@@ -22,6 +22,32 @@ def require(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
+def marker_index(actions, marker: str) -> int:
+    matches = [index for index, item in enumerate(actions)
+               if item.get("WFWorkflowActionParameters", {}).get("WFCommentActionText", "").startswith(f"--- {marker} ---")]
+    require(len(matches) == 1, f"expected one {marker} marker")
+    return matches[0]
+
+
+def conditional_ancestry(actions, until: int) -> list[tuple[str, int]]:
+    """Return each enclosing conditional and the arm containing action ``until``."""
+    stack: list[list[object]] = []
+    for item in actions[:until]:
+        if item["WFWorkflowActionIdentifier"] != "is.workflow.actions.conditional":
+            continue
+        params = item["WFWorkflowActionParameters"]
+        mode, group = params.get("WFControlFlowMode"), params.get("GroupingIdentifier")
+        if mode == 0:
+            stack.append([group, 0])
+        elif mode == 1:
+            require(stack and stack[-1][0] == group, "otherwise without matching conditional")
+            stack[-1][1] = 1
+        elif mode == 2:
+            require(stack and stack[-1][0] == group, "end conditional without matching start")
+            stack.pop()
+    return [(group, arm) for group, arm in stack]
+
+
 def main() -> None:
     subprocess.run(["python3", str(BUILDER)], cwd=ROOT, check=True)
     first = digest()
@@ -53,6 +79,56 @@ def main() -> None:
             require(params.get("WFVolumeSetting") == "Media", "non-Media volume write")
         if item["WFWorkflowActionIdentifier"] == "is.workflow.actions.setbrightness":
             require(params.get("WFBrightness") not in (0, "0", 0.0), "brightness may reach zero")
+
+    cooldown_index, cooldown = next(
+        ((index, item) for index, item in enumerate(actions)
+         if item["WFWorkflowActionIdentifier"] == "is.workflow.actions.conditional"
+         and item["WFWorkflowActionParameters"].get("WFControlFlowMode") == 0
+         and item["WFWorkflowActionParameters"].get("WFInput", {}).get("Variable", {}).get("Value", {})
+         .get("VariableName") == "Cooldown Until"),
+        (None, None),
+    )
+    require(cooldown is not None, "named cooldown conditional missing")
+    cooldown_group = cooldown["WFWorkflowActionParameters"]["GroupingIdentifier"]
+    input_present_group = next(
+        item["WFWorkflowActionParameters"]["GroupingIdentifier"] for item in actions
+        if item["WFWorkflowActionIdentifier"] == "is.workflow.actions.conditional"
+        and item["WFWorkflowActionParameters"].get("WFControlFlowMode") == 0
+        and item["WFWorkflowActionParameters"].get("WFCondition") == 100
+        and item["WFWorkflowActionParameters"].get("WFInput", {}).get("Variable", {}).get("Value", {})
+        .get("VariableName") == "Input Key")
+    open_group = next(
+        item["WFWorkflowActionParameters"]["GroupingIdentifier"] for item in actions
+        if item["WFWorkflowActionIdentifier"] == "is.workflow.actions.conditional"
+        and item["WFWorkflowActionParameters"].get("WFControlFlowMode") == 0
+        and item["WFWorkflowActionParameters"].get("WFCondition") == 4
+        and item["WFWorkflowActionParameters"].get("WFConditionalActionString") == "OPEN"
+        and item["WFWorkflowActionParameters"].get("WFInput", {}).get("Variable", {}).get("Value", {})
+        .get("VariableName") == "Input Key")
+    otherwise_index = next(index for index, item in enumerate(actions[cooldown_index + 1:], cooldown_index + 1)
+                           if item["WFWorkflowActionIdentifier"] == "is.workflow.actions.conditional"
+                           and item["WFWorkflowActionParameters"].get("GroupingIdentifier") == cooldown_group
+                           and item["WFWorkflowActionParameters"].get("WFControlFlowMode") == 1)
+    cooldown_end = next(index for index, item in enumerate(actions[otherwise_index + 1:], otherwise_index + 1)
+                        if item["WFWorkflowActionIdentifier"] == "is.workflow.actions.conditional"
+                        and item["WFWorkflowActionParameters"].get("GroupingIdentifier") == cooldown_group
+                        and item["WFWorkflowActionParameters"].get("WFControlFlowMode") == 2)
+    live_index = marker_index(actions, "PHASE 5 LIVE ICE REDIRECT")
+    expiry_index = marker_index(actions, "PHASE 5 ICE EXPIRY")
+    require(conditional_ancestry(actions, live_index) == [(input_present_group, 0), (open_group, 0), (cooldown_group, 0)],
+            "live-Ice marker is not exactly in the live-cooldown branch")
+    require(conditional_ancestry(actions, expiry_index) == [(input_present_group, 0), (open_group, 0), (cooldown_group, 1)],
+            "expiry marker is not exactly in the expired-cooldown branch")
+    live_actions = actions[cooldown_index + 1:otherwise_index]
+    require(any(item["WFWorkflowActionIdentifier"] == "is.workflow.actions.returntohomescreen" for item in live_actions),
+            "live-cooldown branch has no redirect")
+    live_keys = "\n".join(str(item.get("WFWorkflowActionParameters", {}).get("WFDictionaryKey", "")) for item in live_actions)
+    require("heat" not in live_keys and "opens_today" not in live_keys,
+            "live-cooldown branch inflates Heat or open count")
+    expiry_actions = actions[otherwise_index + 1:cooldown_end]
+    expiry_keys = "\n".join(str(item.get("WFWorkflowActionParameters", {}).get("WFDictionaryKey", "")) for item in expiry_actions)
+    require("cooldown_until" in expiry_keys and "heat" in expiry_keys,
+            "expired-cooldown branch does not clear cooldown and apply relief")
 
     stack: list[str] = []
     flow_ids = {"is.workflow.actions.conditional", "is.workflow.actions.repeat.count",

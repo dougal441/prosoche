@@ -584,36 +584,49 @@ def replace_marker_block(actions, start: str, end: str, replacement):
     actions[begin:finish + 1] = replacement
 
 
+def remove_marker_block(actions, start: str, end: str):
+    """Remove one named generated region, wherever an earlier build put it."""
+    try:
+        begin = comment_index(actions, start)
+    except SystemExit:
+        return
+    finish = comment_index(actions[begin + 1:], end) + begin + 1
+    del actions[begin:finish + 1]
+
+
 def insert_or_replace_after(actions, anchor: str, start: str, end: str, replacement):
-    """Place a named block beside an existing semantic action, never an index."""
+    """Keep ordinary one-location generated blocks adjacent to their anchor."""
     try:
         replace_marker_block(actions, start, end, replacement)
-        return
     except SystemExit:
-        pass
-    at = comment_index(actions, anchor)
-    actions[at + 1:at + 1] = replacement
+        at = comment_index(actions, anchor)
+        actions[at + 1:at + 1] = replacement
 
 
-def insert_or_replace_in_otherwise(actions, anchor: str, start: str, end: str, replacement):
-    """Put expiry in the named cooldown conditional's Otherwise path."""
-    try:
-        replace_marker_block(actions, start, end, replacement)
-        return
-    except SystemExit:
-        pass
-    at = comment_index(actions, anchor)
-    start_action = next((candidate for candidate in actions[at + 1:]
-                         if candidate.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
-                         and candidate.get("WFWorkflowActionParameters", {}).get("WFControlFlowMode") == 0), None)
-    if not start_action:
-        raise SystemExit("live cooldown conditional not found after semantic marker")
-    group = start_action["WFWorkflowActionParameters"]["GroupingIdentifier"]
+def install_cooldown_branches(actions):
+    """Install Ice only in the true/otherwise arms of the named cooldown If."""
+    # Removing both first repairs builds made by the earlier broad-anchor helpers.
+    # Expiry may have been nested inside the live block, so remove the outer block first.
+    remove_marker_block(actions, LIVE_ICE_MARKER, "--- PHASE 5 LIVE ICE REDIRECT END ---")
+    remove_marker_block(actions, EXPIRY_MARKER, "--- PHASE 5 ICE EXPIRY END ---")
+    at = comment_index(actions, "Short-circuit a live cooldown")
+    cooldown_index, cooldown_action = next(
+        ((index, candidate) for index, candidate in enumerate(actions[at + 1:], at + 1)
+         if candidate.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+         and candidate.get("WFWorkflowActionParameters", {}).get("WFControlFlowMode") == 0
+         and candidate.get("WFWorkflowActionParameters", {}).get("WFInput", {}).get("Variable", {})
+         .get("Value", {}).get("VariableName") == "Cooldown Until"),
+        (None, None),
+    )
+    if cooldown_action is None:
+        raise SystemExit("named live cooldown conditional not found")
+    actions[cooldown_index + 1:cooldown_index + 1] = live_ice_redirect()
+    group = cooldown_action["WFWorkflowActionParameters"]["GroupingIdentifier"]
     for index, candidate in enumerate(actions[at + 1:], start=at + 1):
         params = candidate.get("WFWorkflowActionParameters", {})
         if (candidate.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
                 and params.get("GroupingIdentifier") == group and params.get("WFControlFlowMode") == 1):
-            actions[index + 1:index + 1] = replacement
+            actions[index + 1:index + 1] = ice_expiry()
             return
     raise SystemExit("live cooldown Otherwise path not found")
 
@@ -694,10 +707,7 @@ def main():
                          [comment(RESTORE_MARKER + "\n\n- Only the matching CLOSE owner restores captured settings.\n- A superseded CLOSE reaches no restore or Save File action."),
                           *restore_managed_settings("Reloaded State"),
                           comment("--- PHASE 5 RESTORE MANAGED SETTINGS END ---")])
-    insert_or_replace_after(actions, "Short-circuit a live cooldown", LIVE_ICE_MARKER,
-                            "--- PHASE 5 LIVE ICE REDIRECT END ---", live_ice_redirect())
-    insert_or_replace_in_otherwise(actions, "Short-circuit a live cooldown", EXPIRY_MARKER,
-                                   "--- PHASE 5 ICE EXPIRY END ---", ice_expiry())
+    install_cooldown_branches(actions)
     insert_or_replace_after(actions, "--- CONTROL ROOM: confirm", MANUAL_MARKER,
                             "--- PHASE 5 MANUAL EMERGENCY RESTORE END ---", manual_emergency_restore())
     normalize_setters(actions)
