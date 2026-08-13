@@ -133,3 +133,58 @@ Decisions in this document are numbered `BD-NN` ("blocker decision"). They are *
 **Consequence for later phases:** Phase 2 (Control Room build) is directly gated on this decision. ROOM-01 through ROOM-06 all depend on the Note existing and being writable; ROOM-02 and ROOM-03 (the automation setup instructions) depend specifically on CAP-08 producing a non-empty note body; ROOM-06 (the editable proforma) and, in Phase 7, ROOM-11 (Sync My Profile's extraction of the proforma back into state) depend on CAP-07/CAP-09's find-and-append mechanics remaining reliable across the Note's lifetime. If UA-01 surfaces a failure, Phase 2 must rebuild the onboarding surface on Option 3's file-based fallback, accepting the round-trip and ledger-append degradation described above.
 
 **Requirement:** AUDIT-05
+
+---
+
+# REVISIONS — 2026-08-13, user correction
+
+These supersede the decisions above where they conflict. Two Phase 1 conclusions were wrong or over-constrained.
+
+## BD-01-R — Ash / Color Filters: SUPERSEDES BD-01
+
+**Supersedes:** BD-01 (which degraded Ash to a non-environmental visual pause).
+**New verdict for CAP-20:** **VERIFIED — usable on iOS.**
+
+**Action:** `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` — display name **"Set Color Filters"**.
+
+**Parameters** (from `toolkit-v78-first-party-parameter-keys.json`):
+
+| Key | Type | Values |
+|---|---|---|
+| `operation` | enum `com_apple_universal_access_uasettings_shortcuts_operation` | `turn` (title "Turn") \| `toggle` (title "Toggle") |
+| `state` | bool | trueString `On` / falseString `Off` |
+| `ShowWhenRun` | bool | trueString `On` / falseString `Off` — set `Off` |
+
+**Why BD-01 was wrong.** BD-01 read the entry's `platforms: ["macOS 27"]` tag and its absence from `toolkit-v78-ios27-tool-ids.json` as proof of macOS exclusivity. Both signals are artefacts, not facts:
+
+1. `docs/BUILD-NOTES.md` §3 (the evidence-protocol table, row for the parameter-keys catalog) **already states** that a `macOS 27`-only tag is "a *provenance fact about which build the catalog was captured from*, not proof the action is macOS-exclusive." That reasoning was applied to the Notes actions (BD-05) and not to CAP-20. Applying it consistently reverses the verdict.
+2. `toolkit-v78-ios27-tool-ids.json` is an **iOS Simulator** snapshot — 1206 ids versus 2731 in the full macOS snapshot. Simulators do not install the UniversalAccess accessibility extension. Confirmed independently: the iOS 26.5 simulator runtime on this machine contains no `UASettingsShortcuts` bundle and no `UniversalAccess.framework` at all, while still shipping a working Shortcuts.app. Absence from a simulator snapshot is therefore evidence about simulators, not about iOS.
+3. On real iOS hardware the Accessibility section of the Shortcuts action list contains "Set Color Filters"; a grayscale toggle is among the most widely used community shortcuts. Asserted by the project owner and consistent with 1 and 2.
+
+**Ash is therefore a real environmental primitive, and a fully restorable one.** `operation: turn` with an explicit `state` is a *set*, not a blind toggle — PROSOCHĒ never has to infer the current value to restore it.
+
+**Design (Phase 5, CIRC-02):**
+- Apply: `operation = turn`, `state = On`, `ShowWhenRun = Off`.
+- Restore on CLOSE, Emergency Restore, and cooldown expiry: `operation = turn`, `state = Off`.
+- Never use `operation = toggle` — a toggle depends on unknown prior state and can strand the user filtered.
+
+**Canonical §21 compliance.** There is still no read-back for Color Filters, so PROSOCHĒ cannot detect a pre-existing user-configured filter and would clear it on restore. §21 explicitly permits the remedy: *"require the user to opt into a known PROSOCHĒ-managed configuration."* Ash is therefore opt-in via `safety.ash_managed_color_filters` (default `true`), and the Control Room Note states that PROSOCHĒ manages Color Filters and will leave them off after an intervention. A user who has deliberately configured Color Filters sets the flag `false` and Ash falls back to BD-01's non-environmental visual pause, which remains implemented as the fallback branch.
+
+**Consequence:** `DEV-01` is withdrawn — Ash needs no deviation. Phase 5 builds CIRC-02 on the real action with the opt-in guard and the BD-01 pause as fallback.
+
+**Requirement:** AUDIT-02
+
+## BD-04-R — Model source: SUPERSEDES BD-04's hard constraint
+
+**Supersedes:** BD-04's requirement that Sentient must be On-Device or make no claim.
+**Change authorised by the project owner:** the hard On-Device-only privacy constraint is **relaxed**. Private Cloud Compute is acceptable.
+
+**What this changes:**
+- Sentient may ship with the model source unset in the plist, and On-Device *preferred* rather than *required*.
+- Private Cloud Compute is an acceptable runtime outcome. ChatGPT / third-party extension models remain excluded — they are a different trust boundary and the strategy's exclusion of them stands.
+- Phase 8 is **no longer gated** on recovering the `WFLLMModel` literal. UA-02 is downgraded from a gate to an optional improvement: if the literal is recovered by round-trip, pin On-Device; otherwise ship without the key and instruct the user in the Note.
+- The still-binding rule from BD-04 is unchanged and is the important one: **do not write a guessed `WFLLMModel` value.** An invented enum could silently route somewhere unintended. Omitting the key is safe; guessing it is not.
+
+**Product copy consequence:** Sentient says it prefers Apple's on-device model and that the user selects the model source after import — not that on-device is enforced.
+
+**Requirement:** AUDIT-06

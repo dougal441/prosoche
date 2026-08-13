@@ -333,3 +333,18 @@ Each of the five Phase 1 success criteria in `.planning/ROADMAP.md`, mapped to c
 3. *"Brightness and volume read-back capability are each resolved; if no safe read path exists, Dimming and Silence are specified to degrade to non-stateful variants rather than making an unrestorable change."* — Satisfied by CAP-16/CAP-17 and BD-02 (Dimming), CAP-18/CAP-19 and BD-03 (Silence); both resolved to the stronger stateful-with-safety-branch form because the read-back path was found `VERIFIED`, which is a stronger outcome than the criterion's own fallback-only framing anticipated — the message-only degrade path is retained as each primitive's mandatory per-run safety branch, not discarded.
 4. *"Notes actions (Create Note, Append to Note, find/show a Note) are confirmed usable on the iOS target."* — Satisfied by CAP-07 through CAP-10 (all `VERIFIED`) and BD-05, which authorises Phase 2 to build on this evidence while gating final on-device confirmation on UA-01 — met by the alternative branch AUDIT-05's own evidentiary standard permits (authorise-and-confirm-early, not block-and-wait), stated plainly rather than overstated as a completed on-device test.
 5. *"The `Use Model` On-Device selection literal is recovered by round-trip... and recorded verbatim, or the Sentient fork's On-Device guarantee is explicitly re-planned; a single editable Config block... exists in the graph."* — The literal was **not** recovered (CAP-26, token `UNRECOVERED-LOCALLY`); the guarantee is explicitly re-planned by BD-04 Branch B, which AUDIT-06 permits as an equally-satisfying outcome — met by the alternative branch, stated plainly, not overstated as a completed round-trip. The Config block half of this criterion is satisfied by `src/CONFIG-BLOCK.md` (single fenced JSON block, nine sibling top-level keys, confirmed parsing and intact sequence orderings in this plan's own verification step).
+
+---
+
+## 8. Revisions — 2026-08-13 (user correction)
+
+| Row | Was | Now | Authority |
+|---|---|---|---|
+| CAP-20 Color Filters / grayscale | `NOT AVAILABLE` | **`VERIFIED`** — `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` ("Set Color Filters"), params `operation` (`turn`\|`toggle`), `state` (bool On/Off), `ShowWhenRun` (bool) | BD-01-R |
+| CAP-26 Use Model, On-Device pinning | Hard gate on Phase 8 | Gate removed — PCC acceptable, On-Device preferred not required | BD-04-R |
+| DEV-01 | Open deviation for Ash | **Withdrawn** — Ash needs no deviation | BD-01-R |
+| UA-02 | Blocking gate on Phase 8 | Optional improvement | BD-04-R |
+
+The CAP-20 correction turns on a distinction §3 of this document already drew but §4 failed to apply: a `platforms: ["macOS 27"]` tag records which build the catalog was captured from, and `toolkit-v78-ios27-tool-ids.json` is an **iOS Simulator** snapshot (1206 ids vs 2731) that omits the UniversalAccess extension entirely. Verified independently on this machine: the iOS 26.5 simulator runtime ships Shortcuts.app but contains no `UniversalAccess.framework` and no `UASettingsShortcuts` bundle. Neither signal is evidence about real iOS.
+
+See `docs/CAPABILITY-DECISIONS.md` → REVISIONS for the full decisions.
