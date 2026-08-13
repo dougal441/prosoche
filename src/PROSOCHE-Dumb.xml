@@ -519,9 +519,118 @@ ALLOW_MANUAL_UNIT_CONVERSION: the settings text below includes the date pattern 
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>WFCommentActionText</key>
-				<string>Route this run based on whether the shortcut received any input:
-- If input has a value, this run came from an automation and is handled in a later build
-- If input is empty, this is a manual run and continues below to check for existing setup</string>
+				<string>--- ROUTING: normalise the Shortcut Input into Input Key before any comparison ---</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>E3FD3152-6C36-43C4-BCEC-FDEBEE22E4E0</string>
+				<key>WFTextActionText</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>ExtensionInput</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.text.trimwhitespace</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>97E7534D-0C5B-4865-BB3E-3FCC78710DA0</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>E3FD3152-6C36-43C4-BCEC-FDEBEE22E4E0</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.text.changecase</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>E1DAACD5-CAE1-403D-833D-756CD8EA01B1</string>
+				<key>text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>97E7534D-0C5B-4865-BB3E-3FCC78710DA0</string>
+						<key>OutputName</key>
+						<string>Trimmed Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFCaseType</key>
+				<string>UPPERCASE</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>E1DAACD5-CAE1-403D-833D-756CD8EA01B1</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Input Key</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Route this run based on whether the normalised Input Key has a value, never the raw Shortcut Input:
+- Input Key is built just above by composing the Shortcut Input into text, trimming surrounding whitespace, then uppercasing the result.
+- Trimming an all-whitespace value leaves an empty string, and an empty string has no value, so a plain manual tap (no input at all) and a whitespace-only input both fall through to this gate's Otherwise below, the MANUAL branch, rather than being treated as unrecognised input. The very first run of a freshly imported Shortcut is exactly this case, since neither Personal Automation exists yet to send OPEN or CLOSE.
+- If Input Key has a value, this run came from an automation (or a stray caller) and is classified into OPEN, CLOSE, or an unrecognised fail-safe outcome below.
+- If Input Key is empty, this is a manual run and continues below to check for existing setup.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -544,7 +653,9 @@ ALLOW_MANUAL_UNIT_CONVERSION: the settings text below includes the date pattern 
 						<key>Value</key>
 						<dict>
 							<key>Type</key>
-							<string>ExtensionInput</string>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Input Key</string>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
