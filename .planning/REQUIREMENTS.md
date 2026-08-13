@@ -18,7 +18,7 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 - [ ] **AUDIT-05**: Notes actions (Create Note, Append to Note, find/show a Note) are confirmed usable on the iOS target, since the Control Room is the only onboarding path
 - [ ] **AUDIT-06**: The `Use Model` On-Device selection literal is recovered by round-trip (select On-Device in Shortcuts, export unsigned XML, read the literal back) and recorded verbatim, OR the Sentient fork's On-Device guarantee is explicitly re-planned
 - [x] **AUDIT-07**: Every deviation from the canonical strategy forced by an unverifiable action is recorded with the fallback taken, and the Shortcut remains runnable
-- [ ] **AUDIT-08**: Static configuration (profile threshold tables, sequence orderings, Ice cooldown durations, Heat coefficients) exists as a single editable block so prototype parameters can be tuned without restructuring the graph
+- [x] **AUDIT-08**: Static configuration (profile threshold tables, sequence orderings, Ice cooldown durations, Heat coefficients) exists as a single editable block so prototype parameters can be tuned without restructuring the graph
 
 ### Routing & Bootstrap (BOOT)
 
@@ -224,7 +224,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | AUDIT-05 | Phase 1 | Pending |
 | AUDIT-06 | Phase 1 | Pending |
 | AUDIT-07 | Phase 1 | Complete |
-| AUDIT-08 | Phase 1 | Pending |
+| AUDIT-08 | Phase 1 | Complete |
 | BOOT-01 | Phase 2 | Pending |
 | BOOT-02 | Phase 2 | Pending |
 | BOOT-03 | Phase 2 | Pending |

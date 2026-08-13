@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 1
 current_phase_name: Capability Audit & Config Foundation
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-08-13T00:53:55.626Z"
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-08-13T00:58:45.526Z"
 last_activity: 2026-08-13
 last_activity_desc: Completed 01-01 (Ash/Color Filters tracer slice) — BUILD-NOTES.md, CAPABILITY-DECISIONS.md, CONFIG-BLOCK.md created
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 ## Current Position
 
 Phase: 1 of 8 (Capability Audit & Config Foundation)
-Plan: 1 of 5 in current phase
-Status: Executing
+Plan: 2 of 5 in current phase
+Status: Ready to execute
 Last activity: 2026-08-13 — Completed 01-01 (Ash/Color Filters tracer slice) — BUILD-NOTES.md, CAPABILITY-DECISIONS.md, CONFIG-BLOCK.md created
 
-Progress: [██░░░░░░░░] 20%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Progress: [██░░░░░░░░] 20%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 01 P01 | 15min | 2 tasks | 3 files |
+| Phase 01 P03 | ~20min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [Roadmap]: The final phase (Phase 8) delivers both signed `.shortcut` files — the project's definition of done.
 - [Phase 1]: BD-01: Ash degraded to a non-environmental variant (self-contained visual pause) rather than a system Color Filters toggle — no iOS read-back mechanism exists in any bundled ToolKit snapshot
 - [Phase 1]: CAP-20 verdict set to NOT AVAILABLE, confirmed by a live re-run of the ToolKit lookup
+- [Phase ?]: heat.reopen_bonus_mode = "exclusive" (PROTOTYPE INTERPRETATION): a reopen matching both rapid-return bands earns only the tighter bonus, not both stacked; Phase 3 owns STATE-04 against this value
+- [Phase ?]: config_version, heat.ice_expiry_relief, exits.exploration_rate, exits.exploit_min_observations labelled PROTOTYPE DEFAULT: canonical strategy requires each field to exist but states no number
 
 ### Pending Todos
 
@@ -92,6 +95,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-13T00:53:55.618Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-08-13T00:58:45.519Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None
