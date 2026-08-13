@@ -402,3 +402,13 @@ Each of the five Phase 1 success criteria in `.planning/ROADMAP.md`, mapped to c
 The CAP-20 correction turns on a distinction §3 of this document already drew but §4 failed to apply: a `platforms: ["macOS 27"]` tag records which build the catalog was captured from, and `toolkit-v78-ios27-tool-ids.json` is an **iOS Simulator** snapshot (1206 ids vs 2731) that omits the UniversalAccess extension entirely. Verified independently on this machine: the iOS 26.5 simulator runtime ships Shortcuts.app but contains no `UniversalAccess.framework` and no `UASettingsShortcuts` bundle. Neither signal is evidence about real iOS.
 
 See `docs/CAPABILITY-DECISIONS.md` → REVISIONS for the full decisions.
+
+---
+
+## 9. Control Room Note — canonical signing name (plan 02-02)
+
+Plan 02-02 expanded the `Control Room Body` `Text` action in `src/PROSOCHE-Dumb.xml` into the full Control Room Note. Its Automation A and Automation B build steps both instruct the user, identically, to pick the Run Shortcut target named exactly:
+
+`PROSOCHĒ — Nine Circles — Dumb`
+
+This is the same string already recorded as `WFWorkflowName` in `src/PROSOCHE-Dumb.xml` and as the intended signing name in `.planning/research/STACK.md` (`sign-shortcut ... --name "PROSOCHĒ — Nine Circles — Dumb"`). Phase 7's signing step must sign the Dumb-fork artifact under this exact string — em dash, macron, and the trailing " — Dumb" suffix all literal — so the entry the user selects from the Shortcuts app's Run Shortcut picker matches what the Note tells them to look for. Any future rename of the shipped shortcut requires updating both of this Note's automation sections to match; the Note is written first here and the signer must agree with it, not the reverse.

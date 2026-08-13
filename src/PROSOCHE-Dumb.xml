@@ -1028,13 +1028,133 @@ ALLOW_MANUAL_UNIT_CONVERSION: the settings text below includes the date pattern 
 				<key>UUID</key>
 				<string>56EB40A5-794B-414E-864B-F08B00F95A89</string>
 				<key>WFTextActionText</key>
-				<string># PROSOCHĒ — Control Room
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string># PROSOCHĒ — Control Room
 
 ## READ THIS FIRST
 
-PROSOCHĒ is a small system that steps in between you and the apps you open on impulse. It does not block anything, and it cannot install its own automations — the short setup below is a few taps you do yourself in the Shortcuts app. You can turn it off at any time by removing the two automations described there; nothing about your phone changes if you do.
+PROSOCHĒ notices when you open a chosen app. It measures how often and how automatically you have been reaching for that app, and the more automatic that reaching has become, the more it gets in your way before you arrive where you were actually going. It does not block anything. It does not decide anything on your behalf.
 
-This is the first note it created for you. Later runs update this same note with your live setup and what it has noticed so far.</string>
+Two things about it should be plain from the start.
+
+This Shortcut cannot create its own automations. Apple does not allow a shared shortcut to install a Personal Automation on your device. Automation A and Automation B below are something you build yourself, once, in the Shortcuts app. Nothing else in this Note will do that step for you.
+
+PROSOCHĒ is bypassable. You can dismiss any interruption it shows you, at any time, without consequence. You can turn either automation off, or delete both, in the Shortcuts app whenever you want. It is not trying to stop you, and it does not claim otherwise.
+
+### Automation A — OPEN
+
+Build this in the Shortcuts app, with this Note open beside you.
+
+1. Open the Shortcuts app.
+2. Go to the Automation tab.
+3. Tap the button to create a new Personal Automation.
+4. Choose the App trigger.
+5. Select the apps you want PROSOCHĒ to watch.
+6. Choose Is Opened.
+7. Turn off "Ask Before Running", so the automation runs immediately without asking.
+8. Add the Run Shortcut action.
+9. For the shortcut, choose the one named exactly PROSOCHĒ — Nine Circles — Dumb.
+10. Set the Run Shortcut action's input to the text OPEN, typed exactly as those four capital letters and nothing else.
+
+### Automation B — CLOSE
+
+Build a second Personal Automation the same way as Automation A, with three differences: the same apps, the Is Closed trigger in place of Is Opened, and the input text CLOSE in place of OPEN.
+
+1. Open the Shortcuts app.
+2. Go to the Automation tab.
+3. Tap the button to create a new Personal Automation.
+4. Choose the App trigger.
+5. Select the same apps you chose for Automation A.
+6. Choose Is Closed, not Is Opened.
+7. Turn off "Ask Before Running", so the automation runs immediately without asking.
+8. Add the Run Shortcut action.
+9. For the shortcut, choose the one named exactly PROSOCHĒ — Nine Circles — Dumb.
+10. Set the Run Shortcut action's input to the text CLOSE, typed exactly as those five capital letters and nothing else, not OPEN.
+
+Both automations are needed. Without CLOSE, PROSOCHĒ has no way to measure how long a session actually lasted, so it cannot tell whether a boundary you set for yourself was kept or exceeded.
+
+## Do not target these apps
+
+Do not point either automation at Phone, Messages, Maps, Wallet, an authenticator, a password manager, or any other app you might need in a hurry or in an emergency. PROSOCHĒ is meant for the apps you open without deciding to, not the ones you rely on.
+
+## MY PHONE, ON PURPOSE
+
+This section is yours. Write in it directly, here in the Notes app. Nothing here has to be tidy, and you can write naturally.
+
+### What is my phone genuinely for?
+
+Write a few things your phone does that improve your life. For example: communicate with the people I love; navigate; capture ideas; take photographs; make or listen to music; learn; organise my life; deliberately relax.
+
+### Which apps take more attention than I intend to give them?
+
+List the apps you are configuring the OPEN and CLOSE automations for. For example: Instagram, Facebook, Reddit, TikTok.
+
+### What do I actually want the reclaimed attention for?
+
+For example: books; making music; training; cooking; friends; my partner; my children; being outside; thinking; sleeping; doing nothing.
+
+### When PROSOCHĒ stops an automatic open, what would I rather do?
+
+Choose from the six exits PROSOCHĒ offers — Capture, Coordinate, Create, Connect, Consult, Close — and name the apps or actions you would actually prefer, for each one that fits you.
+
+### What does deliberate leisure look like for me?
+
+For example: ten minutes of Reels after dinner is fine; I do not want to turn five minutes into forty; I do not want to repeatedly check the same feed.
+
+### Optional sentence to my future self
+
+For example: I installed this because I was tired of checking without deciding.
+
+PROSOCHĒ only reads this section when you explicitly ask it to, from the Control Room menu. It is not parsed on every app open.
+
+## CURRENT SETTINGS
+
+- Fork: Dumb
+- Profile: ￼
+- Sequence: Classic
+- Voice: ￼
+- AI: not used by this fork
+- Enabled exits: all six, by default — Capture, Coordinate, Create, Connect, Consult, Close
+
+## CURRENT STATE
+
+Nothing has been recorded yet. This is the first run. This section is rewritten each time PROSOCHĒ is run manually, so what you read here will change as you use it.
+
+## ATTENTION LEDGER
+
+Meaningful events are appended here as they happen: circle changes, boundaries set and then kept or exceeded, redirects, cool-downs, profile changes. Not every internal calculation is recorded here. Entries begin in later phases of this build.
+
+## VALUE / LIFE RETURNED
+
+Reserved. Nothing is measured here yet.
+
+## SUPPORT PROSOCHĒ
+
+Reserved. Nothing is asked for here yet.</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{4389, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Import Descent</string>
+							</dict>
+							<key>{4420, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Import Voice</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
 			</dict>
 		</dict>
 		<dict>
