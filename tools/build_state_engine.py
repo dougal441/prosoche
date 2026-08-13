@@ -22,6 +22,46 @@ CONTRACT_MARKER = "--- PHASE 6 CONTRACT CLOSE ---"
 EXIT_NAMES = ("Capture", "Coordinate", "Create", "Connect", "Consult", "Close")
 UUID_COUNTER = 0
 
+# Every sentence below is selected only in an OPEN run after its named facts are
+# present.  The strings are deliberately local and deterministic: Dumb never
+# asks a model to interpret a person or fabricate telemetry.
+MIRROR_BASELINES = (
+    "Circle ￼ follows recorded pressure ￼ and heat ￼.",
+    "Recorded now: Circle ￼, pressure ￼, heat ￼.",
+    "This open reaches Circle ￼ from pressure ￼ and heat ￼.",
+    "The current record places this at Circle ￼, pressure ￼, heat ￼.",
+    "Facts for this interruption: Circle ￼; pressure ￼; heat ￼.",
+    "The saved calculation is Circle ￼ with pressure ￼ and heat ￼.",
+    "This is Circle ￼ on recorded pressure ￼ and heat ￼.",
+    "The deterministic reading is Circle ￼, pressure ￼, heat ￼.",
+    "Recorded signals: Circle ￼, pressure ￼, heat ￼.",
+    "This run has Circle ￼, pressure ￼, and heat ￼.",
+)
+MIRROR_SUCCESSES = (
+    "A recorded boundary was kept before this Circle ￼ open.",
+    "The last recorded boundary was respected; this open is Circle ￼.",
+    "There is a kept boundary in the record; current Circle: ￼.",
+    "The previous contract was kept. Recorded pressure is ￼.",
+    "A kept boundary is part of this record; heat is ￼.",
+    "The record includes a respected contract before Circle ￼.",
+    "One prior boundary was kept; this run's pressure is ￼.",
+    "Success is recorded too: the prior boundary was respected.",
+    "The last contract was kept; the current heat is ￼.",
+    "A recorded success precedes this Circle ￼ interruption.",
+)
+MIRROR_LAPSES = (
+    "A prior recorded boundary ran over; this open is Circle ￼.",
+    "The record shows a prior overrun; current pressure is ￼.",
+    "One earlier boundary exceeded its time; heat is now ￼.",
+    "A recorded contract overran before this Circle ￼ open.",
+    "The previous boundary was exceeded; pressure is ￼.",
+    "This record includes an overrun; current Circle: ￼.",
+    "A prior contract exceeded its boundary; heat is ￼.",
+    "The recorded lapse is a time overrun, not a judgment.",
+    "There was a previous overrun; this run reaches Circle ￼.",
+    "A time boundary ran over earlier; pressure is now ￼.",
+)
+
 
 def uid() -> str:
     global UUID_COUNTER
@@ -348,16 +388,36 @@ def exile():
             action("is.workflow.actions.returntohomescreen")]
 
 
+def mirror_text(items, name: str):
+    """Select one non-empty template from a fact-gated list using Circle 1..9."""
+    list_id, item_id = uid(), uid()
+    a = [action("is.workflow.actions.list", UUID=list_id, WFItems=list(items)),
+         action("is.workflow.actions.getitemfromlist", UUID=item_id,
+                WFItemSpecifier=variable("Circle Next"), WFInput=output(list_id, "List")),
+         set_var(name, output(item_id, "Item from List"))]
+    return a
+
+
+def mirror_templates(templates):
+    facts = ("Circle Next", "Pressure Next", "Heat Final")
+    return tuple(text_token([(part, facts[index] if index < len(template.split("￼")) - 1 else None)
+                             for index, part in enumerate(template.split("￼"))]) for template in templates)
+
+
 def mirror_and_voice():
-    a = [comment("""Mirror states only guarded recorded facts:
-- Circle, Pressure, and Heat are prepared by this OPEN run.
-- Voice uses this same text at most once when it is enabled.""")]
-    mirror_id = uid()
-    a += [action("is.workflow.actions.gettext", UUID=mirror_id,
-                 WFTextActionText=text_token([("Circle ", "Circle Next"),
-                                               (" follows recorded pressure ", "Pressure Next"),
-                                               (" and heat ", "Heat Final")])),
-          set_var("Mirror Text", output(mirror_id, "Text")),
+    baseline = mirror_templates(MIRROR_BASELINES)
+    success = mirror_templates(MIRROR_SUCCESSES)
+    lapse = mirror_templates(MIRROR_LAPSES)
+    a = [comment("""Mirror selects from 30 fact-gated, local templates:
+- Baselines use only this OPEN's Circle, Pressure, and Heat.
+- Success and lapse wording runs only when the recorded previous contract says so.
+- No model, interpretation, or empty telemetry path exists.""")]
+    # Baseline is always available: Circle, Pressure, and Heat are prepared in this OPEN run.
+    a += mirror_text(baseline, "Mirror Text")
+    respected_g, respected_if = if_block("Previous Respected", 4, string="true")
+    lapsed_g, lapsed_if = if_block("Previous Respected", 4, string="false")
+    a += [respected_if] + mirror_text(success, "Mirror Text") + [otherwise(respected_g), lapsed_if]
+    a += mirror_text(lapse, "Mirror Text") + [otherwise(lapsed_g), action("is.workflow.actions.nothing"), end_if(lapsed_g), end_if(respected_g),
           alert("Mirror", variable("Mirror Text"))]
     a += read_value("voice_enabled", variable("State"), "Voice Enabled")
     voice_g, voice_if = if_block("Voice Enabled", 2, number=0)
@@ -381,9 +441,13 @@ def ice_start():
     return a
 
 
-def primitive_dispatch():
+def primitive_dispatch(circle_name: str | None = None):
     a = [comment(DISPATCH_MARKER + "\n\n- Select exactly one configured sequence entry for Circle after Leaving is offered.\n- Combined entries call only their named primitives.")]
-    a += read_value("sequence", variable("State"), "Sequence") + read_value("circle", variable("State"), "Dispatch Circle")
+    a += read_value("sequence", variable("State"), "Sequence")
+    if circle_name is None:
+        a += read_value("circle", variable("State"), "Dispatch Circle")
+    else:
+        a += [set_var("Dispatch Circle", variable(circle_name))]
     entry_id, entry_text_id = uid(), uid()
     a += [action("is.workflow.actions.getvalueforkey", UUID=entry_id,
                  WFDictionaryKey=text_token([("sequences.", "Sequence"), (".", None), ("", "Dispatch Circle")]),
@@ -961,15 +1025,54 @@ def ice_expiry():
 
 def manual_emergency_restore():
     group = uid()
-    a = [comment(MANUAL_MARKER + "\n\n- Manual control offers an independent Emergency Restore.\n- It roots every mutation in the full loaded State.\n- The branch saves exactly once before the Control Room is shown."),
-         menu(group, 0, prompt="PROSOCHĒ", items=["Open Control Room", "Emergency Restore"]),
-         menu(group, 1, title="Open Control Room"), action("is.workflow.actions.nothing"),
-         menu(group, 1, title="Emergency Restore")]
+    choices = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore"]
+    a = [comment(MANUAL_MARKER + "\n\n- Manual control is the only path that refreshes the Control Room or reads its proforma.\n- OPEN and CLOSE never enter this menu or parse the Note.\n- Test Circle copies recorded values into test variables and never writes Pressure."),
+         menu(group, 0, prompt="PROSOCHĒ", items=choices)]
+    for title in ("Status", "Open Control Room"):
+        a += [menu(group, 1, title=title), *number(1, "Manual Refresh Requested")]
+    a += [menu(group, 1, title="Sync My Profile"), *number(1, "Manual Refresh Requested"), *number(1, "Manual Sync Requested")]
+    profile_menu = uid()
+    a += [menu(group, 1, title="Change Profile"), menu(profile_menu, 0, prompt="Choose profile", items=["Paradise", "Limbo", "Inferno"])]
+    for profile in ("Paradise", "Limbo", "Inferno"):
+        text_id = uid()
+        a += [menu(profile_menu, 1, title=profile), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=profile), set_var("Manual Profile", output(text_id, "Text")), set_value("profile", variable("Manual Profile")), *number(1, "Manual Refresh Requested"), *save_state()]
+    a += [menu(profile_menu, 2)]
+    sequence_menu = uid()
+    a += [menu(group, 1, title="Change Sequence"), menu(sequence_menu, 0, prompt="Choose sequence", items=["Classic", "BlackMirror", "Ambient"])]
+    for sequence in ("Classic", "BlackMirror", "Ambient"):
+        text_id = uid()
+        a += [menu(sequence_menu, 1, title=sequence), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=sequence), set_var("Manual Sequence", output(text_id, "Text")), set_value("sequence", variable("Manual Sequence")), *number(1, "Manual Refresh Requested"), *save_state()]
+    a += [menu(sequence_menu, 2), menu(group, 1, title="Toggle Voice")]
+    a += read_value("voice_enabled", variable("State"), "Manual Voice")
+    voice_g, voice_if = if_block("Manual Voice", 2, number=0)
+    a += [voice_if, *number(0, "Manual Voice Next"), otherwise(voice_g), *number(1, "Manual Voice Next"), end_if(voice_g), set_value("voice_enabled", variable("Manual Voice Next")), *number(1, "Manual Refresh Requested"), *save_state()]
+    test_menu = uid()
+    a += [menu(group, 1, title="Test a Circle"), menu(test_menu, 0, prompt="Test a Circle", items=[f"Circle {number}" for number in range(1, 10)])]
+    for test_circle in range(1, 10):
+        a += [menu(test_menu, 1, title=f"Circle {test_circle}"), *number(test_circle, "Test Circle")]
+        a += read_value("pressure", variable("State"), "Pressure Next") + read_value("heat", variable("State"), "Heat Final") + read_value("circle", variable("State"), "Circle Next")
+        a += [set_var("Circle Next", variable("Test Circle")), comment("Test Circle uses a copied Circle value:\n- Pressure remains the saved recorded value.\n- This branch does not set or save Pressure.\n- Chosen Circle behaviour runs with the copied value only.")] + primitive_dispatch("Test Circle")
+    a += [menu(test_menu, 2), menu(group, 1, title="Reset Today"), *number(0, "Manual Zero"), set_value("opens_today", variable("Manual Zero")), set_value("gravity", variable("Manual Zero")), *number(1, "Manual Refresh Requested"), *save_state(), menu(group, 1, title="Emergency Restore")]
     a += restore_managed_settings("State")
     a += [set_value("cooldown_until", text_token([("null", None)])),
-          set_value("active_session", text_token([("null", None)]))]
+          set_value("active_session", text_token([("null", None)])), *number(1, "Manual Refresh Requested")]
     a += save_state()
     a += [menu(group, 2), comment("--- PHASE 5 MANUAL EMERGENCY RESTORE END ---")]
+    return a
+
+
+def manual_note_refresh():
+    """Append current settings/state only after an explicit manual menu choice."""
+    a = [comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH ---\n\n- This runs after the Note is found or created in the MANUAL branch only.\n- It appends a factual current snapshot and meaningful manual events.\n- OPEN never reaches this Note parsing or append block.")]
+    for key, name in (("fork", "Snapshot Fork"), ("profile", "Snapshot Profile"), ("sequence", "Snapshot Sequence"), ("voice_enabled", "Snapshot Voice"), ("pressure", "Snapshot Pressure"), ("circle", "Snapshot Circle"), ("cooldown_until", "Snapshot Cooldown"), ("profile_snapshot.enabled_exits", "Snapshot Exits")):
+        a += read_value(key, variable("State"), name)
+    refresh_g, refresh_if = if_block("Manual Refresh Requested", 2, number=0)
+    snapshot_id = uid()
+    snapshot = text_token([("\n\n## CURRENT SETTINGS\n- Fork: ", "Snapshot Fork"), ("\n- Profile: ", "Snapshot Profile"), ("\n- Sequence: ", "Snapshot Sequence"), ("\n- Voice: ", "Snapshot Voice"), ("\n- AI: not used by this fork\n- Enabled exits: ", "Snapshot Exits"), ("\n\n## CURRENT STATE\n- Circle: ", "Snapshot Circle"), ("\n- Pressure: ", "Snapshot Pressure"), ("\n- Cool-down until: ", "Snapshot Cooldown"), ("\n\n## ATTENTION LEDGER\n- Manual Control Room refresh at ", "Now Epoch")])
+    a += [refresh_if, action("is.workflow.actions.gettext", UUID=snapshot_id, WFTextActionText=snapshot), action("is.workflow.actions.appendnote", operation="append", entity=variable("Control Room Note"), text=output(snapshot_id, "Text")), otherwise(refresh_g), action("is.workflow.actions.nothing"), end_if(refresh_g)]
+    sync_g, sync_if = if_block("Manual Sync Requested", 2, number=0)
+    text_id, match_id = uid(), uid()
+    a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The extracted text is saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), set_value("profile_snapshot.proforma", output(match_id, "Matched Text")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g), comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH END ---")]
     return a
 
 
@@ -1007,6 +1110,8 @@ def main():
     install_cooldown_branches(actions)
     insert_or_replace_after(actions, "--- CONTROL ROOM: confirm", MANUAL_MARKER,
                             "--- PHASE 5 MANUAL EMERGENCY RESTORE END ---", manual_emergency_restore())
+    insert_or_replace_after(actions, "Check whether this run had to rebuild the setup file", "--- PHASE 7 MANUAL CONTROL ROOM REFRESH ---",
+                            "--- PHASE 7 MANUAL CONTROL ROOM REFRESH END ---", manual_note_refresh())
     normalize_setters(actions)
     # The skill requires a repair-oriented, bulleted Comment immediately before
     # every control-flow start.  Make this invariant structural, not index-based.
