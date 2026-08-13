@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 1
 current_phase_name: Capability Audit & Config Foundation
 status: executing
-stopped_at: Completed 01-04-PLAN.md
-last_updated: "2026-08-13T01:27:16.634Z"
+stopped_at: Completed 01-05-PLAN.md
+last_updated: "2026-08-13T01:37:48.316Z"
 last_activity: 2026-08-13
 last_activity_desc: Completed 01-01 (Ash/Color Filters tracer slice) — BUILD-NOTES.md, CAPABILITY-DECISIONS.md, CONFIG-BLOCK.md created
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 ## Current Position
 
 Phase: 1 of 8 (Capability Audit & Config Foundation)
-Plan: 4 of 5 in current phase
+Plan: 5 of 5 in current phase
 Status: Ready to execute
 Last activity: 2026-08-13 — Completed 01-01 (Ash/Color Filters tracer slice) — BUILD-NOTES.md, CAPABILITY-DECISIONS.md, CONFIG-BLOCK.md created
 
-Progress: [████████░░] 80%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ Progress: [████████░░] 80%
 | Phase 01 P03 | ~20min | 2 tasks | 1 files |
 | Phase 01 P02 | ~35min | 2 tasks | 1 files |
 | Phase 01 P04 | 45min | 2 tasks | 2 files |
+| Phase 01 P05 | 45min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 25 capability audit rows resolved to VERIFIED via live ToolKit re-lookup, correcting 5 STACK.md param-shape findings (CAP-03, CAP-13, CAP-21, CAP-23, CAP-24)
 - [Phase ?]: CAP-17/CAP-19 (brightness/volume read-back) VERIFIED via Get Device Details' WFDeviceDetail enum, promoting BD-02/BD-03 to stateful capture-and-restore Dimming/Silence instead of message-only
 - [Phase ?]: BD-05: Phase 2 authorised to build the Control Room on CAP-07..CAP-10 (all VERIFIED), gated by UA-01's on-device confirmation, with a file-based fallback if that gate fails
+- [Phase ?]: BD-04 (AUDIT-06 Branch B): the Use Model On-Device literal is UNRECOVERED-LOCALLY; the Sentient fork's On-Device guarantee is explicitly re-planned rather than guessed, gated on UA-02
+- [Phase ?]: Phase 8 gate: may build Use Model with evidenced parameters and deterministic fallback now; may not write a WFLLMModel value or claim On-Device is enforced until UA-02 closes
 
 ### Pending Todos
 
@@ -100,6 +103,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-13T01:27:16.627Z
-Stopped at: Completed 01-04-PLAN.md
+Last session: 2026-08-13T01:37:48.307Z
+Stopped at: Completed 01-05-PLAN.md
 Resume file: None
