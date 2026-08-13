@@ -147,7 +147,7 @@ def main() -> None:
                                                "ParameterKey": "WFTextActionText",
                                                "Text": "Use Apple's on-device intelligence contract audit when available? Answer yes or no."})
     root["WFWorkflowName"] = "PROSOCHĒ — Nine Circles — Sentient"
-    root["WFWorkflowIcon"] = {"WFWorkflowIconGlyphNumber": 61440, "WFWorkflowIconStartColor": 4251333119}
+    root["WFWorkflowIcon"] = {"WFWorkflowIconGlyphNumber": 59856, "WFWorkflowIconStartColor": 431817727}
     for index, item in enumerate(actions):
         value = item.get("WFWorkflowActionParameters", {}).get("WFCommentActionText", "")
         if value.startswith("Reload before writing a contract."):

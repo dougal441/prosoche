@@ -1,5 +1,13 @@
 # PROSOCHĒ — Build Notes
 
+## Phase 8 distribution record (2026-08-13)
+
+- Both unsigned forks pass `plutil -lint` and Shortcuts Playground with `--target-macos 26 --target-platform all`; signed files and dated unsigned archives are listed in `artifacts/shortcuts/MANIFEST.md`.
+- Sentient uses the direct-device-evidenced `WFLLMModel = Apple Intelligence on Device` literal and `WFGenerativeResultType = Text`. The OS-27-only `WFAllowWebSearch` and `FollowUp` keys are absent.
+- The model is a bounded advisory contract auditor only. A malformed, empty, unavailable, or completed-but-slow result follows Dumb. Shortcuts exposes no supported target-26 cancellation timeout, so an indefinitely hung platform action cannot be intercepted; this is a documented platform limit, not a fabricated workaround.
+- No external analytics or application/web-content access exists. Core deterministic functionality has no network dependency; users can bypass the experience or decline the optional audit.
+- Device evidence is not fabricated: `xcrun devicectl list devices` found no connected iPhone. DIST-03 remains unchecked pending imports and first Manual runs on a qualifying Apple-Intelligence-capable iPhone.
+
 ## 1. Purpose and scope
 
 This document is the durable capability record for the PROSOCHĒ build. Every later phase treats it as ground truth. It is **appended to, never rewritten** — once a row, deviation entry, or action item is recorded, later plans may only add new rows/entries or extend existing sections; they do not delete or silently reword what is already here.
