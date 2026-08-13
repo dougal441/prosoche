@@ -27,7 +27,7 @@ side by side, which is this project's definition of done.
 - [x] **Phase 4: CLOSE Pipeline & Session Race Protocol** - Session duration is measured accurately and stays race-proof under rapid app switching
 - [ ] **Phase 5: Nine Primitives & Environmental Safety** - All nine Circle primitives fire correctly with guaranteed safety floors and a model-free Circle IX
 - [ ] **Phase 6: Exits, Exit Learning & Contracts** - Six exits are reachable and learned from; contracts are honoured and feed back into Heat
-- [ ] **Phase 7: Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze** - The Dumb fork becomes feature-complete, validated, signed, and on-device verified
+- [ ] **Phase 7: Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze** - Dumb implementation, validation, and signing are complete; real-iPhone first-run UAT remains pending
 - [ ] **Phase 8: Sentient Fork & Dual Distribution** - On-Device AI wraps the untouched deterministic engine; both forks ship as signed, importable `.shortcut` files
 
 ## Phase Details

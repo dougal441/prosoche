@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 5
-current_phase_name: Nine Primitives & Environmental Safety
+current_phase: 7
+current_phase_name: Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze
 status: verifying
 stopped_at: Completed 06-03-PLAN.md
 last_updated: "2026-08-13T08:09:32.597Z"
@@ -11,7 +11,7 @@ last_activity: 2026-08-13
 last_activity_desc: Completed Phase 5 primitive and restoration graph
 progress:
   total_phases: 8
-  completed_phases: 4
+  completed_phases: 6
   total_plans: 15
   completed_plans: 15
 ---
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 5 — Nine Primitives & Environmental Safety
+**Current focus:** Phase 7 — real-iPhone Dumb-fork UAT
 
 ## Current Position
 
-Phase: 5 of 8 (Nine Primitives & Environmental Safety)
-Plan: 3 of 3 in current phase
-Status: Phase complete — ready for verification
-Last activity: 2026-08-13 — Completed Phase 5 primitive and restoration graph
+Phase: 7 of 8 (Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze)
+Plan: light pass complete
+Status: Awaiting real-iPhone first manual run / import UAT
+Last activity: 2026-08-13 — Built, validated, and signed Dumb fork; UAT remains pending
 
 Progress: [██████████] 100%
 

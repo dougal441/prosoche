@@ -111,12 +111,12 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 - [x] **ROOM-04**: The Note states plainly that the Shortcut cannot install these automations itself and that PROSOCHĒ is bypassable
 - [x] **ROOM-05**: The Note carries the safety warning not to target Phone, Maps, Wallet, authenticators, password managers, or other essential apps
 - [x] **ROOM-06**: The Note contains the editable MY PHONE, ON PURPOSE proforma with all its prompts
-- [ ] **ROOM-07**: The Note shows current settings — fork, profile, sequence, voice, AI, enabled exits
-- [ ] **ROOM-08**: The Note shows a human-readable current-state snapshot refreshed on manual run
-- [ ] **ROOM-09**: The Attention Ledger records meaningful events only — Circle changes, contracts, redirects, rapid-return clusters, cool-downs, profile changes — not every internal calculation
-- [ ] **ROOM-10**: The manual menu offers Status, Open Control Room, Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Test a Circle, Reset Today, and Emergency Restore
-- [ ] **ROOM-11**: Sync My Profile extracts the human proforma from the Note into state, and the OPEN path never parses the Note
-- [ ] **ROOM-12**: Test a Circle runs any chosen Circle's behaviour without altering real Pressure
+- [x] **ROOM-07**: The Note shows current settings — fork, profile, sequence, voice, AI, enabled exits
+- [x] **ROOM-08**: The Note shows a human-readable current-state snapshot refreshed on manual run
+- [x] **ROOM-09**: The Attention Ledger records meaningful events only — Circle changes, contracts, redirects, rapid-return clusters, cool-downs, profile changes — not every internal calculation
+- [x] **ROOM-10**: The manual menu offers Status, Open Control Room, Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Test a Circle, Reset Today, and Emergency Restore
+- [x] **ROOM-11**: Sync My Profile extracts the human proforma from the Note into state, and the OPEN path never parses the Note
+- [x] **ROOM-12**: Test a Circle runs any chosen Circle's behaviour without altering real Pressure
 
 ### Safety & Restoration (SAFE)
 
@@ -129,12 +129,12 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 
 ### Dumb Fork (DUMB)
 
-- [ ] **DUMB-01**: The Dumb fork has no Apple Intelligence dependency and runs fully on non-Apple-Intelligence iOS 26 iPhones
-- [ ] **DUMB-02**: At least 30 Mirror templates exist and none invents a fact
-- [ ] **DUMB-03**: Template selection is gated on which facts are actually available, producing no malformed or empty telemetry messages
-- [ ] **DUMB-04**: Consult without a model offers Search Web, Search Maps, Open Notes, Open Reminders, Open Calendar, and Back
-- [ ] **DUMB-05**: The intent gate accepts a blank or vague response without attempting to judge sincerity
-- [ ] **DUMB-06**: Mirror output acknowledges success as well as lapses, so opening a target app does not always produce criticism
+- [x] **DUMB-01**: The Dumb fork has no Apple Intelligence dependency and runs fully on non-Apple-Intelligence iOS 26 iPhones
+- [x] **DUMB-02**: At least 30 Mirror templates exist and none invents a fact
+- [x] **DUMB-03**: Template selection is gated on which facts are actually available, producing no malformed or empty telemetry messages
+- [x] **DUMB-04**: Consult without a model offers Search Web, Search Maps, Open Notes, Open Reminders, Open Calendar, and Back
+- [x] **DUMB-05**: The intent gate accepts a blank or vague response without attempting to judge sincerity
+- [x] **DUMB-06**: Mirror output acknowledges success as well as lapses, so opening a target app does not always produce criticism
 
 ### Sentient Fork (SENT)
 
@@ -299,18 +299,18 @@ Which phases cover which requirements. Populated during roadmap creation.
 | CONT-04 | Phase 6 | Complete |
 | CONT-05 | Phase 6 | Complete |
 | CONT-06 | Phase 6 | Complete |
-| ROOM-07 | Phase 7 | Pending |
-| ROOM-08 | Phase 7 | Pending |
-| ROOM-09 | Phase 7 | Pending |
-| ROOM-10 | Phase 7 | Pending |
-| ROOM-11 | Phase 7 | Pending |
-| ROOM-12 | Phase 7 | Pending |
-| DUMB-01 | Phase 7 | Pending |
-| DUMB-02 | Phase 7 | Pending |
-| DUMB-03 | Phase 7 | Pending |
-| DUMB-04 | Phase 7 | Pending |
-| DUMB-05 | Phase 7 | Pending |
-| DUMB-06 | Phase 7 | Pending |
+| ROOM-07 | Phase 7 | Complete |
+| ROOM-08 | Phase 7 | Complete |
+| ROOM-09 | Phase 7 | Complete |
+| ROOM-10 | Phase 7 | Complete |
+| ROOM-11 | Phase 7 | Complete |
+| ROOM-12 | Phase 7 | Complete |
+| DUMB-01 | Phase 7 | Complete |
+| DUMB-02 | Phase 7 | Complete |
+| DUMB-03 | Phase 7 | Complete |
+| DUMB-04 | Phase 7 | Complete |
+| DUMB-05 | Phase 7 | Complete |
+| DUMB-06 | Phase 7 | Complete |
 | SENT-01 | Phase 8 | Pending |
 | SENT-02 | Phase 8 | Pending |
 | SENT-03 | Phase 8 | Pending |
