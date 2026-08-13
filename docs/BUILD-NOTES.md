@@ -421,3 +421,16 @@ Plan 02-02 expanded the `Control Room Body` `Text` action in `src/PROSOCHE-Dumb.
 `PROSOCHĒ — Nine Circles — Dumb`
 
 This is the same string already recorded as `WFWorkflowName` in `src/PROSOCHE-Dumb.xml` and as the intended signing name in `.planning/research/STACK.md` (`sign-shortcut ... --name "PROSOCHĒ — Nine Circles — Dumb"`). Phase 7's signing step must sign the Dumb-fork artifact under this exact string — em dash, macron, and the trailing " — Dumb" suffix all literal — so the entry the user selects from the Shortcuts app's Run Shortcut picker matches what the Note tells them to look for. Any future rename of the shipped shortcut requires updating both of this Note's automation sections to match; the Note is written first here and the signer must agree with it, not the reverse.
+
+---
+
+## 10. Note-check scoping decision (plan 02-04)
+
+Plan 02-04 task 2 added the Note-existence guard (`Find Notes` → `Note Present` → reuse-or-create) that makes a deleted Control Room Note self-heal on the next manual run. That guard runs **only on the MANUAL branch** of `src/PROSOCHE-Dumb.xml` — never on the OPEN or CLOSE automation path — for two independent reasons, both already in the project's record rather than invented for this plan:
+
+1. **Cost.** `.planning/research/ARCHITECTURE.md` §3's "When to run the Note-existence check" paragraph is explicit: an extra `Find Notes` call on every automatic app-open buys nothing, because the fast OPEN/CLOSE path never needs the Note at all (§5.4/§7.3 of the canonical strategy — the Note is write-only from the hot path's perspective). Paying a note-search cost on every tracked-app open for a check the hot path structurally cannot use would be pure overhead.
+2. **Safety.** `.planning/research/PITFALLS.md` C10, read together with `UA-01` in §6 above, is equally explicit: a Notes action's very first invocation must happen inside a deliberate, watched manual run, never inside an unattended automation — because the first-use Notes permission prompt can appear at a moment the user is not looking at the screen if it fires from an automatic OPEN or CLOSE. Scoping the guard to the MANUAL branch guarantees every Notes action's first use in this file happens during the guided bootstrap flow.
+
+**The rule Phases 6 and 7 inherit.** Neither reason above is specific to the bootstrap guard itself — both apply equally to any future Note append from the OPEN or CLOSE path (the Attention Ledger writer, Phase 6/7). The binding rule for those later phases, already stated in `.planning/research/ARCHITECTURE.md` §3: guard **lazily, immediately before the append**, not once per run and not up front — check existence right at the moment a specific append is about to happen, recreate the Note only if that specific check finds it missing, then make the append. This ties the repair cost to the moment it is actually needed rather than paying it on every single OPEN or CLOSE. Phase 6 and Phase 7 must not add a second, hot-path `Find Notes` call to satisfy this same guarantee — they reuse this exact lazy-guard shape at their own append site instead.
+
+Structurally checked by plan 02-04 task 2's own `<verify>` (the IDEMPOTENCE-OK script): no `Find Notes`, Note-creation, `Append to Note`, or `Show Note` action sits inside the `OPEN` or `CLOSE` conditional's chain anywhere in the file.

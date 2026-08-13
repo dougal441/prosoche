@@ -2031,7 +2031,299 @@ Guard against empty fields before reading anything nested inside them. Six field
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>WFCommentActionText</key>
-				<string>--- CONTROL ROOM: build the setup note body, then create and open the note ---</string>
+				<string>--- CONTROL ROOM: confirm the setup note still exists before doing anything with it ---
+
+This check runs here, on the manual branch, and nowhere else — never on an automatic app-open or app-close. Two separate reasons: an extra note search on every automatic app-open buys nothing, since the fast automatic path never needs the note; and every note action's very first use must happen inside this deliberate, watched manual run rather than during an unattended automation, where any permission prompt it triggered could appear at a moment nobody is looking at the screen. A later build that appends to the note from an automatic app-open or app-close guards its own existence check immediately before that append, right when it is actually needed, rather than paying this cost on every single run.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.filter.notes</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>B30152D7-C97D-413F-AD4F-00052422E27E</string>
+				<key>WFContentItemFilter</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>WFActionParameterFilterPrefix</key>
+						<integer>1</integer>
+						<key>WFActionParameterFilterTemplates</key>
+						<array>
+							<dict>
+								<key>Operator</key>
+								<integer>99</integer>
+								<key>Property</key>
+								<string>Name</string>
+								<key>Removable</key>
+								<true/>
+								<key>Values</key>
+								<dict>
+									<key>String</key>
+									<dict>
+										<key>Value</key>
+										<dict>
+											<key>string</key>
+											<string>PROSOCHĒ — Control Room</string>
+											<key>attachmentsByRange</key>
+											<dict/>
+										</dict>
+										<key>WFSerializationType</key>
+										<string>WFTextTokenString</string>
+									</dict>
+								</dict>
+							</dict>
+						</array>
+						<key>WFContentPredicateBoundedDate</key>
+						<false/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFContentPredicateTableTemplate</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>5F7C4238-64EA-4D39-B05C-895AA9FC2480</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Note Found Text</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Check whether the setup note search above found anything:
+- Input uses the note search result from above.
+- If it has any value, the setup note already exists; the result below is marked yes.
+- Otherwise the result below stays at its default of no.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>D2249F8A-F712-4135-A890-D35F02E910EC</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>100</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>OutputUUID</key>
+							<string>B30152D7-C97D-413F-AD4F-00052422E27E</string>
+							<key>OutputName</key>
+							<string>Notes</string>
+							<key>Type</key>
+							<string>ActionOutput</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>989DB5F1-9D5C-4E43-A50C-0740A606CD0E</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Note Found Text</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>D2249F8A-F712-4135-A890-D35F02E910EC</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Note Found Text</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Note Present</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Decide whether to reuse the setup note or create it, using the found/not-found result computed above:
+- Input uses the note-found result set above.
+- If it is exactly yes, the setup note already exists; reuse it below.
+- Otherwise no setup note was found; build its full body and create it below.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>D703FE92-120F-41EA-A88C-132AC96ACEC1</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>4</integer>
+				<key>WFConditionalActionString</key>
+				<string>yes</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Note Present</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>The setup note already exists. Reuse the one found above; nothing new is created, and its full body is untouched.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getitemfromlist</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>F3E8BE7B-1DDF-464F-B882-A1C41BBF809F</string>
+				<key>WFItemSpecifier</key>
+				<string>First Item</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>B30152D7-C97D-413F-AD4F-00052422E27E</string>
+						<key>OutputName</key>
+						<string>Notes</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>F3E8BE7B-1DDF-464F-B882-A1C41BBF809F</string>
+						<key>OutputName</key>
+						<string>Item from List</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Control Room Note</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>D703FE92-120F-41EA-A88C-132AC96ACEC1</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>--- No existing setup note was found: build its full body, then create it ---</string>
 			</dict>
 		</dict>
 		<dict>
@@ -2266,6 +2558,120 @@ Reserved. Nothing is asked for here yet.</string>
 				</dict>
 				<key>WFVariableName</key>
 				<string>Control Room Note</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>D703FE92-120F-41EA-A88C-132AC96ACEC1</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Check whether this run had to rebuild the setup file, using the record set far above:
+- Input uses the rebuild record set during the setup-file check above.
+- If it has any value, a rebuild happened on this run; add one best-effort line about it to the setup note below.
+- Otherwise nothing happened here and the setup note is shown as-is below.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>CC320081-2478-40B6-BC5D-738AE6CCD1C2</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>100</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>State Recovery Occurred</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.appendnote</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>operation</key>
+				<string>append</string>
+				<key>entity</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Control Room Note</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>Note: PROSOCHĒ found the saved setup file unreadable during this run and safely rebuilt it with default values on ￼.</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{114, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Behavioural Day</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>CC320081-2478-40B6-BC5D-738AE6CCD1C2</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Whether or not that line was added, the setup note is always shown next below — a failed or skipped best-effort line here must never stop the note from being shown.</string>
 			</dict>
 		</dict>
 		<dict>
