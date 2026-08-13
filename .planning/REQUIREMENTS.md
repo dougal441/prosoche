@@ -138,32 +138,32 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 
 ### Sentient Fork (SENT)
 
-- [ ] **SENT-01**: The Sentient fork uses the Apple On-Device model only, with no cloud, no Private Cloud Compute, and no ChatGPT path
-- [ ] **SENT-02**: The model is invoked across Circles II–VIII with increasing involvement, while Circle I stays fast and deterministic
-- [ ] **SENT-03**: Circle IX invokes no model and remains fully deterministic
-- [ ] **SENT-04**: Model output is structured as ALLOW, CHALLENGE, or DENY, and is parsed and validated
-- [ ] **SENT-05**: Malformed, empty, or slow model output falls back to the deterministic Dumb behaviour without breaking the run
-- [ ] **SENT-06**: At most one challenge round occurs — no interrogation loop
-- [ ] **SENT-07**: DENY is available only at sufficiently high Circles and means redirect, never system-level punishment
-- [ ] **SENT-08**: The model audits contracts on specificity, boundedness, and consistency, and never asserts the user is lying
-- [ ] **SENT-09**: The model never claims to know what happened inside an app or what the user felt
-- [ ] **SENT-10**: A clearly bounded deliberate-leisure contract can receive ALLOW
-- [ ] **SENT-11**: Prior contract consistency can inform a challenge, using only recorded behavioural facts
-- [ ] **SENT-12**: The model never controls Heat, Gravity, Pressure, thresholds, timers, exit selection, or Ice
-- [ ] **SENT-13**: The model receives only a compact local context window, never the whole Note, and no behavioural data leaves the device
-- [ ] **SENT-14**: The system instruction enforces the required tone and forbids the banned vocabulary and diagnosis language
-- [ ] **SENT-15**: The Sentient fork adds no changes to the deterministic state engine inherited from Dumb
+- [x] **SENT-01**: The Sentient fork uses the Apple On-Device model only, with no cloud, no Private Cloud Compute, and no ChatGPT path
+- [x] **SENT-02**: The model is invoked across Circles II–VIII with increasing involvement, while Circle I stays fast and deterministic
+- [x] **SENT-03**: Circle IX invokes no model and remains fully deterministic
+- [x] **SENT-04**: Model output is structured as ALLOW, CHALLENGE, or DENY, and is parsed and validated
+- [x] **SENT-05**: Malformed, empty, or slow model output falls back to the deterministic Dumb behaviour without breaking the run
+- [x] **SENT-06**: At most one challenge round occurs — no interrogation loop
+- [x] **SENT-07**: DENY is available only at sufficiently high Circles and means redirect, never system-level punishment
+- [x] **SENT-08**: The model audits contracts on specificity, boundedness, and consistency, and never asserts the user is lying
+- [x] **SENT-09**: The model never claims to know what happened inside an app or what the user felt
+- [x] **SENT-10**: A clearly bounded deliberate-leisure contract can receive ALLOW
+- [x] **SENT-11**: Prior contract consistency can inform a challenge, using only recorded behavioural facts
+- [x] **SENT-12**: The model never controls Heat, Gravity, Pressure, thresholds, timers, exit selection, or Ice
+- [x] **SENT-13**: The model receives only a compact local context window, never the whole Note, and no behavioural data leaves the device
+- [x] **SENT-14**: The system instruction enforces the required tone and forbids the banned vocabulary and diagnosis language
+- [x] **SENT-15**: The Sentient fork adds no changes to the deterministic state engine inherited from Dumb
 
 ### Distribution (DIST)
 
-- [ ] **DIST-01**: Both forks pass the Shortcuts Playground validator at the iOS 26 target
-- [ ] **DIST-02**: Both forks sign successfully into importable `.shortcut` files
+- [x] **DIST-01**: Both forks pass the Shortcuts Playground validator at the iOS 26 target
+- [x] **DIST-02**: Both forks sign successfully into importable `.shortcut` files
 - [ ] **DIST-03**: Both forks import onto a real iPhone and complete a first manual run
-- [ ] **DIST-04**: The two forks are named unambiguously and distinguishable at import
-- [ ] **DIST-05**: Unsigned XML source is retained in the repository for both forks
-- [ ] **DIST-06**: Build notes document unsupported actions, deviations, fallbacks taken, and known iOS limitations
-- [ ] **DIST-07**: Repository documentation states plainly that data stays on-device, there is no external analytics, model output can be wrong, and the system is self-directed and bypassable
-- [ ] **DIST-08**: Core functionality has no external network dependency
+- [x] **DIST-04**: The two forks are named unambiguously and distinguishable at import
+- [x] **DIST-05**: Unsigned XML source is retained in the repository for both forks
+- [x] **DIST-06**: Build notes document unsupported actions, deviations, fallbacks taken, and known iOS limitations
+- [x] **DIST-07**: Repository documentation states plainly that data stays on-device, there is no external analytics, model output can be wrong, and the system is self-directed and bypassable
+- [x] **DIST-08**: Core functionality has no external network dependency
 
 ## v2 Requirements
 
@@ -311,29 +311,29 @@ Which phases cover which requirements. Populated during roadmap creation.
 | DUMB-04 | Phase 7 | Complete |
 | DUMB-05 | Phase 7 | Complete |
 | DUMB-06 | Phase 7 | Complete |
-| SENT-01 | Phase 8 | Pending |
-| SENT-02 | Phase 8 | Pending |
-| SENT-03 | Phase 8 | Pending |
-| SENT-04 | Phase 8 | Pending |
-| SENT-05 | Phase 8 | Pending |
-| SENT-06 | Phase 8 | Pending |
-| SENT-07 | Phase 8 | Pending |
-| SENT-08 | Phase 8 | Pending |
-| SENT-09 | Phase 8 | Pending |
-| SENT-10 | Phase 8 | Pending |
-| SENT-11 | Phase 8 | Pending |
-| SENT-12 | Phase 8 | Pending |
-| SENT-13 | Phase 8 | Pending |
-| SENT-14 | Phase 8 | Pending |
-| SENT-15 | Phase 8 | Pending |
-| DIST-01 | Phase 8 | Pending |
-| DIST-02 | Phase 8 | Pending |
+| SENT-01 | Phase 8 | Complete |
+| SENT-02 | Phase 8 | Complete |
+| SENT-03 | Phase 8 | Complete |
+| SENT-04 | Phase 8 | Complete |
+| SENT-05 | Phase 8 | Complete |
+| SENT-06 | Phase 8 | Complete |
+| SENT-07 | Phase 8 | Complete |
+| SENT-08 | Phase 8 | Complete |
+| SENT-09 | Phase 8 | Complete |
+| SENT-10 | Phase 8 | Complete |
+| SENT-11 | Phase 8 | Complete |
+| SENT-12 | Phase 8 | Complete |
+| SENT-13 | Phase 8 | Complete |
+| SENT-14 | Phase 8 | Complete |
+| SENT-15 | Phase 8 | Complete |
+| DIST-01 | Phase 8 | Complete |
+| DIST-02 | Phase 8 | Complete |
 | DIST-03 | Phase 8 | Pending |
-| DIST-04 | Phase 8 | Pending |
-| DIST-05 | Phase 8 | Pending |
-| DIST-06 | Phase 8 | Pending |
-| DIST-07 | Phase 8 | Pending |
-| DIST-08 | Phase 8 | Pending |
+| DIST-04 | Phase 8 | Complete |
+| DIST-05 | Phase 8 | Complete |
+| DIST-06 | Phase 8 | Complete |
+| DIST-07 | Phase 8 | Complete |
+| DIST-08 | Phase 8 | Complete |
 
 **Coverage:**
 

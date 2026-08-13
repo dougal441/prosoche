@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 7
 current_phase_name: Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze
 status: verifying
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-08-13T08:09:32.597Z"
+stopped_at: Phase 08 Plan 03 awaiting real-iPhone DIST-03 UAT
+last_updated: "2026-08-13T08:58:14.171Z"
 last_activity: 2026-08-13
-last_activity_desc: Completed Phase 5 primitive and restoration graph
+last_activity_desc: Built, validated, and signed Dumb fork; UAT remains pending
 progress:
   total_phases: 8
-  completed_phases: 6
-  total_plans: 15
-  completed_plans: 15
+  completed_phases: 5
+  total_plans: 18
+  completed_plans: 18
 ---
 
 # Project State
@@ -73,6 +73,9 @@ Progress: [██████████] 100%
 | Phase 06-exits-exit-learning-contracts P01 | 25min | 2 tasks | 2 files |
 | Phase 06-exits-exit-learning-contracts P02 | 15min | 2 tasks | 2 files |
 | Phase 06-exits-exit-learning-contracts P03 | 20min | 3 tasks | 3 files |
+| Phase 08-sentient-fork-dual-distribution P01 | 20m | 2 tasks | 3 files |
+| Phase 08-sentient-fork-dual-distribution P02 | 12m | 2 tasks | 3 files |
+| Phase 08-sentient-fork-dual-distribution P03 | 10m | 1 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -111,6 +114,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Ash remains a validator-clean non-environmental pause; Dimming and Silence act only after capturing a restorable original.
 - [Phase ?]: Leaving wraps primitive dispatch only after the initial session save.
 - [Phase ?]: Exit selection remains deterministic and Config-driven without model, random, or network actions.
+- [Phase ?]: Sentient uses the device-evidenced Apple Intelligence on Device model literal; no OS-27-only keys.
+- [Phase ?]: Completed-slow, empty, or malformed audit output falls through to Dumb; hung model cancellation is unavailable at target 26.
 
 ### Pending Todos
 
@@ -119,6 +124,7 @@ None yet.
 ### Blockers/Concerns
 
 - [Phase 1]: Four capability blockers are unresolved pending live on-device verification — grayscale/Color Filters availability, brightness/volume read-back, the `Use Model` On-Device pinning literal, and Notes actions on iOS. All downstream phases assume these get resolved (favorably or via documented fallback) in Phase 1.
+- DIST-03 real-iPhone import and first Manual UAT blocked: xcrun devicectl reports no connected devices.
 
 ## Deferred Items
 
@@ -130,6 +136,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-13T08:09:32.588Z
-Stopped at: Completed 06-03-PLAN.md
-Resume file: None
+Last session: 2026-08-13T08:58:14.160Z
+Stopped at: Phase 08 Plan 03 awaiting real-iPhone DIST-03 UAT
+Resume file: docs/device-evidence/Phase8-DIST-03-BLOCKED.md

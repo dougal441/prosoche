@@ -181,7 +181,11 @@ Plans:
   4. Both forks pass the Shortcuts Playground validator at the iOS 26 target, sign successfully into importable `.shortcut` files, and complete a first manual run on a real iPhone; the two forks are named unambiguously and distinguishable at import.
   5. Unsigned XML source is retained in the repository for both forks; build notes document unsupported actions, deviations, fallbacks taken, and known iOS limitations; repository documentation states plainly that data stays on-device, there is no external analytics, model output can be wrong, and the system is self-directed and bypassable; core functionality has no external network dependency.
 
-**Plans**: TBD
+**Plans**: 3/3 plans executed
+
+- [x] 08-01-PLAN.md
+- [x] 08-02-PLAN.md
+- [x] 08-03-PLAN.md
 
 ## Progress
 
@@ -197,4 +201,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Nine Primitives & Environmental Safety | 3/3 | Complete | 2026-08-13 |
 | 6. Exits, Exit Learning & Contracts | 3/3 | In Progress|  |
 | 7. Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze | 0/TBD | Not started | - |
-| 8. Sentient Fork & Dual Distribution | 0/TBD | Not started | - |
+| 8. Sentient Fork & Dual Distribution | 3/3 | In Progress|  |
