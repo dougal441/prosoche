@@ -482,3 +482,47 @@ Plan 02-04 task 2 added the Note-existence guard (`Find Notes` → `Note Present
 **The rule Phases 6 and 7 inherit.** Neither reason above is specific to the bootstrap guard itself — both apply equally to any future Note append from the OPEN or CLOSE path (the Attention Ledger writer, Phase 6/7). The binding rule for those later phases, already stated in `.planning/research/ARCHITECTURE.md` §3: guard **lazily, immediately before the append**, not once per run and not up front — check existence right at the moment a specific append is about to happen, recreate the Note only if that specific check finds it missing, then make the append. This ties the repair cost to the moment it is actually needed rather than paying it on every single OPEN or CLOSE. Phase 6 and Phase 7 must not add a second, hot-path `Find Notes` call to satisfy this same guarantee — they reuse this exact lazy-guard shape at their own append site instead.
 
 Structurally checked by plan 02-04 task 2's own `<verify>` (the IDEMPOTENCE-OK script): no `Find Notes`, Note-creation, `Append to Note`, or `Show Note` action sits inside the `OPEN` or `CLOSE` conditional's chain anywhere in the file.
+
+---
+
+## 11. Device evidence — 2026-08-13 (exports from the owner's iPhone, iOS 26)
+
+Two shortcuts were built on a real iPhone, exported, and decrypted here. This is **primary device evidence** and outranks every ToolKit snapshot inference in this document. Raw plists: `docs/device-evidence/UseModel-OnDevice.xml`, `docs/device-evidence/SetColorFilters.xml`.
+
+Recovery method (reproducible): a shared `.shortcut` is an AEA1 archive at profile 0 (`hkdf_sha256_hmac__none__ecdsa_p256` — signed, **not** encrypted). The leaf signing certificate is in a plaintext bplist at byte offset 12 under `SigningCertificateChain`. Extract it, take its public key, and the archive unlocks:
+
+```
+python3 -c "import plistlib;raw=open('X.shortcut','rb').read();open('/tmp/c.der','wb').write(plistlib.loads(raw[12:2216])['SigningCertificateChain'][0])"
+openssl x509 -inform DER -in /tmp/c.der -pubkey -noout > /tmp/c.pub
+aea decrypt -i X.shortcut -o /tmp/X.aa -sign-pub /tmp/c.pub
+aa extract -i /tmp/X.aa -d /tmp/X          # yields Shortcut.wflow (binary plist)
+```
+
+This supersedes the project-wide assumption that a signed `.shortcut` can never be read back. It can, without the private key.
+
+### CAP-26 — `Use Model` On-Device literal: **RECOVERED**
+
+```
+WFWorkflowActionIdentifier = is.workflow.actions.askllm
+WFLLMModel                 = Apple Intelligence on Device      <- exact string
+```
+
+Supersedes BD-04 and BD-04-R's "unrecovered" branch. `UNRECOVERED-LOCALLY` is withdrawn; UA-02 is closed. Phase 8 **must** write `WFLLMModel = Apple Intelligence on Device`. On-Device is now enforceable in the shipped file, so the relaxation to PCC in BD-04-R is no longer needed — though it remains authorised as a fallback if the key is ever rejected on an older device.
+
+### CAP-20 — Color Filters on iOS: **the identifier was wrong**
+
+```
+WFWorkflowActionIdentifier = com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent
+state                      = <integer>1</integer>              <- 1 = On, 0 = Off
+```
+
+The iOS action is **`AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent`**, not `UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent`. The `UniversalAccess` identifier is the **macOS** action. The iOS one is absent from **all three** bundled ToolKit snapshots (v63, v78, v78-ios27) — confirmed by direct search for `AXSett` and `AccessibilityUtilities`, zero hits in each.
+
+Consequences:
+- BD-01-R's chosen identifier is wrong and is corrected here. Phase 5 uses the `AX…` identifier above.
+- There is **no `operation` key** on the iOS action — a bare `state` integer is the whole parameter set. Set `1` to apply Ash, `0` to restore. Still an explicit set, so restoration remains exact.
+- The validator will not recognise this identifier (it is in no snapshot). Expect a Craig-Loop failure at that action and handle it as a documented, evidence-backed override rather than by substituting a different action.
+
+### Incidental fact
+
+`WFWorkflowClientVersion` on real iOS 26 exports is `4711` (both files). The project currently emits an OS27-era default; harmless per `PLIST_FORMAT.md` (the field is metadata Shortcuts rewrites on save), but `4711` is the observed-true value.
