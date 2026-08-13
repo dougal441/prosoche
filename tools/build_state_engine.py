@@ -458,20 +458,41 @@ def select_exit():
     a += read_value(text_token([("exit_stats.", "Stats Exit"), (".sum_return_seconds", None)]), variable("State"), "Stats Sum")
     a += math("Stats Sum", variable("Stats Count"), "Stats Average Raw", "÷") + round_down("Stats Average Raw", "Stats Average")
     higher_group, higher = if_block("Stats Average", 3, number=variable("Best Average"))
-    a += [higher, set_var("Best Average", variable("Stats Average")), set_var("Selected Exit", variable("Stats Exit")),
+    a += [higher, set_var("Best Average", variable("Stats Average")), set_var("Best Exit", variable("Stats Exit")), set_var("Selected Exit", variable("Stats Exit")),
           otherwise(higher_group), action("is.workflow.actions.nothing"), end_if(higher_group),
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=score_loop, WFControlFlowMode=2)]
     a += expression([( "", "Exit Selection Counter"), (" % 100", None)], "Exploration Roll") + math("Exploration Rate", 100, "Exploration Threshold Raw", "×") + round_down("Exploration Threshold Raw", "Exploration Threshold")
     explore_group, explore = if_block("Exploration Roll", 0, number=variable("Exploration Threshold"))
-    a += [explore]
+    a += [explore, *number(0, "Exploration Selected"), *number(0, "Past Best")]
     next_loop = uid()
     a += [action("is.workflow.actions.repeat.each", GroupingIdentifier=next_loop, WFControlFlowMode=0, WFInput=variable("Enabled Exits")),
           set_var("Candidate Exit", variable("Repeat Item"))]
-    non_best_group, non_best = if_block("Candidate Exit", 99, string="selected-exit-placeholder")
-    non_best["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    non_best["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Candidate Exit")}
-    a += [non_best, set_var("Selected Exit", variable("Candidate Exit")), otherwise(non_best_group), action("is.workflow.actions.nothing"), end_if(non_best_group),
-          action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=next_loop, WFControlFlowMode=2),
+    is_best_group, is_best = if_block("Candidate Exit", 4, string="best-exit-placeholder")
+    is_best["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    is_best["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Candidate Exit")}
+    a += [is_best, *number(1, "Past Best"), otherwise(is_best_group)]
+    choose_after_group, choose_after = if_block("Past Best", 2, number=0)
+    a += [choose_after]
+    unchosen_group, unchosen = if_block("Exploration Selected", 4, string="0")
+    unchosen["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    unchosen["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exploration Selected")}
+    a += [unchosen, set_var("Selected Exit", variable("Candidate Exit")), *number(1, "Exploration Selected"), otherwise(unchosen_group), action("is.workflow.actions.nothing"), end_if(unchosen_group),
+          otherwise(choose_after_group), action("is.workflow.actions.nothing"), end_if(choose_after_group), end_if(is_best_group),
+          action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=next_loop, WFControlFlowMode=2)]
+    wrap_loop = uid()
+    a += [comment("Exploration wrap:\n- After Close, choose the first canonical non-best exit exactly once."),
+          action("is.workflow.actions.repeat.each", GroupingIdentifier=wrap_loop, WFControlFlowMode=0, WFInput=variable("Enabled Exits")),
+          set_var("Candidate Exit", variable("Repeat Item"))]
+    needs_wrap_group, needs_wrap = if_block("Exploration Selected", 4, string="0")
+    needs_wrap["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    needs_wrap["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exploration Selected")}
+    wrap_non_best_group, wrap_non_best = if_block("Candidate Exit", 99, string="best-exit-placeholder")
+    wrap_non_best["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    wrap_non_best["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Candidate Exit")}
+    a += [needs_wrap, wrap_non_best, set_var("Selected Exit", variable("Candidate Exit")), *number(1, "Exploration Selected"),
+          otherwise(wrap_non_best_group), action("is.workflow.actions.nothing"), end_if(wrap_non_best_group),
+          otherwise(needs_wrap_group), action("is.workflow.actions.nothing"), end_if(needs_wrap_group),
+          action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=wrap_loop, WFControlFlowMode=2),
           otherwise(explore_group), action("is.workflow.actions.nothing"), end_if(explore_group),
           otherwise(exploit_group), action("is.workflow.actions.nothing"), end_if(exploit_group)]
     suggestion = uid()
@@ -516,15 +537,28 @@ def route_exit(choice_name: str):
     a += [action("is.workflow.actions.ask", UUID=ask_id, WFAskActionPrompt="Where should Create open?", WFInputType="URL"),
           set_var("Create Target URL", output(ask_id, "Provided Input"))]
     valid_group, valid = if_block("Create Target URL", 100)
-    a += [valid, set_value("profile_snapshot.create_target_url", variable("Create Target URL"), "Reloaded State"),
+    a += [valid, comment("Reload after Create input; stale sessions neither save the URL nor route it."), *reload_state(),
+          *read_value("active_session.id", variable("Reloaded State"), "Create Owner ID")]
+    create_owner_group, create_owner = if_block("Create Owner ID", 4, string="captured-session-placeholder")
+    create_owner["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Session ID")
+    create_owner["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Create Owner ID")}
+    a += [create_owner, set_value("profile_snapshot.create_target_url", variable("Create Target URL"), "Reloaded State"),
           *save_state("Reloaded State"), action("is.workflow.actions.openurl", WFInput=variable("Create Target URL")),
+          otherwise(create_owner_group), action("is.workflow.actions.nothing"), end_if(create_owner_group),
           otherwise(valid_group), alert("Create", "No target was saved or opened."), end_if(valid_group), end_if(target_group),
           otherwise(create_group), action("is.workflow.actions.nothing"), end_if(create_group)]
     consult_group, consult = if_block(choice_name, 4, string="Consult")
     consult_menu = uid()
-    a += [consult, menu(consult_menu, 0, prompt="Consult", items=["Search web", "Search maps"]),
-          menu(consult_menu, 1, title="Search web"), action("is.workflow.actions.searchweb", WFSearchWebDestination="Google", WFInputText="helpful next step"),
-          menu(consult_menu, 1, title="Search maps"), action("is.workflow.actions.searchmaps", WFInput="nearby", WFSearchMapsActionApp="Maps"),
+    ask_query = uid()
+    a += [consult, action("is.workflow.actions.ask", UUID=ask_query, WFAskActionPrompt="What are you trying to find?", WFInputType="Text"),
+          set_var("Consult Query", output(ask_query, "Provided Input")),
+          menu(consult_menu, 0, prompt="Consult", items=["Search Web", "Search Maps", "Open Notes", "Open Reminders", "Open Calendar", "Back"]),
+          menu(consult_menu, 1, title="Search Web"), action("is.workflow.actions.searchweb", WFSearchWebDestination="Google", WFInputText=variable("Consult Query")),
+          menu(consult_menu, 1, title="Search Maps"), action("is.workflow.actions.searchmaps", WFInput=variable("Consult Query"), WFSearchMapsActionApp="Maps"),
+          menu(consult_menu, 1, title="Open Notes"), action("is.workflow.actions.openapp", WFSelectedApp="Notes", WFAppName="Notes"),
+          menu(consult_menu, 1, title="Open Reminders"), action("is.workflow.actions.openapp", WFSelectedApp="Reminders", WFAppName="Reminders"),
+          menu(consult_menu, 1, title="Open Calendar"), action("is.workflow.actions.openapp", WFSelectedApp="Calendar", WFAppName="Calendar"),
+          menu(consult_menu, 1, title="Back"), action("is.workflow.actions.nothing"),
           menu(consult_menu, 2), otherwise(consult_group), action("is.workflow.actions.nothing"), end_if(consult_group)]
     return a
 
@@ -681,10 +715,11 @@ def open_pipeline():
     session_exists, session_exists_if = if_block("Recent Sessions", 100)
     first_session = uid()
     a += [session_exists_if, action("is.workflow.actions.getitemfromlist", UUID=first_session, WFItemSpecifier="First Item", WFInput=variable("Recent Sessions")), set_var("Previous Session", output(first_session, "Item from List"))]
-    a += read_value("respected", variable("Previous Session"), "Previous Respected") + read_value("overrun_seconds", variable("Previous Session"), "Previous Overrun")
+    a += read_value("declared_duration_seconds", variable("Previous Session"), "Previous Declared Duration") + read_value("respected", variable("Previous Session"), "Previous Respected") + read_value("overrun_seconds", variable("Previous Session"), "Previous Overrun")
+    has_previous_contract_g, has_previous_contract = if_block("Previous Declared Duration", 2, number=0)
     respected_g, respected_if = if_block("Previous Respected", 4, string="true")
     overrun_g, overrun_if = if_block("Previous Overrun", 2, number=variable("Overrun Minimum"))
-    a += [respected_if] + math("Heat After Reopen", variable("Respect Relief"), "Heat After Contract") + [otherwise(respected_g), overrun_if] + math("Heat After Reopen", variable("Overrun Penalty"), "Heat After Contract") + [otherwise(overrun_g), set_var("Heat After Contract", variable("Heat After Reopen")), end_if(overrun_g), end_if(respected_g), otherwise(session_exists), set_var("Heat After Contract", variable("Heat After Reopen")), end_if(session_exists)]
+    a += [has_previous_contract, respected_if] + math("Heat After Reopen", variable("Respect Relief"), "Heat After Contract") + [otherwise(respected_g), overrun_if] + math("Heat After Reopen", variable("Overrun Penalty"), "Heat After Contract") + [otherwise(overrun_g), set_var("Heat After Contract", variable("Heat After Reopen")), end_if(overrun_g), end_if(respected_g), otherwise(has_previous_contract_g), set_var("Heat After Contract", variable("Heat After Reopen")), end_if(has_previous_contract_g), otherwise(session_exists), set_var("Heat After Contract", variable("Heat After Reopen")), end_if(session_exists)]
     # Clamp lower then upper, deliberately the last Heat mutations.
     floor_g, floor_if = if_block("Heat After Contract", 0, number=variable("Heat Floor"))
     a += [floor_if, set_value("heat", variable("Heat Floor")), otherwise(floor_g), set_value("heat", variable("Heat After Contract")), end_if(floor_g)]
@@ -775,16 +810,19 @@ def close_pipeline():
 - A zero or absent declared duration has no contract penalty.
 - A genuine overrun is recorded in the session object for the next OPEN.
 - The configured penalty is applied by OPEN, preserving its ordered Heat pipeline.""")]
-    overrun_g, overrun_if = if_block("Declared Duration", 2, number=0)
-    a += [overrun_if] + math("Session Duration", variable("Declared Duration"), "Overrun Seconds", "-") + [otherwise(overrun_g)] + number(0, "Overrun Seconds") + [end_if(overrun_g)]
+    has_contract_g, has_contract = if_block("Declared Duration", 2, number=0)
+    a += [has_contract] + math("Session Duration", variable("Declared Duration"), "Overrun Seconds", "-")
     respected_g, respected_if = if_block("Overrun Seconds", 1, number=0)
     respected_true, respected_false = uid(), uid()
-    a += [comment("Contract outcome:\n- A non-positive overrun is respected.\n- No declared duration remains null and never shows an overrun result."), respected_if,
+    no_overrun, no_respected = uid(), uid()
+    a += [comment("Contract outcome:\n- A non-positive overrun is respected only when a contract exists.\n- No declared duration stores null and never shows an overrun result."), respected_if,
           action("is.workflow.actions.gettext", UUID=respected_true, WFTextActionText="true"),
           set_var("Contract Respected", output(respected_true, "Text")),
           otherwise(respected_g), action("is.workflow.actions.gettext", UUID=respected_false, WFTextActionText="false"),
-          set_var("Contract Respected", output(respected_false, "Text")), end_if(respected_g)]
-    record_text = text_token([('{"id":"', "Captured Session ID"), ('","started_at":', "Captured Start"), (',"ended_at":', "Now Epoch"), (',"duration_seconds":', "Session Duration"), (',"declared_duration_seconds":', "Declared Duration"), (',"overrun_seconds":', "Overrun Seconds"), (',"respected":"', "Contract Respected"), ('"}', None)])
+          set_var("Contract Respected", output(respected_false, "Text")), end_if(respected_g),
+          otherwise(has_contract_g), action("is.workflow.actions.gettext", UUID=no_overrun, WFTextActionText="null"), set_var("Overrun Seconds", output(no_overrun, "Text")),
+          action("is.workflow.actions.gettext", UUID=no_respected, WFTextActionText="null"), set_var("Contract Respected", output(no_respected, "Text")), end_if(has_contract_g)]
+    record_text = text_token([('{"id":"', "Captured Session ID"), ('","started_at":', "Captured Start"), (',"ended_at":', "Now Epoch"), (',"duration_seconds":', "Session Duration"), (',"declared_duration_seconds":', "Declared Duration"), (',"overrun_seconds":', "Overrun Seconds"), (',"respected":', "Contract Respected"), ('}', None)])
     record_json, record_dict = uid(), uid()
     a += [action("is.workflow.actions.gettext", UUID=record_json, WFTextActionText=record_text),
           action("is.workflow.actions.detect.dictionary", UUID=record_dict, WFInput=output(record_json, "Text")),
@@ -804,9 +842,9 @@ def close_pipeline():
     a += [set_value("recent_sessions", variable("Recent Sessions Next"), "Reloaded State"),
           set_value("last_close_at", variable("Now Epoch"), "Reloaded State"),
           set_value("active_session", text_token([( "null", None)]), "Reloaded State")]
-    has_contract_g, has_contract = if_block("Declared Duration", 2, number=0)
-    a += [comment("Contract result display:\n- Only sessions with a declared boundary show contract feedback.\n- Sessions without one make no overrun claim."), has_contract,
-          alert("Contract", text_token([("Overrun seconds: ", "Overrun Seconds")])), otherwise(has_contract_g), action("is.workflow.actions.nothing"), end_if(has_contract_g)]
+    display_contract_g, display_contract = if_block("Declared Duration", 2, number=0)
+    a += [comment("Contract result display:\n- Only sessions with a declared boundary show contract feedback.\n- Sessions without one make no overrun claim."), display_contract,
+          alert("Contract", text_token([("Overrun seconds: ", "Overrun Seconds")])), otherwise(display_contract_g), action("is.workflow.actions.nothing"), end_if(display_contract_g)]
     a += [comment(RESTORE_MARKER + "\n\n- Only the matching CLOSE owner restores captured settings.\n- A superseded CLOSE reaches no restore or Save File action.")]
     a += restore_managed_settings("Reloaded State") + [comment("--- PHASE 5 RESTORE MANAGED SETTINGS END ---")]
     a += save_state("Reloaded State") + [otherwise(owns_g), action("is.workflow.actions.nothing"), end_if(owns_g), otherwise(reload_g), action("is.workflow.actions.nothing"), end_if(reload_g), otherwise(has_g), action("is.workflow.actions.nothing"), end_if(has_g)]

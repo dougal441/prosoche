@@ -22,6 +22,23 @@ def digest() -> str:
     return hashlib.sha256(SOURCE.read_bytes()).hexdigest()
 
 
+def reference_exploration(enabled: list[str], best: str) -> str:
+    """The selector's canonical next-non-best rule, including the Close wrap."""
+    after_best = enabled[enabled.index(best) + 1:]
+    return next((name for name in after_best if name != best),
+                next((name for name in enabled if name != best), best))
+
+
+def index_of(actions: list[dict], identifier: str, **parameters: object) -> int:
+    for index, item in enumerate(actions):
+        if item["WFWorkflowActionIdentifier"] != identifier:
+            continue
+        values = item.get("WFWorkflowActionParameters", {})
+        if all(values.get(key) == value for key, value in parameters.items()):
+            return index
+    raise AssertionError(f"missing {identifier} with {parameters}")
+
+
 def main() -> None:
     subprocess.run(["python3", str(BUILDER)], cwd=ROOT, check=True)
     first = digest()
@@ -53,6 +70,39 @@ def main() -> None:
             require({"WFSearchWebDestination", "WFInputText"} <= params.keys(), "Search Web route shape")
         if ident == "is.workflow.actions.searchmaps":
             require({"WFInput", "WFSearchMapsActionApp"} <= params.keys(), "Search Maps route shape")
+    # Consult asks once, then every prescribed destination shares the supplied query where applicable.
+    consult_ask = index_of(actions, "is.workflow.actions.ask", WFAskActionPrompt="What are you trying to find?")
+    consult = actions[consult_ask:consult_ask + 30]
+    consult_text = str(consult)
+    for item in ("Search Web", "Search Maps", "Open Notes", "Open Reminders", "Open Calendar", "Back"):
+        require(item in consult_text, f"Consult menu option missing: {item}")
+    require("Consult Query" in str(consult[5]) and "Consult Query" in str(consult[7]), "Consult searches must use the asked query")
+    require("helpful next step" not in consult_text and "nearby" not in consult_text, "Consult must not use a hard-coded query")
+    # Create's second reload owns both the persistence and route after an interactive URL Ask.
+    create_ask = index_of(actions, "is.workflow.actions.ask", WFAskActionPrompt="Where should Create open?")
+    create = actions[create_ask:create_ask + 30]
+    create_text = str(create)
+    require("Reload after Create input" in create_text and "Create Owner ID" in create_text, "Create must reload and check ownership after Ask")
+    require(create_text.index("Create Owner ID") < create_text.index("profile_snapshot.create_target_url"), "Create ownership must precede URL persistence")
+    require(create_text.index("profile_snapshot.create_target_url") < create_text.index("is.workflow.actions.openurl"), "Create owner branch must persist before routing")
+    # Reference cases prevent a future loop from overwriting the one canonical exploration choice.
+    require(reference_exploration(["Capture", "Coordinate"], "Capture") == "Coordinate", "exploration next exit")
+    require(reference_exploration(["Capture", "Coordinate"], "Coordinate") == "Capture", "exploration wraps")
+    require(reference_exploration(["Capture", "Coordinate", "Close"], "Close") == "Capture", "exploration wraps after Close")
+    require(reference_exploration(["Close"], "Close") == "Close", "single enabled exit remains safe")
+    selector_start = next(index for index, action_item in enumerate(actions)
+                          if "PHASE 6 EXIT SELECTOR" in action_item.get("WFWorkflowActionParameters", {}).get("WFCommentActionText", ""))
+    selector_text = str(actions[selector_start:selector_start + 140])
+    for marker in ("Best Exit", "Past Best", "Exploration Selected", "Exploration wrap"):
+        require(marker in selector_text, f"selector does not prove canonical single exploration: {marker}")
+    # A no-contract CLOSE serializes null outcomes; only declared contracts can feed next-OPEN Heat relief/penalty.
+    contract_start = next(index for index, action_item in enumerate(actions)
+                          if "Contract outcome:" in action_item.get("WFWorkflowActionParameters", {}).get("WFCommentActionText", ""))
+    contract_text = str(actions[contract_start:contract_start + 80])
+    require('"respected":' in contract_text and '"respected":"' not in contract_text, "respected must serialize as boolean/null, not a string")
+    require("No declared duration stores null" in contract_text, "no-contract outcome must be null")
+    heat_text = str(actions)
+    require("Previous Declared Duration" in heat_text, "next OPEN must guard contract feedback on declared duration")
     banned = ("send", "call", "message", "askllm", "random", "downloadurl")
     require(not any(any(word in ident.lower() for word in banned) for ident in ids if ident != "is.workflow.actions.number.random"), "forbidden side-effect action")
     require(ids.count("is.workflow.actions.number.random") == 1, "only session ID generation may use random")
