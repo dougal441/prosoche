@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 7
-current_phase_name: Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze
+current_phase: 8
+current_phase_name: Sentient Fork & Dual Distribution
 status: verifying
 stopped_at: Phase 08 Plan 03 awaiting real-iPhone DIST-03 UAT
 last_updated: "2026-08-13T08:58:14.171Z"
 last_activity: 2026-08-13
-last_activity_desc: Built, validated, and signed Dumb fork; UAT remains pending
+last_activity_desc: Delivered both validated and signed forks; real-iPhone DIST-03 UAT remains pending
 progress:
   total_phases: 8
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 18
   completed_plans: 18
 ---
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 7 — real-iPhone Dumb-fork UAT
+**Current focus:** Phase 8 — real-iPhone dual-fork UAT
 
 ## Current Position
 
-Phase: 7 of 8 (Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze)
-Plan: light pass complete
-Status: Awaiting real-iPhone first manual run / import UAT
-Last activity: 2026-08-13 — Built, validated, and signed Dumb fork; UAT remains pending
+Phase: 8 of 8 (Sentient Fork & Dual Distribution)
+Plan: 3 of 3 complete
+Status: Automated verification passed; awaiting real-iPhone import / Manual UAT
+Last activity: 2026-08-13 — Delivered both validated and signed forks; DIST-03 remains pending
 
 Progress: [██████████] 100%
 

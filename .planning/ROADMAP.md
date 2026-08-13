@@ -199,6 +199,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 3. Deterministic State Engine | 1/1 | Complete | 2026-08-13 |
 | 4. CLOSE Pipeline & Session Race Protocol | 1/1 | Complete | 2026-08-13 |
 | 5. Nine Primitives & Environmental Safety | 3/3 | Complete | 2026-08-13 |
-| 6. Exits, Exit Learning & Contracts | 3/3 | In Progress|  |
-| 7. Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze | 0/TBD | Not started | - |
-| 8. Sentient Fork & Dual Distribution | 3/3 | In Progress|  |
+| 6. Exits, Exit Learning & Contracts | 3/3 | Complete | 2026-08-13 |
+| 7. Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze | 1/1 light | Human needed | - |
+| 8. Sentient Fork & Dual Distribution | 3/3 | Human needed | - |
