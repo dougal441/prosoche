@@ -22,8 +22,8 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 
 ### Routing & Bootstrap (BOOT)
 
-- [ ] **BOOT-01**: The Shortcut routes correctly on manual run (no input), `OPEN` input, and `CLOSE` input, using iOS-26-compatible nested If/Otherwise rather than macOS-only Otherwise-If
-- [ ] **BOOT-02**: Unrecognised or empty input fails safe — the Shortcut does not corrupt state and does not hang
+- [x] **BOOT-01**: The Shortcut routes correctly on manual run (no input), `OPEN` input, and `CLOSE` input, using iOS-26-compatible nested If/Otherwise rather than macOS-only Otherwise-If
+- [x] **BOOT-02**: Unrecognised or empty input fails safe — the Shortcut does not corrupt state and does not hang
 - [x] **BOOT-03**: First manual run creates `state.json` with initial profile, fork, and config values from the import questions
 - [x] **BOOT-04**: First manual run creates exactly one `PROSOCHĒ — Control Room` Note with a non-empty body
 - [ ] **BOOT-05**: Later manual runs never overwrite existing state or create a duplicate Control Room Note
@@ -225,8 +225,8 @@ Which phases cover which requirements. Populated during roadmap creation.
 | AUDIT-06 | Phase 1 | Complete |
 | AUDIT-07 | Phase 1 | Complete |
 | AUDIT-08 | Phase 1 | Complete |
-| BOOT-01 | Phase 2 | Pending |
-| BOOT-02 | Phase 2 | Pending |
+| BOOT-01 | Phase 2 | Complete |
+| BOOT-02 | Phase 2 | Complete |
 | BOOT-03 | Phase 2 | Complete |
 | BOOT-04 | Phase 2 | Complete |
 | BOOT-05 | Phase 2 | Pending |

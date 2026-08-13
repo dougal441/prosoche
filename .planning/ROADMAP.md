@@ -70,13 +70,13 @@ Plans:
   4. Later manual runs never overwrite existing state or create a duplicate Control Room Note.
   5. Missing or corrupt state.json, and a deleted Control Room Note, each trigger safe self-healing recovery rather than failure, from any invocation mode.
 
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 
 - [x] 02-01-PLAN.md — Walking skeleton: import questions, config, run clock, MANUAL router, state.json bootstrap, Control Room Note created and opened, plus the manual wiring audit
 - [x] 02-02-PLAN.md — The complete Control Room Note body and the empty-body trap gate
-- [ ] 02-03-PLAN.md — Input normalisation and the nested OPEN / CLOSE / fail-safe router ladder
+- [x] 02-03-PLAN.md — Input normalisation and the nested OPEN / CLOSE / fail-safe router ladder
 - [ ] 02-04-PLAN.md — Self-healing from any mode, corrupt-state recovery, Note-existence guard, idempotence, and phase closure
 
 ### Phase 3: Deterministic State Engine
@@ -183,7 +183,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Capability Audit & Config Foundation | 5/5 | In Progress|  |
-| 2. Routing, Bootstrap & Control Room Onboarding | 2/4 | In Progress|  |
+| 2. Routing, Bootstrap & Control Room Onboarding | 3/4 | In Progress|  |
 | 3. Deterministic State Engine | 0/TBD | Not started | - |
 | 4. CLOSE Pipeline & Session Race Protocol | 0/TBD | Not started | - |
 | 5. Nine Primitives & Environmental Safety | 0/TBD | Not started | - |

@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 2
 current_phase_name: Routing, Bootstrap & Control Room Onboarding
 status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-08-13T03:05:19.664Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-08-13T03:24:23.695Z"
 last_activity: 2026-08-13
 last_activity_desc: Completed 02-01 (walking skeleton — import questions through Control Room Note) — src/PROSOCHE-Dumb.xml created and validating
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 ## Current Position
 
 Phase: 2 of 8 (Routing, Bootstrap & Control Room Onboarding)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: Ready to execute
 Last activity: 2026-08-13 — Completed 02-01 (walking skeleton — import questions through Control Room Note) — src/PROSOCHE-Dumb.xml created and validating
 
-Progress: [████████░░] 78%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Progress: [████████░░] 78%
 | Phase 01 P05 | 45min | 3 tasks | 3 files |
 | Phase 02 P01 | 50min | 2 tasks | 2 files |
 | Phase 02 P02 | 10min | 2 tasks | 2 files |
+| Phase 02 P03 | 20min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,8 @@ Recent decisions affecting current work:
 - [Phase ?]: New docs/BUILD-NOTES.md §9 records the canonical Dumb-fork signing name so Phase 7's signer agrees with what the Control Room Note tells the user to look for
 - [Phase ?]: BD-05's fallback trigger recorded as a new field inside the existing UA-01 entry, not a separate item, so the trigger sits next to the observation that would raise it
 - [Phase ?]: CURRENT STATE / ATTENTION LEDGER / VALUE-LIFE-RETURNED / SUPPORT-PROSOCHĒ left as honest first-run placeholders per canonical strategy §17 and Phase 7's ROOM-08, not embellished with invented content
+- [Phase ?]: [Phase 2]: Router's OPEN/CLOSE/fail-safe ladder built entirely from nested If/Otherwise, a fresh GroupingIdentifier per nesting level, no Otherwise If anywhere (macOS 27+ only, unusable at the iOS 26 target)
+- [Phase ?]: [Phase 2]: Fail-safe branch (BOOT-02) is structurally inert by construction -- one Comment + one Show Alert only, no file/dictionary/Note action -- so unrecognised input can never be mistaken for a real OPEN/CLOSE event
 
 ### Pending Todos
 
@@ -113,6 +116,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-13T03:05:19.656Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-08-13T03:24:23.687Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None
