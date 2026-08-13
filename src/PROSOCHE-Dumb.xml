@@ -669,7 +669,51 @@ ALLOW_MANUAL_UNIT_CONVERSION: the settings text below includes the date pattern 
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>WFCommentActionText</key>
-				<string>Automation input (an app open or close signal) is routed to the tracked-app handling in a later build. Nothing is saved on this path yet.</string>
+				<string>Compare the normalised Input Key to OPEN, the exact text Automation A's Run Shortcut step sends (per the Control Room Note's Automation A build steps):
+- Input uses the Input Key variable set above.
+- If Input Key is exactly OPEN, this run continues into the OPEN branch below.
+- Otherwise, this run continues below to check for CLOSE instead.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>FA045F2B-237A-447C-A256-63490608FC0D</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>4</integer>
+				<key>WFConditionalActionString</key>
+				<string>OPEN</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Input Key</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>OPEN branch anchor. Phase 3 fills this with the OPEN pipeline (Heat, Gravity, Pressure, and the Circle they map to); plan 02-04 inserts the shared bootstrap check here first, ahead of everything else, which is what makes the self-healing-from-any-mode requirement true. Nothing in this branch reads, writes, or changes anything in this plan.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -677,6 +721,151 @@ ALLOW_MANUAL_UNIT_CONVERSION: the settings text below includes the date pattern 
 			<string>is.workflow.actions.nothing</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict/>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>FA045F2B-237A-447C-A256-63490608FC0D</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Input Key was not OPEN. Compare it to CLOSE, the exact text Automation B's Run Shortcut step sends (per the Control Room Note's Automation B build steps):
+- Input uses the same Input Key variable tested above.
+- If Input Key is exactly CLOSE, this run continues into the CLOSE branch below.
+- Otherwise, this run continues below to the fail-safe branch, since Input Key is non-empty but neither OPEN nor CLOSE.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>A2F7247B-3920-4B4A-B5FF-C7C5C2F95D7D</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>4</integer>
+				<key>WFConditionalActionString</key>
+				<string>CLOSE</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Input Key</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>CLOSE branch anchor. Phase 4 fills this with the CLOSE pipeline (session measurement and the overrun/race protocol). Nothing in this branch reads, writes, or changes anything in this plan.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.nothing</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict/>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>A2F7247B-3920-4B4A-B5FF-C7C5C2F95D7D</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Input Key was neither OPEN nor CLOSE, and is not empty: unrecognised input, a mis-typed automation, or a stray caller (BOOT-02). This branch is inert by construction - it performs no file read, no file write, no dictionary mutation, no Note creation or append, and waits on nothing, because treating this as a real tracked-app open would inject a phantom event into Heat and Pressure, and a branch that waits on anything is a branch that can hang. It shows one diagnostic alert and ends.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFAlertActionTitle</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>Unrecognised Input</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>WFAlertActionMessage</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>PROSOCHĒ received input it did not recognise and took no action. Nothing was read, written, or changed.</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>WFAlertActionCancelButtonShown</key>
+				<false/>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>A2F7247B-3920-4B4A-B5FF-C7C5C2F95D7D</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>FA045F2B-237A-447C-A256-63490608FC0D</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
