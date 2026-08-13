@@ -125,7 +125,11 @@ Plans:
   4. Ice applies a deterministic cooldown whose duration varies by profile, decided entirely without the model; a target-app OPEN during Ice immediately ejects or redirects with remaining cooldown shown where practical; blocked attempts don't endlessly inflate Heat; Ice always expires, granting Heat relief and clearing the cooldown.
   5. Switching between Classic (default), Black Mirror, and Ambient sequences visibly changes which primitives each Circle invokes, including combined primitives, and a stronger Circle does not necessarily replay every weaker Circle's prompt; Emergency Restore clears cooldown, the active session, and recoverable brightness/volume/colour state, and is reachable even while in Ice.
 
-**Plans**: TBD
+**Plans**: 3/3 plans executed
+
+- [x] 05-01-PLAN.md
+- [x] 05-02-PLAN.md
+- [x] 05-03-PLAN.md
 
 ### Phase 6: Exits, Exit Learning & Contracts
 
@@ -186,7 +190,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 2. Routing, Bootstrap & Control Room Onboarding | 4/4 | Complete | 2026-08-13 |
 | 3. Deterministic State Engine | 1/1 | Complete | 2026-08-13 |
 | 4. CLOSE Pipeline & Session Race Protocol | 1/1 | Complete | 2026-08-13 |
-| 5. Nine Primitives & Environmental Safety | 0/TBD | Not started | - |
+| 5. Nine Primitives & Environmental Safety | 3/3 | Complete | 2026-08-13 |
 | 6. Exits, Exit Learning & Contracts | 0/TBD | Not started | - |
 | 7. Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze | 0/TBD | Not started | - |
 | 8. Sentient Fork & Dual Distribution | 0/TBD | Not started | - |

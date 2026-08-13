@@ -59,20 +59,20 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 
 ### Circles & Primitives (CIRC)
 
-- [ ] **CIRC-01**: The Knock shows a brief, non-lecturing interruption carrying real telemetry
-- [ ] **CIRC-02**: Ash applies the audited visual-salience reduction, or its documented fallback if no safe action exists
-- [ ] **CIRC-03**: Silence reduces media audio only when the original value can be captured and restored, otherwise degrades safely
-- [ ] **CIRC-04**: Confession asks for a free-text intention and then a time boundary (2/5/10/15/custom)
-- [ ] **CIRC-05**: Dimming reduces brightness only when reversible, never to zero, otherwise degrades safely
-- [ ] **CIRC-06**: Exile immediately routes to an exit without a permission prompt, and returning remains possible as an affirmative act
-- [ ] **CIRC-07**: The Mirror shows a precise behavioural reflection built only from recorded facts
-- [ ] **CIRC-08**: The Voice speaks the Mirror at most once per run, only when voice is enabled, never at unsafe levels
-- [ ] **CIRC-09**: Ice applies a deterministic cooldown whose duration varies by profile, decided entirely without the model
-- [ ] **CIRC-10**: During Ice, a target-app OPEN immediately ejects or redirects, and remaining cooldown is shown where practical
-- [ ] **CIRC-11**: Blocked attempts during Ice do not endlessly inflate Heat
-- [ ] **CIRC-12**: Ice always expires, granting Heat relief and clearing the cooldown — the user is never permanently trapped
-- [ ] **CIRC-13**: All three sequences (Classic default, Black Mirror, Ambient) are selectable and change which primitives each Circle invokes, including combined primitives
-- [ ] **CIRC-14**: A stronger Circle does not necessarily replay every weaker Circle's prompt
+- [x] **CIRC-01**: The Knock shows a brief, non-lecturing interruption carrying real telemetry
+- [x] **CIRC-02**: Ash applies the audited visual-salience reduction, or its documented fallback if no safe action exists
+- [x] **CIRC-03**: Silence reduces media audio only when the original value can be captured and restored, otherwise degrades safely
+- [x] **CIRC-04**: Confession asks for a free-text intention and then a time boundary (2/5/10/15/custom)
+- [x] **CIRC-05**: Dimming reduces brightness only when reversible, never to zero, otherwise degrades safely
+- [x] **CIRC-06**: Exile immediately routes to an exit without a permission prompt, and returning remains possible as an affirmative act
+- [x] **CIRC-07**: The Mirror shows a precise behavioural reflection built only from recorded facts
+- [x] **CIRC-08**: The Voice speaks the Mirror at most once per run, only when voice is enabled, never at unsafe levels
+- [x] **CIRC-09**: Ice applies a deterministic cooldown whose duration varies by profile, decided entirely without the model
+- [x] **CIRC-10**: During Ice, a target-app OPEN immediately ejects or redirects, and remaining cooldown is shown where practical
+- [x] **CIRC-11**: Blocked attempts during Ice do not endlessly inflate Heat
+- [x] **CIRC-12**: Ice always expires, granting Heat relief and clearing the cooldown — the user is never permanently trapped
+- [x] **CIRC-13**: All three sequences (Classic default, Black Mirror, Ambient) are selectable and change which primitives each Circle invokes, including combined primitives
+- [x] **CIRC-14**: A stronger Circle does not necessarily replay every weaker Circle's prompt
 
 ### Contracts (CONT)
 
@@ -120,12 +120,12 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 
 ### Safety & Restoration (SAFE)
 
-- [ ] **SAFE-01**: Brightness is never set to zero
-- [ ] **SAFE-02**: Volume is never increased and no startling output is produced
-- [ ] **SAFE-03**: Any environmental setting whose original value cannot be captured is left unchanged rather than changed unrestorably
-- [ ] **SAFE-04**: Pre-existing accessibility configuration is never blindly overridden
-- [ ] **SAFE-05**: Emergency Restore clears cooldown, clears the active session, and restores recoverable brightness, volume, and colour settings
-- [ ] **SAFE-06**: Emergency Restore is reachable even while in Ice
+- [x] **SAFE-01**: Brightness is never set to zero
+- [x] **SAFE-02**: Volume is never increased and no startling output is produced
+- [x] **SAFE-03**: Any environmental setting whose original value cannot be captured is left unchanged rather than changed unrestorably
+- [x] **SAFE-04**: Pre-existing accessibility configuration is never blindly overridden
+- [x] **SAFE-05**: Emergency Restore clears cooldown, clears the active session, and restores recoverable brightness, volume, and colour settings
+- [x] **SAFE-06**: Emergency Restore is reachable even while in Ice
 
 ### Dumb Fork (DUMB)
 
@@ -259,26 +259,26 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SESS-05 | Phase 4 | Complete |
 | SESS-06 | Phase 4 | Complete |
 | SESS-07 | Phase 4 | Complete |
-| CIRC-01 | Phase 5 | Pending |
-| CIRC-02 | Phase 5 | Pending |
-| CIRC-03 | Phase 5 | Pending |
-| CIRC-04 | Phase 5 | Pending |
-| CIRC-05 | Phase 5 | Pending |
-| CIRC-06 | Phase 5 | Pending |
-| CIRC-07 | Phase 5 | Pending |
-| CIRC-08 | Phase 5 | Pending |
-| CIRC-09 | Phase 5 | Pending |
-| CIRC-10 | Phase 5 | Pending |
-| CIRC-11 | Phase 5 | Pending |
-| CIRC-12 | Phase 5 | Pending |
-| CIRC-13 | Phase 5 | Pending |
-| CIRC-14 | Phase 5 | Pending |
-| SAFE-01 | Phase 5 | Pending |
-| SAFE-02 | Phase 5 | Pending |
-| SAFE-03 | Phase 5 | Pending |
-| SAFE-04 | Phase 5 | Pending |
-| SAFE-05 | Phase 5 | Pending |
-| SAFE-06 | Phase 5 | Pending |
+| CIRC-01 | Phase 5 | Complete |
+| CIRC-02 | Phase 5 | Complete |
+| CIRC-03 | Phase 5 | Complete |
+| CIRC-04 | Phase 5 | Complete |
+| CIRC-05 | Phase 5 | Complete |
+| CIRC-06 | Phase 5 | Complete |
+| CIRC-07 | Phase 5 | Complete |
+| CIRC-08 | Phase 5 | Complete |
+| CIRC-09 | Phase 5 | Complete |
+| CIRC-10 | Phase 5 | Complete |
+| CIRC-11 | Phase 5 | Complete |
+| CIRC-12 | Phase 5 | Complete |
+| CIRC-13 | Phase 5 | Complete |
+| CIRC-14 | Phase 5 | Complete |
+| SAFE-01 | Phase 5 | Complete |
+| SAFE-02 | Phase 5 | Complete |
+| SAFE-03 | Phase 5 | Complete |
+| SAFE-04 | Phase 5 | Complete |
+| SAFE-05 | Phase 5 | Complete |
+| SAFE-06 | Phase 5 | Complete |
 | EXIT-01 | Phase 6 | Pending |
 | EXIT-02 | Phase 6 | Pending |
 | EXIT-03 | Phase 6 | Pending |

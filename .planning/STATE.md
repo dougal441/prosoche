@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 4
-current_phase_name: CLOSE Pipeline & Session Race Protocol
+current_phase: 5
+current_phase_name: Nine Primitives & Environmental Safety
 status: complete
-stopped_at: Completed merged 03-01 and 04-01 execution
-last_updated: "2026-08-13T04:06:45.256Z"
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-08-13T07:25:39.562Z"
 last_activity: 2026-08-13
-last_activity_desc: Completed 02-01 (walking skeleton — import questions through Control Room Note) — src/PROSOCHE-Dumb.xml created and validating
+last_activity_desc: Completed merged Phase 3/4 deterministic OPEN/CLOSE state engine
 progress:
   total_phases: 8
-  completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
+  completed_phases: 5
+  total_plans: 14
+  completed_plans: 14
 ---
 
 # Project State
@@ -27,12 +27,12 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Current Position
 
-Phase: 4 of 8 (CLOSE Pipeline & Session Race Protocol)
-Plan: 1 of 1 in current phase
+Phase: 5 of 8 (Nine Primitives & Environmental Safety)
+Plan: 3 of 3 in current phase
 Status: Complete
-Last activity: 2026-08-13 — Completed merged Phase 3/4 deterministic OPEN/CLOSE state engine
+Last activity: 2026-08-13 — Completed Phase 5 primitive and restoration graph
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 63%
 
 ## Performance Metrics
 
@@ -67,6 +67,9 @@ Progress: [█████░░░░░] 50%
 | Phase 02 P02 | 10min | 2 tasks | 2 files |
 | Phase 02 P03 | 20min | 3 tasks | 2 files |
 | Phase 02 P04 | 55min | 3 tasks | 3 files |
+| Phase 05 P01 | 35min | 2 tasks | 3 files |
+| Phase 05 P02 | 20min | 3 tasks | 2 files |
+| Phase 05 P03 | 15min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -101,6 +104,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Hoisted the state-load-and-bootstrap chain above the router (not into each branch) so BOOT-06 self-healing works from manual, OPEN, and CLOSE alike, since Shortcuts has no subroutine mechanism to share it otherwise
 - [Phase ?]: Two-field validity gate (schema_version has-value AND equals "1" AND profile has-value) replaces the single-field presence check, computed via a two-variable accumulator-then-canonical-copy pattern so State Present is still assigned by exactly one Set Variable while genuinely nested If/Otherwise blocks drive it
 - [Phase ?]: Note-existence guard (Find Notes with condition code 99, never 4, per the documented Notes name-matching trap) recreates a deleted Control Room Note with its full original body, scoped to the MANUAL branch only for both cost and Notes-permission-prompt safety reasons
+- [Phase ?]: Phase 5 uses semantic plist markers plus deterministic UUID5 generation, so the full shortcut rebuild is idempotent without numeric action indices.
+- [Phase ?]: Ash remains a validator-clean non-environmental pause; Dimming and Silence act only after capturing a restorable original.
 
 ### Pending Todos
 
@@ -120,6 +125,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-13T04:06:45.247Z
-Stopped at: Completed 02-04-PLAN.md
+Last session: 2026-08-13T07:25:39.554Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
