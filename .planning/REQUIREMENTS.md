@@ -11,13 +11,13 @@ Requirements for the initial release: two importable, signed Shortcuts (Dumb and
 
 The canonical strategy forbids fabricating an action because the strategy asks for it. These requirements make verification an explicit deliverable.
 
-- [ ] **AUDIT-01**: Every iOS action the build depends on is resolved to VERIFIED / UNVERIFIED / NOT AVAILABLE with its exact identifier and parameter shape, recorded in a build-notes document
-- [ ] **AUDIT-02**: Grayscale / Color Filters capability is resolved to a go/no-go decision, and the Ash primitive has a documented fallback design if no safe action exists
+- [x] **AUDIT-01**: Every iOS action the build depends on is resolved to VERIFIED / UNVERIFIED / NOT AVAILABLE with its exact identifier and parameter shape, recorded in a build-notes document
+- [x] **AUDIT-02**: Grayscale / Color Filters capability is resolved to a go/no-go decision, and the Ash primitive has a documented fallback design if no safe action exists
 - [ ] **AUDIT-03**: Brightness read-back capability is resolved; if no safe read path exists, Dimming is specified to degrade to a non-stateful variant rather than making an unrestorable change
 - [ ] **AUDIT-04**: Volume read-back capability is resolved; if no safe read path exists, Silence is specified to degrade to a non-stateful variant
 - [ ] **AUDIT-05**: Notes actions (Create Note, Append to Note, find/show a Note) are confirmed usable on the iOS target, since the Control Room is the only onboarding path
 - [ ] **AUDIT-06**: The `Use Model` On-Device selection literal is recovered by round-trip (select On-Device in Shortcuts, export unsigned XML, read the literal back) and recorded verbatim, OR the Sentient fork's On-Device guarantee is explicitly re-planned
-- [ ] **AUDIT-07**: Every deviation from the canonical strategy forced by an unverifiable action is recorded with the fallback taken, and the Shortcut remains runnable
+- [x] **AUDIT-07**: Every deviation from the canonical strategy forced by an unverifiable action is recorded with the fallback taken, and the Shortcut remains runnable
 - [ ] **AUDIT-08**: Static configuration (profile threshold tables, sequence orderings, Ice cooldown durations, Heat coefficients) exists as a single editable block so prototype parameters can be tuned without restructuring the graph
 
 ### Routing & Bootstrap (BOOT)
@@ -217,13 +217,13 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUDIT-01 | Phase 1 | Pending |
-| AUDIT-02 | Phase 1 | Pending |
+| AUDIT-01 | Phase 1 | Complete |
+| AUDIT-02 | Phase 1 | Complete |
 | AUDIT-03 | Phase 1 | Pending |
 | AUDIT-04 | Phase 1 | Pending |
 | AUDIT-05 | Phase 1 | Pending |
 | AUDIT-06 | Phase 1 | Pending |
-| AUDIT-07 | Phase 1 | Pending |
+| AUDIT-07 | Phase 1 | Complete |
 | AUDIT-08 | Phase 1 | Pending |
 | BOOT-01 | Phase 2 | Pending |
 | BOOT-02 | Phase 2 | Pending |
@@ -336,6 +336,7 @@ Which phases cover which requirements. Populated during roadmap creation.
 | DIST-08 | Phase 8 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 117 total
 - Mapped to phases: 117
 - Unmapped: 0 ✓

@@ -1,12 +1,19 @@
 ---
-gsd_state_version: '1.0'
-status: planning
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+current_phase: 1
+current_phase_name: Capability Audit & Config Foundation
+status: executing
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-08-13T00:53:55.626Z"
+last_activity: 2026-08-13
+last_activity_desc: Completed 01-01 (Ash/Color Filters tracer slice) — BUILD-NOTES.md, CAPABILITY-DECISIONS.md, CONFIG-BLOCK.md created
 progress:
-  total_phases: 8
+  total_phases: 1
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 5
+  completed_plans: 1
 ---
 
 # Project State
@@ -21,15 +28,16 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 ## Current Position
 
 Phase: 1 of 8 (Capability Audit & Config Foundation)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-08-13 — ROADMAP.md and REQUIREMENTS.md traceability created from research + requirements
+Plan: 1 of 5 in current phase
+Status: Executing
+Last activity: 2026-08-13 — Completed 01-01 (Ash/Color Filters tracer slice) — BUILD-NOTES.md, CAPABILITY-DECISIONS.md, CONFIG-BLOCK.md created
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 0
 - Average duration: - min
 - Total execution time: 0 hours
@@ -41,10 +49,16 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 **Recent Trend:**
+
 - Last 5 plans: -
 - Trend: -
 
 *Updated after each plan completion*
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 01 P01 | 15min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -57,6 +71,8 @@ Recent decisions affecting current work:
 - [Roadmap]: Dumb fork must be fully built, validated, signed, and on-device-verified (Phase 7) before Sentient work (Phase 8) begins; Sentient is an additive wrap that must not alter the deterministic engine.
 - [Roadmap]: CLOSE/session-race handling (Phase 4) lands before contracts and exit learning (Phase 6), because contract fidelity and exit outcomes both depend on trustworthy session duration.
 - [Roadmap]: The final phase (Phase 8) delivers both signed `.shortcut` files — the project's definition of done.
+- [Phase 1]: BD-01: Ash degraded to a non-environmental variant (self-contained visual pause) rather than a system Color Filters toggle — no iOS read-back mechanism exists in any bundled ToolKit snapshot
+- [Phase 1]: CAP-20 verdict set to NOT AVAILABLE, confirmed by a live re-run of the ToolKit lookup
 
 ### Pending Todos
 
@@ -76,6 +92,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-13
-Stopped at: ROADMAP.md created (8 phases, 117/117 requirements mapped); REQUIREMENTS.md traceability table updated
+Last session: 2026-08-13T00:53:55.618Z
+Stopped at: Completed 01-01-PLAN.md
 Resume file: None
