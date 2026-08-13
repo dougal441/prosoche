@@ -54,7 +54,7 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → inte
 - NFC / physical commitment tokens — deliberately removed from v1; possible Phase D extension
 - Screen Time blocking APIs (FamilyControls / ManagedSettings / DeviceActivity) and any companion iOS app — PROSOCHĒ is a behavioural intervention, not secure access control
 - CSV or any second machine store — one JSON for machine state, one Note for human history
-- ChatGPT, Private Cloud Compute, arbitrary web APIs, analytics services — Sentient is On-Device only
+- ChatGPT / third-party extension models, arbitrary web APIs, analytics services — a different trust boundary. (Private Cloud Compute was originally excluded too; the owner relaxed this on 2026-08-13 — see BD-04-R. On-Device is preferred, PCC is acceptable.)
 - Remote A/B testing infrastructure — sequences are switchable locally for manual comparison only
 - `Get App & Website Data` / Screen Time telemetry as a core dependency — research/measurement only, later phase
 - "Life Returned" value quantification and pay-after-value support prompts — recorded as concepts, designed rigorously later
@@ -75,7 +75,7 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → inte
 
 - **Platform**: iOS 26.x, native Shortcuts only — no companion app, no private APIs
 - **Tech stack**: Shortcuts plist XML built and signed via Shortcuts Playground; one `state.json`; one Apple Note
-- **AI**: Apple On-Device Intelligence via the iOS 26 `Use Model` action, Sentient fork only — never cloud, never PCC, never ChatGPT
+- **AI**: Apple Intelligence via the iOS 26 `Use Model` action, Sentient fork only. On-Device preferred; Private Cloud Compute acceptable (relaxed 2026-08-13, BD-04-R). ChatGPT / extension models excluded. Never write a guessed `WFLLMModel` value — omitting the key is safe, guessing it is not.
 - **Privacy**: no behavioural data leaves the device; Sentient receives only a compact local context window, never the whole Note
 - **Capability**: every iOS action identifier and parameter shape must be verified before use — if it cannot be verified, use the safest fallback, record the deviation, and keep the Shortcut runnable. Never fabricate an action because the strategy asks for it.
 - **Safety**: no zero brightness, no unsafe or startling volume, no accessibility-stranding state, Emergency Restore always available

@@ -73,14 +73,17 @@ This is the complete literal: nine sibling top-level keys, transcribed once from
   "safety": {
     "brightness_floor": 0.10,
     "dim_target": 0.12,
-    "allow_volume_increase": false
+    "allow_volume_increase": false,
+    "ash_managed_color_filters": true
   }
 }
 ```
 
 Transcribed verbatim from canonical strategy: `behavioural_day.offset_seconds` from §10.1; `thresholds.*` from §10.5 (the default `profile` is `Limbo`, and the default `sequence` is `Classic`, per `state.json`'s own defaults in ARCHITECTURE.md §2 — this Config literal does not itself pick a default, `state.json` does); `cooldown_seconds.*` from §22; `sequences.*` from §12, unchanged from plan 01-01 — `Classic` from §12.1, `BlackMirror` from §12.2, `Ambient` from §12.3; `heat.*` from §10.2's suggested initial rule; `gravity.*` from §10.3.
 
-**Note — binding:** BD-01 (see `docs/CAPABILITY-DECISIONS.md`) redefines what the **Ash** primitive *does* on the iOS build (a non-environmental, self-contained low-salience visual pause rather than a system Color Filters toggle) — it does **not** delete Ash from these sequence orderings. All three arrays above keep their nine entries and keep `Ash` and the combined `Ash+Confession` entry exactly where canonical strategy §12 places them (`Classic` position 2, `BlackMirror` position 3 as `Ash+Confession`, `Ambient` position 1). This keeps the sequence table the single source of truth for which primitives fire at each Circle, and localises the grayscale deviation to one decision record (BD-01) instead of touching this file's structure.
+**Note — SUPERSEDED by BD-01-R (2026-08-13).** Ash *is* a real system Color Filters change on iOS: `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` with `operation = turn` and an explicit `state`, applied On and restored Off. `safety.ash_managed_color_filters` (default `true`) is the canonical-§21 opt-in — when `false`, Ash falls back to BD-01's non-environmental visual pause. Phase 5 reads this flag and branches. The paragraph below is retained for history; its claim that Ash is non-environmental no longer holds.
+
+**Note — binding (historical, superseded above):** BD-01 (see `docs/CAPABILITY-DECISIONS.md`) redefines what the **Ash** primitive *does* on the iOS build (a non-environmental, self-contained low-salience visual pause rather than a system Color Filters toggle) — it does **not** delete Ash from these sequence orderings. All three arrays above keep their nine entries and keep `Ash` and the combined `Ash+Confession` entry exactly where canonical strategy §12 places them (`Classic` position 2, `BlackMirror` position 3 as `Ash+Confession`, `Ambient` position 1). This keeps the sequence table the single source of truth for which primitives fire at each Circle, and localises the grayscale deviation to one decision record (BD-01) instead of touching this file's structure.
 
 **Note — `heat.reopen_bonus_mode` is a labelled prototype interpretation, not a canonical value.** Canonical strategy §10.2 states a reopen under 2 minutes earns an additional `+2` and a reopen under 10 minutes earns an additional `+1`, but it does not settle what happens at a reopen that satisfies both bands simultaneously — for example, a reopen at 90 seconds, which is both "under 2 minutes" and "under 10 minutes." The value `exclusive` means only the tightest matching band applies: a 90-second reopen earns `+2` only, never `+3`. This is a prototype interpretation chosen here, not a canonical value. The alternative value is `cumulative` (both bands would stack, so the same 90-second reopen would earn `+2` plus `+1` = `+3`). Phase 3 owns implementing STATE-04 (the rapid-reopen Heat bonus) against whichever value this key holds at build time — it must read `reopen_bonus_mode` and branch, not hardcode either behavior.
 
