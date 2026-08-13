@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 1
-current_phase_name: Capability Audit & Config Foundation
+current_phase: 2
+current_phase_name: Routing, Bootstrap & Control Room Onboarding
 status: executing
-stopped_at: Completed 01-05-PLAN.md
-last_updated: "2026-08-13T01:37:48.316Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-08-13T02:52:07.389Z"
 last_activity: 2026-08-13
-last_activity_desc: Completed 01-01 (Ash/Color Filters tracer slice) — BUILD-NOTES.md, CAPABILITY-DECISIONS.md, CONFIG-BLOCK.md created
+last_activity_desc: Completed 02-01 (walking skeleton — import questions through Control Room Note) — src/PROSOCHE-Dumb.xml created and validating
 progress:
-  total_phases: 1
+  total_phases: 2
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 9
+  completed_plans: 6
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 1 — Capability Audit & Config Foundation
+**Current focus:** Phase 2 — Routing, Bootstrap & Control Room Onboarding
 
 ## Current Position
 
-Phase: 1 of 8 (Capability Audit & Config Foundation)
-Plan: 5 of 5 in current phase
-Status: Ready to execute
-Last activity: 2026-08-13 — Completed 01-01 (Ash/Color Filters tracer slice) — BUILD-NOTES.md, CAPABILITY-DECISIONS.md, CONFIG-BLOCK.md created
+Phase: 2 of 8 (Routing, Bootstrap & Control Room Onboarding)
+Plan: 1 of 4 in current phase
+Status: Executing
+Last activity: 2026-08-13 — Completed 02-01 (walking skeleton — import questions through Control Room Note) — src/PROSOCHE-Dumb.xml created and validating
 
-Progress: [██████████] 100%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [██████████] 100%
 | Phase 01 P02 | ~35min | 2 tasks | 1 files |
 | Phase 01 P04 | 45min | 2 tasks | 2 files |
 | Phase 01 P05 | 45min | 3 tasks | 3 files |
+| Phase 02 P01 | 50min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,10 @@ Recent decisions affecting current work:
 - [Phase ?]: BD-05: Phase 2 authorised to build the Control Room on CAP-07..CAP-10 (all VERIFIED), gated by UA-01's on-device confirmation, with a file-based fallback if that gate fails
 - [Phase ?]: BD-04 (AUDIT-06 Branch B): the Use Model On-Device literal is UNRECOVERED-LOCALLY; the Sentient fork's On-Device guarantee is explicitly re-planned rather than guessed, gated on UA-02
 - [Phase ?]: Phase 8 gate: may build Use Model with evidenced parameters and deterministic fallback now; may not write a WFLLMModel value or claim On-Device is enforced until UA-02 closes
+- [Phase ?]: [Phase 2]: WFWorkflowInputContentItemClasses set to ["WFStringContentItem"] (not empty) — the validator flags any ExtensionInput reference against an empty list as a real Stop-and-Respond risk
+- [Phase ?]: [Phase 2]: Create Note carries a defensive name parameter alongside markdownContents, reusing the evidenced key from its sibling Notes-create action, since the validator requires a title-shaped parameter on every Notes-create action
+- [Phase ?]: [Phase 2]: profile_snapshot.synced_at (as text) is the field seeded with Now Epoch at bootstrap; last_open_at/last_close_at stay null per PITFALLS B7 so Phase 3's first-run detection is not defeated
+- [Phase ?]: [Phase 2]: DEV-04 — validator invocation corrected to --target-platform all (not ios); the recorded ios invocation measured 118 spurious errors against a known-good file
 
 ### Pending Todos
 
@@ -103,6 +108,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-13T01:37:48.307Z
-Stopped at: Completed 01-05-PLAN.md
+Last session: 2026-08-13T02:52:07.381Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None
