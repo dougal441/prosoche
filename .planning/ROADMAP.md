@@ -182,8 +182,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Capability Audit & Config Foundation | 5/5 | In Progress|  |
-| 2. Routing, Bootstrap & Control Room Onboarding | 4/4 | In Progress|  |
+| 1. Capability Audit & Config Foundation | 5/5 | Complete | 2026-08-13 |
+| 2. Routing, Bootstrap & Control Room Onboarding | 4/4 | Complete | 2026-08-13 |
 | 3. Deterministic State Engine | 0/TBD | Not started | - |
 | 4. CLOSE Pipeline & Session Race Protocol | 0/TBD | Not started | - |
 | 5. Nine Primitives & Environmental Safety | 0/TBD | Not started | - |
