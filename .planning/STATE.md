@@ -119,7 +119,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- [blocker] Apply Addendum 01 and repair automation onboarding — `.planning/todos/pending/2026-08-13-apply-addendum-01-and-repair-automation-onboarding.md`
+- [cosmetic] Apply Build Addendum 01 — `.planning/todos/pending/2026-08-14-apply-build-addendum-01.md`
+- [major] Repair iOS 26 automation onboarding — `.planning/todos/pending/2026-08-14-repair-ios-26-automation-onboarding.md`
 - [blocker] Fix OPEN routing and Test Circle sequence error — `.planning/todos/pending/2026-08-13-fix-open-routing-and-test-circle-sequence-error.md`
 
 ### Blockers/Concerns
