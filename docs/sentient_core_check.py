@@ -13,6 +13,9 @@ p = models[0]["WFWorkflowActionParameters"]
 assert p["WFLLMModel"] == "Apple Intelligence on Device" and p["WFGenerativeResultType"] == "Text"
 assert "WFAllowWebSearch" not in p and "FollowUp" not in p
 marker = next(i for i, a in enumerate(sa) if "--- SENTIENT CONTRACT AUDIT ---" in a.get("WFWorkflowActionParameters", {}).get("WFCommentActionText", ""))
-assert "Circle I" not in str(sa[:marker]) and "Circle IX" not in str(sa[marker:marker + 1])
+end = next(i for i, a in enumerate(sa[marker + 1:], marker + 1) if "--- SENTIENT CONTRACT AUDIT END ---" in a.get("WFWorkflowActionParameters", {}).get("WFCommentActionText", ""))
+assert [a["WFWorkflowActionIdentifier"] for a in sa[6:8]] == ["is.workflow.actions.gettext", "is.workflow.actions.setvariable"]
+assert sa[7]["WFWorkflowActionParameters"]["WFVariableName"] == "Import AI"
+assert sa[:6] + sa[8:marker] + sa[end + 1:] == da
 assert all(a["WFWorkflowActionIdentifier"] != "is.workflow.actions.askllm" for a in da)
 print("sentient core check: unchanged Dumb core and one bounded model gate")

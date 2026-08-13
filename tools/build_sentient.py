@@ -79,8 +79,8 @@ def end(group: str):
 
 def audit_block():
     """One optional advisory call. Every non-ALLOW branch continues Dumb."""
-    before, model, after, elapsed, matches, count, first, revision = (uid(x) for x in (
-        "before", "model", "after", "elapsed", "matches", "count", "first", "revision"))
+    before, model, after, elapsed, matches, count, first, revision, scope, prior = (uid(x) for x in (
+        "before", "model", "after", "elapsed", "matches", "count", "first", "revision", "scope", "prior"))
     enabled_g, enabled = if_block("Import AI", 4, string="yes", key="enabled")
     min_g, minimum = if_block("Circle Next", 3, number=2, key="circle-min")
     max_g, maximum = if_block("Circle Next", 0, number=9, key="circle-max")
@@ -89,21 +89,36 @@ def audit_block():
     challenge_g, challenge = if_block("Audit Token", 99, string="CHALLENGE", key="challenge")
     deny_g, deny = if_block("Audit Token", 99, string="DENY", key="deny")
     high_g, high = if_block("Circle Next", 3, number=7, key="deny-high")
+    bounded_g, bounded = if_block("Circle Next", 3, number=4, key="scope-bounded")
+    consistency_g, consistency = if_block("Circle Next", 3, number=7, key="scope-consistency")
     return [
-        comment(MARKER + "\n\n- Audit only a voluntary contract after Confession and before its existing Dumb save.\n- The model receives compact recorded facts, never the Note or app contents.\n- Empty, malformed, unavailable, or slow output continues the unchanged Dumb path; platform hangs cannot be cancelled at target 26."),
+        comment(MARKER + "\n\n- Audit only a voluntary contract after Confession and before its existing Dumb save.\n- The model receives compact recorded facts, never the Note or app contents.\n- Empty, malformed, or completed-slow output continues the unchanged Dumb path."),
         comment("AI preference gate:\n- A no response keeps this run entirely Dumb.\n- Only an explicit yes reaches the optional audit."), enabled,
         comment("Circle gate:\n- Circle I remains deterministic.\n- Only Circle II and above may reach the audit."), minimum,
         comment("Circle ceiling:\n- Circle IX remains deterministic Ice.\n- Only Circles II through VIII may reach the audit."), maximum,
+        action("is.workflow.actions.gettext", UUID=scope, WFTextActionText="specificity"),
+        set_var("Audit Scope", output(scope, "Text")),
+        action("is.workflow.actions.gettext", UUID=prior, WFTextActionText="not supplied at this Circle"),
+        set_var("Audit Prior Fact", output(prior, "Text")),
+        comment("Progressive audit scope:\n- Circles II–III assess specificity only.\n- Circles IV–VI add boundedness.\n- Circles VII–VIII additionally receive the recorded prior-contract result."), bounded,
+        action("is.workflow.actions.gettext", UUID=uid("scope-bounded-text"), WFTextActionText="specificity and boundedness"),
+        set_var("Audit Scope", output(uid("scope-bounded-text"), "Text")),
+        end(bounded_g),
+        comment("High-circle consistency gate:\n- Only Circles VII–VIII receive the existing Previous Respected fact.\n- Lower circles never receive that history."), consistency,
+        action("is.workflow.actions.gettext", UUID=uid("scope-consistency-text"), WFTextActionText="specificity, boundedness, and recorded consistency"),
+        set_var("Audit Scope", output(uid("scope-consistency-text"), "Text")),
+        set_var("Audit Prior Fact", variable("Previous Respected")),
+        end(consistency_g),
         action("is.workflow.actions.date", UUID=before, WFDateActionMode="Current Date"),
         set_var("Audit Before", output(before, "Date")),
         action("is.workflow.actions.askllm", UUID=model,
                WFLLMModel=MODEL, WFGenerativeResultType="Text",
                WFLLMPrompt=text([(
                    "You are a bounded contract auditor. Return exactly one first token: ALLOW, CHALLENGE, or DENY. ", None),
-                   ("ALLOW a clearly bounded deliberate leisure choice. Audit only specificity, boundedness, and guarded recorded consistency. ", None),
+                   ("ALLOW a clearly bounded deliberate leisure choice. Audit only this scope: ", None), ("", "Audit Scope"), (". ", None),
                    ("Never claim lying, diagnosis, addiction, morality, feelings, or knowledge of app contents. Do not prescribe settings, arithmetic, timers, exits, or Ice.\n", None),
                    ("Intention: ", "Confession Intention"), ("\nBoundary minutes: ", "Declared Boundary Minutes"),
-                   ("\nCircle: ", "Circle Next"), ("\nHeat: ", "Heat Final"), ("\nOpen count: ", "Opens Today Next"),
+                   ("\nCircle: ", "Circle Next"), ("\nHeat: ", "Heat Final"), ("\nOpen count: ", "Opens Today Next"), ("\nPrior respected: ", "Audit Prior Fact"),
                ])),
         action("is.workflow.actions.date", UUID=after, WFDateActionMode="Current Date"),
         set_var("Audit After", output(after, "Date")),
@@ -112,7 +127,7 @@ def audit_block():
         set_var("Audit Seconds", output(elapsed, "Time Between Dates")),
         comment("Completed latency gate:\n- Use the dates immediately around Use Model.\n- A result over eight seconds takes the Dumb path."), fast,
         action("is.workflow.actions.text.match", UUID=matches, text=output(model, "Model Result"),
-               WFMatchTextPattern=r"(?i)^\\s*(ALLOW|CHALLENGE|DENY)\\b"),
+               WFMatchTextPattern=r"(?i)^\s*(ALLOW|CHALLENGE|DENY)\b"),
         action("is.workflow.actions.count", UUID=count, WFInput=output(matches, "Matches"), Input=output(matches, "Matches")),
         set_var("Audit Match Count", output(count, "Count")),
         comment("Parsed-token gate:\n- Only a matched first token is considered.\n- Empty or malformed output takes the Dumb path."), found,
@@ -125,7 +140,8 @@ def audit_block():
         comment("Deny branch:\n- Only a DENY token may redirect.\n- Lower circles continue Dumb without punishment."), deny,
         comment("High-circle gate:\n- DENY redirects only at Circle VII or VIII.\n- It cannot alter deterministic state."), high,
         comment("High-circle DENY redirects without punishment:\n- Use the already offered Leaving route or return home.\n- No settings, arithmetic, timer, Ice, or exit selection changes here."),
-        action("is.workflow.actions.returntohomescreen"), otherwise(high_g), action("is.workflow.actions.nothing"), end(high_g),
+        action("is.workflow.actions.returntohomescreen"),
+        action("is.workflow.actions.exit"), otherwise(high_g), action("is.workflow.actions.nothing"), end(high_g),
         otherwise(deny_g), action("is.workflow.actions.nothing"), end(deny_g),
         end(challenge_g), end(found_g), otherwise(fast_g), action("is.workflow.actions.nothing"), end(fast_g),
         end(max_g), end(min_g), end(enabled_g),

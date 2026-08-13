@@ -4,7 +4,7 @@
 
 - Both unsigned forks pass `plutil -lint` and Shortcuts Playground with `--target-macos 26 --target-platform all`; signed files and dated unsigned archives are listed in `artifacts/shortcuts/MANIFEST.md`.
 - Sentient uses the direct-device-evidenced `WFLLMModel = Apple Intelligence on Device` literal and `WFGenerativeResultType = Text`. The OS-27-only `WFAllowWebSearch` and `FollowUp` keys are absent.
-- The model is a bounded advisory contract auditor only. A malformed, empty, unavailable, or completed-but-slow result follows Dumb. Shortcuts exposes no supported target-26 cancellation timeout, so an indefinitely hung platform action cannot be intercepted; this is a documented platform limit, not a fabricated workaround.
+- The model is a bounded advisory contract auditor only. A malformed, empty, or completed-but-slow result follows Dumb. The audit does not claim to catch an unavailable or indefinitely hung platform action.
 - No external analytics or application/web-content access exists. Core deterministic functionality has no network dependency; users can bypass the experience or decline the optional audit.
 - Device evidence is not fabricated: `xcrun devicectl list devices` found no connected iPhone. DIST-03 remains unchecked pending imports and first Manual runs on a qualifying Apple-Intelligence-capable iPhone.
 
