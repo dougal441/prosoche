@@ -42,7 +42,14 @@ side by side, which is this project's definition of done.
   3. Brightness and volume read-back capability are each resolved; if no safe read path exists, Dimming and Silence are specified to degrade to non-stateful variants rather than making an unrestorable change.
   4. Notes actions (Create Note, Append to Note, find/show a Note) are confirmed usable on the iOS target.
   5. The `Use Model` On-Device selection literal is recovered by round-trip (select On-Device in Shortcuts, export unsigned XML, read the literal back) and recorded verbatim, or the Sentient fork's On-Device guarantee is explicitly re-planned; a single editable Config block (profile threshold tables, sequence orderings, Ice cooldown durations, Heat coefficients) exists in the graph.
-**Plans**: TBD
+**Plans:** 5 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Tracer: Ash / Color Filters end to end through all three Phase 1 artifacts, plus the do-not-fabricate and evidence protocols
+- [ ] 01-02-PLAN.md — Capability audit rows for the data, control-flow, interaction and output actions
+- [ ] 01-03-PLAN.md — The complete Config JSON literal, field reference, derived-value rules and transcription recipe
+- [ ] 01-04-PLAN.md — Notes on the iOS target (BD-05) and brightness/volume read-back (BD-02, BD-03)
+- [ ] 01-05-PLAN.md — Use Model On-Device literal (BD-04), the Phase 8 gate, coverage check and phase closure
 
 ### Phase 2: Routing, Bootstrap & Control Room Onboarding
 **Goal**: A user can import the Shortcut, run it manually for the first time, and get a working state.json plus a fully instructive Control Room Note — and every subsequent invocation routes correctly and never corrupts or duplicates that foundation.
@@ -142,7 +149,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Capability Audit & Config Foundation | 0/TBD | Not started | - |
+| 1. Capability Audit & Config Foundation | 0/5 | Not started | - |
 | 2. Routing, Bootstrap & Control Room Onboarding | 0/TBD | Not started | - |
 | 3. Deterministic State Engine | 0/TBD | Not started | - |
 | 4. CLOSE Pipeline & Session Race Protocol | 0/TBD | Not started | - |
