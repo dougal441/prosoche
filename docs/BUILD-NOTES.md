@@ -6,6 +6,8 @@ This document is the durable capability record for the PROSOCHĒ build. Every la
 
 It covers **iOS 26.x native Shortcuts only** (per D-01 — target iOS 26.x, native Shortcuts only, no companion app, no Screen Time blocking APIs, no private APIs).
 
+**Cross-references:** This document is one of three Phase 1 artifacts, each pointing at the other two so a reader landing on any one finds the rest. The single editable tuning block (profile threshold tables, sequence orderings, Ice cooldown durations, Heat coefficients) lives at `src/CONFIG-BLOCK.md`, not here. The five blocker decisions (BD-01 through BD-05) this document's capability rows and deviations feed into live at `docs/CAPABILITY-DECISIONS.md`, not here.
+
 ## 2. Do-not-fabricate protocol
 
 Reproduced as a blockquote so it is directly quotable by every later phase. Sourced from canonical strategy §31 and the standalone "Do not fabricate" protocol block in `.planning/research/PITFALLS.md`. **This protocol is binding (per D-07)** — it governs every capability row in §4 and every action any later phase authors.
@@ -228,3 +230,106 @@ _Owner: appended to by plans 01-04 and 01-05. Entries are numbered `UA-01`, `UA-
 ## 7. Coverage check
 
 _Owner: finalised by plan 01-05._
+
+### A. Capability coverage table
+
+One row per capability named in `.planning/phases/01-capability-audit-config-foundation/01-CONTEXT.md`'s "Capability audit must cover, at minimum (§31)" list — the operative superset of canonical strategy §31's list. All 28 map cleanly to `CAP-01` through `CAP-28`, by construction: this document's CAP numbering was assigned in that exact order across plans 01-01, 01-02, 01-04, and this plan.
+
+| # | Canonical capability | CAP ID | Verdict | Deviation |
+|---|---|---|---|---|
+| 1 | Get Current App | CAP-01 | VERIFIED | — |
+| 2 | Get File | CAP-02 | VERIFIED | — |
+| 3 | Save File / overwrite | CAP-03 | VERIFIED | DEV-02 (the related file-existence-check question) |
+| 4 | Dictionary and JSON parsing | CAP-04 | VERIFIED | — |
+| 5 | Get Dictionary Value | CAP-05 | VERIFIED | — |
+| 6 | Date arithmetic | CAP-06 | VERIFIED | — |
+| 7 | Notes search/find | CAP-07 | VERIFIED | — (UA-01 tracks on-device confirmation, not a deviation) |
+| 8 | Create Note | CAP-08 | VERIFIED | — (UA-01) |
+| 9 | Append to Note | CAP-09 | VERIFIED | — (UA-01) |
+| 10 | Show/open note | CAP-10 | VERIFIED | — (UA-01) |
+| 11 | Ask for Input | CAP-11 | VERIFIED | — |
+| 12 | Choose from Menu/List | CAP-12 | VERIFIED | — |
+| 13 | Open App | CAP-13 | VERIFIED | — |
+| 14 | Open URLs / web search | CAP-14 | VERIFIED | — |
+| 15 | Maps search | CAP-15 | VERIFIED | — |
+| 16 | Set Brightness | CAP-16 | VERIFIED | — |
+| 17 | Get current brightness | CAP-17 | VERIFIED | — |
+| 18 | Set Volume | CAP-18 | VERIFIED | — |
+| 19 | Get current volume | CAP-19 | VERIFIED | — |
+| 20 | Color Filters / grayscale | CAP-20 | NOT AVAILABLE | DEV-01 |
+| 21 | Speak Text | CAP-21 | VERIFIED | — |
+| 22 | Lock Screen | CAP-22 | VERIFIED | — |
+| 23 | Run Shortcut | CAP-23 | VERIFIED | — |
+| 24 | Wait | CAP-24 | VERIFIED | — |
+| 25 | Base64 if needed | CAP-25 | VERIFIED | — |
+| 26 | Use Model / On-Device model | CAP-26 | VERIFIED (action + parameters); On-Device literal `UNRECOVERED-LOCALLY` | DEV-03 |
+| 27 | Model structured output | CAP-27 | VERIFIED | — |
+| 28 | Get App & Website Data | CAP-28 | VERIFIED | — |
+
+Every ID from `CAP-01` through `CAP-28` is accounted for above — no gap was found, so none needed auditing fresh during this closure pass.
+
+**Supplementary table — architecture-critical actions beyond the canonical §31 list.** These are actions the build depends on that canonical strategy §31 does not separately enumerate (control flow, data plumbing, and display primitives used throughout every Circle and the bootstrap/routing logic), audited by plans 01-01 and 01-02 for completeness because the build cannot function without them even though they fall outside the §31 capability list proper.
+
+| CAP ID | Capability | Verdict | Deviation |
+|---|---|---|---|
+| CAP-S01 | Set Variable / Get Variable | VERIFIED | — |
+| CAP-S02 | Text (Get Text) | VERIFIED | — |
+| CAP-S03 | Number and Math | VERIFIED | — |
+| CAP-S04 | If / Otherwise / End If | VERIFIED | — |
+| CAP-S05 | Repeat with a count | VERIFIED | — |
+| CAP-S06 | Get Item from List | VERIFIED | — |
+| CAP-S07 | Show Alert / Show Result / Show Notification | VERIFIED | — |
+| CAP-S08 | Set Name (rename before Save File) | VERIFIED | — |
+
+### B. Deviation index
+
+Every `DEV-NN` entry recorded in §5, indexed against the requirement it touches and the phase that owns resolving it, so nothing recorded in this document is lost between Phase 1 and the phase that closes it.
+
+| DEV ID | Capability | Requirement touched | Owning phase | How it resolves |
+|---|---|---|---|---|
+| DEV-01 | CAP-20 — Color Filters / grayscale (Ash, Primitive B) | AUDIT-02 | Phase 5 | BD-01 degrades Ash to a verified, self-contained, non-environmental low-salience visual pause (CIRC-02) — never `UAToggleColorFiltersIntent`, never a read of live accessibility state. Phase 5 builds CIRC-02 exactly as BD-01 specifies; resolved by construction, not by a future capability discovery. |
+| DEV-02 | CAP-03 — Save File / the missing file-existence-check action (bootstrap's "does `state.json` already exist" question) | AUDIT-01 | Phase 2 | Phase 2's bootstrap (BOOT-01 through BOOT-04) implements the substitute directly: Get File with `WFFileErrorIfNotFound=Off`, piped through Detect Dictionary, treating a non-dictionary/empty result as "state absent." Resolved by construction; no further capability discovery needed. |
+| DEV-03 | CAP-26 — Use Model / the `WFLLMModel` On-Device selection literal | AUDIT-06 | Phase 8 | UA-02 (§6) is the exit path: a human on-device round-trip recovers the literal and updates CAP-26's token from `UNRECOVERED-LOCALLY` to `ROUND-TRIP-CONFIRMED`. Until UA-02 completes, BD-04 Branch B governs — Phase 8 builds everything not dependent on the literal and states the guarantee honestly per D-06/DIST-07. This is the one open item in this index that is not resolved by construction; it is resolved either by UA-02 or by BD-04's re-plan standing as the permanent answer, both of which AUDIT-06 accepts. |
+
+### C. Runnability statement
+
+Per AUDIT-07's second clause and D-07 point 4 ("keep the Shortcut runnable"), the following four claims are asserted and checked against the deviation index above:
+
+1. **No OPEN or CLOSE path depends on an action whose verdict is `NOT AVAILABLE`.** The only `NOT AVAILABLE` row in this document is CAP-20 (Color Filters). BD-01 degrades Ash to a substitute built entirely from `VERIFIED` display actions (CIRC-02); nothing on the OPEN or CLOSE path calls `UAToggleColorFiltersIntent` or reads live accessibility state. Claim holds.
+2. **Every primitive occupying a slot in a sequence ordering has a defined behaviour under its decision record.** `src/CONFIG-BLOCK.md`'s three `sequences` arrays name nine primitives each (Knock, Ash, Silence, Confession, Dimming, Exile, Mirror, Voice, Ice, plus the combined `Ash+Confession`/`Silence+Mirror`/`Dimming+Mirror` entries in Black Mirror). Ash is defined by BD-01, Silence by BD-03, Dimming by BD-02; the remaining six (Knock, Confession, Exile, Mirror, Voice, Ice) rest on `VERIFIED` actions audited elsewhere in §4 (CAP-S07 display primitives, CAP-11 Ask for Input, CAP-21 Speak Text, CAP-22 Lock Screen and the exit-routing actions in CAP-13/14/15) with no open deviation against any of them. Claim holds.
+3. **Circle IX's guaranteed route-out does not depend on any unverified action.** Circle IX (Ice) is deterministic per D-04/SENT-12 — the model never touches it — and its cooldown/eject/redirect mechanics rest on `VERIFIED` actions only (CAP-22 Lock Screen, CAP-24 Wait, the exit-routing actions). It has no dependency on CAP-20 (Ash is not part of Ice's own mechanics) and no dependency on CAP-26 (Use Model plays no role in Circle IX at all, per canonical strategy §14.4's own Circle IX = "No model. Deterministic Ice."). Claim holds.
+4. **The Dumb fork has no dependency on any item still open.** Of the two items this document leaves open past Phase 1 — UA-01 (Notes on-device confirmation) and UA-02/DEV-03 (the Use Model literal) — UA-01 is scoped entirely to Phase 2's own guided bootstrap run and closes within that phase's build, not deferred past it; DEV-03/UA-02 is scoped exclusively to the Sentient fork (Phase 8) and DUMB-01 establishes the Dumb fork has zero Apple Intelligence dependency. Neither open item is a dependency of the Dumb fork. Claim holds.
+
+All four claims hold as stated; no exception needed to be recorded.
+
+### D. Requirement closure table
+
+| Requirement | Where satisfied | Status |
+|---|---|---|
+| AUDIT-01 | §4 (36 judged CAP rows, `CAP-01`–`CAP-28` plus `CAP-S01`–`CAP-S08`, each with identifier, parameter shape, verdict, evidence) | Complete |
+| AUDIT-02 | `docs/CAPABILITY-DECISIONS.md` BD-01 (Ash / Color Filters go/no-go and fallback design) | Complete |
+| AUDIT-03 | `docs/CAPABILITY-DECISIONS.md` BD-02 (brightness read-back, Dimming's stateful-with-safety-branch form) | Complete |
+| AUDIT-04 | `docs/CAPABILITY-DECISIONS.md` BD-03 (volume read-back, Silence's stateful-with-safety-branch form) | Complete |
+| AUDIT-05 | `docs/CAPABILITY-DECISIONS.md` BD-05 (Notes actions authorised for the iOS target, gated on UA-01) | Complete |
+| AUDIT-06 | `docs/CAPABILITY-DECISIONS.md` BD-04 — **Branch B taken** (the literal was not recovered locally; the Sentient fork's On-Device guarantee is explicitly re-planned, per the alternative outcome AUDIT-06 itself permits), with UA-02 recorded as the still-open exit path to Branch A | Complete (via the permitted alternative branch) |
+| AUDIT-07 | §5 (deviation log, three `DEV-NN` entries) plus §7.B (deviation index with owning phases) plus §7.C (the runnability statement above) | Complete |
+| AUDIT-08 | `src/CONFIG-BLOCK.md` (single fenced JSON block, nine sibling top-level keys, field reference, derived-value rules) | Complete |
+
+### Consistency pass
+
+Checked 2026-08-13 as part of this plan's closure:
+
+- `docs/CAPABILITY-DECISIONS.md` contains all five records `BD-01` through `BD-05`, each with all seven labelled fields (`Question`, `Evidence`, `Options considered`, `Decision`, `Rationale`, `Consequence for later phases`, `Requirement`) and each naming a requirement ID (`AUDIT-02`, `AUDIT-03`, `AUDIT-04`, `AUDIT-06`, `AUDIT-05` respectively). Confirmed by direct read of the file.
+- Every Verdict cell in §4 holds exactly one of the four vocabulary values (`VERIFIED`, `VERIFIED (identifier only)`, `UNVERIFIED`, `NOT AVAILABLE`) and nothing else. The only non-`VERIFIED` row is CAP-20 (`NOT AVAILABLE`), and it has a matching `DEV-01` entry in §5. No row holds `UNVERIFIED` or `VERIFIED (identifier only)` in this document as of this closure pass.
+- `src/CONFIG-BLOCK.md` still contains exactly one fenced `json` block, it parses as valid JSON, and all three `sequences` orderings (`Classic`, `BlackMirror`, `Ambient`) each still hold exactly nine entries — verified by direct parse during this plan's own verification step.
+- Cross-reference lines are in place: this document's §1 now points at `src/CONFIG-BLOCK.md` (the config deliverable) and `docs/CAPABILITY-DECISIONS.md` (the decision record); `src/CONFIG-BLOCK.md` carries the matching prose cross-reference back to this document (added by this plan, outside its fenced JSON block).
+
+### Closing subsection — ROADMAP Phase 1 success criteria
+
+Each of the five Phase 1 success criteria in `.planning/ROADMAP.md`, mapped to concrete content in these three files:
+
+1. *"A build-notes document lists every dependent iOS action with VERIFIED/UNVERIFIED/NOT AVAILABLE status and exact identifier/parameter shape, and every deviation forced by an unverifiable action is recorded with the fallback taken while the Shortcut remains runnable."* — Satisfied by §4 (36 judged rows) and §5 (three `DEV-NN` entries), with §7.C's runnability statement confirming the Shortcut remains runnable.
+2. *"Grayscale/Color Filters capability has a documented go/no-go decision, with a documented fallback design for the Ash primitive if no safe action exists."* — Satisfied by CAP-20 (`NOT AVAILABLE`) and BD-01 (Ash degraded to a non-environmental variant, CIRC-02).
+3. *"Brightness and volume read-back capability are each resolved; if no safe read path exists, Dimming and Silence are specified to degrade to non-stateful variants rather than making an unrestorable change."* — Satisfied by CAP-16/CAP-17 and BD-02 (Dimming), CAP-18/CAP-19 and BD-03 (Silence); both resolved to the stronger stateful-with-safety-branch form because the read-back path was found `VERIFIED`, which is a stronger outcome than the criterion's own fallback-only framing anticipated — the message-only degrade path is retained as each primitive's mandatory per-run safety branch, not discarded.
+4. *"Notes actions (Create Note, Append to Note, find/show a Note) are confirmed usable on the iOS target."* — Satisfied by CAP-07 through CAP-10 (all `VERIFIED`) and BD-05, which authorises Phase 2 to build on this evidence while gating final on-device confirmation on UA-01 — met by the alternative branch AUDIT-05's own evidentiary standard permits (authorise-and-confirm-early, not block-and-wait), stated plainly rather than overstated as a completed on-device test.
+5. *"The `Use Model` On-Device selection literal is recovered by round-trip... and recorded verbatim, or the Sentient fork's On-Device guarantee is explicitly re-planned; a single editable Config block... exists in the graph."* — The literal was **not** recovered (CAP-26, token `UNRECOVERED-LOCALLY`); the guarantee is explicitly re-planned by BD-04 Branch B, which AUDIT-06 permits as an equally-satisfying outcome — met by the alternative branch, stated plainly, not overstated as a completed round-trip. The Config block half of this criterion is satisfied by `src/CONFIG-BLOCK.md` (single fenced JSON block, nine sibling top-level keys, confirmed parsing and intact sequence orderings in this plan's own verification step).

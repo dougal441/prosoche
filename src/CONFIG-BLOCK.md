@@ -1,5 +1,7 @@
 # PROSOCHĒ — Config Block
 
+**Cross-references:** This is one of three Phase 1 artifacts. The capability audit table, deviation log, user action items, and coverage check live at `docs/BUILD-NOTES.md`. The five blocker decisions (BD-01 through BD-05) that shape several of this file's values — most directly BD-01's note on the `Ash` sequence entry below — live at `docs/CAPABILITY-DECISIONS.md`.
+
 ## How to use this file
 
 This literal is **product configuration, not user data**. It is never written to `state.json` — `state.json` holds the mutable per-run machine state (heat, gravity, pressure, circle, active_session, etc.), while this file holds the fixed tuning values that shape how that machine state is interpreted.
