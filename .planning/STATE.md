@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 1
 current_phase_name: Capability Audit & Config Foundation
 status: executing
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-08-13T01:10:19.202Z"
+stopped_at: Completed 01-04-PLAN.md
+last_updated: "2026-08-13T01:27:16.634Z"
 last_activity: 2026-08-13
 last_activity_desc: Completed 01-01 (Ash/Color Filters tracer slice) — BUILD-NOTES.md, CAPABILITY-DECISIONS.md, CONFIG-BLOCK.md created
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 ## Current Position
 
 Phase: 1 of 8 (Capability Audit & Config Foundation)
-Plan: 3 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: Ready to execute
 Last activity: 2026-08-13 — Completed 01-01 (Ash/Color Filters tracer slice) — BUILD-NOTES.md, CAPABILITY-DECISIONS.md, CONFIG-BLOCK.md created
 
-Progress: [██████░░░░] 60%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -61,6 +61,7 @@ Progress: [██████░░░░] 60%
 | Phase 01 P01 | 15min | 2 tasks | 3 files |
 | Phase 01 P03 | ~20min | 2 tasks | 1 files |
 | Phase 01 P02 | ~35min | 2 tasks | 1 files |
+| Phase 01 P04 | 45min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Recent decisions affecting current work:
 - [Phase ?]: heat.reopen_bonus_mode = "exclusive" (PROTOTYPE INTERPRETATION): a reopen matching both rapid-return bands earns only the tighter bonus, not both stacked; Phase 3 owns STATE-04 against this value
 - [Phase ?]: config_version, heat.ice_expiry_relief, exits.exploration_rate, exits.exploit_min_observations labelled PROTOTYPE DEFAULT: canonical strategy requires each field to exist but states no number
 - [Phase ?]: 25 capability audit rows resolved to VERIFIED via live ToolKit re-lookup, correcting 5 STACK.md param-shape findings (CAP-03, CAP-13, CAP-21, CAP-23, CAP-24)
+- [Phase ?]: CAP-17/CAP-19 (brightness/volume read-back) VERIFIED via Get Device Details' WFDeviceDetail enum, promoting BD-02/BD-03 to stateful capture-and-restore Dimming/Silence instead of message-only
+- [Phase ?]: BD-05: Phase 2 authorised to build the Control Room on CAP-07..CAP-10 (all VERIFIED), gated by UA-01's on-device confirmation, with a file-based fallback if that gate fails
 
 ### Pending Todos
 
@@ -97,6 +100,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-13T01:10:19.195Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-08-13T01:27:16.627Z
+Stopped at: Completed 01-04-PLAN.md
 Resume file: None
