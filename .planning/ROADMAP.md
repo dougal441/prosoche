@@ -23,8 +23,8 @@ side by side, which is this project's definition of done.
 
 - [x] **Phase 1: Capability Audit & Config Foundation** - Resolve all four capability blockers to VERIFIED/UNVERIFIED/NOT AVAILABLE with fallback designs and lock the tunable config block
 - [x] **Phase 2: Routing, Bootstrap & Control Room Onboarding** - First-run bootstrap creates a valid state.json and Control Room Note; every invocation mode routes and self-heals safely
-- [ ] **Phase 3: Deterministic State Engine** - Heat, Gravity, Pressure, and Circle mapping compute correctly and demonstrably differ across all three profiles
-- [ ] **Phase 4: CLOSE Pipeline & Session Race Protocol** - Session duration is measured accurately and stays race-proof under rapid app switching
+- [x] **Phase 3: Deterministic State Engine** - Heat, Gravity, Pressure, and Circle mapping compute correctly and demonstrably differ across all three profiles
+- [x] **Phase 4: CLOSE Pipeline & Session Race Protocol** - Session duration is measured accurately and stays race-proof under rapid app switching
 - [ ] **Phase 5: Nine Primitives & Environmental Safety** - All nine Circle primitives fire correctly with guaranteed safety floors and a model-free Circle IX
 - [ ] **Phase 6: Exits, Exit Learning & Contracts** - Six exits are reachable and learned from; contracts are honoured and feed back into Heat
 - [ ] **Phase 7: Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze** - The Dumb fork becomes feature-complete, validated, signed, and on-device verified
@@ -93,7 +93,7 @@ Plans:
   4. Pressure equals Heat plus Gravity, and maps to a Circle via the active profile's threshold table using ordered comparisons rather than equality.
   5. All three profiles (Paradise, Limbo, Inferno) produce demonstrably different Circles for the same test Pressure value; duplicate OPEN events from a single user action increment the open count only once.
 
-**Plans**: TBD
+**Plans:** 1/1 plans executed
 
 ### Phase 4: CLOSE Pipeline & Session Race Protocol
 
@@ -109,7 +109,7 @@ Plans:
   4. Rapid switching between two tracked apps in a test sequence never corrupts state or produces a phantom session.
   5. CLOSE clears the active session, appends the completed session to the rolling window, and restores any environmental setting PROSOCHĒ itself changed during the session.
 
-**Plans**: TBD
+**Plans:** 1/1 plans executed
 
 ### Phase 5: Nine Primitives & Environmental Safety
 
@@ -184,8 +184,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 |-------|----------------|--------|-----------|
 | 1. Capability Audit & Config Foundation | 5/5 | Complete | 2026-08-13 |
 | 2. Routing, Bootstrap & Control Room Onboarding | 4/4 | Complete | 2026-08-13 |
-| 3. Deterministic State Engine | 0/TBD | Not started | - |
-| 4. CLOSE Pipeline & Session Race Protocol | 0/TBD | Not started | - |
+| 3. Deterministic State Engine | 1/1 | Complete | 2026-08-13 |
+| 4. CLOSE Pipeline & Session Race Protocol | 1/1 | Complete | 2026-08-13 |
 | 5. Nine Primitives & Environmental Safety | 0/TBD | Not started | - |
 | 6. Exits, Exit Learning & Contracts | 0/TBD | Not started | - |
 | 7. Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze | 0/TBD | Not started | - |

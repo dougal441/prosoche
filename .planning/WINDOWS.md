@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 2
+open_count: 0
 waived_count: 0
-fixed_count: 0
+fixed_count: 2
 total_count: 2
-last_updated: 2026-08-13T03:24:42.828Z
+last_updated: 2026-08-13T06:48:07.512Z
 ---
 
 # Broken Windows Ledger
@@ -15,8 +15,8 @@ last_updated: 2026-08-13T03:24:42.828Z
 
 | id | phase | kind | file | line | description | status | reason | recorded_at | resolved_at |
 |----|-------|------|------|------|-------------|--------|--------|-------------|-------------|
-| 1 | 02 | stub | src/PROSOCHE-Dumb.xml |  | OPEN branch anchor is Comment+Nothing only; Phase 3 fills the OPEN pipeline | open |  | 2026-08-13T03:24:42.716Z |  |
-| 2 | 02 | stub | src/PROSOCHE-Dumb.xml |  | CLOSE branch anchor is Comment+Nothing only; Phase 4 fills the CLOSE pipeline | open |  | 2026-08-13T03:24:42.828Z |  |
+| 1 | 02 | stub | src/PROSOCHE-Dumb.xml |  | OPEN branch anchor is Comment+Nothing only; Phase 3 fills the OPEN pipeline | fixed |  | 2026-08-13T03:24:42.716Z | 2026-08-13T06:48:07.399Z |
+| 2 | 02 | stub | src/PROSOCHE-Dumb.xml |  | CLOSE branch anchor is Comment+Nothing only; Phase 4 fills the CLOSE pipeline | fixed |  | 2026-08-13T03:24:42.828Z | 2026-08-13T06:48:07.512Z |
 
 ````json
 [
@@ -27,10 +27,10 @@ last_updated: 2026-08-13T03:24:42.828Z
     "file": "src/PROSOCHE-Dumb.xml",
     "line": null,
     "description": "OPEN branch anchor is Comment+Nothing only; Phase 3 fills the OPEN pipeline",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-08-13T03:24:42.716Z",
-    "resolved_at": null
+    "resolved_at": "2026-08-13T06:48:07.399Z"
   },
   {
     "id": 2,
@@ -39,10 +39,10 @@ last_updated: 2026-08-13T03:24:42.828Z
     "file": "src/PROSOCHE-Dumb.xml",
     "line": null,
     "description": "CLOSE branch anchor is Comment+Nothing only; Phase 4 fills the CLOSE pipeline",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-08-13T03:24:42.828Z",
-    "resolved_at": null
+    "resolved_at": "2026-08-13T06:48:07.512Z"
   }
 ]
 ````

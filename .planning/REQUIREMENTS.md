@@ -34,28 +34,28 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 
 ### State Engine (STATE)
 
-- [ ] **STATE-01**: Behavioural day is computed as current date minus 4 hours and stored as a date key
-- [ ] **STATE-02**: Behavioural-day rollover resets `opens_today` and Gravity, and does not reset Heat, recent sessions, or exit statistics
-- [ ] **STATE-03**: Heat decays with time since the last genuine target-app interaction
-- [ ] **STATE-04**: A genuine OPEN increments Heat, with additional Heat for rapid reopening
-- [ ] **STATE-05**: Heat is adjusted by the previous contract's outcome — increased on substantial overrun, decreased when the boundary was respected
-- [ ] **STATE-06**: Heat is clamped to its floor and cap
-- [ ] **STATE-07**: Gravity accumulates from the day's open count and is capped
-- [ ] **STATE-08**: Pressure is computed as Heat plus Gravity
-- [ ] **STATE-09**: Pressure maps to a Circle via the active profile's threshold table, using ordered comparisons rather than equality
-- [ ] **STATE-10**: All three profiles produce demonstrably different Circles for the same Pressure value
-- [ ] **STATE-11**: Duplicate OPEN events from a single user action are debounced and increment the open count only once
+- [x] **STATE-01**: Behavioural day is computed as current date minus 4 hours and stored as a date key
+- [x] **STATE-02**: Behavioural-day rollover resets `opens_today` and Gravity, and does not reset Heat, recent sessions, or exit statistics
+- [x] **STATE-03**: Heat decays with time since the last genuine target-app interaction
+- [x] **STATE-04**: A genuine OPEN increments Heat, with additional Heat for rapid reopening
+- [x] **STATE-05**: Heat is adjusted by the previous contract's outcome — increased on substantial overrun, decreased when the boundary was respected
+- [x] **STATE-06**: Heat is clamped to its floor and cap
+- [x] **STATE-07**: Gravity accumulates from the day's open count and is capped
+- [x] **STATE-08**: Pressure is computed as Heat plus Gravity
+- [x] **STATE-09**: Pressure maps to a Circle via the active profile's threshold table, using ordered comparisons rather than equality
+- [x] **STATE-10**: All three profiles produce demonstrably different Circles for the same Pressure value
+- [x] **STATE-11**: Duplicate OPEN events from a single user action are debounced and increment the open count only once
 - [x] **STATE-12**: State is persisted as a bounded, versioned JSON document with rolling windows for sessions, contracts, and per-exit aggregates — no unbounded arrays, no CSV
 
 ### Session Measurement (SESS)
 
-- [ ] **SESS-01**: Each OPEN creates a session with a unique ID and start timestamp recorded in state
-- [ ] **SESS-02**: CLOSE measures actual session duration from the recorded start timestamp
-- [ ] **SESS-03**: CLOSE reloads state and aborts without mutating it if a newer OPEN owns the active session
-- [ ] **SESS-04**: Rapid switching between two tracked apps does not corrupt state or produce a phantom session
-- [ ] **SESS-05**: CLOSE compares actual duration against the declared contract and records the overrun
-- [ ] **SESS-06**: CLOSE clears the active session and appends the completed session to the rolling window
-- [ ] **SESS-07**: CLOSE restores any environmental setting PROSOCHĒ itself changed during the session
+- [x] **SESS-01**: Each OPEN creates a session with a unique ID and start timestamp recorded in state
+- [x] **SESS-02**: CLOSE measures actual session duration from the recorded start timestamp
+- [x] **SESS-03**: CLOSE reloads state and aborts without mutating it if a newer OPEN owns the active session
+- [x] **SESS-04**: Rapid switching between two tracked apps does not corrupt state or produce a phantom session
+- [x] **SESS-05**: CLOSE compares actual duration against the declared contract and records the overrun
+- [x] **SESS-06**: CLOSE clears the active session and appends the completed session to the rolling window
+- [x] **SESS-07**: CLOSE restores any environmental setting PROSOCHĒ itself changed during the session
 
 ### Circles & Primitives (CIRC)
 
@@ -241,24 +241,24 @@ Which phases cover which requirements. Populated during roadmap creation.
 | ROOM-04 | Phase 2 | Complete |
 | ROOM-05 | Phase 2 | Complete |
 | ROOM-06 | Phase 2 | Complete |
-| STATE-01 | Phase 3 | Pending |
-| STATE-02 | Phase 3 | Pending |
-| STATE-03 | Phase 3 | Pending |
-| STATE-04 | Phase 3 | Pending |
-| STATE-05 | Phase 3 | Pending |
-| STATE-06 | Phase 3 | Pending |
-| STATE-07 | Phase 3 | Pending |
-| STATE-08 | Phase 3 | Pending |
-| STATE-09 | Phase 3 | Pending |
-| STATE-10 | Phase 3 | Pending |
-| STATE-11 | Phase 3 | Pending |
-| SESS-01 | Phase 4 | Pending |
-| SESS-02 | Phase 4 | Pending |
-| SESS-03 | Phase 4 | Pending |
-| SESS-04 | Phase 4 | Pending |
-| SESS-05 | Phase 4 | Pending |
-| SESS-06 | Phase 4 | Pending |
-| SESS-07 | Phase 4 | Pending |
+| STATE-01 | Phase 3 | Complete |
+| STATE-02 | Phase 3 | Complete |
+| STATE-03 | Phase 3 | Complete |
+| STATE-04 | Phase 3 | Complete |
+| STATE-05 | Phase 3 | Complete |
+| STATE-06 | Phase 3 | Complete |
+| STATE-07 | Phase 3 | Complete |
+| STATE-08 | Phase 3 | Complete |
+| STATE-09 | Phase 3 | Complete |
+| STATE-10 | Phase 3 | Complete |
+| STATE-11 | Phase 3 | Complete |
+| SESS-01 | Phase 4 | Complete |
+| SESS-02 | Phase 4 | Complete |
+| SESS-03 | Phase 4 | Complete |
+| SESS-04 | Phase 4 | Complete |
+| SESS-05 | Phase 4 | Complete |
+| SESS-06 | Phase 4 | Complete |
+| SESS-07 | Phase 4 | Complete |
 | CIRC-01 | Phase 5 | Pending |
 | CIRC-02 | Phase 5 | Pending |
 | CIRC-03 | Phase 5 | Pending |
