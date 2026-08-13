@@ -12,12 +12,18 @@ from pathlib import Path
 
 
 SOURCE = Path("src/PROSOCHE-Dumb.xml")
-OPEN_ANCHOR = "OPEN branch anchor."
-CLOSE_ANCHOR = "CLOSE branch anchor."
+DISPATCH_MARKER = "--- PHASE 5 PRIMITIVE DISPATCH ---"
+RESTORE_MARKER = "--- PHASE 5 RESTORE MANAGED SETTINGS ---"
+MANUAL_MARKER = "--- PHASE 5 MANUAL EMERGENCY RESTORE ---"
+LIVE_ICE_MARKER = "--- PHASE 5 LIVE ICE REDIRECT ---"
+EXPIRY_MARKER = "--- PHASE 5 ICE EXPIRY ---"
+UUID_COUNTER = 0
 
 
 def uid() -> str:
-    return str(uuid.uuid4()).upper()
+    global UUID_COUNTER
+    UUID_COUNTER += 1
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, f"prosoche-state-engine/{UUID_COUNTER}")).upper()
 
 
 def action(identifier: str, **parameters):
@@ -145,6 +151,213 @@ def save_state(source_name="State"):
         action("is.workflow.actions.documentpicker.save", WFInput=output(named_id, "Renamed Item"),
                WFAskWhereToSave=False, WFFileDestinationPath="PROSOCHE/state.json", WFSaveFileOverwrite=True),
     ]
+
+
+def alert(title: str, message):
+    return action("is.workflow.actions.alert", WFAlertActionTitle=title,
+                  WFAlertActionMessage=message)
+
+
+def menu(group: str, mode: int, *, prompt=None, items=None, title=None):
+    params = {"GroupingIdentifier": group, "WFControlFlowMode": mode}
+    if prompt is not None:
+        params["WFMenuPrompt"] = prompt
+    if items is not None:
+        params["WFMenuItems"] = items
+    if title is not None:
+        params["WFMenuItemTitle"] = title
+    return action("is.workflow.actions.choosefrommenu", **params)
+
+
+def device_detail(detail: str, name: str):
+    detail_id = uid()
+    return [action("is.workflow.actions.getdevicedetails", UUID=detail_id,
+                   WFDeviceDetail=detail),
+            set_var(name, output(detail_id, "Device Details"))]
+
+
+def set_brightness(source):
+    return action("is.workflow.actions.setbrightness", WFBrightness=source,
+                  ShowWhenRun=False)
+
+
+def set_media_volume(source):
+    return action("is.workflow.actions.setvolume", WFVolume=source,
+                  WFVolumeSetting="Media", ShowWhenRun=False)
+
+
+def clear_snapshot(key: str, dictionary_name="State"):
+    """Clear only a snapshot we have just restored from the full State."""
+    return set_value(f"settings_snapshot.{key}", text_token([("null", None)]), dictionary_name)
+
+
+def restore_managed_settings(dictionary_name="State"):
+    """Restore only captured values; never guess an original setting."""
+    a = [comment("""Restore managed settings only when a captured original exists:
+- Brightness uses the saved original value, never a new target.
+- Volume is always Media volume and never exceeds its saved original.
+- A restored snapshot key is cleared while all unrelated State remains intact.""")]
+    a += read_value("settings_snapshot.brightness", variable(dictionary_name), "Restore Brightness Snapshot")
+    snapshot_g, snapshot_if = if_block("Restore Brightness Snapshot", 100)
+    a += [snapshot_if] + read_value("settings_snapshot.brightness.original_value", variable(dictionary_name), "Restore Brightness")
+    bright_g, bright_if = if_block("Restore Brightness", 100)
+    a += [bright_if, set_brightness(variable("Restore Brightness")), clear_snapshot("brightness", dictionary_name),
+          otherwise(bright_g), action("is.workflow.actions.nothing"), end_if(bright_g), otherwise(snapshot_g),
+          action("is.workflow.actions.nothing"), end_if(snapshot_g)]
+    a += read_value("settings_snapshot.volume", variable(dictionary_name), "Restore Volume Snapshot")
+    snapshot_g, snapshot_if = if_block("Restore Volume Snapshot", 100)
+    a += [snapshot_if] + read_value("settings_snapshot.volume.original_value", variable(dictionary_name), "Restore Volume")
+    volume_g, volume_if = if_block("Restore Volume", 100)
+    a += [volume_if, set_media_volume(variable("Restore Volume")), clear_snapshot("volume", dictionary_name),
+          otherwise(volume_g), action("is.workflow.actions.nothing"), end_if(volume_g), otherwise(snapshot_g),
+          action("is.workflow.actions.nothing"), end_if(snapshot_g)]
+    return a
+
+
+def knock():
+    return [comment("""Knock is a brief factual interruption:
+- Circle, Pressure, and Heat come from this OPEN run.
+- It does not infer intent or alter State."""),
+            alert("PROSOCHĒ", text_token([("Circle ", "Circle Next"),
+                                           (" · pressure ", "Pressure Next"),
+                                           (" · heat ", "Heat Final")] ))]
+
+
+def ash():
+    return [comment("""Ash is the validator-clean visual-pause fallback:
+- It changes no accessibility setting.
+- Color Filters is deliberately excluded because the iOS action is not validator-supported."""),
+            alert("Ash", "Pause. Put the phone down for one breath.")]
+
+
+def confession():
+    ask_id = uid()
+    group = uid()
+    a = [comment("""Confession accepts any wording, including a blank intention:
+- Ask for Input collects free text without judging it.
+- Choose from Menu offers 2, 5, 10, 15, or a custom boundary."""),
+         action("is.workflow.actions.ask", UUID=ask_id,
+                WFAskActionPrompt="What are you reaching for? (optional)", WFInputType="Text"),
+         set_var("Confession Intention", output(ask_id, "Provided Input")),
+         comment("Choose a boundary after accepting the intention:\n- Menu options preserve the user's free-text answer.\n- Custom asks for a numeric number of minutes."),
+         menu(group, 0, prompt="Choose a boundary", items=["2 minutes", "5 minutes", "10 minutes", "15 minutes", "Custom"])]
+    for label, minutes in (("2 minutes", 2), ("5 minutes", 5), ("10 minutes", 10), ("15 minutes", 15)):
+        a += [menu(group, 1, title=label)] + number(minutes, "Declared Boundary Minutes")
+    custom_id = uid()
+    a += [menu(group, 1, title="Custom"),
+          action("is.workflow.actions.ask", UUID=custom_id,
+                 WFAskActionPrompt="How many minutes?", WFInputType="Number"),
+          set_var("Declared Boundary Minutes", output(custom_id, "Provided Input")),
+          menu(group, 2)]
+    return a
+
+
+def dimming():
+    a = [comment("""Dimming is reversible or message-only:
+- Capture Current Brightness once when no snapshot exists.
+- Do not brighten an already dim screen and never set zero.
+- Keep an existing unrestored snapshot unchanged.""")]
+    a += read_value("settings_snapshot.brightness", variable("State"), "Brightness Snapshot")
+    snapshot_g, snapshot_if = if_block("Brightness Snapshot", 100)
+    a += [snapshot_if, action("is.workflow.actions.nothing"), otherwise(snapshot_g)]
+    a += device_detail("Current Brightness", "Captured Brightness")
+    capture_g, capture_if = if_block("Captured Brightness", 2, number=0)
+    a += [capture_if, set_value("settings_snapshot.brightness.original_value", variable("Captured Brightness")),
+          set_value("settings_snapshot.brightness.changed_at", variable("Now Epoch")),
+          set_value("settings_snapshot.brightness.changed_by_session_id", variable("Session ID"))]
+    a += config("safety.dim_target", "Dim Target")
+    already_dim_g, already_dim_if = if_block("Captured Brightness", 1, number=variable("Dim Target"))
+    a += [already_dim_if, action("is.workflow.actions.nothing"), otherwise(already_dim_g),
+          set_brightness(variable("Dim Target")), end_if(already_dim_g), otherwise(capture_g),
+          alert("Dimming", "Brightness could not be captured, so nothing was changed."), end_if(capture_g),
+          end_if(snapshot_g)]
+    return a
+
+
+def silence():
+    a = [comment("""Silence is reversible or message-only:
+- Capture Current Volume once when no snapshot exists.
+- Use Media volume only and never increase it.
+- Keep an existing unrestored snapshot unchanged.""")]
+    a += read_value("settings_snapshot.volume", variable("State"), "Volume Snapshot")
+    snapshot_g, snapshot_if = if_block("Volume Snapshot", 100)
+    a += [snapshot_if, action("is.workflow.actions.nothing"), otherwise(snapshot_g)]
+    a += device_detail("Current Volume", "Captured Volume")
+    capture_g, capture_if = if_block("Captured Volume", 2, number=0)
+    a += [capture_if, set_value("settings_snapshot.volume.original_value", variable("Captured Volume")),
+          set_value("settings_snapshot.volume.changed_at", variable("Now Epoch")),
+          set_value("settings_snapshot.volume.changed_by_session_id", variable("Session ID"))]
+    target = number(0.10, "Silence Target")
+    a += target
+    quiet_g, quiet_if = if_block("Captured Volume", 1, number=variable("Silence Target"))
+    a += [quiet_if, action("is.workflow.actions.nothing"), otherwise(quiet_g),
+          set_media_volume(variable("Silence Target")), end_if(quiet_g), otherwise(capture_g),
+          alert("Silence", "Volume could not be captured, so nothing was changed."), end_if(capture_g),
+          end_if(snapshot_g)]
+    return a
+
+
+def exile():
+    return [comment("""Exile is immediate and deterministic:
+- Return to Home Screen does not ask a permission question.
+- Phase 6 may replace this route with learned exits."""),
+            action("is.workflow.actions.returntohomescreen")]
+
+
+def mirror_and_voice():
+    a = [comment("""Mirror states only guarded recorded facts:
+- Circle, Pressure, and Heat are prepared by this OPEN run.
+- Voice uses this same text at most once when it is enabled.""")]
+    mirror_id = uid()
+    a += [action("is.workflow.actions.gettext", UUID=mirror_id,
+                 WFTextActionText=text_token([("Circle ", "Circle Next"),
+                                               (" follows recorded pressure ", "Pressure Next"),
+                                               (" and heat ", "Heat Final")])),
+          set_var("Mirror Text", output(mirror_id, "Text")),
+          alert("Mirror", variable("Mirror Text"))]
+    a += read_value("voice_enabled", variable("State"), "Voice Enabled")
+    voice_g, voice_if = if_block("Voice Enabled", 2, number=0)
+    spoken_g, spoken_if = if_block("Spoken This Run", 101)
+    a += [voice_if, spoken_if, action("is.workflow.actions.speaktext", WFInput=variable("Mirror Text"))]
+    a += number(1, "Spoken This Run")
+    a += [otherwise(spoken_g), action("is.workflow.actions.nothing"), end_if(spoken_g),
+          otherwise(voice_g), action("is.workflow.actions.nothing"), end_if(voice_g)]
+    return a
+
+
+def ice_start():
+    a = [comment("""Ice is profile-aware and deterministic:
+- Read the active profile duration from Config.
+- Record one cooldown deadline and route to Home Screen.
+- Model output is not involved.""")]
+    a += read_value("profile", variable("State"), "Ice Profile")
+    a += config(text_token([("cooldown_seconds.", "Ice Profile")]), "Ice Seconds")
+    a += math("Now Epoch", variable("Ice Seconds"), "Ice Until")
+    a += [set_value("cooldown_until", variable("Ice Until")), exile()[-1]]
+    return a
+
+
+def primitive_dispatch():
+    a = [comment(DISPATCH_MARKER + "\n\n- Select exactly one configured sequence entry for Circle.\n- Combined entries call only their named primitives.\n- Heat, Gravity, Pressure, and Circle are already computed and remain untouched.")]
+    a += read_value("sequence", variable("State"), "Sequence") + read_value("circle", variable("State"), "Dispatch Circle")
+    entry_id, entry_text_id = uid(), uid()
+    a += [action("is.workflow.actions.getvalueforkey", UUID=entry_id,
+                 WFDictionaryKey=text_token([("sequences.", "Sequence"), (".", None), ("", "Dispatch Circle")]),
+                 WFInput=variable("Config")),
+          action("is.workflow.actions.gettext", UUID=entry_text_id,
+                 WFTextActionText=output(entry_id, "Dictionary Value")),
+          set_var("Selected Primitive", output(entry_text_id, "Text"))]
+    for name, implementation in (("Knock", knock), ("Ash", ash), ("Silence", silence),
+                                 ("Confession", confession), ("Dimming", dimming), ("Exile", exile),
+                                 ("Mirror", mirror_and_voice), ("Voice", mirror_and_voice), ("Ice", ice_start)):
+        # Mirror is rendered once for a combined Silence+Mirror entry; Voice is a separate sequence name.
+        if name == "Voice":
+            continue
+        group, check = if_block("Selected Primitive", 99, string=name)
+        a += [comment(f"Dispatch {name} only when the selected Config entry names it:\n- Input uses Selected Primitive from the sequence lookup.\n- The otherwise path leaves State unchanged."), check]
+        a += implementation() + [otherwise(group), action("is.workflow.actions.nothing"), end_if(group)]
+    a += [comment("--- PHASE 5 PRIMITIVE DISPATCH END ---")]
+    return a
 
 
 def config(key: str, name: str):
@@ -352,37 +565,142 @@ def close_pipeline():
     return a
 
 
-def replace_anchor(actions, prefix: str, replacement):
-    for index, candidate in enumerate(actions[:-1]):
-        parameters = candidate.get("WFWorkflowActionParameters", {})
-        if candidate.get("WFWorkflowActionIdentifier") == "is.workflow.actions.comment" and parameters.get("WFCommentActionText", "").startswith(prefix):
-            following = actions[index + 1]
-            if following.get("WFWorkflowActionIdentifier") != "is.workflow.actions.nothing":
-                raise SystemExit(f"{prefix} is not followed by its Nothing anchor")
-            actions[index:index + 2] = replacement
+def comment_index(actions, prefix: str):
+    for index, candidate in enumerate(actions):
+        if (candidate.get("WFWorkflowActionIdentifier") == "is.workflow.actions.comment"
+                and candidate.get("WFWorkflowActionParameters", {}).get("WFCommentActionText", "").startswith(prefix)):
+            return index
+    raise SystemExit(f"semantic marker not found: {prefix}")
+
+
+def replace_marker_block(actions, start: str, end: str, replacement):
+    """Replace a named generated region without depending on its action number."""
+    begin = comment_index(actions, start)
+    try:
+        finish = comment_index(actions[begin + 1:], end) + begin + 1
+    except SystemExit:
+        # The Phase 3/4 hooks are a single comment before their first expansion.
+        finish = begin
+    actions[begin:finish + 1] = replacement
+
+
+def insert_or_replace_after(actions, anchor: str, start: str, end: str, replacement):
+    """Place a named block beside an existing semantic action, never an index."""
+    try:
+        replace_marker_block(actions, start, end, replacement)
+        return
+    except SystemExit:
+        pass
+    at = comment_index(actions, anchor)
+    actions[at + 1:at + 1] = replacement
+
+
+def insert_or_replace_in_otherwise(actions, anchor: str, start: str, end: str, replacement):
+    """Put expiry in the named cooldown conditional's Otherwise path."""
+    try:
+        replace_marker_block(actions, start, end, replacement)
+        return
+    except SystemExit:
+        pass
+    at = comment_index(actions, anchor)
+    start_action = next((candidate for candidate in actions[at + 1:]
+                         if candidate.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+                         and candidate.get("WFWorkflowActionParameters", {}).get("WFControlFlowMode") == 0), None)
+    if not start_action:
+        raise SystemExit("live cooldown conditional not found after semantic marker")
+    group = start_action["WFWorkflowActionParameters"]["GroupingIdentifier"]
+    for index, candidate in enumerate(actions[at + 1:], start=at + 1):
+        params = candidate.get("WFWorkflowActionParameters", {})
+        if (candidate.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+                and params.get("GroupingIdentifier") == group and params.get("WFControlFlowMode") == 1):
+            actions[index + 1:index + 1] = replacement
             return
-    raise SystemExit(f"semantic anchor not found: {prefix}")
+    raise SystemExit("live cooldown Otherwise path not found")
+
+
+def live_ice_redirect():
+    group = uid()
+    a = [comment(LIVE_ICE_MARKER + "\n\n- A live cooldown routes away before OPEN arithmetic.\n- Emergency Restore is available even during Ice.\n- This branch uses the existing single Save File below."),
+         menu(group, 0, prompt="Ice is active", items=["Return Home", "Emergency Restore"]),
+         menu(group, 1, title="Return Home"), action("is.workflow.actions.returntohomescreen"),
+         menu(group, 1, title="Emergency Restore")]
+    a += restore_managed_settings("State")
+    a += [set_value("cooldown_until", text_token([("null", None)])),
+          set_value("active_session", text_token([("null", None)])),
+          menu(group, 2), comment("--- PHASE 5 LIVE ICE REDIRECT END ---")]
+    return a
+
+
+def ice_expiry():
+    a = [comment(EXPIRY_MARKER + "\n\n- A past cooldown restores captured settings before normal OPEN work.\n- Clear cooldown only after restoration.\n- Apply the configured Heat relief and clamp it." )]
+    a += restore_managed_settings("State")
+    a += [set_value("cooldown_until", text_token([("null", None)]))]
+    a += config("heat.ice_expiry_relief", "Ice Expiry Relief") + config("heat.floor", "Heat Floor")
+    a += read_value("heat", variable("State"), "Heat Before Ice Relief")
+    a += math("Heat Before Ice Relief", variable("Ice Expiry Relief"), "Heat After Ice Relief")
+    floor_g, floor_if = if_block("Heat After Ice Relief", 0, number=variable("Heat Floor"))
+    a += [floor_if, set_value("heat", variable("Heat Floor")), otherwise(floor_g),
+          set_value("heat", variable("Heat After Ice Relief")), end_if(floor_g),
+          comment("--- PHASE 5 ICE EXPIRY END ---")]
+    return a
+
+
+def manual_emergency_restore():
+    group = uid()
+    a = [comment(MANUAL_MARKER + "\n\n- Manual control offers an independent Emergency Restore.\n- It roots every mutation in the full loaded State.\n- The branch saves exactly once before the Control Room is shown."),
+         menu(group, 0, prompt="PROSOCHĒ", items=["Open Control Room", "Emergency Restore"]),
+         menu(group, 1, title="Open Control Room"), action("is.workflow.actions.nothing"),
+         menu(group, 1, title="Emergency Restore")]
+    a += restore_managed_settings("State")
+    a += [set_value("cooldown_until", text_token([("null", None)])),
+          set_value("active_session", text_token([("null", None)]))]
+    a += save_state()
+    a += [menu(group, 2), comment("--- PHASE 5 MANUAL EMERGENCY RESTORE END ---")]
+    return a
+
+
+def normalize_setters(actions):
+    """Set Dictionary Value returns a full dictionary; rebind it exactly once."""
+    normalized, index = [], 0
+    while index < len(actions):
+        candidate = actions[index]
+        normalized.append(candidate)
+        params = candidate.get("WFWorkflowActionParameters", {})
+        source = params.get("WFDictionary", {}).get("Value", {})
+        target = source.get("VariableName")
+        if candidate.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setvalueforkey" and target:
+            following = actions[index + 1] if index + 1 < len(actions) else None
+            follows_setter = (following and following.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setvariable"
+                               and following.get("WFWorkflowActionParameters", {}).get("WFVariableName") == target
+                               and following.get("WFWorkflowActionParameters", {}).get("WFInput", {}).get("Value", {}).get("OutputUUID") == params.get("UUID"))
+            normalized.append(set_var(target, output(params["UUID"], "Dictionary")))
+            if follows_setter:
+                index += 1
+        index += 1
+    actions[:] = normalized
 
 
 def main():
+    global UUID_COUNTER
+    UUID_COUNTER = 0
     data = plistlib.loads(SOURCE.read_bytes())  # exactly one parse
     actions = data["WFWorkflowActions"]
     pinned = plistlib.dumps(actions[:5], fmt=plistlib.FMT_XML)
-    replace_anchor(actions, OPEN_ANCHOR, open_pipeline())
-    replace_anchor(actions, CLOSE_ANCHOR, close_pipeline())
-    # Set Dictionary Value returns a new whole dictionary.  Rebind that output
-    # immediately so each later setter starts from the full, latest State, not a
-    # stale action index or a partial dictionary.
-    index = 0
-    while index < len(actions):
-        candidate = actions[index]
-        parameters = candidate.get("WFWorkflowActionParameters", {})
-        source = parameters.get("WFDictionary", {}).get("Value", {})
-        target = source.get("VariableName")
-        if candidate.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setvalueforkey" and target:
-            actions.insert(index + 1, set_var(target, output(parameters["UUID"], "Dictionary")))
-            index += 1
-        index += 1
+    # Phase 3/4 already expanded their original anchors. Phase 5 owns named
+    # markers inside that complete graph, so every rerun replaces whole sections
+    # deterministically instead of relying on mutable numeric action offsets.
+    replace_marker_block(actions, DISPATCH_MARKER, "--- PHASE 5 PRIMITIVE DISPATCH END", primitive_dispatch())
+    replace_marker_block(actions, RESTORE_MARKER, "--- PHASE 5 RESTORE MANAGED SETTINGS END",
+                         [comment(RESTORE_MARKER + "\n\n- Only the matching CLOSE owner restores captured settings.\n- A superseded CLOSE reaches no restore or Save File action."),
+                          *restore_managed_settings("Reloaded State"),
+                          comment("--- PHASE 5 RESTORE MANAGED SETTINGS END ---")])
+    insert_or_replace_after(actions, "Short-circuit a live cooldown", LIVE_ICE_MARKER,
+                            "--- PHASE 5 LIVE ICE REDIRECT END ---", live_ice_redirect())
+    insert_or_replace_in_otherwise(actions, "Short-circuit a live cooldown", EXPIRY_MARKER,
+                                   "--- PHASE 5 ICE EXPIRY END ---", ice_expiry())
+    insert_or_replace_after(actions, "--- CONTROL ROOM: confirm", MANUAL_MARKER,
+                            "--- PHASE 5 MANUAL EMERGENCY RESTORE END ---", manual_emergency_restore())
+    normalize_setters(actions)
     # The skill requires a repair-oriented, bulleted Comment immediately before
     # every control-flow start.  Make this invariant structural, not index-based.
     index = 0

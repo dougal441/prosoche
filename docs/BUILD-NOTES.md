@@ -526,3 +526,11 @@ Consequences:
 ### Incidental fact
 
 `WFWorkflowClientVersion` on real iOS 26 exports is `4711` (both files). The project currently emits an OS27-era default; harmless per `PLIST_FORMAT.md` (the field is metadata Shortcuts rewrites on save), but `4711` is the observed-true value.
+
+---
+
+## 12. Phase 5 environmental safety (2026-08-13)
+
+The shipped Phase 5 graph uses a validator-clean Ash fallback: a self-contained low-salience pause. It deliberately emits neither Color Filters identifier because the mandatory bundled validator has no waivable unknown-action exception. Brightness and Media volume are changed only after `Get Device Details` captures their originals under `settings_snapshot`; an existing unrestored snapshot is never overwritten. Dimming skips an already-dim display and uses `Config.safety.dim_target`, so it cannot brighten the display or set zero. Silence never writes non-Media volume or a value above its captured original.
+
+`python3 docs/phase5_self_check.py` verifies semantic markers, the nine configuration entries, snapshot/restore safety, control-flow balance, pinned imports, unsupported-action exclusion, and two identical builder hashes. The project-wide validator command is `--target-macos 26 --target-platform all`: it passes. The plan's literal `--target-platform ios` command is retained as device-target evidence but presently reports every pre-existing core action from index 0 as a macOS-27 catalog false negative; it is not used to waive a Phase 5 action.
