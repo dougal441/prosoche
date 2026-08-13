@@ -288,6 +288,7 @@ def persist_contract():
     owns_group, owns = if_block("Contract Owner ID", 4, string="captured-session-placeholder")
     owns["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
     owns["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Contract Owner ID")}
+    owns["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Session ID")
     a += [owns, set_value("active_session.intention", variable("Confession Intention"), "Reloaded State"),
           set_value("active_session.declared_duration_seconds", variable("Declared Duration Seconds"), "Reloaded State")]
     a += save_state("Reloaded State") + [otherwise(owns_group), action("is.workflow.actions.nothing"), end_if(owns_group),
@@ -381,7 +382,7 @@ def ice_start():
 
 
 def primitive_dispatch():
-    a = [comment("--- PHASE 6 PRIMITIVE DISPATCH ---\n\n- Select exactly one configured sequence entry for Circle after Leaving is offered.\n- Combined entries call only their named primitives.")]
+    a = [comment(DISPATCH_MARKER + "\n\n- Select exactly one configured sequence entry for Circle after Leaving is offered.\n- Combined entries call only their named primitives.")]
     a += read_value("sequence", variable("State"), "Sequence") + read_value("circle", variable("State"), "Dispatch Circle")
     entry_id, entry_text_id = uid(), uid()
     a += [action("is.workflow.actions.getvalueforkey", UUID=entry_id,
@@ -399,7 +400,7 @@ def primitive_dispatch():
         group, check = if_block("Selected Primitive", 99, string=name)
         a += [comment(f"Dispatch {name} only when the selected Config entry names it:\n- Input uses Selected Primitive from the sequence lookup.\n- The otherwise path leaves State unchanged."), check]
         a += implementation() + [otherwise(group), action("is.workflow.actions.nothing"), end_if(group)]
-    a += [comment("--- PHASE 6 PRIMITIVE DISPATCH END ---")]
+    a += [comment("--- PHASE 5 PRIMITIVE DISPATCH END ---")]
     return a
 
 
@@ -535,7 +536,7 @@ def record_exit_and_route(choice_name: str):
     active_group, active = if_block("Exit Active Session", 100)
     a += [active] + read_value("active_session.id", variable("Reloaded State"), "Exit Owner ID")
     owner_group, owner = if_block("Exit Owner ID", 4, string="captured-session-placeholder")
-    owner["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    owner["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Session ID")
     owner["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exit Owner ID")}
     a += read_value("last_app", variable("Reloaded State"), "Triggering App")
     event_text = text_token([('{"type":"', choice_name), ('","timestamp":', "Now Epoch"), (',"app":"', "Triggering App"), ('","circle":', "Circle Next"), (',"heat":', "Heat Final"), ('}', None)])
@@ -569,6 +570,33 @@ def universal_leaving():
     return a
 
 
+def complete_pending_exit():
+    """The one guarded genuine OPEN that follows an exit records its time away once."""
+    a = [comment("--- PHASE 6 PENDING EXIT OUTCOME ---\n\n- This runs only after cooldown and duplicate OPEN guards.\n- A pending exit records one elapsed sample, then is cleared before the new session begins.")]
+    a += read_value("pending_exit", variable("State"), "Pending Exit")
+    pending_group, pending = if_block("Pending Exit", 100)
+    a += [pending] + read_value("pending_exit.type", variable("State"), "Pending Exit Type") + read_value("pending_exit.timestamp", variable("State"), "Pending Exit Timestamp")
+    a += elapsed("Now Date", "Pending Exit Timestamp", "Return Seconds")
+    a += read_value(text_token([("exit_stats.", "Pending Exit Type"), (".samples", None)]), variable("State"), "Exit Samples")
+    a += [action("is.workflow.actions.appendvariable", WFInput=variable("Return Seconds"), WFVariableName="Exit Samples Next")]
+    cap_loop = uid()
+    a += [comment("Bound outcome samples:\n- Retain the just-recorded return duration.\n- Keep at most nineteen prior samples so the list never grows without bound."),
+          action("is.workflow.actions.repeat.each", GroupingIdentifier=cap_loop, WFControlFlowMode=0, WFInput=variable("Exit Samples"))]
+    cap_group, cap = if_block("Repeat Index", 0, number=20)
+    a += [cap, action("is.workflow.actions.appendvariable", WFInput=variable("Repeat Item"), WFVariableName="Exit Samples Next"), otherwise(cap_group), action("is.workflow.actions.nothing"), end_if(cap_group),
+          action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=cap_loop, WFControlFlowMode=2)]
+    a += read_value(text_token([("exit_stats.", "Pending Exit Type"), (".count", None)]), variable("State"), "Exit Count")
+    a += read_value(text_token([("exit_stats.", "Pending Exit Type"), (".sum_return_seconds", None)]), variable("State"), "Exit Sum")
+    a += math("Exit Count", 1, "Exit Count Next", "+") + math("Exit Sum", variable("Return Seconds"), "Exit Sum Next", "+")
+    a += [set_value(text_token([("exit_stats.", "Pending Exit Type"), (".samples", None)]), variable("Exit Samples Next")),
+          set_value(text_token([("exit_stats.", "Pending Exit Type"), (".count", None)]), variable("Exit Count Next")),
+          set_value(text_token([("exit_stats.", "Pending Exit Type"), (".sum_return_seconds", None)]), variable("Exit Sum Next")),
+          set_value("pending_exit", text_token([("null", None)])),
+          otherwise(pending_group), action("is.workflow.actions.nothing"), end_if(pending_group),
+          comment("--- PHASE 6 PENDING EXIT OUTCOME END ---")]
+    return a
+
+
 def config(key: str, name: str):
     return read_value(key, variable("Config"), name)
 
@@ -588,6 +616,7 @@ def open_pipeline():
     a += config("heat.decay_interval_seconds", "Decay Interval") + config("heat.decay_amount", "Decay Amount")
     a += config("heat.reopen_under_120s_bonus", "Reopen 120 Bonus") + config("heat.reopen_under_600s_bonus", "Reopen 600 Bonus")
     a += config("heat.reopen_bonus_mode", "Reopen Bonus Mode") + config("heat.overrun_penalty", "Overrun Penalty")
+    a += config("heat.overrun_ratio", "Overrun Ratio") + config("heat.overrun_min_seconds", "Overrun Minimum")
     a += config("heat.contract_respected_relief", "Respect Relief") + config("gravity.opens_per_point", "Opens Per Gravity") + config("gravity.cap", "Gravity Cap")
     # Behavioural day rollover is the first state update (only opens_today resets).
     g, start = if_block("Stored Day", 5, string=None)
@@ -652,9 +681,10 @@ def open_pipeline():
     session_exists, session_exists_if = if_block("Recent Sessions", 100)
     first_session = uid()
     a += [session_exists_if, action("is.workflow.actions.getitemfromlist", UUID=first_session, WFItemSpecifier="First Item", WFInput=variable("Recent Sessions")), set_var("Previous Session", output(first_session, "Item from List"))]
-    a += read_value("overrun_seconds", variable("Previous Session"), "Previous Overrun")
-    overrun_g, overrun_if = if_block("Previous Overrun", 2, number=120)
-    a += [overrun_if] + math("Heat After Reopen", variable("Overrun Penalty"), "Heat After Contract") + [otherwise(overrun_g), set_var("Heat After Contract", variable("Heat After Reopen")), end_if(overrun_g), otherwise(session_exists), set_var("Heat After Contract", variable("Heat After Reopen")), end_if(session_exists)]
+    a += read_value("respected", variable("Previous Session"), "Previous Respected") + read_value("overrun_seconds", variable("Previous Session"), "Previous Overrun")
+    respected_g, respected_if = if_block("Previous Respected", 4, string="true")
+    overrun_g, overrun_if = if_block("Previous Overrun", 2, number=variable("Overrun Minimum"))
+    a += [respected_if] + math("Heat After Reopen", variable("Respect Relief"), "Heat After Contract") + [otherwise(respected_g), overrun_if] + math("Heat After Reopen", variable("Overrun Penalty"), "Heat After Contract") + [otherwise(overrun_g), set_var("Heat After Contract", variable("Heat After Reopen")), end_if(overrun_g), end_if(respected_g), otherwise(session_exists), set_var("Heat After Contract", variable("Heat After Reopen")), end_if(session_exists)]
     # Clamp lower then upper, deliberately the last Heat mutations.
     floor_g, floor_if = if_block("Heat After Contract", 0, number=variable("Heat Floor"))
     a += [floor_if, set_value("heat", variable("Heat Floor")), otherwise(floor_g), set_value("heat", variable("Heat After Contract")), end_if(floor_g)]
@@ -700,8 +730,8 @@ def open_pipeline():
     hit_g, hit_if = if_block("Pressure Next", 3, number=variable("Threshold"))
     a += [hit_if, set_var("Circle Next", variable("Repeat Index")), otherwise(hit_g), action("is.workflow.actions.nothing"), end_if(hit_g),
           action("is.workflow.actions.repeat.count", UUID=uid(), GroupingIdentifier=scan, WFControlFlowMode=2)]
-    a += [set_value("circle", variable("Circle Next")), set_value("behavioural_day", variable("Behavioural Day")),
-          set_value("pending_exit", text_token([("null", None)]))]
+    a += [set_value("circle", variable("Circle Next")), set_value("behavioural_day", variable("Behavioural Day"))]
+    a += complete_pending_exit()
     # State is persisted before any menu/Ask action. The wrapper owns all later interaction.
     a += save_state() + universal_leaving() + [end_if(genuine_group), end_if(cooldown_group)]
     return a
@@ -739,13 +769,22 @@ def close_pipeline():
     # Owner branch operates only on Reloaded State, preserving unrelated fields from the fresh dictionary.
     a += math("Now Epoch", variable("Captured Start"), "Session Duration", "-")
     a += read_value("active_session.declared_duration_seconds", variable("Reloaded State"), "Declared Duration")
-    a += [comment("""Compare the measured duration with any declared contract:
+    a += [comment(CONTRACT_MARKER + """
+
+- Compare the measured duration with any declared contract:
 - A zero or absent declared duration has no contract penalty.
 - A genuine overrun is recorded in the session object for the next OPEN.
 - The configured penalty is applied by OPEN, preserving its ordered Heat pipeline.""")]
     overrun_g, overrun_if = if_block("Declared Duration", 2, number=0)
     a += [overrun_if] + math("Session Duration", variable("Declared Duration"), "Overrun Seconds", "-") + [otherwise(overrun_g)] + number(0, "Overrun Seconds") + [end_if(overrun_g)]
-    record_text = text_token([('{"id":"', "Captured Session ID"), ('","started_at":', "Captured Start"), (',"ended_at":', "Now Epoch"), (',"duration_seconds":', "Session Duration"), (',"overrun_seconds":', "Overrun Seconds"), ('}', None)])
+    respected_g, respected_if = if_block("Overrun Seconds", 1, number=0)
+    respected_true, respected_false = uid(), uid()
+    a += [comment("Contract outcome:\n- A non-positive overrun is respected.\n- No declared duration remains null and never shows an overrun result."), respected_if,
+          action("is.workflow.actions.gettext", UUID=respected_true, WFTextActionText="true"),
+          set_var("Contract Respected", output(respected_true, "Text")),
+          otherwise(respected_g), action("is.workflow.actions.gettext", UUID=respected_false, WFTextActionText="false"),
+          set_var("Contract Respected", output(respected_false, "Text")), end_if(respected_g)]
+    record_text = text_token([('{"id":"', "Captured Session ID"), ('","started_at":', "Captured Start"), (',"ended_at":', "Now Epoch"), (',"duration_seconds":', "Session Duration"), (',"declared_duration_seconds":', "Declared Duration"), (',"overrun_seconds":', "Overrun Seconds"), (',"respected":"', "Contract Respected"), ('"}', None)])
     record_json, record_dict = uid(), uid()
     a += [action("is.workflow.actions.gettext", UUID=record_json, WFTextActionText=record_text),
           action("is.workflow.actions.detect.dictionary", UUID=record_dict, WFInput=output(record_json, "Text")),
@@ -765,6 +804,9 @@ def close_pipeline():
     a += [set_value("recent_sessions", variable("Recent Sessions Next"), "Reloaded State"),
           set_value("last_close_at", variable("Now Epoch"), "Reloaded State"),
           set_value("active_session", text_token([( "null", None)]), "Reloaded State")]
+    has_contract_g, has_contract = if_block("Declared Duration", 2, number=0)
+    a += [comment("Contract result display:\n- Only sessions with a declared boundary show contract feedback.\n- Sessions without one make no overrun claim."), has_contract,
+          alert("Contract", text_token([("Overrun seconds: ", "Overrun Seconds")])), otherwise(has_contract_g), action("is.workflow.actions.nothing"), end_if(has_contract_g)]
     a += [comment(RESTORE_MARKER + "\n\n- Only the matching CLOSE owner restores captured settings.\n- A superseded CLOSE reaches no restore or Save File action.")]
     a += restore_managed_settings("Reloaded State") + [comment("--- PHASE 5 RESTORE MANAGED SETTINGS END ---")]
     a += save_state("Reloaded State") + [otherwise(owns_g), action("is.workflow.actions.nothing"), end_if(owns_g), otherwise(reload_g), action("is.workflow.actions.nothing"), end_if(reload_g), otherwise(has_g), action("is.workflow.actions.nothing"), end_if(has_g)]
