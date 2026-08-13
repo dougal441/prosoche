@@ -105,12 +105,12 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 
 ### Control Room (ROOM)
 
-- [ ] **ROOM-01**: The Note opens with READ THIS FIRST explaining what PROSOCHĒ is and how to create both automations
-- [ ] **ROOM-02**: The Note gives exact steps for Automation A (App / selected apps / Is Opened / run automatically / Run Shortcut / pass input `OPEN`)
-- [ ] **ROOM-03**: The Note gives exact steps for Automation B (same apps / Is Closed / run automatically / Run Shortcut / pass input `CLOSE`)
-- [ ] **ROOM-04**: The Note states plainly that the Shortcut cannot install these automations itself and that PROSOCHĒ is bypassable
-- [ ] **ROOM-05**: The Note carries the safety warning not to target Phone, Maps, Wallet, authenticators, password managers, or other essential apps
-- [ ] **ROOM-06**: The Note contains the editable MY PHONE, ON PURPOSE proforma with all its prompts
+- [x] **ROOM-01**: The Note opens with READ THIS FIRST explaining what PROSOCHĒ is and how to create both automations
+- [x] **ROOM-02**: The Note gives exact steps for Automation A (App / selected apps / Is Opened / run automatically / Run Shortcut / pass input `OPEN`)
+- [x] **ROOM-03**: The Note gives exact steps for Automation B (same apps / Is Closed / run automatically / Run Shortcut / pass input `CLOSE`)
+- [x] **ROOM-04**: The Note states plainly that the Shortcut cannot install these automations itself and that PROSOCHĒ is bypassable
+- [x] **ROOM-05**: The Note carries the safety warning not to target Phone, Maps, Wallet, authenticators, password managers, or other essential apps
+- [x] **ROOM-06**: The Note contains the editable MY PHONE, ON PURPOSE proforma with all its prompts
 - [ ] **ROOM-07**: The Note shows current settings — fork, profile, sequence, voice, AI, enabled exits
 - [ ] **ROOM-08**: The Note shows a human-readable current-state snapshot refreshed on manual run
 - [ ] **ROOM-09**: The Attention Ledger records meaningful events only — Circle changes, contracts, redirects, rapid-return clusters, cool-downs, profile changes — not every internal calculation
@@ -235,12 +235,12 @@ Which phases cover which requirements. Populated during roadmap creation.
 | BOOT-08 | Phase 2 | Pending |
 | BOOT-09 | Phase 2 | Complete |
 | STATE-12 | Phase 2 | Complete |
-| ROOM-01 | Phase 2 | Pending |
-| ROOM-02 | Phase 2 | Pending |
-| ROOM-03 | Phase 2 | Pending |
-| ROOM-04 | Phase 2 | Pending |
-| ROOM-05 | Phase 2 | Pending |
-| ROOM-06 | Phase 2 | Pending |
+| ROOM-01 | Phase 2 | Complete |
+| ROOM-02 | Phase 2 | Complete |
+| ROOM-03 | Phase 2 | Complete |
+| ROOM-04 | Phase 2 | Complete |
+| ROOM-05 | Phase 2 | Complete |
+| ROOM-06 | Phase 2 | Complete |
 | STATE-01 | Phase 3 | Pending |
 | STATE-02 | Phase 3 | Pending |
 | STATE-03 | Phase 3 | Pending |

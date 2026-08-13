@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 2
 current_phase_name: Routing, Bootstrap & Control Room Onboarding
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-08-13T02:52:07.389Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-08-13T03:05:19.664Z"
 last_activity: 2026-08-13
 last_activity_desc: Completed 02-01 (walking skeleton — import questions through Control Room Note) — src/PROSOCHE-Dumb.xml created and validating
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 9
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 ## Current Position
 
 Phase: 2 of 8 (Routing, Bootstrap & Control Room Onboarding)
-Plan: 1 of 4 in current phase
-Status: Executing
+Plan: 2 of 4 in current phase
+Status: Ready to execute
 Last activity: 2026-08-13 — Completed 02-01 (walking skeleton — import questions through Control Room Note) — src/PROSOCHE-Dumb.xml created and validating
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 78%
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Progress: [███████░░░] 67%
 | Phase 01 P04 | 45min | 2 tasks | 2 files |
 | Phase 01 P05 | 45min | 3 tasks | 3 files |
 | Phase 02 P01 | 50min | 2 tasks | 2 files |
+| Phase 02 P02 | 10min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,10 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 2]: Create Note carries a defensive name parameter alongside markdownContents, reusing the evidenced key from its sibling Notes-create action, since the validator requires a title-shaped parameter on every Notes-create action
 - [Phase ?]: [Phase 2]: profile_snapshot.synced_at (as text) is the field seeded with Now Epoch at bootstrap; last_open_at/last_close_at stay null per PITFALLS B7 so Phase 3's first-run detection is not defeated
 - [Phase ?]: [Phase 2]: DEV-04 — validator invocation corrected to --target-platform all (not ios); the recorded ios invocation measured 118 spurious errors against a known-good file
+- [Phase ?]: Automation B written as its own full ten-step list (mirroring Automation A) rather than a delta paragraph, so the shortcut name PROSOCHĒ — Nine Circles — Dumb appears identically in both automation sections
+- [Phase ?]: New docs/BUILD-NOTES.md §9 records the canonical Dumb-fork signing name so Phase 7's signer agrees with what the Control Room Note tells the user to look for
+- [Phase ?]: BD-05's fallback trigger recorded as a new field inside the existing UA-01 entry, not a separate item, so the trigger sits next to the observation that would raise it
+- [Phase ?]: CURRENT STATE / ATTENTION LEDGER / VALUE-LIFE-RETURNED / SUPPORT-PROSOCHĒ left as honest first-run placeholders per canonical strategy §17 and Phase 7's ROOM-08, not embellished with invented content
 
 ### Pending Todos
 
@@ -108,6 +113,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-13T02:52:07.381Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-08-13T03:05:19.656Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
