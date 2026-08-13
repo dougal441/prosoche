@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 5
 current_phase_name: Nine Primitives & Environmental Safety
-status: complete
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-08-13T07:25:39.562Z"
+status: verifying
+stopped_at: Completed 06-03-PLAN.md
+last_updated: "2026-08-13T08:09:32.597Z"
 last_activity: 2026-08-13
-last_activity_desc: Completed merged Phase 3/4 deterministic OPEN/CLOSE state engine
+last_activity_desc: Completed Phase 5 primitive and restoration graph
 progress:
   total_phases: 8
-  completed_phases: 5
-  total_plans: 14
-  completed_plans: 14
+  completed_phases: 4
+  total_plans: 15
+  completed_plans: 15
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 Phase: 5 of 8 (Nine Primitives & Environmental Safety)
 Plan: 3 of 3 in current phase
-Status: Complete
+Status: Phase complete — ready for verification
 Last activity: 2026-08-13 — Completed Phase 5 primitive and restoration graph
 
-Progress: [██████░░░░] 63%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -70,6 +70,9 @@ Progress: [██████░░░░] 63%
 | Phase 05 P01 | 35min | 2 tasks | 3 files |
 | Phase 05 P02 | 20min | 3 tasks | 2 files |
 | Phase 05 P03 | 15min | 2 tasks | 5 files |
+| Phase 06-exits-exit-learning-contracts P01 | 25min | 2 tasks | 2 files |
+| Phase 06-exits-exit-learning-contracts P02 | 15min | 2 tasks | 2 files |
+| Phase 06-exits-exit-learning-contracts P03 | 20min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -106,6 +109,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Note-existence guard (Find Notes with condition code 99, never 4, per the documented Notes name-matching trap) recreates a deleted Control Room Note with its full original body, scoped to the MANUAL branch only for both cost and Notes-permission-prompt safety reasons
 - [Phase ?]: Phase 5 uses semantic plist markers plus deterministic UUID5 generation, so the full shortcut rebuild is idempotent without numeric action indices.
 - [Phase ?]: Ash remains a validator-clean non-environmental pause; Dimming and Silence act only after capturing a restorable original.
+- [Phase ?]: Leaving wraps primitive dispatch only after the initial session save.
+- [Phase ?]: Exit selection remains deterministic and Config-driven without model, random, or network actions.
 
 ### Pending Todos
 
@@ -125,6 +130,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-13T07:25:39.554Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-08-13T08:09:32.588Z
+Stopped at: Completed 06-03-PLAN.md
 Resume file: None

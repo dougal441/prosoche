@@ -76,32 +76,32 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 
 ### Contracts (CONT)
 
-- [ ] **CONT-01**: A free-text intention of any wording is accepted, including deliberate leisure such as "watch stupid videos"
-- [ ] **CONT-02**: A time boundary is selectable from presets or entered as a custom value
-- [ ] **CONT-03**: A kept contract is recorded as respected
-- [ ] **CONT-04**: An exceeded contract is recorded with its overrun magnitude
-- [ ] **CONT-05**: Recorded contract outcomes are available to the next OPEN's Heat calculation
-- [ ] **CONT-06**: A time-overrun message is never shown when no contract existed
+- [x] **CONT-01**: A free-text intention of any wording is accepted, including deliberate leisure such as "watch stupid videos"
+- [x] **CONT-02**: A time boundary is selectable from presets or entered as a custom value
+- [x] **CONT-03**: A kept contract is recorded as respected
+- [x] **CONT-04**: An exceeded contract is recorded with its overrun magnitude
+- [x] **CONT-05**: Recorded contract outcomes are available to the next OPEN's Heat calculation
+- [x] **CONT-06**: A time-overrun message is never shown when no contract existed
 
 ### Exits (EXIT)
 
-- [ ] **EXIT-01**: Capture routes to an idea-externalising target (notes, voice memo, or camera)
-- [ ] **EXIT-02**: Coordinate routes to a planning target (reminders, calendar, or task list)
-- [ ] **EXIT-03**: Create routes to a user-defined making target
-- [ ] **EXIT-04**: Connect routes to a direct human-contact tool without initiating contact on the user's behalf
-- [ ] **EXIT-05**: Consult asks what the user is trying to find and provides at least a direct query-shaped search route, with a menu covering web, maps, notes, reminders, and calendar
-- [ ] **EXIT-06**: Close returns the user off the phone — home or lock — and is treated as a first-class outcome, not a fallback
-- [ ] **EXIT-07**: Leaving is always available at every Circle; the user is never forced to complete an intervention to exit
-- [ ] **EXIT-08**: Exits the user has disabled are never selected
-- [ ] **EXIT-09**: Each exit use is recorded with its type, timestamp, triggering app, Circle, and Heat
+- [x] **EXIT-01**: Capture routes to an idea-externalising target (notes, voice memo, or camera)
+- [x] **EXIT-02**: Coordinate routes to a planning target (reminders, calendar, or task list)
+- [x] **EXIT-03**: Create routes to a user-defined making target
+- [x] **EXIT-04**: Connect routes to a direct human-contact tool without initiating contact on the user's behalf
+- [x] **EXIT-05**: Consult asks what the user is trying to find and provides at least a direct query-shaped search route, with a menu covering web, maps, notes, reminders, and calendar
+- [x] **EXIT-06**: Close returns the user off the phone — home or lock — and is treated as a first-class outcome, not a fallback
+- [x] **EXIT-07**: Leaving is always available at every Circle; the user is never forced to complete an intervention to exit
+- [x] **EXIT-08**: Exits the user has disabled are never selected
+- [x] **EXIT-09**: Each exit use is recorded with its type, timestamp, triggering app, Circle, and Heat
 
 ### Exit Learning (LEARN)
 
-- [ ] **LEARN-01**: Time until the next tracked-app OPEN after an exit is measured and recorded as that exit's outcome
-- [ ] **LEARN-02**: With few observations, exits rotate roughly evenly across the user's enabled exits
-- [ ] **LEARN-03**: With sufficient observations, exits associated with longer time away are preferred, with occasional exploration
-- [ ] **LEARN-04**: The exploration rate is a configuration value, not a hardcoded constant
-- [ ] **LEARN-05**: Exit selection is computed deterministically and never delegated to the model
+- [x] **LEARN-01**: Time until the next tracked-app OPEN after an exit is measured and recorded as that exit's outcome
+- [x] **LEARN-02**: With few observations, exits rotate roughly evenly across the user's enabled exits
+- [x] **LEARN-03**: With sufficient observations, exits associated with longer time away are preferred, with occasional exploration
+- [x] **LEARN-04**: The exploration rate is a configuration value, not a hardcoded constant
+- [x] **LEARN-05**: Exit selection is computed deterministically and never delegated to the model
 
 ### Control Room (ROOM)
 
@@ -279,26 +279,26 @@ Which phases cover which requirements. Populated during roadmap creation.
 | SAFE-04 | Phase 5 | Complete |
 | SAFE-05 | Phase 5 | Complete |
 | SAFE-06 | Phase 5 | Complete |
-| EXIT-01 | Phase 6 | Pending |
-| EXIT-02 | Phase 6 | Pending |
-| EXIT-03 | Phase 6 | Pending |
-| EXIT-04 | Phase 6 | Pending |
-| EXIT-05 | Phase 6 | Pending |
-| EXIT-06 | Phase 6 | Pending |
-| EXIT-07 | Phase 6 | Pending |
-| EXIT-08 | Phase 6 | Pending |
-| EXIT-09 | Phase 6 | Pending |
-| LEARN-01 | Phase 6 | Pending |
-| LEARN-02 | Phase 6 | Pending |
-| LEARN-03 | Phase 6 | Pending |
-| LEARN-04 | Phase 6 | Pending |
-| LEARN-05 | Phase 6 | Pending |
-| CONT-01 | Phase 6 | Pending |
-| CONT-02 | Phase 6 | Pending |
-| CONT-03 | Phase 6 | Pending |
-| CONT-04 | Phase 6 | Pending |
-| CONT-05 | Phase 6 | Pending |
-| CONT-06 | Phase 6 | Pending |
+| EXIT-01 | Phase 6 | Complete |
+| EXIT-02 | Phase 6 | Complete |
+| EXIT-03 | Phase 6 | Complete |
+| EXIT-04 | Phase 6 | Complete |
+| EXIT-05 | Phase 6 | Complete |
+| EXIT-06 | Phase 6 | Complete |
+| EXIT-07 | Phase 6 | Complete |
+| EXIT-08 | Phase 6 | Complete |
+| EXIT-09 | Phase 6 | Complete |
+| LEARN-01 | Phase 6 | Complete |
+| LEARN-02 | Phase 6 | Complete |
+| LEARN-03 | Phase 6 | Complete |
+| LEARN-04 | Phase 6 | Complete |
+| LEARN-05 | Phase 6 | Complete |
+| CONT-01 | Phase 6 | Complete |
+| CONT-02 | Phase 6 | Complete |
+| CONT-03 | Phase 6 | Complete |
+| CONT-04 | Phase 6 | Complete |
+| CONT-05 | Phase 6 | Complete |
+| CONT-06 | Phase 6 | Complete |
 | ROOM-07 | Phase 7 | Pending |
 | ROOM-08 | Phase 7 | Pending |
 | ROOM-09 | Phase 7 | Pending |

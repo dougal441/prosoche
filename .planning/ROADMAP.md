@@ -145,7 +145,11 @@ Plans:
   4. A free-text intention of any wording, including deliberate leisure such as "watch stupid videos," is accepted, paired with a time boundary selectable from presets or entered as a custom value.
   5. A kept contract is recorded as respected, an exceeded contract is recorded with its overrun magnitude, that recorded outcome is available to the next OPEN's Heat calculation, and a time-overrun message is never shown when no contract existed.
 
-**Plans**: TBD
+**Plans**: 3/3 plans executed
+
+- [x] 06-01-PLAN.md
+- [x] 06-02-PLAN.md
+- [x] 06-03-PLAN.md
 
 ### Phase 7: Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze
 
@@ -191,6 +195,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 3. Deterministic State Engine | 1/1 | Complete | 2026-08-13 |
 | 4. CLOSE Pipeline & Session Race Protocol | 1/1 | Complete | 2026-08-13 |
 | 5. Nine Primitives & Environmental Safety | 3/3 | Complete | 2026-08-13 |
-| 6. Exits, Exit Learning & Contracts | 0/TBD | Not started | - |
+| 6. Exits, Exit Learning & Contracts | 3/3 | In Progress|  |
 | 7. Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze | 0/TBD | Not started | - |
 | 8. Sentient Fork & Dual Distribution | 0/TBD | Not started | - |
