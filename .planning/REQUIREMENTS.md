@@ -26,10 +26,10 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 - [x] **BOOT-02**: Unrecognised or empty input fails safe — the Shortcut does not corrupt state and does not hang
 - [x] **BOOT-03**: First manual run creates `state.json` with initial profile, fork, and config values from the import questions
 - [x] **BOOT-04**: First manual run creates exactly one `PROSOCHĒ — Control Room` Note with a non-empty body
-- [ ] **BOOT-05**: Later manual runs never overwrite existing state or create a duplicate Control Room Note
-- [ ] **BOOT-06**: Missing `state.json` triggers self-healing bootstrap rather than failure, from any invocation mode
-- [ ] **BOOT-07**: Corrupt or unparseable `state.json` triggers safe recovery rather than failure or silent wrong behaviour
-- [ ] **BOOT-08**: A deleted Control Room Note is detected and safely recreated without crashing the run
+- [x] **BOOT-05**: Later manual runs never overwrite existing state or create a duplicate Control Room Note
+- [x] **BOOT-06**: Missing `state.json` triggers self-healing bootstrap rather than failure, from any invocation mode
+- [x] **BOOT-07**: Corrupt or unparseable `state.json` triggers safe recovery rather than failure or silent wrong behaviour
+- [x] **BOOT-08**: A deleted Control Room Note is detected and safely recreated without crashing the run
 - [x] **BOOT-09**: Import questions capture descent profile (Paradise/Limbo/Inferno, default Limbo) and voice permission; the Sentient fork additionally captures the on-device intelligence preference
 
 ### State Engine (STATE)
@@ -229,10 +229,10 @@ Which phases cover which requirements. Populated during roadmap creation.
 | BOOT-02 | Phase 2 | Complete |
 | BOOT-03 | Phase 2 | Complete |
 | BOOT-04 | Phase 2 | Complete |
-| BOOT-05 | Phase 2 | Pending |
-| BOOT-06 | Phase 2 | Pending |
-| BOOT-07 | Phase 2 | Pending |
-| BOOT-08 | Phase 2 | Pending |
+| BOOT-05 | Phase 2 | Complete |
+| BOOT-06 | Phase 2 | Complete |
+| BOOT-07 | Phase 2 | Complete |
+| BOOT-08 | Phase 2 | Complete |
 | BOOT-09 | Phase 2 | Complete |
 | STATE-12 | Phase 2 | Complete |
 | ROOM-01 | Phase 2 | Complete |
