@@ -22,7 +22,7 @@ side by side, which is this project's definition of done.
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Capability Audit & Config Foundation** - Resolve all four capability blockers to VERIFIED/UNVERIFIED/NOT AVAILABLE with fallback designs and lock the tunable config block
-- [ ] **Phase 2: Routing, Bootstrap & Control Room Onboarding** - First-run bootstrap creates a valid state.json and Control Room Note; every invocation mode routes and self-heals safely
+- [x] **Phase 2: Routing, Bootstrap & Control Room Onboarding** - First-run bootstrap creates a valid state.json and Control Room Note; every invocation mode routes and self-heals safely
 - [ ] **Phase 3: Deterministic State Engine** - Heat, Gravity, Pressure, and Circle mapping compute correctly and demonstrably differ across all three profiles
 - [ ] **Phase 4: CLOSE Pipeline & Session Race Protocol** - Session duration is measured accurately and stays race-proof under rapid app switching
 - [ ] **Phase 5: Nine Primitives & Environmental Safety** - All nine Circle primitives fire correctly with guaranteed safety floors and a model-free Circle IX
@@ -70,14 +70,14 @@ Plans:
   4. Later manual runs never overwrite existing state or create a duplicate Control Room Note.
   5. Missing or corrupt state.json, and a deleted Control Room Note, each trigger safe self-healing recovery rather than failure, from any invocation mode.
 
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans executed
 
 Plans:
 
 - [x] 02-01-PLAN.md — Walking skeleton: import questions, config, run clock, MANUAL router, state.json bootstrap, Control Room Note created and opened, plus the manual wiring audit
 - [x] 02-02-PLAN.md — The complete Control Room Note body and the empty-body trap gate
 - [x] 02-03-PLAN.md — Input normalisation and the nested OPEN / CLOSE / fail-safe router ladder
-- [ ] 02-04-PLAN.md — Self-healing from any mode, corrupt-state recovery, Note-existence guard, idempotence, and phase closure
+- [x] 02-04-PLAN.md — Self-healing from any mode, corrupt-state recovery, Note-existence guard, idempotence, and phase closure
 
 ### Phase 3: Deterministic State Engine
 
@@ -183,7 +183,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Capability Audit & Config Foundation | 5/5 | In Progress|  |
-| 2. Routing, Bootstrap & Control Room Onboarding | 3/4 | In Progress|  |
+| 2. Routing, Bootstrap & Control Room Onboarding | 4/4 | In Progress|  |
 | 3. Deterministic State Engine | 0/TBD | Not started | - |
 | 4. CLOSE Pipeline & Session Race Protocol | 0/TBD | Not started | - |
 | 5. Nine Primitives & Environmental Safety | 0/TBD | Not started | - |
