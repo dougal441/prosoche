@@ -120,6 +120,7 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - [blocker] Apply Addendum 01 and repair automation onboarding — `.planning/todos/pending/2026-08-13-apply-addendum-01-and-repair-automation-onboarding.md`
+- [blocker] Fix OPEN routing and Test Circle sequence error — `.planning/todos/pending/2026-08-13-fix-open-routing-and-test-circle-sequence-error.md`
 
 ### Blockers/Concerns
 
