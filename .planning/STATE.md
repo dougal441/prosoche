@@ -119,7 +119,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+- [blocker] Apply Addendum 01 and repair automation onboarding — `.planning/todos/pending/2026-08-13-apply-addendum-01-and-repair-automation-onboarding.md`
 
 ### Blockers/Concerns
 
