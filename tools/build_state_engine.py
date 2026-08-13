@@ -17,6 +17,9 @@ RESTORE_MARKER = "--- PHASE 5 RESTORE MANAGED SETTINGS ---"
 MANUAL_MARKER = "--- PHASE 5 MANUAL EMERGENCY RESTORE ---"
 LIVE_ICE_MARKER = "--- PHASE 5 LIVE ICE REDIRECT ---"
 EXPIRY_MARKER = "--- PHASE 5 ICE EXPIRY ---"
+EXIT_MARKER = "--- PHASE 6 UNIVERSAL LEAVING ---"
+CONTRACT_MARKER = "--- PHASE 6 CONTRACT CLOSE ---"
+EXIT_NAMES = ("Capture", "Coordinate", "Create", "Connect", "Consult", "Close")
 UUID_COUNTER = 0
 
 
@@ -123,9 +126,15 @@ def number(value, name: str):
 def math(left_name: str, right, result_name: str, op=None):
     math_id, params = uid(), {"UUID": uid(), "WFInput": variable(left_name), "WFMathOperand": right}
     params["UUID"] = math_id
-    if op:
+    if op and op != "+":
         params["WFMathOperation"] = op
     return [action("is.workflow.actions.math", **params), set_var(result_name, output(math_id, "Calculation Result"))]
+
+
+def expression(parts: list[tuple[str, str | None]], name: str):
+    expression_id = uid()
+    return [action("is.workflow.actions.calculateexpression", UUID=expression_id,
+                   Input=text_token(parts)), set_var(name, output(expression_id, "Result"))]
 
 
 def elapsed(later_name: str, earlier_name: str, result_name: str):
@@ -156,6 +165,20 @@ def save_state(source_name="State"):
 def alert(title: str, message):
     return action("is.workflow.actions.alert", WFAlertActionTitle=title,
                   WFAlertActionMessage=message)
+
+
+def list_items(items, name: str):
+    list_id = uid()
+    return [action("is.workflow.actions.list", UUID=list_id, WFItems=list(items)),
+            set_var(name, output(list_id, "List"))]
+
+
+def reload_state(name="Reloaded State"):
+    file_id, dictionary_id = uid(), uid()
+    return [action("is.workflow.actions.documentpicker.open", UUID=file_id,
+                   WFFileErrorIfNotFound=False, WFGetFilePath="PROSOCHE/state.json", WFShowFilePicker=False),
+            action("is.workflow.actions.detect.dictionary", UUID=dictionary_id, WFInput=output(file_id, "File")),
+            set_var(name, output(dictionary_id, "Dictionary"))]
 
 
 def menu(group: str, mode: int, *, prompt=None, items=None, title=None):
@@ -249,6 +272,26 @@ def confession():
                  WFAskActionPrompt="How many minutes?", WFInputType="Number"),
           set_var("Declared Boundary Minutes", output(custom_id, "Provided Input")),
           menu(group, 2)]
+    valid_group, valid = if_block("Declared Boundary Minutes", 2, number=0)
+    a += [comment("Boundary validation:\n- Only the numeric minute boundary must be positive.\n- Blank intention remains valid and has no keyword or sincerity gate."), valid]
+    a += math("Declared Boundary Minutes", 60, "Declared Duration Seconds", "×") + persist_contract()
+    a += [otherwise(valid_group), alert("Boundary", "Choose a positive number of minutes."), end_if(valid_group)]
+    return a
+
+
+def persist_contract():
+    """Write Confession only when this primitive still owns the open session."""
+    a = [comment("Reload before writing a contract. A superseded session has a Nothing-only path.")]
+    a += reload_state() + read_value("active_session", variable("Reloaded State"), "Contract Active Session")
+    active_group, active = if_block("Contract Active Session", 100)
+    a += [active] + read_value("active_session.id", variable("Reloaded State"), "Contract Owner ID")
+    owns_group, owns = if_block("Contract Owner ID", 4, string="captured-session-placeholder")
+    owns["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    owns["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Contract Owner ID")}
+    a += [owns, set_value("active_session.intention", variable("Confession Intention"), "Reloaded State"),
+          set_value("active_session.declared_duration_seconds", variable("Declared Duration Seconds"), "Reloaded State")]
+    a += save_state("Reloaded State") + [otherwise(owns_group), action("is.workflow.actions.nothing"), end_if(owns_group),
+                                            otherwise(active_group), action("is.workflow.actions.nothing"), end_if(active_group)]
     return a
 
 
@@ -338,7 +381,7 @@ def ice_start():
 
 
 def primitive_dispatch():
-    a = [comment(DISPATCH_MARKER + "\n\n- Select exactly one configured sequence entry for Circle.\n- Combined entries call only their named primitives.\n- Heat, Gravity, Pressure, and Circle are already computed and remain untouched.")]
+    a = [comment("--- PHASE 6 PRIMITIVE DISPATCH ---\n\n- Select exactly one configured sequence entry for Circle after Leaving is offered.\n- Combined entries call only their named primitives.")]
     a += read_value("sequence", variable("State"), "Sequence") + read_value("circle", variable("State"), "Dispatch Circle")
     entry_id, entry_text_id = uid(), uid()
     a += [action("is.workflow.actions.getvalueforkey", UUID=entry_id,
@@ -356,7 +399,173 @@ def primitive_dispatch():
         group, check = if_block("Selected Primitive", 99, string=name)
         a += [comment(f"Dispatch {name} only when the selected Config entry names it:\n- Input uses Selected Primitive from the sequence lookup.\n- The otherwise path leaves State unchanged."), check]
         a += implementation() + [otherwise(group), action("is.workflow.actions.nothing"), end_if(group)]
-    a += [comment("--- PHASE 5 PRIMITIVE DISPATCH END ---")]
+    a += [comment("--- PHASE 6 PRIMITIVE DISPATCH END ---")]
+    return a
+
+
+def enabled_exits(source="State"):
+    """Filter in canonical order; no disabled name can enter a selection menu."""
+    a = [comment("Build Enabled Exits in canonical order by intersecting the saved profile list.")]
+    a += read_value("profile_snapshot.enabled_exits", variable(source), "Profile Enabled Exits")
+    a += list_items(EXIT_NAMES, "Canonical Exits")
+    outer = uid()
+    a += [action("is.workflow.actions.repeat.each", GroupingIdentifier=outer, WFControlFlowMode=0,
+                 WFInput=variable("Canonical Exits")), set_var("Canonical Exit", variable("Repeat Item"))]
+    inner = uid()
+    a += [action("is.workflow.actions.repeat.each", GroupingIdentifier=inner, WFControlFlowMode=0,
+                 WFInput=variable("Profile Enabled Exits")), set_var("Enabled Exit Candidate", variable("Repeat Item"))]
+    matches_group, matches = if_block("Enabled Exit Candidate", 4, string="canonical-exit-placeholder")
+    matches["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    matches["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Enabled Exit Candidate")}
+    a += [matches, action("is.workflow.actions.appendvariable", WFInput=variable("Canonical Exit"), WFVariableName="Enabled Exits"),
+          otherwise(matches_group), action("is.workflow.actions.nothing"), end_if(matches_group),
+          action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=inner, WFControlFlowMode=2),
+          action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=outer, WFControlFlowMode=2)]
+    return a
+
+
+def select_exit():
+    """Deterministic, state-driven selector. The concrete menu always shares recorder/router."""
+    a = [comment("--- PHASE 6 EXIT SELECTOR ---\n\n- Sparse data rotates enabled exits by the persisted counter.\n- Sufficient data uses integer averages, canonical ties, then configured epsilon exploration.")]
+    a += enabled_exits() + read_value("exit_selection_counter", variable("State"), "Exit Selection Counter")
+    missing_counter, counter = if_block("Exit Selection Counter", 5, string=None)
+    counter["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    counter["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exit Selection Counter")}
+    a += [counter] + number(0, "Exit Selection Counter") + [otherwise(missing_counter), action("is.workflow.actions.nothing"), end_if(missing_counter)]
+    a += config("exits.exploit_min_observations", "Exploit Minimum") + config("exits.exploration_rate", "Exploration Rate")
+    a += number(0, "Sparse Selection")
+    enough = uid()
+    a += [action("is.workflow.actions.repeat.each", GroupingIdentifier=enough, WFControlFlowMode=0, WFInput=variable("Enabled Exits")),
+          set_var("Stats Exit", variable("Repeat Item"))]
+    a += read_value(text_token([("exit_stats.", "Stats Exit"), (".count", None)]), variable("State"), "Stats Count")
+    sparse_group, sparse = if_block("Stats Count", 0, number=variable("Exploit Minimum"))
+    a += [sparse, *number(1, "Sparse Selection"), otherwise(sparse_group), action("is.workflow.actions.nothing"), end_if(sparse_group),
+          action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=enough, WFControlFlowMode=2)]
+    count_id = uid()
+    a += [action("is.workflow.actions.count", UUID=count_id, WFInput=variable("Enabled Exits"), Input=variable("Enabled Exits")), set_var("Enabled Exit Count", output(count_id, "Count"))]
+    a += expression([( "(", None), ("", "Exit Selection Counter"), (" % ", None), ("", "Enabled Exit Count"), (") + 1", None)], "Rotation Index")
+    item_id = uid()
+    a += [action("is.workflow.actions.getitemfromlist", UUID=item_id, WFItemSpecifier=variable("Rotation Index"), WFInput=variable("Enabled Exits")),
+          set_var("Selected Exit", output(item_id, "Item from List"))]
+    # Keep the sparse selection as the default, then replace it only when all exits have evidence.
+    exploit_group, exploit = if_block("Sparse Selection", 2, number=0)
+    a += [exploit, *number(-1, "Best Average"), *number(0, "Best Seen")]
+    score_loop = uid()
+    a += [action("is.workflow.actions.repeat.each", GroupingIdentifier=score_loop, WFControlFlowMode=0, WFInput=variable("Enabled Exits")),
+          set_var("Stats Exit", variable("Repeat Item"))]
+    a += read_value(text_token([("exit_stats.", "Stats Exit"), (".count", None)]), variable("State"), "Stats Count")
+    a += read_value(text_token([("exit_stats.", "Stats Exit"), (".sum_return_seconds", None)]), variable("State"), "Stats Sum")
+    a += math("Stats Sum", variable("Stats Count"), "Stats Average Raw", "÷") + round_down("Stats Average Raw", "Stats Average")
+    higher_group, higher = if_block("Stats Average", 3, number=variable("Best Average"))
+    a += [higher, set_var("Best Average", variable("Stats Average")), set_var("Selected Exit", variable("Stats Exit")),
+          otherwise(higher_group), action("is.workflow.actions.nothing"), end_if(higher_group),
+          action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=score_loop, WFControlFlowMode=2)]
+    a += expression([( "", "Exit Selection Counter"), (" % 100", None)], "Exploration Roll") + math("Exploration Rate", 100, "Exploration Threshold Raw", "×") + round_down("Exploration Threshold Raw", "Exploration Threshold")
+    explore_group, explore = if_block("Exploration Roll", 0, number=variable("Exploration Threshold"))
+    a += [explore]
+    next_loop = uid()
+    a += [action("is.workflow.actions.repeat.each", GroupingIdentifier=next_loop, WFControlFlowMode=0, WFInput=variable("Enabled Exits")),
+          set_var("Candidate Exit", variable("Repeat Item"))]
+    non_best_group, non_best = if_block("Candidate Exit", 99, string="selected-exit-placeholder")
+    non_best["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    non_best["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Candidate Exit")}
+    a += [non_best, set_var("Selected Exit", variable("Candidate Exit")), otherwise(non_best_group), action("is.workflow.actions.nothing"), end_if(non_best_group),
+          action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=next_loop, WFControlFlowMode=2),
+          otherwise(explore_group), action("is.workflow.actions.nothing"), end_if(explore_group),
+          otherwise(exploit_group), action("is.workflow.actions.nothing"), end_if(exploit_group)]
+    suggestion = uid()
+    a += [menu(suggestion, 0, prompt="Leave now", items=["Take suggested exit", "Choose another"]),
+          menu(suggestion, 1, title="Take suggested exit")] + record_exit_and_route("Selected Exit")
+    chooser = uid()
+    a += [menu(suggestion, 1, title="Choose another"),
+          action("is.workflow.actions.choosefromlist", UUID=chooser, WFInput=variable("Enabled Exits")),
+          set_var("Selected Exit", output(chooser, "Chosen Item"))] + record_exit_and_route("Selected Exit") + [menu(suggestion, 2)]
+    return a
+
+
+def route_exit(choice_name: str):
+    """All routes are first-party, non-contacting exits selected by state only."""
+    a = [comment("Route the already-owned exit. Contacts opens Contacts only; no send, call, or message action exists.")]
+    routes = {
+        "Capture": [menu(uid(), 0, prompt="Capture", items=["Notes", "Voice Memos", "Camera"])],
+        "Coordinate": [menu(uid(), 0, prompt="Coordinate", items=["Reminders", "Calendar"])],
+        "Connect": [action("is.workflow.actions.openapp", WFSelectedApp="Contacts", WFAppName="Contacts")],
+        "Close": [action("is.workflow.actions.returntohomescreen")],
+    }
+    for name, actions in routes.items():
+        group, check = if_block(choice_name, 4, string=name)
+        a += [comment("Route check:\n- Compare the owned Selected Exit with this fixed first-party route.\n- The otherwise arm makes no route or state change."), check]
+        if name == "Capture":
+            capture = actions[0]["WFWorkflowActionParameters"]["GroupingIdentifier"]
+            a += actions + [menu(capture, 1, title="Notes"), action("is.workflow.actions.openapp", WFSelectedApp="Notes", WFAppName="Notes"),
+                            menu(capture, 1, title="Voice Memos"), action("is.workflow.actions.openapp", WFSelectedApp="Voice Memos", WFAppName="Voice Memos"),
+                            menu(capture, 1, title="Camera"), action("is.workflow.actions.openapp", WFSelectedApp="Camera", WFAppName="Camera"), menu(capture, 2)]
+        elif name == "Coordinate":
+            coordinate = actions[0]["WFWorkflowActionParameters"]["GroupingIdentifier"]
+            a += actions + [menu(coordinate, 1, title="Reminders"), action("is.workflow.actions.openapp", WFSelectedApp="Reminders", WFAppName="Reminders"),
+                            menu(coordinate, 1, title="Calendar"), action("is.workflow.actions.openapp", WFSelectedApp="Calendar", WFAppName="Calendar"), menu(coordinate, 2)]
+        else:
+            a += actions
+        a += [otherwise(group), action("is.workflow.actions.nothing"), end_if(group)]
+    create_group, create = if_block(choice_name, 4, string="Create")
+    a += [create] + read_value("profile_snapshot.create_target_url", variable("Reloaded State"), "Create Target URL")
+    target_group, target = if_block("Create Target URL", 100)
+    a += [target, action("is.workflow.actions.openurl", WFInput=variable("Create Target URL")), otherwise(target_group)]
+    ask_id = uid()
+    a += [action("is.workflow.actions.ask", UUID=ask_id, WFAskActionPrompt="Where should Create open?", WFInputType="URL"),
+          set_var("Create Target URL", output(ask_id, "Provided Input"))]
+    valid_group, valid = if_block("Create Target URL", 100)
+    a += [valid, set_value("profile_snapshot.create_target_url", variable("Create Target URL"), "Reloaded State"),
+          *save_state("Reloaded State"), action("is.workflow.actions.openurl", WFInput=variable("Create Target URL")),
+          otherwise(valid_group), alert("Create", "No target was saved or opened."), end_if(valid_group), end_if(target_group),
+          otherwise(create_group), action("is.workflow.actions.nothing"), end_if(create_group)]
+    consult_group, consult = if_block(choice_name, 4, string="Consult")
+    consult_menu = uid()
+    a += [consult, menu(consult_menu, 0, prompt="Consult", items=["Search web", "Search maps"]),
+          menu(consult_menu, 1, title="Search web"), action("is.workflow.actions.searchweb", WFSearchWebDestination="Google", WFInputText="helpful next step"),
+          menu(consult_menu, 1, title="Search maps"), action("is.workflow.actions.searchmaps", WFInput="nearby", WFSearchMapsActionApp="Maps"),
+          menu(consult_menu, 2), otherwise(consult_group), action("is.workflow.actions.nothing"), end_if(consult_group)]
+    return a
+
+
+def record_exit_and_route(choice_name: str):
+    """Reload, own, write one bounded event, then route from the fresh full State."""
+    a = [comment("Record an exit only after reloading and proving the captured OPEN still owns State.")]
+    a += reload_state() + read_value("active_session", variable("Reloaded State"), "Exit Active Session")
+    active_group, active = if_block("Exit Active Session", 100)
+    a += [active] + read_value("active_session.id", variable("Reloaded State"), "Exit Owner ID")
+    owner_group, owner = if_block("Exit Owner ID", 4, string="captured-session-placeholder")
+    owner["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    owner["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exit Owner ID")}
+    a += read_value("last_app", variable("Reloaded State"), "Triggering App")
+    event_text = text_token([('{"type":"', choice_name), ('","timestamp":', "Now Epoch"), (',"app":"', "Triggering App"), ('","circle":', "Circle Next"), (',"heat":', "Heat Final"), ('}', None)])
+    event_json, event_dict = uid(), uid()
+    a += [owner, action("is.workflow.actions.gettext", UUID=event_json, WFTextActionText=event_text),
+          action("is.workflow.actions.detect.dictionary", UUID=event_dict, WFInput=output(event_json, "Text")),
+          set_var("Exit Event", output(event_dict, "Dictionary")), *read_value("exit_events", variable("Reloaded State"), "Exit Events")]
+    a += [action("is.workflow.actions.appendvariable", WFInput=variable("Exit Event"), WFVariableName="Exit Events Next")]
+    cap_loop = uid()
+    a += [action("is.workflow.actions.repeat.each", GroupingIdentifier=cap_loop, WFControlFlowMode=0, WFInput=variable("Exit Events"))]
+    cap_group, cap = if_block("Repeat Index", 0, number=20)
+    a += [cap, action("is.workflow.actions.appendvariable", WFInput=variable("Repeat Item"), WFVariableName="Exit Events Next"), otherwise(cap_group), action("is.workflow.actions.nothing"), end_if(cap_group),
+          action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=cap_loop, WFControlFlowMode=2)]
+    a += [set_value("exit_events", variable("Exit Events Next"), "Reloaded State"),
+          set_value("pending_exit", variable("Exit Event"), "Reloaded State"), *read_value("exit_selection_counter", variable("Reloaded State"), "Reloaded Exit Counter")]
+    missing_counter, counter = if_block("Reloaded Exit Counter", 5, string=None)
+    counter["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    counter["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Reloaded Exit Counter")}
+    a += [counter] + number(0, "Reloaded Exit Counter") + [otherwise(missing_counter), action("is.workflow.actions.nothing"), end_if(missing_counter)]
+    a += math("Reloaded Exit Counter", 1, "Exit Counter Next", "+") + [set_value("exit_selection_counter", variable("Exit Counter Next"), "Reloaded State")]
+    a += save_state("Reloaded State") + route_exit(choice_name)
+    a += [otherwise(owner_group), action("is.workflow.actions.nothing"), end_if(owner_group), otherwise(active_group), action("is.workflow.actions.nothing"), end_if(active_group)]
+    return a
+
+
+def universal_leaving():
+    group = uid()
+    a = [comment(EXIT_MARKER + "\n\n- The session was saved before every interactive action.\n- Leaving is available before every primitive in every sequence and Circle.\n- Continue reaches exactly the selected primitive."),
+         menu(group, 0, prompt="PROSOCHĒ", items=["Leaving", "Continue"]), menu(group, 1, title="Leaving")]
+    a += select_exit() + [menu(group, 1, title="Continue")] + primitive_dispatch() + [menu(group, 2), comment("--- PHASE 6 UNIVERSAL LEAVING END ---")]
     return a
 
 
@@ -411,11 +620,14 @@ def open_pipeline():
 - A genuine later OPEN continues to ordered Heat arithmetic.
 - This is timestamp comparison only, not a second event system.""")]
     # Prototype 2-second debounce: config intentionally has no debounce field.
+    a += number(1, "Genuine Open")
     debounce_exists, debounce_exists_if = if_block("Last Open", 100)
     a += [debounce_exists_if] + elapsed("Now Date", "Last Open", "Seconds Since Open")
     debounce_group, debounce_if = if_block("Seconds Since Open", 0, number=2)
     a += [comment("Duplicate OPEN guard (prototype 2 seconds):\n- Compare the elapsed seconds from the captured last-open timestamp.\n- A value below two exits through Nothing with no dictionary mutation.\n- A later event continues to the complete Heat pipeline."), debounce_if,
-          action("is.workflow.actions.nothing"), otherwise(debounce_group), end_if(debounce_group), otherwise(debounce_exists), action("is.workflow.actions.nothing"), end_if(debounce_exists)]
+          *number(0, "Genuine Open"), otherwise(debounce_group), action("is.workflow.actions.nothing"), end_if(debounce_group), otherwise(debounce_exists), action("is.workflow.actions.nothing"), end_if(debounce_exists)]
+    genuine_group, genuine = if_block("Genuine Open", 2, number=0)
+    a += [genuine]
     # Current state values are loaded only after the short circuit branches.
     a += read_value("heat", variable("State"), "Heat Current") + read_value("opens_today", variable("State"), "Opens Today")
     a += [comment("""Compute Heat in its required order, then clamp it last:
@@ -488,13 +700,10 @@ def open_pipeline():
     hit_g, hit_if = if_block("Pressure Next", 3, number=variable("Threshold"))
     a += [hit_if, set_var("Circle Next", variable("Repeat Index")), otherwise(hit_g), action("is.workflow.actions.nothing"), end_if(hit_g),
           action("is.workflow.actions.repeat.count", UUID=uid(), GroupingIdentifier=scan, WFControlFlowMode=2)]
-    a += [set_value("circle", variable("Circle Next")), set_value("behavioural_day", variable("Behavioural Day"))]
-    a += [comment("""--- PHASE 5 DISPATCH HOOK ---
-
-- Circle has been computed and persisted from the full State dictionary.
-- Phase 5 attaches the selected primitive sequence after this marker.
-- This phase intentionally performs no Circle behaviour.""")]
-    a += save_state() + [end_if(cooldown_group)]
+    a += [set_value("circle", variable("Circle Next")), set_value("behavioural_day", variable("Behavioural Day")),
+          set_value("pending_exit", text_token([("null", None)]))]
+    # State is persisted before any menu/Ask action. The wrapper owns all later interaction.
+    a += save_state() + universal_leaving() + [end_if(genuine_group), end_if(cooldown_group)]
     return a
 
 
@@ -556,11 +765,8 @@ def close_pipeline():
     a += [set_value("recent_sessions", variable("Recent Sessions Next"), "Reloaded State"),
           set_value("last_close_at", variable("Now Epoch"), "Reloaded State"),
           set_value("active_session", text_token([( "null", None)]), "Reloaded State")]
-    a += [comment("""--- PHASE 5 RESTORE HOOK ---
-
-- Any settings snapshot restored here must come from the reloaded full State dictionary.
-- This phase records the hook but changes no environmental setting yet.
-- State is persisted only after the eventual restore work.""")]
+    a += [comment(RESTORE_MARKER + "\n\n- Only the matching CLOSE owner restores captured settings.\n- A superseded CLOSE reaches no restore or Save File action.")]
+    a += restore_managed_settings("Reloaded State") + [comment("--- PHASE 5 RESTORE MANAGED SETTINGS END ---")]
     a += save_state("Reloaded State") + [otherwise(owns_g), action("is.workflow.actions.nothing"), end_if(owns_g), otherwise(reload_g), action("is.workflow.actions.nothing"), end_if(reload_g), otherwise(has_g), action("is.workflow.actions.nothing"), end_if(has_g)]
     return a
 
@@ -582,6 +788,21 @@ def replace_marker_block(actions, start: str, end: str, replacement):
         # The Phase 3/4 hooks are a single comment before their first expansion.
         finish = begin
     actions[begin:finish + 1] = replacement
+
+
+def replace_branch_body(actions, marker: str, route_marker: str, replacement):
+    """Replace a router arm without consuming its enclosing Otherwise branch."""
+    begin = comment_index(actions, marker)
+    route = comment_index(actions, route_marker)
+    outer_start = next(item for item in reversed(actions[:begin])
+                       if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+                       and item.get("WFWorkflowActionParameters", {}).get("WFControlFlowMode") == 0)
+    outer_group = outer_start["WFWorkflowActionParameters"]["GroupingIdentifier"]
+    outer_otherwise = next(index for index in range(begin, route)
+                           if actions[index].get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+                           and actions[index].get("WFWorkflowActionParameters", {}).get("WFControlFlowMode") == 1
+                           and actions[index].get("WFWorkflowActionParameters", {}).get("GroupingIdentifier") == outer_group)
+    actions[begin:outer_otherwise] = replacement
 
 
 def remove_marker_block(actions, start: str, end: str):
@@ -699,14 +920,10 @@ def main():
     data = plistlib.loads(SOURCE.read_bytes())  # exactly one parse
     actions = data["WFWorkflowActions"]
     pinned = plistlib.dumps(actions[:5], fmt=plistlib.FMT_XML)
-    # Phase 3/4 already expanded their original anchors. Phase 5 owns named
-    # markers inside that complete graph, so every rerun replaces whole sections
-    # deterministically instead of relying on mutable numeric action offsets.
-    replace_marker_block(actions, DISPATCH_MARKER, "--- PHASE 5 PRIMITIVE DISPATCH END", primitive_dispatch())
-    replace_marker_block(actions, RESTORE_MARKER, "--- PHASE 5 RESTORE MANAGED SETTINGS END",
-                         [comment(RESTORE_MARKER + "\n\n- Only the matching CLOSE owner restores captured settings.\n- A superseded CLOSE reaches no restore or Save File action."),
-                          *restore_managed_settings("Reloaded State"),
-                          comment("--- PHASE 5 RESTORE MANAGED SETTINGS END ---")])
+    # Rebuild the semantic router arms atomically.  This keeps the Phase 4 outer
+    # OPEN/CLOSE control flow while replacing only their owned bodies.
+    replace_branch_body(actions, "--- OPEN STATE ENGINE ---", "Input Key was not OPEN", open_pipeline())
+    replace_branch_body(actions, "--- CLOSE SESSION PIPELINE ---", "Input Key was neither OPEN nor CLOSE", close_pipeline())
     install_cooldown_branches(actions)
     insert_or_replace_after(actions, "--- CONTROL ROOM: confirm", MANUAL_MARKER,
                             "--- PHASE 5 MANUAL EMERGENCY RESTORE END ---", manual_emergency_restore())
@@ -717,11 +934,11 @@ def main():
     while index < len(actions):
         parameters = actions[index].get("WFWorkflowActionParameters", {})
         starts_flow = (actions[index].get("WFWorkflowActionIdentifier") in
-                       {"is.workflow.actions.conditional", "is.workflow.actions.repeat.count"}
+                       {"is.workflow.actions.conditional", "is.workflow.actions.repeat.count", "is.workflow.actions.repeat.each", "is.workflow.actions.choosefrommenu"}
                        and parameters.get("WFControlFlowMode") == 0)
         prior_is_comment = index > 0 and actions[index - 1].get("WFWorkflowActionIdentifier") == "is.workflow.actions.comment"
         if starts_flow and not prior_is_comment:
-            actions.insert(index, comment("Control-flow check:\n- Use the named value prepared directly above.\n- Keep the true and otherwise paths balanced.\n- Continue with the full State dictionary unchanged unless this branch explicitly updates it."))
+            actions.insert(index, comment("Control-flow check:\n- Use the named value prepared directly above.\n- Keep each branch or iteration balanced.\n- Continue with the full State dictionary unchanged unless this branch explicitly updates it."))
             index += 1
         index += 1
     if plistlib.dumps(actions[:5], fmt=plistlib.FMT_XML) != pinned:
