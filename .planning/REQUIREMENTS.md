@@ -217,13 +217,129 @@ Which phases cover which requirements. Populated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (pending roadmap) | — | Pending |
+| AUDIT-01 | Phase 1 | Pending |
+| AUDIT-02 | Phase 1 | Pending |
+| AUDIT-03 | Phase 1 | Pending |
+| AUDIT-04 | Phase 1 | Pending |
+| AUDIT-05 | Phase 1 | Pending |
+| AUDIT-06 | Phase 1 | Pending |
+| AUDIT-07 | Phase 1 | Pending |
+| AUDIT-08 | Phase 1 | Pending |
+| BOOT-01 | Phase 2 | Pending |
+| BOOT-02 | Phase 2 | Pending |
+| BOOT-03 | Phase 2 | Pending |
+| BOOT-04 | Phase 2 | Pending |
+| BOOT-05 | Phase 2 | Pending |
+| BOOT-06 | Phase 2 | Pending |
+| BOOT-07 | Phase 2 | Pending |
+| BOOT-08 | Phase 2 | Pending |
+| BOOT-09 | Phase 2 | Pending |
+| STATE-12 | Phase 2 | Pending |
+| ROOM-01 | Phase 2 | Pending |
+| ROOM-02 | Phase 2 | Pending |
+| ROOM-03 | Phase 2 | Pending |
+| ROOM-04 | Phase 2 | Pending |
+| ROOM-05 | Phase 2 | Pending |
+| ROOM-06 | Phase 2 | Pending |
+| STATE-01 | Phase 3 | Pending |
+| STATE-02 | Phase 3 | Pending |
+| STATE-03 | Phase 3 | Pending |
+| STATE-04 | Phase 3 | Pending |
+| STATE-05 | Phase 3 | Pending |
+| STATE-06 | Phase 3 | Pending |
+| STATE-07 | Phase 3 | Pending |
+| STATE-08 | Phase 3 | Pending |
+| STATE-09 | Phase 3 | Pending |
+| STATE-10 | Phase 3 | Pending |
+| STATE-11 | Phase 3 | Pending |
+| SESS-01 | Phase 4 | Pending |
+| SESS-02 | Phase 4 | Pending |
+| SESS-03 | Phase 4 | Pending |
+| SESS-04 | Phase 4 | Pending |
+| SESS-05 | Phase 4 | Pending |
+| SESS-06 | Phase 4 | Pending |
+| SESS-07 | Phase 4 | Pending |
+| CIRC-01 | Phase 5 | Pending |
+| CIRC-02 | Phase 5 | Pending |
+| CIRC-03 | Phase 5 | Pending |
+| CIRC-04 | Phase 5 | Pending |
+| CIRC-05 | Phase 5 | Pending |
+| CIRC-06 | Phase 5 | Pending |
+| CIRC-07 | Phase 5 | Pending |
+| CIRC-08 | Phase 5 | Pending |
+| CIRC-09 | Phase 5 | Pending |
+| CIRC-10 | Phase 5 | Pending |
+| CIRC-11 | Phase 5 | Pending |
+| CIRC-12 | Phase 5 | Pending |
+| CIRC-13 | Phase 5 | Pending |
+| CIRC-14 | Phase 5 | Pending |
+| SAFE-01 | Phase 5 | Pending |
+| SAFE-02 | Phase 5 | Pending |
+| SAFE-03 | Phase 5 | Pending |
+| SAFE-04 | Phase 5 | Pending |
+| SAFE-05 | Phase 5 | Pending |
+| SAFE-06 | Phase 5 | Pending |
+| EXIT-01 | Phase 6 | Pending |
+| EXIT-02 | Phase 6 | Pending |
+| EXIT-03 | Phase 6 | Pending |
+| EXIT-04 | Phase 6 | Pending |
+| EXIT-05 | Phase 6 | Pending |
+| EXIT-06 | Phase 6 | Pending |
+| EXIT-07 | Phase 6 | Pending |
+| EXIT-08 | Phase 6 | Pending |
+| EXIT-09 | Phase 6 | Pending |
+| LEARN-01 | Phase 6 | Pending |
+| LEARN-02 | Phase 6 | Pending |
+| LEARN-03 | Phase 6 | Pending |
+| LEARN-04 | Phase 6 | Pending |
+| LEARN-05 | Phase 6 | Pending |
+| CONT-01 | Phase 6 | Pending |
+| CONT-02 | Phase 6 | Pending |
+| CONT-03 | Phase 6 | Pending |
+| CONT-04 | Phase 6 | Pending |
+| CONT-05 | Phase 6 | Pending |
+| CONT-06 | Phase 6 | Pending |
+| ROOM-07 | Phase 7 | Pending |
+| ROOM-08 | Phase 7 | Pending |
+| ROOM-09 | Phase 7 | Pending |
+| ROOM-10 | Phase 7 | Pending |
+| ROOM-11 | Phase 7 | Pending |
+| ROOM-12 | Phase 7 | Pending |
+| DUMB-01 | Phase 7 | Pending |
+| DUMB-02 | Phase 7 | Pending |
+| DUMB-03 | Phase 7 | Pending |
+| DUMB-04 | Phase 7 | Pending |
+| DUMB-05 | Phase 7 | Pending |
+| DUMB-06 | Phase 7 | Pending |
+| SENT-01 | Phase 8 | Pending |
+| SENT-02 | Phase 8 | Pending |
+| SENT-03 | Phase 8 | Pending |
+| SENT-04 | Phase 8 | Pending |
+| SENT-05 | Phase 8 | Pending |
+| SENT-06 | Phase 8 | Pending |
+| SENT-07 | Phase 8 | Pending |
+| SENT-08 | Phase 8 | Pending |
+| SENT-09 | Phase 8 | Pending |
+| SENT-10 | Phase 8 | Pending |
+| SENT-11 | Phase 8 | Pending |
+| SENT-12 | Phase 8 | Pending |
+| SENT-13 | Phase 8 | Pending |
+| SENT-14 | Phase 8 | Pending |
+| SENT-15 | Phase 8 | Pending |
+| DIST-01 | Phase 8 | Pending |
+| DIST-02 | Phase 8 | Pending |
+| DIST-03 | Phase 8 | Pending |
+| DIST-04 | Phase 8 | Pending |
+| DIST-05 | Phase 8 | Pending |
+| DIST-06 | Phase 8 | Pending |
+| DIST-07 | Phase 8 | Pending |
+| DIST-08 | Phase 8 | Pending |
 
 **Coverage:**
-- v1 requirements: 108 total
-- Mapped to phases: 0
-- Unmapped: 108 ⚠️
+- v1 requirements: 117 total
+- Mapped to phases: 117
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-08-13*
-*Last updated: 2026-08-13 after initial definition*
+*Last updated: 2026-08-13 after roadmap creation (8 phases, full coverage)*
