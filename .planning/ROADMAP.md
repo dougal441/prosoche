@@ -21,7 +21,7 @@ side by side, which is this project's definition of done.
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Capability Audit & Config Foundation** - Resolve all four capability blockers to VERIFIED/UNVERIFIED/NOT AVAILABLE with fallback designs and lock the tunable config block
+- [x] **Phase 1: Capability Audit & Config Foundation** - Resolve all four capability blockers to VERIFIED/UNVERIFIED/NOT AVAILABLE with fallback designs and lock the tunable config block
 - [ ] **Phase 2: Routing, Bootstrap & Control Room Onboarding** - First-run bootstrap creates a valid state.json and Control Room Note; every invocation mode routes and self-heals safely
 - [ ] **Phase 3: Deterministic State Engine** - Heat, Gravity, Pressure, and Circle mapping compute correctly and demonstrably differ across all three profiles
 - [ ] **Phase 4: CLOSE Pipeline & Session Race Protocol** - Session duration is measured accurately and stays race-proof under rapid app switching
