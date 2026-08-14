@@ -1,0 +1,205 @@
+# Cycle 10 — orchestrator findings (produced while the debugger was rate-limited)
+
+Status: **diagnosis complete, fix NOT applied.** The user chose to wait for the
+debugger rather than have the orchestrator edit the generator. Nothing in the repo
+has been changed. Build `2026-08-14i` is the current committed state (`d2e1ebe`).
+
+These findings were derived by the orchestrator via direct static analysis of
+`src/PROSOCHE-Dumb.xml` and `tools/build_state_engine.py`. The debugger should
+**verify rather than trust** them; where its own analysis disagrees, the debugger's
+wins, having full session context.
+
+## 1. Enumeration of `settings_snapshot` (Dumb fork)
+
+**Reads**
+
+| key | n | first |
+|---|---|---|
+| `settings_snapshot.brightness` | 14 | **177** |
+| `settings_snapshot.brightness.original_value` | 4 | 182 |
+| `settings_snapshot.volume` | 14 | 196 |
+| `settings_snapshot.volume.original_value` | 4 | 201 |
+
+**Writes**
+
+| key | n | first |
+|---|---|---|
+| `settings_snapshot.brightness` | 4 | **188** |
+| `settings_snapshot.brightness.original_value` | 10 | 1132 |
+| `settings_snapshot.brightness.changed_at` | 10 | 1134 |
+| `settings_snapshot.brightness.changed_by_session_id` | 10 | 1136 |
+| `settings_snapshot.volume` | 4 | 207 |
+| `settings_snapshot.volume.original_value` | 10 | 1038 |
+| `settings_snapshot.volume.changed_at` | 10 | 1040 |
+| `settings_snapshot.volume.changed_by_session_id` | 10 | 1042 |
+
+Sentient not yet enumerated — the debugger should run the same pass on it.
+
+## 2. Read-before-write, and no top-level creation
+
+First read is **177**; first write is **188** — eleven actions later, both inside the
+C→D span (168–286) where the device stops.
+
+The bootstrap `dictionary` actions at **8** and **25** are built with **zero keys**.
+Every `setvalueforkey` in actions 0–176 is just four writes: `opens_today` (152, 162)
+and `behavioural_day` (154, 164). **No action anywhere creates the top-level
+`settings_snapshot` key** — the subtree only comes into existence as a side effect of
+a nested write much later in the pipeline.
+
+## 3. This predicts both observed device errors exactly, in order
+
+- **Clean install** → read at 177, subtree absent →
+  `In '', no value was found for dictionary key 'settings_snapshot'`.
+  The empty `In ''` is the root State dictionary.
+- **After the user exercised Change Profile / Change Sequence / Test a Circle** →
+  those paths wrote `settings_snapshot.volume.*` (1038–1042), creating the subtree
+  with `volume` but never `brightness` → read at 177 fails one level deeper →
+  `In 'settings_snapshot', no value was found for dictionary key 'brightness'`.
+
+The user's menu exploration produced precisely the intermediate state that
+distinguishes "subtree missing" from "subtree incomplete". It should be treated as a
+deliberate experiment; it is what pins the diagnosis.
+
+## 4. ROOT CAUSE — the defensive pattern rests on a false assumption
+
+`restore_managed_settings` (`tools/build_state_engine.py:335`) is written carefully and
+its stated intent is *"never guess an original setting."* It reads the snapshot, then
+gates on `has any value` (condition 100).
+
+That design assumes **a missing dictionary key reads as empty**, so the gate would be
+false and the branch skipped. It does not. `Get Dictionary Value` on a missing key
+**raises a hard runtime error**. The read at 177 fails before the gate at 178 can
+evaluate. The guard cannot protect anything, because the condition it guards against
+kills the read first.
+
+This is a design-level assumption failure, not a serialization defect — the first such
+in the session. Every previous defect (key name, `str` envelope, `AttributedString`
+envelope, picker enum, variable slot, operand type) was a wrong shape in the emitted
+plist. This one is a wrong belief about iOS semantics.
+
+## 5. SECOND DEFECT — `clear_snapshot` writes the literal string `"null"`
+
+`tools/build_state_engine.py:330`:
+
+```python
+def clear_snapshot(key: str, dictionary_name="State"):
+    return set_value(f"settings_snapshot.{key}", text_token([("null", None)]), dictionary_name)
+```
+
+`text_token([("null", None)])` produces the four-character string `null` — non-empty,
+so `has any value` evaluates **true**. It also replaces the sub-dictionary with a
+string, destroying `original_value` beneath it.
+
+Consequence, on the run *after* a successful restore: `settings_snapshot.brightness`
+is `"null"` → passes the gate → reads `settings_snapshot.brightness.original_value` →
+parent is now a string, key gone → **the same hard error returns**.
+
+This is latent. It only bites once the OPEN path works well enough to perform a
+restore, so fixing bootstrap alone would clear the current error and then reintroduce
+it a run or two later, presenting as a regression.
+
+## 6. THIRD FINDING — the ownership check is not implemented
+
+Four keys are **written but never read anywhere in either fork**:
+
+```
+settings_snapshot.brightness.changed_at
+settings_snapshot.brightness.changed_by_session_id
+settings_snapshot.volume.changed_at
+settings_snapshot.volume.changed_by_session_id
+```
+
+`changed_by_session_id` exists so the restore path can verify it owns a change before
+reverting it. Nothing consults it, so that ownership check **does not exist**.
+
+This reframes the `Session ID` scope defect the debugger found (assigned only under
+[OPEN → not-in-cooldown → genuine-open]; only 2 of 20 `changed_by_session_id` writes
+share that ancestry). Correcting the scope so it records a valid owner would not help,
+because no code reads the owner. Per the project rule that stateful brightness/volume
+changes must be reliably restorable, the ownership half of that guarantee is currently
+**absent**, not merely mis-scoped.
+
+Implementing an ownership check is a **design change, not a bug fix** — it should be
+put to the user rather than added silently.
+
+## 7. Proposed fix (NOT applied — for the debugger to verify and implement)
+
+Both defects in §4 and §5 resolve the same way: **write empty text, not `"null"`, and
+establish the shape at bootstrap.**
+
+1. Bootstrap creates `settings_snapshot.brightness` and `settings_snapshot.volume` as
+   **empty text**, so the reads at 177/196 succeed and the `has any value` gate reads
+   false, skipping the nested reads at 182/201 entirely.
+2. `clear_snapshot` clears to **empty text** for the same reason.
+
+Then the "never guess an original setting" design works as written. No new actions, no
+action-index shifts, so breadcrumb spans stay valid and the letter stays comparable.
+
+**To verify before implementing:**
+- Confirm empty text makes condition 100 evaluate false on device. If it does not, the
+  sentinel must be something that does, and that must be established from a donor
+  rather than assumed — this is exactly the class of assumption that caused §4.
+- Run the §1 enumeration against Sentient.
+- Decide and state what `original_value` defaults to, if anything. A wrong default
+  could restore brightness or volume to a value the user never had. If a safe default
+  cannot be established, skipping the restore is safer than guessing — the project's
+  own rule already says so.
+
+## 8. Still open, unrelated to the above
+
+- Donor 5 (`.planning/debug/Donor 5.shortcut`, 22,458 bytes, AEA1, 16:14) — the
+  cycle-8 optional donor for the 14 `WFConditionalActionString = token()` sites. These
+  are right-hand operands, and cycle 9 established the operator picker is driven by the
+  left input only, so establish whether they are genuinely defective or merely
+  residual before fixing.
+- `List` / `WFItems` wrapper at action 1164 — shape already recovered from Donors 4/4.1
+  as `{"WFItemType": 0, "WFValue": <WFTextTokenString>}`; ours omits the wrapper. Past
+  breadcrumb J, non-blocking.
+
+---
+
+## 8. SESSION-MANAGER ADDENDUM — the `"null"` literal is SYSTEMIC, not one site
+
+Finding 4 above identifies `clear_snapshot` (line 332) as writing the literal four-character
+string `null`. **It is not one site. It is seven, across four distinct state keys.**
+
+```
+tools/build_state_engine.py
+  332   set_value(f"settings_snapshot.{key}", text_token([("null", None)]), ...)
+  768   set_value("pending_exit",    text_token([("null", None)]))
+ 1249   set_value("cooldown_until",  text_token([("null", None)]))
+ 1250   set_value("active_session",  text_token([("null", None)]))
+ 1258   set_value("cooldown_until",  text_token([("null", None)]))
+ 1300   set_value("cooldown_until",  text_token([("null", None)]))
+ 1301   set_value("active_session",  text_token([("null", None)]))
+```
+
+Affected keys: `settings_snapshot.*`, `pending_exit`, `cooldown_until`, `active_session`.
+
+### Why this is critical path, not a tidy-up
+
+**`cooldown_until` is the operand of action 170** — the exact conditional the build-`i` coercion
+fix just repaired, and the first numeric comparison on the OPEN path. It is written as the
+literal text `"null"` at three sites. So the OPEN path performs a *numeric* comparison against
+the four-character string `null` whenever a cooldown has been cleared.
+
+The build-`i` fix declared that operand `WFNumberContentItem`. **Coercing the string `"null"` to
+a number is undefined** — it may yield 0, empty, or a hard error. Action 170 has not yet
+executed against a cleared-cooldown state on device, so this is unmeasured.
+
+`pending_exit` is read at actions 479/484/487, inside span I→J (I=473, J=527).
+
+### Consequence for the fix
+
+Fixing `settings_snapshot` alone leaves three more keys carrying the same disease, one of them on
+the critical path immediately after the current failure point. Every one of these writes is the
+same wrong belief: that `"null"` reads as absent. It does not — it is a non-empty string, so
+`has any value` (code 100) returns **true** for all four keys.
+
+**The fix must be applied to `text_token([("null", None)])` as a construct, not to `clear_snapshot`
+as a function.** Whatever sentinel replaces it must be verified on device, per §7's open question,
+and must satisfy BOTH consumers: the `has any value` gates AND the numeric coercion at 170.
+
+That dual constraint is new information: a sentinel that reads as absent to code 100 must also not
+break a `WFNumberContentItem` coercion on the same key. Establish both from a donor before
+shipping; they may not have the same answer.
