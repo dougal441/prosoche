@@ -18,6 +18,7 @@ from build_state_engine import (
     verify_output_names,
     verify_required_pickers,
     verify_router_shape,
+    verify_state_seed,
     verify_string_envelopes,
 )
 
@@ -200,6 +201,11 @@ def main() -> None:
     verify_required_pickers(actions)
     verify_conditional_inputs(actions)
     verify_numeric_operands(actions)
+    # Sentient INHERITS the seeded bootstrap template from the built Dumb source rather
+    # than re-seeding it, so the assertion is the whole point here: it proves the subtree
+    # survived the fork, and it fails loudly if a future Sentient-only insertion ever adds
+    # a settings_snapshot read that the shared bootstrap does not establish.
+    verify_state_seed(actions)
     # Sentient inherits the router verbatim from the built Dumb source, but assert it here
     # too: an inserted Sentient block must never land between the OPEN/CLOSE tests and the
     # MANUAL arm, and the absence gate must not reappear through a stale fork.

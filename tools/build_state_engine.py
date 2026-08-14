@@ -6,6 +6,7 @@ their branch comments, never by mutable action indexes.
 """
 from __future__ import annotations
 
+import json
 import plistlib
 import uuid
 from pathlib import Path
@@ -17,7 +18,7 @@ SOURCE = Path("src/PROSOCHE-Dumb.xml")
 # matches an installed one can create a second copy and leave an automation
 # wrapper pointed at the old shortcut; without a visible stamp that stale-install
 # case is indistinguishable from a failed fix.  Bump on every device-bound build.
-BUILD_STAMP = "build 2026-08-14i"
+BUILD_STAMP = "build 2026-08-14j"
 # CYCLE 7 MEASUREMENT INSTRUMENT, not a fix.  Cycle 6 proved on device that the Run
 # Shortcut handoff DOES deliver "OPEN" (Probe 5 echoed it) while PROSOCHE still fails,
 # so the failing action is inside the OPEN arm, before the first OPEN menu.  Static
@@ -150,6 +151,48 @@ def text_token(parts: list[tuple[str, str | None]]):
             cursor += 1
     return {"Value": {"string": string, "attachmentsByRange": attachments},
             "WFSerializationType": "WFTextTokenString"}
+
+
+# CYCLE 11, axis 6b -- the CLEARED sentinel, single-sourced but DELIBERATELY UNCHANGED.
+#
+# Four state keys are written back as "cleared" and every one of them is consumed by an
+# `If` with condition 100, HAS ANY VALUE: settings_snapshot.* (@181/186/200/205/1031/
+# 1125), pending_exit (@483) and active_session (@689/1094/1232/1248).  The literal
+# four-character string "null" is NON-EMPTY, so all of those gates read TRUE -- the exact
+# inverse of the intent -- and the guarded NESTED reads then run against a string parent
+# (active_session.id, active_session.declared_duration_seconds).  That is the same defect
+# class as the settings_snapshot failure this cycle fixes, latent one level over.
+#
+# THE OBVIOUS REPAIR -- clear to EMPTY text -- WAS BUILT AND THEN REVERTED, and the reason
+# is the whole finding.  It fails the project's mandatory validation gate at 12 sites:
+#   Empty parameter at index 188: is.workflow.actions.setvalueforkey
+#                                 -> WFDictionaryValue/Value/string
+# validate_shortcut.py's iter_empty_strings() rejects an empty string in ANY parameter,
+# with one narrow Send-Message-spacer exemption; "string" is in neither allow-list.  That
+# rule encodes exactly this session's DEVICE-CONFIRMED symptom 2 -- an unset Value on Set
+# Dictionary Value raises "No value was provided to the Set Dictionary Value action for
+# the key <key>".  Clearing to empty would therefore trade a read-side hard error for a
+# write-side one.
+#
+# The device evidence offered for empty -- EMPTY: NO VALUE -- is a READ-side measurement:
+# a blank value reads as absent to condition 100.  It says nothing about whether Set
+# Dictionary Value ACCEPTS a blank value.  Applying read-side evidence to a write is the
+# same category error as the root cause being fixed this cycle, so it is refused here.
+# The sentinel question is now a PRODUCER-vs-CONSUMER design choice (change the write, or
+# change the six gates from cond 100 to cond 5 "is not null"), needs a donor to settle,
+# and is deliberately not decided inside a cycle whose measurement must stay clean.
+#
+# NOT used for cooldown_until (3 further sites, left inline).  Its only consumer is the
+# NUMERIC comparison at action 170, device-measured as NULL COERCED FALSE with no error,
+# which is already the semantically correct reading of a cleared cooldown ("not in
+# cooldown").  Changing it would alter behaviour at the most critical position on the
+# OPEN path -- the conditional the build-i coercion fix just repaired.
+CLEARED_SENTINEL = "null"
+
+
+def cleared_value():
+    """The CLEARED sentinel for a gate-consumed state key.  See the note above."""
+    return text_token([(CLEARED_SENTINEL, None)])
 
 
 def comment(text: str):
@@ -329,7 +372,7 @@ def set_media_volume(source):
 
 def clear_snapshot(key: str, dictionary_name="State"):
     """Clear only a snapshot we have just restored from the full State."""
-    return set_value(f"settings_snapshot.{key}", text_token([("null", None)]), dictionary_name)
+    return set_value(f"settings_snapshot.{key}", cleared_value(), dictionary_name)
 
 
 def restore_managed_settings(dictionary_name="State"):
@@ -765,7 +808,7 @@ def complete_pending_exit():
     a += [set_value(text_token([("exit_stats.", "Pending Exit Type"), (".samples", None)]), variable("Exit Samples Next")),
           set_value(text_token([("exit_stats.", "Pending Exit Type"), (".count", None)]), variable("Exit Count Next")),
           set_value(text_token([("exit_stats.", "Pending Exit Type"), (".sum_return_seconds", None)]), variable("Exit Sum Next")),
-          set_value("pending_exit", text_token([("null", None)])),
+          set_value("pending_exit", cleared_value()),
           otherwise(pending_group), action("is.workflow.actions.nothing"), end_if(pending_group),
           comment("--- PHASE 6 PENDING EXIT OUTCOME END ---")]
     return a
@@ -1006,7 +1049,7 @@ def close_pipeline():
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=window, WFControlFlowMode=2)]
     a += [set_value("recent_sessions", variable("Recent Sessions Next"), "Reloaded State"),
           set_value("last_close_at", variable("Now Epoch"), "Reloaded State"),
-          set_value("active_session", text_token([( "null", None)]), "Reloaded State")]
+          set_value("active_session", cleared_value(), "Reloaded State")]
     display_contract_g, display_contract = if_block("Declared Duration", 2, number=0)
     a += [comment("Contract result display:\n- Only sessions with a declared boundary show contract feedback.\n- Sessions without one make no overrun claim."), display_contract,
           alert("Contract", text_token([("Overrun seconds: ", "Overrun Seconds")])), otherwise(display_contract_g), action("is.workflow.actions.nothing"), end_if(display_contract_g)]
@@ -1247,7 +1290,7 @@ def live_ice_redirect():
          menu(group, 1, title="Emergency Restore")]
     a += restore_managed_settings("State")
     a += [set_value("cooldown_until", text_token([("null", None)])),
-          set_value("active_session", text_token([("null", None)])),
+          set_value("active_session", cleared_value()),
           menu(group, 2), comment("--- PHASE 5 LIVE ICE REDIRECT END ---")]
     return a
 
@@ -1298,7 +1341,7 @@ def manual_emergency_restore():
     a += [menu(test_menu, 2), menu(group, 1, title="Reset Today"), *number(0, "Manual Zero"), set_value("opens_today", variable("Manual Zero")), set_value("gravity", variable("Manual Zero")), *number(1, "Manual Refresh Requested"), *save_state(), menu(group, 1, title="Emergency Restore")]
     a += restore_managed_settings("State")
     a += [set_value("cooldown_until", text_token([("null", None)])),
-          set_value("active_session", text_token([("null", None)])), *number(1, "Manual Refresh Requested")]
+          set_value("active_session", cleared_value()), *number(1, "Manual Refresh Requested")]
     a += save_state()
     a += [menu(group, 2), comment("--- PHASE 5 MANUAL EMERGENCY RESTORE END ---")]
     return a
@@ -1536,6 +1579,158 @@ def verify_conditional_inputs(actions):
                          "(iOS: 'Please choose a value for each parameter in this action'): "
                          + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
                          + f" ({len(offenders)} total)")
+
+
+# ---------------------------------------------------------------------------
+# CYCLE 11 -- STATE SHAPE, the sixth defect axis.  Not a wrong shape in the emitted
+# plist at all: a wrong BELIEF about iOS semantics, held by the generator's authors.
+#
+# restore_managed_settings() reads settings_snapshot.brightness (action 177) and gates it
+# on condition 100, HAS ANY VALUE.  That design assumes a MISSING dictionary key reads as
+# empty, so the gate would be false and the guarded branch skipped.  It does not.  Get
+# Dictionary Value on a missing key raises a HARD RUNTIME ERROR: the read at 177 dies
+# before the gate at 181 can evaluate, and the guard cannot protect anything because the
+# condition it guards against kills the read first.
+#
+# The bootstrap state.json template seeded settings_snapshot as {} -- the top-level key
+# exists, but neither sub-key does.  Reads sit at depth 2 and 3; the writes that would
+# create them sit at depth 4 and 7 on Circle paths (1132-1136, 1038-1042) that a first
+# run never reaches.  So the reads are reachable on paths where the writes never ran, and
+# both observed device errors follow exactly and in order:
+#   clean state    -> "In '', no value was found for dictionary key 'settings_snapshot'"
+#   after the user exercised the manual menu (which wrote settings_snapshot.volume.*)
+#                  -> "In 'settings_snapshot', no value was found for key 'brightness'"
+#
+# The fix is to establish the COMPLETE subtree at bootstrap, so the shape exists before
+# any read regardless of execution history.  Every leaf is seeded EMPTY -- the cleared
+# sentinel -- and never a fabricated number: a fabricated original_value could restore
+# brightness or volume to a value the user never had.  Empty plus the existing condition
+# 100 gates means "no capture recorded -> skip restore", which fails safe and is what
+# .claude/CLAUDE.md requires of a stateful brightness/volume change.
+#
+# This is a TEXT edit to the existing template action, not new actions, so it adds nothing
+# to the artifact and every breadcrumb keeps its build-i position.
+SNAPSHOT_SEED = {
+    "brightness": ("original_value", "changed_at", "changed_by_session_id"),
+    "volume": ("original_value", "changed_at", "changed_by_session_id"),
+}
+SNAPSHOT_EMPTY = '"settings_snapshot": {},'
+
+
+def _snapshot_seed_text(indent: str) -> str:
+    inner = ",\n".join(
+        f'{indent}  "{group}": {{'
+        + ", ".join(f'"{leaf}": ""' for leaf in leaves)
+        + "}"
+        for group, leaves in SNAPSHOT_SEED.items())
+    return '"settings_snapshot": {\n' + inner + "\n" + indent + "},"
+
+
+def _state_template(actions):
+    """The bootstrap state.json template action, located by content, never by index."""
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.gettext":
+            continue
+        value = item.get("WFWorkflowActionParameters", {}).get("WFTextActionText")
+        if not isinstance(value, dict):
+            continue
+        inner = value.get("Value")
+        if isinstance(inner, dict) and isinstance(inner.get("string"), str) \
+                and '"schema_version"' in inner["string"]:
+            return index, inner
+    raise SystemExit("bootstrap state.json template not found")
+
+
+def _replace_in_token(inner: dict, old: str, new: str):
+    """Replace text inside a WFTextTokenString and SHIFT every attachment offset.
+
+    attachmentsByRange keys are "{offset, 1}" byte-for-character offsets into the final
+    string.  BEST_PRACTICES/VARIABLES both warn that an out-of-bounds or stale range can
+    crash Shortcuts on import, so a text edit that ignores them is not a smaller change
+    than one that recomputes them -- it is a corrupt one.  The template carries four
+    attachments and one of them sits AFTER the settings_snapshot line.
+    """
+    string = inner["string"]
+    at = string.find(old)
+    if at < 0:
+        raise SystemExit(f"state template does not contain {old!r}")
+    delta = len(new) - len(old)
+    inner["string"] = string[:at] + new + string[at + len(old):]
+    shifted = {}
+    for key, attachment in inner.get("attachmentsByRange", {}).items():
+        offset, length = (int(part) for part in key.strip("{}").split(","))
+        if offset > at:
+            offset += delta
+        shifted[f"{{{offset}, {length}}}"] = attachment
+    inner["attachmentsByRange"] = shifted
+    for key in inner["attachmentsByRange"]:
+        offset, _ = (int(part) for part in key.strip("{}").split(","))
+        if inner["string"][offset] != "￼":
+            raise SystemExit(f"attachment offset {offset} no longer points at a placeholder")
+
+
+def seed_settings_snapshot(actions):
+    """Establish the complete settings_snapshot subtree in the bootstrap template."""
+    _, inner = _state_template(actions)
+    if SNAPSHOT_EMPTY not in inner["string"]:
+        return  # already seeded; verify_state_seed() proves it is the right shape
+    line = next(text for text in inner["string"].splitlines() if SNAPSHOT_EMPTY in text)
+    indent = line[:len(line) - len(line.lstrip())]
+    _replace_in_token(inner, SNAPSHOT_EMPTY, _snapshot_seed_text(indent))
+
+
+def verify_state_seed(actions):
+    """Fail the build if any settings_snapshot READ has no bootstrap counterpart.
+
+    Reads are the authority: a key that restore_managed_settings() reads must resolve in
+    the seeded template, at the full depth it is read at, or the read is a hard runtime
+    error on any path that reaches it before a write created the key.  This is the
+    invariant that seed_settings_snapshot() establishes, asserted separately so the two
+    cannot drift -- the same discipline as the five axes before it (KEY NAME, VALUE
+    ENVELOPE, PICKER LITERAL, VARIABLE SLOT, OPERAND TYPE; this is STATE SHAPE).
+    """
+    _, inner = _state_template(actions)
+    # The template is a text template, so it is not valid JSON as written: quoted
+    # placeholders stand in for strings, and one bare placeholder for a boolean.
+    document = inner["string"].replace('"￼"', '"x"').replace("￼", "0")
+    try:
+        seed = json.loads(document)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"bootstrap state.json template is not valid JSON: {error}")
+    wanted = sorted({f"settings_snapshot.{group}.{leaf}"
+                     for group, leaves in SNAPSHOT_SEED.items() for leaf in leaves})
+    read_keys = set()
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.getvalueforkey":
+            continue
+        key = item.get("WFWorkflowActionParameters", {}).get("WFDictionaryKey")
+        # Composite keys are built from a token and cannot be resolved statically; none
+        # of them is rooted at settings_snapshot, and that is asserted rather than assumed.
+        if isinstance(key, str) and key.split(".")[0] == "settings_snapshot":
+            read_keys.add(key)
+        elif not isinstance(key, str) and "settings_snapshot" in str(key):
+            raise SystemExit("a settings_snapshot read uses a composite key and cannot be verified")
+    missing = []
+    for key in sorted(read_keys) + wanted:
+        node = seed
+        for part in key.split("."):
+            if not isinstance(node, dict) or part not in node:
+                missing.append(key)
+                break
+            node = node[part]
+    if missing:
+        raise SystemExit(
+            "bootstrap state.json does not establish every settings_snapshot key that is "
+            "read (Get Dictionary Value on a missing key is a HARD RUNTIME ERROR, so a "
+            "condition-100 guard cannot protect the read): "
+            + ", ".join(sorted(set(missing))))
+    for key in wanted:
+        node = seed
+        for part in key.split("."):
+            node = node[part]
+        if node != "":
+            raise SystemExit(f"{key} is seeded as {node!r}; it must be EMPTY -- a fabricated "
+                             "original_value could restore a setting the user never had")
 
 
 # ---------------------------------------------------------------------------
@@ -1893,6 +2088,7 @@ def main():
         actions[fallback + 1:fallback + 1] = router_trace()
     normalize_setters(actions)
     normalize_open_apps(actions)
+    seed_settings_snapshot(actions)
     # The skill requires a repair-oriented, bulleted Comment immediately before
     # every control-flow start.  Make this invariant structural, not index-based.
     index = 0
@@ -1915,6 +2111,7 @@ def main():
     verify_required_pickers(actions)
     verify_conditional_inputs(actions)
     verify_numeric_operands(actions)
+    verify_state_seed(actions)
     verify_router_shape(actions)
     # Declare that this shortcut consumes Shortcut Input.  The routing block reads the
     # ExtensionInput token, and PLIST_FORMAT.md defines this root key as "True if
