@@ -3,7 +3,7 @@ slug: open-routing-sequence-error
 status: awaiting_human_verify
 trigger: "Fix OPEN routing and Test Circle sequence error (from .planning/todos/pending/2026-08-13-fix-open-routing-and-test-circle-sequence-error.md)"
 created: 2026-08-14
-updated: 2026-08-14 (cycle 8)
+updated: 2026-08-14 (cycle 9)
 severity: blocker
 ---
 
@@ -100,7 +100,99 @@ independently, then check for a shared source before fixing.
 
 bug_class: Bohrbug (all three symptoms deterministic and reproducible on every run)
 
-CYCLE 8 reasoning_checkpoint (supersedes cycle 7, which is kept below for history):
+CYCLE 9 reasoning_checkpoint (supersedes cycle 8, which is kept below for history):
+  hypothesis: >
+    SYMPTOM 1'S SECOND DEFECT, and the fifth axis of this session. A conditional's OPERATOR
+    PICKER is populated from the STATIC TYPE of the variable sitting in WFInput. read_value()
+    defines its variable from an is.workflow.actions.gettext output, so Shortcuts types it as
+    Text and offers only the EIGHT STRING operators — is / is not / has any value / does not
+    have any value / contains / does not contain / begins with / ends with. A numeric
+    WFCondition (0, 1, 2, 3, 1003) then has NO CASE TO RENDER: the operator chip shows RED and
+    iOS refuses to run the action.
+    THIS AXIS IS INVISIBLE IN THE PLIST. Keys, envelope, picker literals and condition code are
+    all well-formed at a defective site, which is why verify_parameter_keys,
+    verify_string_envelopes, verify_required_pickers and verify_conditional_inputs all pass over
+    it, and why eight cycles of static sweeps could not see it. Decrypting the signed artifact
+    does not reveal it either. It surfaced only because the user photographed red operators.
+    DEVICE-LOCALISED, not argued: the cycle-8 pass reached breadcrumb C and died. Action 170 —
+    `Cooldown Until > Now Epoch` — is the first site of this class in the artifact and sits
+    immediately after C. Both cycle-8 predictions landed in one run.
+  confirming_evidence:
+    - "DEVICE: build 2026-08-14h advanced the last breadcrumb from B to C and then failed. 'B again' was stated in advance as meaning the cycle-8 fix had not taken; it advanced, so 149/158 are cleared and the failure is a NEW, LATER defect. Action 170 is the first action of substance after C."
+    - "UI EVIDENCE (the CAP-06 channel): six user screenshots show the operator rendered RED at six distinct Ifs, and the operator picker — opened on four of them — offers EXACTLY the eight STRING operators with no numeric comparator present. That is a type-driven menu, which is the mechanism itself rather than an inference about it."
+    - "CLASSIFIER VALIDATED 6-FOR-6 AGAINST THAT INDEPENDENT UI EVIDENCE: the operand-provenance trace flags 18 sites per fork as gettext-fed; all six photographed red sites fall inside the 18 and ZERO fall outside it. Voice Enabled — the site that broke the initial 'five' sample — is fed by gettext at action 1184 and was always in the bucket."
+    - "DEVICE GROUND TRUTH FOR THE EXACT CONSTRUCT — Donor 4.1, built in Shortcuts.app on the target iPhone and decrypted this cycle. A Get Dictionary Value output compared with WFCondition 2 against WFNumberValue '10' serialises its operand as {Type: ActionOutput, OutputName: 'Dictionary Value', OutputUUID: ..., Aggrandizements: [{Type: 'WFCoercionVariableAggrandizement', CoercionItemClass: 'WFNumberContentItem'}]}. iOS does NOT insert a Number action and does NOT change the read chain — it TYPES THE VARIABLE REFERENCE IN PLACE."
+    - "THE CONTROL CASE IS IN THE SAME DONOR PAIR. Donor 4 is the same shortcut before the type was set: identical descriptor, NO Aggrandizements, and a code-100 test instead. The only delta between Donor 4 and Donor 4.1 is the coercion plus the numeric condition — which isolates the coercion as the thing that makes a numeric operator legal on a dictionary value."
+    - "THE USER'S SCREENSHOT SHOWS THE MECHANISM DIRECTLY: IMG_5636.jpg is the type list for a 'Dictionary Value' chip — Contact / Date / Dictionary / ... / NUMBER / PDF. Choosing Number is what emitted the aggrandizement. The fix is the plist form of a UI action the user performed and photographed."
+    - "THE AGGRANDIZEMENT ATTACHES TO A NAMED VARIABLE TOO, not only to an ActionOutput: golden shortcut 332c12a0060043b388b22b806be7ab58 carries WFCoercionVariableAggrandizement on both {Type: Variable, VariableName: ...} and {Type: ActionOutput, ...} descriptors, 24 instances across the corpus. Our operands are named variables, so this is the link that had to be checked and it holds."
+    - "POST-FIX MEASUREMENT ON THE SHIPPED SIGNED FILE, decrypted with the BUILD-NOTES §14 recipe rather than read from the build tree: 3684 actions (Dumb) / 3752 (Sentient), 87 / 94 numeric conditionals, 20 / 25 Number-coerced, ZERO text-fed-and-uncoerced in either fork. Action 170 — the exact site that killed build h — now carries the coercion."
+  falsification_test: >
+    ONE device sitting on build 2026-08-14i. BREADCRUMBS RETAINED for the third cycle running,
+    and this time their POSITIONS ARE UNCHANGED from build h (A=92, B=147, C=168, D=286, E=306,
+    F=415, G=424, H=458, I=473, J=527) because the fix adds no actions. The next report is
+    therefore directly comparable with the last one.
+      last letter D or beyond -> the class fix is CONFIRMED. Action 170, the site that killed
+        build h, has executed, and with it the first member of the class.
+      last letter C again -> THE HYPOTHESIS IS WRONG, or the coercion is not sufficient at this
+        site. Leading alternative: something else in span C->D that is not operand typing.
+        Because the artifact differs from build h by NOTHING except 20 coercions and two stamp
+        strings, a 'C again' result is an unusually clean refutation — it cannot be blamed on
+        collateral change.
+      all ten letters + the Leaving/Continue menu -> the OPEN pipeline has completed end-to-end
+        for the first time in the project's history.
+    "C again" is a wholly plausible outcome the fix cannot explain away, so this is a genuine
+    falsification test.
+  fix_rationale: >
+    ONE generator-level change fixes the WHOLE CLASS, per the cycle-9 requirement: a
+    normalise_numeric_operands() post-pass attaches Donor 4.1's Number coercion to the operand
+    of every numeric-code conditional whose operand is not already Number-typed. Site-by-site
+    fixing was explicitly rejected — the bisection can only ever localise the EARLIEST remaining
+    site, so incremental fixing would cost one device round trip per site.
+    A FIRST APPROACH WAS BUILT AND THEN DISCARDED, and that is worth recording. Before Donor 4.1
+    arrived, the fix was composed from corpus evidence: golden 2e0fb675 feeds a Dictionary Value
+    straight into is.workflow.actions.number, so a read_number() helper materialised each operand
+    through a Number action with a code-100 null guard. It validated, signed and measured clean.
+    It was discarded anyway, because the donor showed iOS doing something different for THIS
+    construct and device evidence outranks corpus composition. The coercion is also strictly
+    better on every axis that matters here: it adds NO actions (so breadcrumb positions and the
+    comparability of the measurement survive), it leaves every device-proven read chain
+    byte-identical, and it needs no null handling at all — coercing an absent value yields an
+    absent value and the comparison simply evaluates false, whereas a Number action fed a JSON
+    null was the one unevidenced link in the discarded design.
+    SCOPE IS DELIBERATELY MINIMAL. Only operands that are NOT already numeric are touched, so the
+    numeric conditionals that have executed on device — notably the Control Room refresh block
+    from the cycle-5 pass — stay byte-identical. Total artifact delta versus the build the user
+    just tested: 20 conditionals gain an Aggrandizements key, 2 display strings carry the new
+    stamp, and every one of the other 3662 actions is byte-identical.
+    RECURRENCE GUARD: verify_numeric_operands() asserts the invariant that
+    normalise_numeric_operands() establishes, and both run in BOTH forks' builders. They share
+    one provenance resolver so they cannot disagree. The generator now asserts five axes — KEY
+    NAME, VALUE ENVELOPE, PICKER LITERAL, VARIABLE SLOT and OPERAND TYPE.
+  blind_spots:
+    - "THE COERCION IS DEVICE-PROVEN AS A SERIALISATION, NOT AS A RUNTIME OUTCOME. Donor 4.1 proves iOS WRITES this shape when the user types a dictionary value as Number, and therefore that the shape is legal and the operator renders. It does not prove what the comparison EVALUATES TO when the underlying value is JSON null, which is the case for cooldown_until on a fresh state.json. The expectation is 'absent coerces to absent, comparison false, no live cooldown' — which is the desired branch — but it is an expectation, not a measurement."
+    - "PROVENANCE IS RESOLVED PER NAME, NOT PER EXECUTION PATH. Shortcuts types a named variable from ALL of its Set Variable definitions, so the pass treats a name as non-numeric if ANY definition is Text. That is the conservative direction (it coerces more sites, never fewer) and it is why 20 sites are coerced where the hand trace found 18 — Pressure Next and Overrun Seconds are mixed-typed names whose Text definition sits on a different arm entirely."
+    - "THE RIGHT-HAND OPERAND IS DELIBERATELY UNCHANGED. 17 numeric conditionals still carry a gettext-fed WFNumberValue (Heat Cap, Heat Floor, Threshold, Overrun Minimum, Exploit Minimum, Gravity Cap). The evidenced mechanism is the OPERATOR PICKER, driven by the LEFT input only; WFNumberValue is a value field, not a picker, and Donor 4.1 itself pairs a coerced left operand with a plain literal right operand. Recorded as a residual, not fixed."
+    - "MOST OF THE CLASS REMAINS UNTESTABLE THIS CYCLE. Only 170/377/384/409 sit before the first OPEN menu; the rest are on the per-Circle voice check and exit-stats paths the user has never reached. They are fixed by construction — the same pass — but this sitting cannot confirm them and they must not be reported as verified."
+    - "THE 14 WFConditionalActionString = token(...) SITES ARE STILL UNRESOLVED, carried forward unchanged from cycle 8. Same family, but the WFInput evidence does not transfer: that is a TEXT slot where the Shortcuts UI genuinely allows mixed literal+variable text. All 14 sit past breadcrumb J and cannot affect this measurement."
+    - "iOS STILL DOES NOT NAME THE OFFENDING ACTION. Unchanged since cycle 5. The breadcrumbs remain the only instrument, which is why they stay in."
+  candidate_causes:
+    - "code/generator OPERAND TYPE: a numeric condition code applied to a Text-typed operand, so the operator picker has no case to render (PRIMARY, this cycle's fix; 20 sites Dumb / 25 Sentient; device-proven shape from Donor 4.1, positionally matched to the build-h device result)"
+    - "code/generator NAME COLLISION: a variable name assigned from BOTH a numeric and a Text source is mixed-typed, and one Text definition poisons every numeric comparison of that name (CONFIRMED sub-class — Pressure Next, Overrun Seconds, Circle Next; invisible to a hand trace that follows only each conditional's immediate feeding action; covered by the same pass)"
+    - "data/state: cooldown_until is JSON null on fresh state (NOT a separate cause under this fix — the coercion has no failure mode on an absent value — but it is the reason the discarded Number-action design carried risk, and it is the residual uncertainty named in blind_spots)"
+    - "code/generator ENVELOPE: WFConditionalActionString holds a text template at 14 sites (SAME FAMILY, UNRESOLVED, all past breadcrumb J, deliberately unchanged)"
+    - "code/generator SCALAR TYPE: <integer> at number.random / repeat.count (LATENT AT MOST, downgraded in cycle 8, not on this path)"
+  and_gate: >
+    yes, and it is answered rather than assumed. Under the DISCARDED Number-action design the
+    gate genuinely fired at action 170: the operand had to be both Number-typed AND non-null,
+    because a Number action fed a JSON null was an unevidenced failure mode. The coercion design
+    collapses that gate — it types the reference without converting anything, so an absent value
+    stays absent and the comparison simply evaluates false. One condition, not two. That is a
+    substantive reason to prefer it, not merely a smaller diff.
+    The session's broader pattern still holds: the remaining defect count is NOT assumed to be
+    one. The breadcrumbs stay in precisely so a further defect reports as a LATER letter —
+    progress plus localisation — instead of an ambiguous "same error".
+
+CYCLE 8 reasoning_checkpoint (superseded, kept below for history):
   hypothesis: >
     ROOT CAUSE FOUND, and asserted as CONFIRMED rather than ranked, because for the first time
     this session the evidence is positional as well as structural.
@@ -2063,7 +2155,147 @@ superseded_next_action_cycle2: >
     substitution the project docs caution against, and Donor 3 does NOT cover it (its operands
     came from Number actions, not dictionary values). Needs a donor or corpus proof.
 
+- timestamp: 2026-08-14 (cycle 9)
+  checked: "THE ROUTING TENSION the cycle-9 objective required settling before any fix: all 18 defective operands are dictionary values routed through Text, and that routing exists deliberately per .claude/CLAUDE.md. Searched the golden corpus first, then received Donor 4 / Donor 4.1 built on the target iPhone."
+  found: >
+    SETTLED, AND BY DEVICE EVIDENCE RATHER THAN INFERENCE.
+    Donor 4.1 (.planning/debug/"Donor 4.1.shortcut", built in Shortcuts.app on the target
+    iPhone, decrypted with the BUILD-NOTES §14 recipe) is EXACTLY the construct in question —
+    a Get Dictionary Value output compared numerically:
+      0  dictionary            {"heat": "42"}
+      1  getvalueforkey        key "heat"          -> output "Dictionary Value"
+      2  conditional  WFCondition 2, WFNumberValue "10",
+         WFInput = {"Type":"Variable","Variable":{"Value":{
+             "Type":"ActionOutput","OutputName":"Dictionary Value","OutputUUID":"...",
+             "Aggrandizements":[{"Type":"WFCoercionVariableAggrandizement",
+                                 "CoercionItemClass":"WFNumberContentItem"}]},
+           "WFSerializationType":"WFTextTokenAttachment"}}
+    iOS INSERTS NO Number ACTION AND CHANGES NO READ CHAIN. It types the variable reference in
+    place, with a coercion aggrandizement, in the conditional's own input slot.
+    THE CONTROL CASE IS THE SAME SHORTCUT ONE STEP EARLIER. Donor 4 has the identical
+    descriptor with NO Aggrandizements and a code-100 test. The only delta between the two
+    donors is the coercion plus the numeric condition, which isolates the coercion as the thing
+    that makes a numeric operator legal on a dictionary value.
+    THE UI ACTION IS PHOTOGRAPHED: IMG_5636.jpg is the type list for a "Dictionary Value"
+    chip — Contact / Date / Dictionary / ... / NUMBER / PDF. Choosing Number emitted the
+    aggrandizement. The fix is the plist form of a tap the user made and recorded.
+    CORPUS CROSS-CHECK, needed because our operands are NAMED VARIABLES rather than raw
+    ActionOutputs: golden 332c12a0060043b388b22b806be7ab58 carries
+    WFCoercionVariableAggrandizement on both {Type: Variable, VariableName: ...} and
+    {Type: ActionOutput, ...} descriptors (24 instances corpus-wide). The aggrandizement is a
+    property of the descriptor, not of the ActionOutput form.
+  implication: >
+    THE TENSION DISSOLVES WITHOUT TOUCHING THE TEXT HOP AT ALL. The .claude/CLAUDE.md rule —
+    materialise a Dictionary Value before comparing it — is not challenged by this fix, because
+    the read chain is untouched. What was missing was never the materialisation; it was the
+    TYPE DECLARATION on the reference at the point of comparison.
+    None of the four candidate shapes the cycle-9 objective listed is what iOS does. It is the
+    fifth, "something else iOS does that none of us has predicted" — which is precisely why the
+    donor was worth having and why guessing between the four would have cost a device round trip.
+
+- timestamp: 2026-08-14 (cycle 9)
+  checked: "A FIRST FIX WAS BUILT, VALIDATED, SIGNED AND THEN DISCARDED. Recorded because the discard is the methodologically load-bearing part, not the build."
+  found: >
+    Before the donors arrived, the fix was composed from corpus evidence alone: golden
+    2e0fb675e45948aaacee7e534f910492 actions 12->13->15 feed a Get Dictionary Value STRAIGHT
+    into is.workflow.actions.number and consume the "Number" output in a numeric slot. A
+    read_number() helper was written on that basis — Get Dictionary Value -> Number action ->
+    Set Variable, with a WFCondition-100 null guard because cooldown_until is JSON null on a
+    fresh state.json. It passed the new invariant, validated, signed, and measured clean:
+    zero text-fed operands in both forks.
+    It was discarded anyway when Donor 4.1 showed iOS doing something different for this exact
+    construct.
+  implication: >
+    DEVICE EVIDENCE OUTRANKS CORPUS COMPOSITION, and this is the fourth time that ordering has
+    mattered in this session. The corpus construct is REAL — it is the shape for materialising
+    a number into the data flow — but it is not the shape for TYPING A CONDITIONAL OPERAND, and
+    composing two separately-evidenced links into an unobserved chain is inference, not evidence.
+    The coercion is additionally better on every axis that matters here: it adds NO actions, so
+    breadcrumb positions survive and the next device report is directly comparable with the
+    last; it leaves every device-proven read chain byte-identical; and it removes the one
+    unevidenced link the discarded design carried, namely what a Number action does when handed
+    a JSON null. That last point converts a two-condition AND-gate at action 170 into one
+    condition.
+
+- timestamp: 2026-08-14 (cycle 9 build)
+  checked: "Build 2026-08-14i produced, validated, signed, and verified INSIDE THE SHIPPED SIGNED FILE by decryption (BUILD-NOTES §14 recipe), not read back from the build tree."
+  found: >
+    Dumb signed artifact decrypted: 3684 actions; 87 numeric conditionals; 20 Number-coerced;
+    ZERO text-fed-and-uncoerced. Action 170 — the exact site that killed build h — now reads
+    WFInput.Variable.Value = {VariableName: "Cooldown Until", Type: "Variable",
+    Aggrandizements: [{Type: WFCoercionVariableAggrandizement,
+    CoercionItemClass: WFNumberContentItem}]}. Stamp "build 2026-08-14i" x2, zero stale "h".
+    10 breadcrumbs, ROUTER TRACE present, 147 setvalueforkey actions. AEA1 magic confirmed.
+    Sentient: 3752 actions, 94 numeric conditionals, 25 coerced, zero uncoerced.
+    Both forks pass validate-shortcut --target-macos 26.
+    SYMPTOMS 2 AND 3 PRESERVED BY CONSTRUCTION, and this cycle the proof is total rather than
+    class-by-class. A whole-artifact action-by-action comparison against build h — the build the
+    user tested hours ago — gives: action counts IDENTICAL (3684 = 3684); exactly 22 actions
+    differ; 20 of them are conditionals whose ONLY delta is the added Aggrandizements key (each
+    verified by deleting that key and confirming byte-equality with build h); the remaining 2
+    are the BUILD_STAMP display strings. Every other action in the artifact — all 3662 of them,
+    including all 147 Set Dictionary Value actions and the entire Notes family — is BYTE-
+    IDENTICAL to the build that device-confirmed symptoms 2 and 3.
+    BREADCRUMB POSITIONS ARE UNCHANGED from build h: A=92, B=147, C=168, D=286, E=306, F=415,
+    G=424, H=458, I=473, J=527.
+  implication: >
+    This is the cleanest single-variable experiment of the session. A "C again" result cannot be
+    attributed to collateral change, because there is none: the artifact differs from the one
+    the user just ran by 20 type declarations and two display strings. And because no actions
+    were added, the letter the user reports next is directly comparable with the letter they
+    reported last, with no re-indexing.
+
+- timestamp: 2026-08-14 (cycle 9, carried-forward candidates)
+  checked: "The three fold-in candidates, checked against the artifact. Cheap analysis only — NONE was fixed this cycle, deliberately, because any unmeasured change would confound the build-i letter measurement now in flight."
+  found: >
+    (b) 'Spoken This Run' — NOT A DEFECT, a cheap elimination rather than a deferral. The tests
+        use WFCondition 101 ("does not have any value"), not a positive test:
+        `if Spoken This Run does not have any value -> speak -> set Spoken This Run`. Six
+        instances, each with its Set Variable immediately inside its own body. That is the
+        CORRECT once-per-run latch idiom — unset on the first Circle so the branch runs, set
+        thereafter so it does not. The reported concern ("it can never be available at its own
+        test") is exactly the intended precondition.
+    (a) 'Session ID' — REAL, SAFETY-RELEVANT, AND LARGER THAN REPORTED. Control-flow ancestry
+        walk: Session ID is set once, at action 460, ancestry [90 OPEN, 177 not-in-cooldown,
+        316 genuine-open]. Of the twenty `settings_snapshot.*.changed_by_session_id` writes,
+        only TWO share that ancestry. The other EIGHTEEN sit under a different depth-1 branch
+        (1279, not 177) on which Session ID is never assigned at all — so every
+        brightness/volume snapshot taken outside the genuine-OPEN dispatch records an EMPTY
+        owner, and the ownership check guarding restore cannot match it. Eighteen sites, not
+        the three originally noted.
+    (c) The variable-bearing WFItems List shape — SETTLED BY THE SAME DONORS, and our shape is
+        WRONG. Donor 4 / 4.1 action 5 is a List whose WFItems mixes bare strings with a
+        variable-bearing entry, and iOS WRAPS that entry:
+          WFItems: ["Circle",
+                    {"WFItemType": 0, "WFValue": {"Value": {"string": "\\ufffc",
+                       "attachmentsByRange": {...}},
+                     "WFSerializationType": "WFTextTokenString"}},
+                    "follows"]
+        Our artifact puts the {Value, WFSerializationType} object in the array DIRECTLY, with
+        no {WFItemType, WFValue} wrapper. That is the shape the cycle-8 addendum recorded as
+        matching neither golden List action; it does not match the device donor's shape either,
+        and there is now a device precedent to conform to.
+  implication: >
+    (b) is closed at zero cost and removes a false lead from the board.
+    (a) is the next non-blocking work item and should be fixed in its own cycle, where it can be
+    measured alone. Fixing it now would put an unmeasured semantic change into the artifact
+    whose letter result is the entire point of the next device sitting.
+    (c) now has a device shape to conform to and no longer needs a donor request. It sits past
+    breadcrumb J so it cannot affect this measurement; fix it alongside (a).
+
 ## Eliminated
+
+- hypothesis: "'Spoken This Run' is defective because the If that tests it can never see it — its only Set Variable sits inside that If's own body."
+  evidence: "The tests use WFCondition 101 ('does not have any value'), not a positive test. `if not set -> speak -> set` is the correct once-per-run latch: unset on the first Circle so the branch runs, set thereafter so it does not. Six instances, all identical. Checked against the rebuilt artifact at actions 1242/1748/2001/2254/2507/2760."
+  timestamp: 2026-08-14 (cycle 9)
+
+- hypothesis: "Fixing a numeric operand requires REPLACING the Text materialisation — either with a Number action or by restructuring the comparison — which is the substitution .claude/CLAUDE.md cautions against, so the Text hop and the numeric comparison are in genuine conflict."
+  evidence: "Donor 4.1, built on the target iPhone and decrypted 2026-08-14: iOS neither replaces nor adds a materialising action. It attaches a WFCoercionVariableAggrandizement (CoercionItemClass WFNumberContentItem) to the variable reference IN THE CONDITIONAL'S OWN INPUT SLOT, leaving the read chain untouched. Donor 4 is the same shortcut before the type was set and carries the identical descriptor with no Aggrandizements, isolating the coercion as the operative difference. There was never a conflict: the missing thing was a TYPE DECLARATION on the reference, not a different materialiser. None of the four candidate shapes considered was correct."
+  timestamp: 2026-08-14 (cycle 9)
+
+- hypothesis: "The construct 'dictionary value fed into a numeric comparison' has zero coverage in the corpus, the catalog, or any existing donor, so it cannot be resolved without requesting a new one."
+  evidence: "Partially wrong on the corpus and fully resolved by donor. Golden 2e0fb675e45948aaacee7e534f910492 actions 12->13->15 DOES feed a Get Dictionary Value output straight into is.workflow.actions.number — that construct was always covered; prior sweeps searched the corpus for CONDITIONALS when the evidence sat one action upstream in how the OPERAND was produced. It is nonetheless the wrong construct for this problem: it materialises a number into the data flow, whereas the conditional needs its reference TYPED. Donor 4.1 settles the actual construct on device."
+  timestamp: 2026-08-14 (cycle 9)
 
 - hypothesis: "The five red If operators seen in the user's screenshots are the visible symptom of the cycle-8 WFInput.Variable envelope defect — an unresolvable input cannot be typed, so Shortcuts falls back to offering only the eight string operators and the numeric comparator renders red. (Unification: one defect, two presentations.)"
   evidence: "Session-manager programmatic cross-check: the 25 cycle-8 sites carry ONLY string condition codes (4, 5, 99) with variables Stored Day / Owner IDs / counters. The five red Ifs are actions 170, 377, 384, 409, 579 with NUMERIC codes (0, 2) and entirely different variables. Zero overlap. Furthermore all 87 numeric-code conditionals in the POST-FIX build already carry the correct WFTextTokenAttachment envelope, so the envelope fix cannot be what makes them render — they were never envelope-defective."
@@ -2181,6 +2413,70 @@ superseded_next_action_cycle2: >
   timestamp: 2026-08-14 (cycle 2)
 
 ## Resolution
+
+cycle_9_root_cause: >
+  SYMPTOM 1, SECOND DEFECT — the fifth axis of this session, and the first that is invisible
+  in the plist. A conditional's OPERATOR PICKER is populated from the STATIC TYPE of the
+  variable in WFInput. read_value() defines its variable from an is.workflow.actions.gettext
+  output, so Shortcuts types it Text and offers only the eight STRING operators; a numeric
+  WFCondition (0/1/2/3/1003) then has no case to render, the operator chip shows RED, and iOS
+  refuses to run the action. Keys, envelope, picker literals and condition code are all
+  well-formed at a defective site, so every existing invariant passes over it and decrypting
+  the signed artifact does not reveal it either.
+  20 sites in Dumb / 25 in Sentient. That is more than the 18 the hand trace found, because a
+  variable NAME assigned from both a numeric and a Text source anywhere in the artifact is
+  mixed-typed, and one Text definition poisons every numeric comparison of that name — even on
+  an arm the Text definition can never reach (Pressure Next, Overrun Seconds, Circle Next).
+  Device-localised, not argued: the cycle-8 pass reached breadcrumb C and died, and action 170
+  (Cooldown Until > Now Epoch) is the first site of the class in the artifact and sits
+  immediately after C.
+
+cycle_9_fix: >
+  tools/build_state_engine.py and tools/build_sentient.py only; both forks regenerated,
+  validated and re-signed. Nothing from cycles 2, 3, 4, 5 or 8 is reverted.
+  (1) NEW normalise_numeric_operands() — a post-pass that attaches
+      {"Type": "WFCoercionVariableAggrandizement",
+       "CoercionItemClass": "WFNumberContentItem"}
+      to the operand descriptor of every numeric-code conditional whose operand is not already
+      Number-typed. Shape taken verbatim from Donor 4.1, built in Shortcuts.app on the target
+      iPhone and decrypted this cycle; Donor 4 is the same shortcut before the type was set and
+      supplies the control case. Golden 332c12a0 confirms the aggrandizement attaches to a NAMED
+      variable as well as to an ActionOutput, which is the form our operands take.
+      Structural, not site-by-site: any future numeric comparison on a text-coerced value is
+      corrected automatically.
+  (2) NEW verify_numeric_operands() asserts the invariant that (1) establishes. Both run in
+      BOTH forks' builders and share one provenance resolver, so they cannot disagree. The
+      generator now asserts five axes — KEY NAME, VALUE ENVELOPE, PICKER LITERAL, VARIABLE SLOT
+      and OPERAND TYPE.
+  (3) Nothing else changes. Operands that are already numeric are deliberately left untouched,
+      so the numeric conditionals that have executed on device stay byte-identical. No action is
+      added, removed or reordered anywhere in either fork.
+  BUILD_STAMP bumped to "build 2026-08-14i". OPEN_BISECT and ROUTER_TRACE remain ON, and because
+  no actions were added the breadcrumb positions are UNCHANGED from build h: A=92, B=147, C=168,
+  D=286, E=306, F=415, G=424, H=458, I=473, J=527.
+  A FIRST FIX WAS BUILT AND DISCARDED — a read_number() helper materialising each operand
+  through a Number action with a code-100 null guard, composed from golden corpus 2e0fb675. It
+  validated, signed and measured clean, and was discarded when Donor 4.1 showed iOS doing
+  something different for this exact construct. See Evidence for why the discard was correct.
+
+cycle_9_verification: >
+  NOT device-confirmed. Build-side only, and stated as such.
+  - Both forks: validate-shortcut --target-macos 26 passes; signed files carry AEA1 magic.
+  - Shipped signed Dumb artifact DECRYPTED and inspected (not read back from the build tree):
+    3684 actions, 87 numeric conditionals, 20 Number-coerced, ZERO text-fed-and-uncoerced.
+    Action 170 — the exact site that killed build h — carries the coercion. Stamp
+    "build 2026-08-14i" x2 with zero stale "h", 10 breadcrumbs, ROUTER TRACE present.
+  - Sentient: 3752 actions, 94 numeric conditionals, 25 coerced, zero uncoerced.
+  - SYMPTOMS 2 AND 3 PRESERVED BY CONSTRUCTION, proven exhaustively rather than by class:
+    whole-artifact action-by-action comparison against build h gives identical action counts
+    (3684 = 3684) and exactly 22 differing actions — 20 conditionals whose ONLY delta is the
+    added Aggrandizements key (each verified by deleting that key and confirming byte-equality
+    with build h), plus the 2 BUILD_STAMP display strings. All 147 Set Dictionary Value actions
+    and the entire Notes family are BYTE-IDENTICAL to the build that device-confirmed them.
+  Awaiting the build-i device pass. Decision rule stated in advance: last letter D or beyond
+  confirms the class fix; C again refutes it, and unusually cleanly, since the artifact differs
+  from the one just tested by 20 type declarations and two display strings and nothing else.
+
 
 cycle_8_root_cause: >
   SYMPTOM 1, CONFIRMED. A conditional's WFInput is {"Type":"Variable","Variable": <token>}, and

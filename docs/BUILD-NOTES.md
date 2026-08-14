@@ -744,7 +744,133 @@ This is the fifth distinct parameter-defect axis found in one session, after key
 envelope (`str`), value envelope (`AttributedString`), and required picker enum. Each was
 invisible to the sweep that caught the previous one.
 
-**Status:** not fixed at time of writing — a fix was deliberately withheld so it could not
-confound the bisection measurement already in flight. Fix direction indicated by Donor 3: route
-numeric operands through a **Number** action before comparison so Shortcuts types them
-numerically, rather than relying on text coercion.
+**Status:** ~~not fixed at time of writing~~ — **FIXED in build 2026-08-14i (debug cycle 9).**
+See §16.
+
+---
+
+## 16. CAP-07 — a numeric conditional operand must be TYPED, not re-materialised (debug cycle 9, 2026-08-14)
+
+§15 named the axis (a Text-typed operand offers only string operators, so a numeric comparator
+renders red) but left the **construct** open, because all 18 defective operands per fork are
+**dictionary values** and `.claude/CLAUDE.md` warns that *"comparing a Dictionary Value (text)
+directly in an If often renders blank — pass it through a Text action first."* Donor 3 did not
+cover it: its operands came from `Number` actions, not dictionary values.
+
+### Device ground truth — Donor 4.1
+
+`.planning/debug/"Donor 4.1.shortcut"`, built in Shortcuts.app on the target iPhone and decrypted
+with §14's recipe. It is exactly the construct in question — a Get Dictionary Value output
+compared numerically:
+
+| # | action | parameter |
+|---|---|---|
+| 0 | `is.workflow.actions.dictionary` | `{"heat": "42"}` |
+| 1 | `is.workflow.actions.getvalueforkey` | key `heat` → output `Dictionary Value` |
+| 2 | `is.workflow.actions.conditional` | `WFCondition 2`, `WFNumberValue "10"`, operand as below |
+
+```json
+"WFInput": {"Type": "Variable", "Variable": {
+    "Value": {"Type": "ActionOutput", "OutputName": "Dictionary Value", "OutputUUID": "…",
+              "Aggrandizements": [{"Type": "WFCoercionVariableAggrandizement",
+                                   "CoercionItemClass": "WFNumberContentItem"}]},
+    "WFSerializationType": "WFTextTokenAttachment"}}
+```
+
+**iOS inserts no `Number` action and changes no read chain. It types the variable reference in
+place**, with a coercion aggrandizement, in the conditional's own input slot.
+
+**The control case ships in the same donor pair.** `Donor 4` is the identical shortcut before the
+type was set: same descriptor, **no** `Aggrandizements`, and a `WFCondition 100` test instead. The
+only delta between the two is the coercion plus the numeric condition — which isolates the
+coercion as the thing that makes a numeric operator legal on a dictionary value.
+
+**The UI action is photographed.** `.planning/debug/IMG_5636.jpg` is the type list for a
+`Dictionary Value` chip — Contact / Date / Dictionary / … / **Number** / PDF. Choosing *Number*
+emits the aggrandizement. The fix is the plist form of a tap the user made and recorded.
+
+**It attaches to named variables too**, which is the form our operands take: golden shortcut
+`332c12a0060043b388b22b806be7ab58` carries `WFCoercionVariableAggrandizement` on both
+`{Type: Variable, VariableName: …}` and `{Type: ActionOutput, …}` descriptors — 24 instances
+corpus-wide. The aggrandizement is a property of the descriptor, not of the ActionOutput form.
+
+### The apparent conflict with the project rule was never real
+
+The `.claude/CLAUDE.md` rule — materialise a Dictionary Value before comparing it — is untouched
+by this fix, because **the read chain is not modified at all**. What was missing was never the
+materialisation; it was the **type declaration on the reference at the point of comparison**.
+
+### A corpus-composed fix was built and discarded — the discard is the lesson
+
+Before the donors arrived, a fix was composed from corpus evidence: golden
+`2e0fb675e45948aaacee7e534f910492` actions 12 → 13 → 15 feed a Get Dictionary Value **straight
+into `is.workflow.actions.number`** and consume the `Number` output in a numeric slot. A
+`read_number()` helper was written on that basis, with a `WFCondition 100` null guard because
+`cooldown_until` is JSON `null` on a fresh `state.json`. It validated, signed and measured clean.
+
+It was discarded when Donor 4.1 arrived. **Device evidence outranks corpus composition.** The
+corpus construct is real — it is the shape for *materialising a number into the data flow* — but
+it is not the shape for *typing a conditional operand*, and chaining two separately-evidenced
+links into an unobserved sequence is inference, not evidence.
+
+The coercion is also better on every axis that matters:
+
+| | coercion (shipped) | Number action (discarded) |
+|---|---|---|
+| actions added | **0** | ~250 |
+| breadcrumb positions | **unchanged** — next device report directly comparable | shifted; re-indexing required |
+| existing read chains | **byte-identical** | rewritten at 20 sites |
+| behaviour on a JSON `null` | absent stays absent, comparison false | **unevidenced** — needs a guard, and the guard's premise was itself unproven |
+
+That last row collapsed a two-condition AND-gate at action 170 into one condition.
+
+### A distinct sub-class: mixed-typed variable NAMES
+
+Shortcuts types a named variable from **all** of its `Set Variable` definitions. One Text-typed
+definition anywhere poisons **every** numeric comparison of that name — *including comparisons on
+an arm the Text definition can never reach*. This is why 20 sites are coerced where a hand trace
+following each conditional's immediate feeding action found 18: `Pressure Next`, `Overrun Seconds`
+and `Circle Next` are mixed-typed names.
+
+### Passes
+
+`normalise_numeric_operands()` attaches the coercion to any numeric-code conditional operand that
+is not already Number-typed; `verify_numeric_operands()` asserts the resulting invariant. Both run
+in **both** forks' builders and share one provenance resolver, so they cannot disagree. Operands
+already fed by a numeric source (`number`, `number.random`, `math`, `round`,
+`calculateexpression`, `gettimebetweendates`, `getdevicedetails`, `count`, `ask` with
+`WFInputType = Number`, or the built-in `Repeat Index`) are deliberately left untouched, so
+numeric conditionals that have executed on device stay byte-identical.
+
+The generator now asserts five axes: **key name · value envelope · picker literal · variable slot ·
+operand type.**
+
+### Settled as a side effect — the variable-bearing `WFItems` List shape
+
+Donor 4 / 4.1 action 5 is a `list` whose `WFItems` mixes bare strings with a variable-bearing
+entry, and iOS **wraps** that entry:
+
+```json
+"WFItems": ["Circle",
+            {"WFItemType": 0,
+             "WFValue": {"Value": {"string": "￼", "attachmentsByRange": {…}},
+                         "WFSerializationType": "WFTextTokenString"}},
+            "follows"]
+```
+
+This artifact puts the `{Value, WFSerializationType}` object into the array **directly**, with no
+`{WFItemType, WFValue}` wrapper. §15's addendum recorded that our shape matched neither golden
+List action; it does not match the device shape either. **Not fixed in this cycle** — it sits past
+breadcrumb J and cannot affect the measurement in flight — but there is now a device precedent to
+conform to, and no donor request is owed.
+
+### Carried forward, not fixed in this cycle
+
+- **`Session ID` scope — safety-relevant, 18 sites.** `Session ID` is assigned once (ancestry:
+  OPEN → not-in-cooldown → genuine-open). Only 2 of the 20
+  `settings_snapshot.*.changed_by_session_id` writes share that ancestry; the other **18** sit
+  under a different depth-1 branch where `Session ID` is never assigned, so brightness/volume
+  snapshots taken outside the genuine-OPEN dispatch record an **empty owner** and the ownership
+  check guarding restore cannot match. Deserves its own cycle so it can be measured alone.
+- **`Spoken This Run` — investigated and dismissed.** Its tests use `WFCondition 101` ("does not
+  have any value"), so `if not set → speak → set` is the correct once-per-run latch, not a defect.
