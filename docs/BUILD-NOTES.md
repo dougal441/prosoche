@@ -660,9 +660,19 @@ The artifact contained its own control group: eight picker classes already carri
 
 §13 recorded that `speaktext` "lists no parameters at all" in the catalog and that no verified replacement key existed. **That premise was wrong.** The ToolKit v78 first-party catalog defines six parameters for `is.workflow.actions.speaktext`: `WFSpeakTextWait`, `WFSpeakTextRate`, `WFSpeakTextPitch`, `WFSpeakTextLanguage`, `WFSpeakTextVoice`, and **`WFText`** (type `str`, display name `Text`). `WFInput` is not among them, so the spoken text was never being read. All 10 sites now emit `WFText`, and because it is `str`-typed it is registered in `STRING_ENVELOPE_PARAMS` and takes the `WFTextTokenString` envelope per CAP-05/CAP-05a. No fabrication was required.
 
-### DEV-05 — `math.WFMathOperation` is deliberately left absent at 25 sites
+### DEV-05 — `math.WFMathOperation` is deliberately left absent at 25 sites — **CLOSED on device evidence (cycle 7)**
 
 This looked like the leading candidate for the same defect class: a required enum picker (`Operation`) missing wherever the generator's `math()` helper is called with `op=None` or `op="+"`. It is **refuted by the corpus**, which outranks catalog inference under the cycle-2 `openurl` precedent: golden shortcut `2e0fb675e459` (client `1146.11.1`, minimum client `900` — our exact vintage) omits `WFMathOperation` with our exact key shape (`WFInput` + `WFMathOperand`). Addition is genuinely the implicit default. `math` is therefore **excluded** from `REQUIRED_PICKER_PARAMS`, deliberately and with the reason recorded in source.
+
+**Settled affirmatively 2026-08-14 (cycle 7).** Cycle 6 had re-scored the corpus evidence as a weak 1-of-2 split and reopened this. Device donor 3 (`docs/device-evidence/Donor3-NumericConstructs.xml`, built in Shortcuts.app on the target iPhone and decrypted with §14's recipe) closes it: a Calculate action left at its **default** operation serialises as `WFInput` + `WFMathOperand`, both bare `WFTextTokenAttachment`, with `WFMathOperation` **absent entirely**. Omitting it is what iOS itself does. No generator change is owed.
+
+### DEV-07 — numeric literals are emitted as plist `<integer>`; iOS never does (open, under test)
+
+Neither the 19-shortcut golden corpus nor device donor 3 ever serialises a numeric literal parameter as plist `<integer>` — iOS uses `<real>` or `<string>` without a single exception. Donor 3 writes `number.random`'s `WFRandomNumberMinimum`/`Maximum` as `<string>` and `repeat.count`'s `WFRepeatCount` as `<real>`; the corpus writes `conditional.WFNumberValue` as `<real>` 4/4. This generator emits `<integer>` at 78 sites.
+
+The axis is **not broadly guilty**: `number.WFNumberActionNumber` as `<integer>` executed successfully on device inside the "Open Control Room" menu case, and `conditional.WFNumberValue` as `<integer>` executed in the Control Room refresh block on the same pass. It survives at exactly two sites that are uniquely on the OPEN path, have zero corpus precedent, zero device coverage, and a donor that contradicts them — `number.random` and the nine-step `repeat.count`. Both are **deliberately left unchanged** pending the cycle-7 bisection result, so the measurement is not confounded. See `.planning/debug/open-routing-sequence-error.md` cycle-7 checkpoint.
+
+Recurrence-guard gap this exposes, independent of the outcome: the generator asserts invariants on parameter **key**, value **envelope** and picker **literal**, but has none on the plist **type** of an emitted parameter. Six cycles of sweeps believed to be exhaustive never modelled it.
 
 ### DEV-06 — `openapp` legacy `WFAppIdentifier` retained; `WFWindowingFormat` deliberately omitted
 
@@ -680,4 +690,4 @@ Before either generator runs, enforce `git merge-base --is-ancestor 7ca8ebbfe467
 
 ### Scaffolding debt (carried forward, unchanged)
 
-`BUILD_STAMP` (now `build 2026-08-14f`) and `ROUTER_TRACE` both remain ON while the session iterates. See §13's debt table; neither ships.
+`BUILD_STAMP` (now `build 2026-08-14g`), `ROUTER_TRACE` and — added in cycle 7 — `OPEN_BISECT` all remain ON while the session iterates. See §13's debt table; none of them ships. `OPEN_BISECT = False` strips all ten OPEN-path breadcrumb alerts; nothing else depends on them, and with them removed the artifact is byte-identical to build `14f` across all 3,674 actions apart from the two display-only stamp strings.
