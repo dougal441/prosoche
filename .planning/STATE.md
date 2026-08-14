@@ -8,7 +8,7 @@ status: verifying
 stopped_at: Phase 08 Plan 03 awaiting real-iPhone DIST-03 UAT
 last_updated: "2026-08-13T08:58:14.171Z"
 last_activity: 2026-08-14
-last_activity_desc: "Completed quick task 260814-kqm: corrected signed .shortcut recovery instructions"
+last_activity_desc: "Completed quick task 260814-kut: disambiguated deviations and guarded rebuild provenance"
 progress:
   total_phases: 8
   completed_phases: 6
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 Phase: 8 of 8 (Sentient Fork & Dual Distribution)
 Plan: 3 of 3 complete
 Status: Automated verification passed; awaiting real-iPhone import / Manual UAT
-Last activity: 2026-08-14 — Completed quick task 260814-kqm: corrected signed `.shortcut` recovery instructions
+Last activity: 2026-08-14 — Completed quick task 260814-kut: disambiguated deviations and guarded rebuild provenance
 
 Progress: [██████████] 100%
 
@@ -133,6 +133,7 @@ Recent decisions affecting current work:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260814-kqm | Correct signed AEA1 `.shortcut` recovery instructions | 2026-08-14 | adc96a3 | [260814-kqm-correct-8-signed-aea1-shortcut-artifacts](./quick/260814-kqm-correct-8-signed-aea1-shortcut-artifacts/) |
+| 260814-kut | Disambiguate deviation IDs and guard rebuild provenance | 2026-08-14 | 05f69fc | [260814-kut-disambiguate-the-cycle-3-speaktext-devia](./quick/260814-kut-disambiguate-the-cycle-3-speaktext-devia/) |
 
 ## Deferred Items
 
