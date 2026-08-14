@@ -203,3 +203,55 @@ and must satisfy BOTH consumers: the `has any value` gates AND the numeric coerc
 That dual constraint is new information: a sentinel that reads as absent to code 100 must also not
 break a `WFNumberContentItem` coercion on the same key. Establish both from a donor before
 shipping; they may not have the same answer.
+
+---
+
+## 9. PER-KEY CONSUMPTION MAP — 4 of the 7 `"null"` sites change, 3 must NOT
+
+Built by tracing each `getvalueforkey` forward through its `gettext` → `setvariable` hop to the
+condition code that actually consumes it. This is the map that decides the fix scope.
+
+| state key | consumed by | `"null"` verdict |
+|---|---|---|
+| `settings_snapshot.brightness` | **code 100 HAS ANY VALUE** @181 | **DEFECT** |
+| `settings_snapshot.brightness.original_value` | **code 100** @186 | **DEFECT** |
+| `settings_snapshot.volume` | **code 100** @200, @1031 | **DEFECT** |
+| `settings_snapshot.volume.original_value` | **code 100** @205 | **DEFECT** |
+| `settings_snapshot.brightness` (Circle path) | **code 100** @1125 | **DEFECT** |
+| `pending_exit` | **code 100 HAS ANY VALUE** @483 | **DEFECT** |
+| `active_session` | **code 100 HAS ANY VALUE** @689, @1094, @1232, @1248 | **DEFECT** |
+| `active_session.id` | code 4 string-is @697, @794, @1099, @1253 | (gated by the 100s above) |
+| `active_session.declared_duration_seconds` | code 2 numeric @1260 | (gated by the 100s above) |
+| **`cooldown_until`** | **code 2 `>` NUMERIC ONLY** @170 | **SAFE — DO NOT CHANGE** |
+
+### Verdict
+
+**Change 4 sites** — line 332 (`settings_snapshot.*`), 768 (`pending_exit`), 1250 and 1301
+(`active_session`). All three keys are consumed by `has any value`, and the device result
+`EMPTY: NO VALUE` confirms an empty sentinel makes that gate read false as intended.
+
+**Do NOT change 3 sites** — lines 1249, 1258, 1300 (`cooldown_until`). Its *only* consumer is the
+numeric comparison at action 170, and the device result `NULL COERCED FALSE` (no error) means the
+current literal already evaluates false, which is semantically correct: **"cleared cooldown" →
+"not in cooldown"**. Changing it would alter behaviour on the single most critical position on
+the OPEN path — the conditional the build-`i` coercion fix just repaired. **That would be a
+regression, not a fix.**
+
+This supersedes the uniform seven-site plan in §8. The construct is not uniformly wrong; the
+question is per-key whether the sentinel matches its consumption pattern, and for `cooldown_until`
+it already does.
+
+### Note on `active_session` — the empty sentinel is load-bearing here
+
+`active_session` is read at 32 sites, and its sub-keys (`.id`, `.declared_duration_seconds`) are
+read *nested*. Those nested reads would hard-error on a missing parent — the same failure as
+`settings_snapshot`. They are protected only because the `has any value` gates at 689/1094/1232/
+1248 skip them. So the empty sentinel is doing real work: with `"null"` those gates read **true**
+and the nested reads execute against a string, which is exactly the `settings_snapshot` failure
+one level over. Fixing `active_session` is not cosmetic.
+
+### Still blocked on
+
+Whether **empty** survives a Number coercion. Not needed for these four keys — all are
+gate-consumed — but it decides whether empty is a single universal sentinel or whether
+gate-consumed and numerically-consumed keys need different ones as a documented choice.
