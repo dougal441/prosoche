@@ -12,6 +12,7 @@ from pathlib import Path
 from build_state_engine import (
     normalise_output_names,
     normalise_string_envelopes,
+    verify_conditional_inputs,
     verify_output_names,
     verify_required_pickers,
     verify_router_shape,
@@ -190,6 +191,7 @@ def main() -> None:
     verify_string_envelopes(actions)
     verify_output_names(actions)
     verify_required_pickers(actions)
+    verify_conditional_inputs(actions)
     # Sentient inherits the router verbatim from the built Dumb source, but assert it here
     # too: an inserted Sentient block must never land between the OPEN/CLOSE tests and the
     # MANUAL arm, and the absence gate must not reappear through a stale fork.

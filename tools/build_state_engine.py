@@ -17,7 +17,7 @@ SOURCE = Path("src/PROSOCHE-Dumb.xml")
 # matches an installed one can create a second copy and leave an automation
 # wrapper pointed at the old shortcut; without a visible stamp that stale-install
 # case is indistinguishable from a failed fix.  Bump on every device-bound build.
-BUILD_STAMP = "build 2026-08-14g"
+BUILD_STAMP = "build 2026-08-14h"
 # CYCLE 7 MEASUREMENT INSTRUMENT, not a fix.  Cycle 6 proved on device that the Run
 # Shortcut handoff DOES deliver "OPEN" (Probe 5 echoed it) while PROSOCHE still fails,
 # so the failing action is inside the OPEN arm, before the first OPEN menu.  Static
@@ -191,6 +191,17 @@ def set_value(key: str, value, dictionary_name="State"):
 
 
 def if_block(value_name: str, condition: int, *, number=None, string=None):
+    # WFInput.Variable is a VARIABLE SLOT, not a string slot.  It must hold a
+    # WFTextTokenAttachment wrapping a Type-bearing descriptor -- variable() or output().
+    # It must NOT hold token()/text_token(), which produce a WFTextTokenString TEXT
+    # TEMPLATE ({"string": "￼", "attachmentsByRange": {...}}).  Shortcuts cannot
+    # resolve a text template as a conditional input: it renders the If's input field as
+    # unset and refuses to run with "Please choose a value for each parameter in this
+    # action".  This is the cycle-2 string-envelope rule INVERTED, which is exactly how 13
+    # hand-written overwrites of this parameter went unnoticed for seven debug cycles.
+    # Evidence: Donor 3 action 4 (device export, variable-vs-variable If) uses the
+    # attachment form; 20/20 golden-corpus conditionals carrying WFInput use it; 0 use a
+    # text template.  Enforced by verify_conditional_inputs().
     group = uid()
     params = {"GroupingIdentifier": group, "WFControlFlowMode": 0,
               "WFCondition": condition,
@@ -394,7 +405,6 @@ def persist_contract():
     a += [active] + read_value("active_session.id", variable("Reloaded State"), "Contract Owner ID")
     owns_group, owns = if_block("Contract Owner ID", 4, string="captured-session-placeholder")
     owns["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    owns["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Contract Owner ID")}
     owns["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Session ID")
     a += [owns, set_value("active_session.intention", variable("Confession Intention"), "Reloaded State"),
           set_value("active_session.declared_duration_seconds", variable("Declared Duration Seconds"), "Reloaded State")]
@@ -552,7 +562,6 @@ def enabled_exits(source="State"):
                  WFInput=variable("Profile Enabled Exits")), set_var("Enabled Exit Candidate", variable("Repeat Item"))]
     matches_group, matches = if_block("Enabled Exit Candidate", 4, string="canonical-exit-placeholder")
     matches["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    matches["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Enabled Exit Candidate")}
     a += [matches, action("is.workflow.actions.appendvariable", WFInput=variable("Canonical Exit"), WFVariableName="Enabled Exits"),
           otherwise(matches_group), action("is.workflow.actions.nothing"), end_if(matches_group),
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=inner, WFControlFlowMode=2),
@@ -566,7 +575,6 @@ def select_exit():
     a += enabled_exits() + read_value("exit_selection_counter", variable("State"), "Exit Selection Counter")
     missing_counter, counter = if_block("Exit Selection Counter", 5, string=None)
     counter["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    counter["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exit Selection Counter")}
     a += [counter] + number(0, "Exit Selection Counter") + [otherwise(missing_counter), action("is.workflow.actions.nothing"), end_if(missing_counter)]
     a += config("exits.exploit_min_observations", "Exploit Minimum") + config("exits.exploration_rate", "Exploration Rate")
     a += number(0, "Sparse Selection")
@@ -608,13 +616,11 @@ def select_exit():
           set_var("Candidate Exit", variable("Repeat Item"))]
     is_best_group, is_best = if_block("Candidate Exit", 4, string="best-exit-placeholder")
     is_best["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    is_best["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Candidate Exit")}
     a += [is_best, *number(1, "Past Best"), otherwise(is_best_group)]
     choose_after_group, choose_after = if_block("Past Best", 2, number=0)
     a += [choose_after]
     unchosen_group, unchosen = if_block("Exploration Selected", 4, string="0")
     unchosen["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    unchosen["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exploration Selected")}
     a += [unchosen, set_var("Selected Exit", variable("Candidate Exit")), *number(1, "Exploration Selected"), otherwise(unchosen_group), action("is.workflow.actions.nothing"), end_if(unchosen_group),
           otherwise(choose_after_group), action("is.workflow.actions.nothing"), end_if(choose_after_group), end_if(is_best_group),
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=next_loop, WFControlFlowMode=2)]
@@ -624,10 +630,8 @@ def select_exit():
           set_var("Candidate Exit", variable("Repeat Item"))]
     needs_wrap_group, needs_wrap = if_block("Exploration Selected", 4, string="0")
     needs_wrap["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    needs_wrap["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exploration Selected")}
     wrap_non_best_group, wrap_non_best = if_block("Candidate Exit", 99, string="best-exit-placeholder")
     wrap_non_best["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    wrap_non_best["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Candidate Exit")}
     a += [needs_wrap, wrap_non_best, set_var("Selected Exit", variable("Candidate Exit")), *number(1, "Exploration Selected"),
           otherwise(wrap_non_best_group), action("is.workflow.actions.nothing"), end_if(wrap_non_best_group),
           otherwise(needs_wrap_group), action("is.workflow.actions.nothing"), end_if(needs_wrap_group),
@@ -680,7 +684,6 @@ def route_exit(choice_name: str):
           *read_value("active_session.id", variable("Reloaded State"), "Create Owner ID")]
     create_owner_group, create_owner = if_block("Create Owner ID", 4, string="captured-session-placeholder")
     create_owner["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Session ID")
-    create_owner["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Create Owner ID")}
     a += [create_owner, set_value("profile_snapshot.create_target_url", variable("Create Target URL"), "Reloaded State"),
           *save_state("Reloaded State"), action("is.workflow.actions.openurl", WFInput=variable("Create Target URL")),
           otherwise(create_owner_group), action("is.workflow.actions.nothing"), end_if(create_owner_group),
@@ -710,7 +713,6 @@ def record_exit_and_route(choice_name: str):
     a += [active] + read_value("active_session.id", variable("Reloaded State"), "Exit Owner ID")
     owner_group, owner = if_block("Exit Owner ID", 4, string="captured-session-placeholder")
     owner["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Session ID")
-    owner["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exit Owner ID")}
     a += read_value("last_app", variable("Reloaded State"), "Triggering App")
     event_text = text_token([('{"type":"', choice_name), ('","timestamp":', "Now Epoch"), (',"app":"', "Triggering App"), ('","circle":', "Circle Next"), (',"heat":', "Heat Final"), ('}', None)])
     event_json, event_dict = uid(), uid()
@@ -727,7 +729,6 @@ def record_exit_and_route(choice_name: str):
           set_value("pending_exit", variable("Exit Event"), "Reloaded State"), *read_value("exit_selection_counter", variable("Reloaded State"), "Reloaded Exit Counter")]
     missing_counter, counter = if_block("Reloaded Exit Counter", 5, string=None)
     counter["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    counter["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Reloaded Exit Counter")}
     a += [counter] + number(0, "Reloaded Exit Counter") + [otherwise(missing_counter), action("is.workflow.actions.nothing"), end_if(missing_counter)]
     a += math("Reloaded Exit Counter", 1, "Exit Counter Next", "+") + [set_value("exit_selection_counter", variable("Exit Counter Next"), "Reloaded State")]
     a += save_state("Reloaded State") + route_exit(choice_name)
@@ -799,7 +800,6 @@ def open_pipeline():
     g, start = if_block("Stored Day", 5, string=None)
     # Code 5 requires a string; textual empty guards avoid direct null compare.
     start["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    start["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Stored Day")}
     a += [comment("""Check whether a saved behavioural day exists before comparing it to today:
 - A missing value is treated as rollover so the counter is safe on migrated state.
 - A present value continues to the same-day comparison below.
@@ -807,7 +807,6 @@ def open_pipeline():
     a += number(0, "Zero") + [set_value("opens_today", variable("Zero")), set_value("behavioural_day", variable("Behavioural Day")), otherwise(g)]
     day_group, day_if = if_block("Stored Day", 4, string="same-day-placeholder")
     day_if["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    day_if["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Stored Day")}
     # The explicit Text variable is compared as a string to the Behavioural Day token.
     a += [comment("""Compare the stored behavioural day with today's adjusted day:
 - Both values are text, so equality is the supported string comparison.
@@ -963,7 +962,6 @@ def close_pipeline():
     a += [reload_if] + read_value("active_session.id", variable("Reloaded State"), "Reloaded Session ID")
     owns_g, owns_if = if_block("Reloaded Session ID", 4, string="captured-session-placeholder")
     owns_if["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    owns_if["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Reloaded Session ID")}
     a += [comment("""Compare the reloaded active session with the captured owner:
 - A matching ID means this CLOSE still owns the session.
 - A different ID means a newer OPEN owns state; this otherwise branch is intentionally Nothing only.
@@ -1490,6 +1488,56 @@ def verify_required_pickers(actions):
                                      for i, ident, key, why in offenders[:5])
                          + f" ({len(offenders)} total)")
 
+def verify_conditional_inputs(actions):
+    """Fail the build if a conditional's input slot holds a text template.
+
+    WFInput on is.workflow.actions.conditional is {"Type": "Variable", "Variable": <token>}.
+    The <token> must be a WFTextTokenAttachment wrapping a descriptor that carries a Type key
+    ({Type: Variable, VariableName: ...} or {Type: ActionOutput, OutputUUID/OutputName: ...}).
+
+    A WFTextTokenString text template in that slot -- Value = {"string": "￼",
+    "attachmentsByRange": {...}} -- is NOT a variable reference.  iOS renders the If's input
+    field as unset and refuses to run the action with "Please choose a value for each
+    parameter in this action".  This is the fourth defect axis found in this debug session
+    and the first one that inverts an earlier rule: string-typed PARAMETERS need
+    WFTextTokenString (see normalise_string_envelopes), but variable SLOTS need the bare
+    attachment.  No catalog entry exists for is.workflow.actions.conditional, so no
+    catalog-driven sweep can see this -- hence an explicit invariant.
+
+    Ground truth: Donor 3 action 4 (device export from the target iPhone) and 20/20
+    WFInput-carrying conditionals across the 19 golden shortcuts.
+    """
+    offenders = []
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        # Otherwise (1) and End If (2) carry no input of their own.
+        if parameters.get("WFControlFlowMode") != 0:
+            continue
+        wrapper = parameters.get("WFInput")
+        if not isinstance(wrapper, dict):
+            offenders.append((index, "WFInput missing or not a dict"))
+            continue
+        holder = wrapper.get("Variable")
+        if not isinstance(holder, dict):
+            offenders.append((index, "WFInput.Variable missing or not a dict"))
+            continue
+        if holder.get("WFSerializationType") != "WFTextTokenAttachment":
+            offenders.append((index, f"WFInput.Variable is {holder.get('WFSerializationType')!r}, "
+                                     "expected WFTextTokenAttachment"))
+            continue
+        inner = holder.get("Value")
+        if not isinstance(inner, dict) or "Type" not in inner or "string" in inner:
+            offenders.append((index, "WFInput.Variable.Value is a text template, "
+                                     "not a variable descriptor"))
+    if offenders:
+        raise SystemExit("conditional input slots hold a non-variable value "
+                         "(iOS: 'Please choose a value for each parameter in this action'): "
+                         + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
+                         + f" ({len(offenders)} total)")
+
+
 # Real output names, keyed by producing action identifier.  A magic-variable reference
 # carries OutputUUID (the binding) plus OutputName (the label iOS shows and re-resolves
 # against).  Hand-authored blocks in this artifact guessed some of these; where two
@@ -1672,6 +1720,7 @@ def main():
     verify_string_envelopes(actions)
     verify_output_names(actions)
     verify_required_pickers(actions)
+    verify_conditional_inputs(actions)
     verify_router_shape(actions)
     # Declare that this shortcut consumes Shortcut Input.  The routing block reads the
     # ExtensionInput token, and PLIST_FORMAT.md defines this root key as "True if

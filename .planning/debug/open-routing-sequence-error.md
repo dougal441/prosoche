@@ -3,7 +3,7 @@ slug: open-routing-sequence-error
 status: awaiting_human_verify
 trigger: "Fix OPEN routing and Test Circle sequence error (from .planning/todos/pending/2026-08-13-fix-open-routing-and-test-circle-sequence-error.md)"
 created: 2026-08-14
-updated: 2026-08-14 (cycle 7)
+updated: 2026-08-14 (cycle 8)
 severity: blocker
 ---
 
@@ -100,7 +100,81 @@ independently, then check for a shared source before fixing.
 
 bug_class: Bohrbug (all three symptoms deterministic and reproducible on every run)
 
-CYCLE 7 reasoning_checkpoint (supersedes cycle 6, which is kept below for history):
+CYCLE 8 reasoning_checkpoint (supersedes cycle 7, which is kept below for history):
+  hypothesis: >
+    ROOT CAUSE FOUND, and asserted as CONFIRMED rather than ranked, because for the first time
+    this session the evidence is positional as well as structural.
+    THE DEFECT: a conditional's WFInput is {"Type":"Variable","Variable": <token>}, and the
+    <token> slot must hold a VARIABLE REFERENCE serialization — WFTextTokenAttachment whose
+    Value is a {Type, VariableName} or {Type, OutputUUID, OutputName} descriptor. At 25 sites
+    the generator overwrites if_block()'s already-correct value with token(name), which returns
+    a WFTextTokenString TEXT TEMPLATE — {"Value": {"string":"￼","attachmentsByRange":{...}}}.
+    A text template is not a variable descriptor. Shortcuts cannot resolve the If's input,
+    renders the input field as UNSET, and refuses to run the action with exactly the reported
+    message, "Please choose a value for each parameter in this action".
+    THE POSITIONAL PROOF: of those 25 sites, exactly TWO sit before breadcrumb J. They are
+    actions 149 and 158 — BOTH INSIDE SPAN B->C, and 149 is the FIRST occurrence of the defect
+    class in the entire 3684-action artifact. The user saw B and did not see C. The first
+    instance of the only unproven shape in the span sits two actions past the last breadcrumb
+    they saw.
+    THIS IS AXIS 2 (value ENVELOPE), not the newest axis. It is the cycle-2 axis inverted:
+    cycle 2 established that string-typed parameters need WFTextTokenString; this site needs
+    the OPPOSITE, because WFInput.Variable is a variable slot, not a string slot. The generator
+    had the right shape and hand-overwrote it with the wrong one.
+  confirming_evidence:
+    - "DEVICE GROUND TRUTH — Donor 3, action 4, the user's own iPhone, this exact construct (a variable-vs-variable If): WFInput = {'Type':'Variable','Variable':{'Value':{'Type':'Variable','VariableName':'A'},'WFSerializationType':'WFTextTokenAttachment'}}. iOS writes an ATTACHMENT. It does not write a text template. Zero ambiguity."
+    - "GOLDEN CORPUS UNANIMOUS — 20 of 20 mode-0 conditionals that carry a WFInput across all 19 shortcuts use WFSerializationType WFTextTokenAttachment inside Variable. ZERO use WFTextTokenString. ZERO contain 'string'/'attachmentsByRange' in that slot. (18 further conditionals carry no WFInput at all and are not evidence either way.)"
+    - "INTERNAL CONTROL GROUP, largest of the session — 307 mode-0 conditionals in our own artifact: 282 carry the correct WFTextTokenAttachment form, 25 carry the text template. The 282 include the DEVICE-PROVEN router at actions 37/39/41 (cond 100 and cond 4, which have executed on every single device run this session) and the Control Room refresh conditional at 3612 (executed when the user ran Open Control Room). Same natural-experiment shape that settled cycles 2, 4 and 5."
+    - "EXECUTION-COVERAGE SEPARATION IS TOTAL: not one of the 25 defective sites has ever executed on device. 23 of them sit past breadcrumb J on the exit/contract paths the user has never reached; the remaining 2 are 149 and 158, which the bisection just proved were reached for the first time and killed the run."
+    - "THE SPAN IS OTHERWISE FULLY DEVICE-PROVEN. All 20 actions in B->C were read individually. 18 of them are classes already executed on device: comment; number with WFNumberActionNumber (proven at action 1359 inside Open Control Room); setvariable with an ActionOutput attachment (proven throughout PRE); setvalueforkey with WFDictionaryValue as WFTextTokenString (this is the cycle-2/3 symptom-2 fix, device-CONFIRMED); conditional modes 1 and 2, which carry only GroupingIdentifier and WFControlFlowMode. Exactly 2 of 20 actions carry a shape that has never run, and both carry this defect."
+    - "PRIORITY-3 DATE-ACTION LEAD CLOSED AFFIRMATIVELY, with device evidence rather than inference: gettimebetweendates appears at action 15 at control-flow DEPTH 0, unconditionally, 22 actions before the router. Every device run that reached the manual menu — cycles 3, 5, 6 and 7 — executed it. It carries WFTextTokenString in BOTH DateTime-typed slots (WFInput, WFTimeUntilFromDate) and 'Seconds' in WFTimeUntilUnit. Those shapes are therefore device-proven, and the date/adjustdate actions at 11/13/17/19 with them. No date action needs changing, and no donor is needed to settle it."
+  falsification_test: >
+    ONE device sitting on build 2026-08-14h. The BREADCRUMBS ARE DELIBERATELY RETAINED, so the
+    result is informative under a multi-defect world instead of collapsing to pass/fail:
+      last letter C or beyond -> span B->C is CLEARED. The fix is correct and any remaining
+        failure is a DIFFERENT, later defect, reported as a new letter and localised in one
+        more sitting rather than reading as "the fix did not work".
+      last letter B again -> THE HYPOTHESIS IS WRONG. The defect in B->C is not the conditional
+        envelope, and the 18 device-proven-by-class actions in that span must be re-examined
+        individually rather than by class.
+      all ten letters + the Leaving/Continue menu -> the OPEN pipeline has completed end-to-end
+        for the first time in the project's history.
+    This is a genuine falsification test: "last letter B again" is a wholly plausible outcome
+    that the fix cannot explain away.
+  fix_rationale: >
+    The fix DELETES the 13 generator lines that overwrite WFInput. It does not invent a shape.
+    Every one of those 13 overwrites passes the SAME variable name that if_block() was already
+    called with on the line above — they change the envelope and nothing else. Deleting them
+    leaves if_block()'s own output, which is byte-identical to the 282 correct sites and to
+    Donor 3. Nothing is guessed, nothing is fabricated, and the resulting shape is the one iOS
+    itself writes.
+    RECURRENCE GUARD, so the diff is not deletion-only and the axis closes rather than the
+    instance: verify_conditional_inputs() fails the build if any conditional's WFInput.Variable
+    is not a WFTextTokenAttachment wrapping a Type-bearing descriptor. Cycle 5 added
+    verify_required_pickers for the picker axis; this does the same for the variable-slot axis.
+    The generator now asserts KEY, ENVELOPE, PICKER LITERAL and VARIABLE-SLOT shape.
+  blind_spots:
+    - "THE 14 WFConditionalActionString = token(...) SITES ARE LEFT UNCHANGED AND ARE NOT CLAIMED CORRECT. They are the same family — a variable placed in an operand slot as a text template — but the evidence that settles WFInput does NOT transfer: WFInput.Variable is structurally a variable slot, whereas WFConditionalActionString is a TEXT slot, and the Shortcuts UI genuinely allows mixed literal+variable text there. Corpus coverage is zero (every corpus conditional operand is a literal), catalog coverage is zero (is.workflow.actions.conditional is absent from the ToolKit catalog entirely), device coverage is zero. All 14 sit PAST breadcrumb J, so they cannot affect this cycle's measurement. A donor settles them and one is requested in parallel, at zero device cost to this sitting."
+    - "THE SCALAR-TYPE AXIS IS NOW WEAKER THAN CYCLE 7 RECORDED, and this is a correction of my own prior reasoning, not a new finding. Donor 3 writes WFNumberActionNumber as plist <string>; our generator writes <integer>; and ours has EXECUTED SUCCESSFULLY ON DEVICE at action 1359 inside Open Control Room. So iOS demonstrably coerces plist scalar type on at least one of these numeric fields rather than failing to decode it. The cycle-7 inference 'iOS never writes <integer>, therefore <integer> is undecodable' does not follow, and the two latent sites at 418/454 are correspondingly weaker suspects than cycle 7 ranked them."
+    - "THE 23 SITES PAST J ARE FIXED BUT UNTESTABLE THIS CYCLE. They sit on exit-selection and Circle-9 contract paths the user has never reached. The fix is applied to them by construction (same generator lines), but this sitting cannot confirm them, and they must not be reported as verified."
+    - "A SECOND DEFECT IN B->C IS NOT EXCLUDED. The span's other 18 actions are cleared BY CLASS — the class has executed on device — not by having those specific instances execute. If a class-level clearance is wrong somewhere, the run stops at B again. That outcome is explicitly in the falsification test rather than argued away."
+    - "iOS STILL DOES NOT NAME THE OFFENDING ACTION. Unchanged since cycle 5. The breadcrumbs remain the only instrument; that is why they stay in."
+  candidate_causes:
+    - "code/generator ENVELOPE: conditional WFInput.Variable holds a WFTextTokenString text template where a WFTextTokenAttachment variable descriptor is required (CONFIRMED — donor + corpus 20/20 + internal control 282/307 + exact positional match to the bisection result)"
+    - "code/generator ENVELOPE: WFConditionalActionString holds a text template at 14 sites (SAME FAMILY, UNRESOLVED, all past breadcrumb J, donor requested, deliberately unchanged)"
+    - "code/generator SCALAR TYPE: <integer> at number.random 418 / repeat.count 454 (LATENT AT MOST, and downgraded this cycle by the WFNumberActionNumber counter-evidence; NOT symptom 1 — execution stops hundreds of actions upstream)"
+    - "environment/iOS: date-action DateTime slots carrying WFTextTokenString (ELIMINATED this cycle by device evidence — action 15 runs unconditionally at depth 0 on every successful manual invocation)"
+    - "data/state: a stored behavioural_day value that changes which arm of the rollover runs (NOT the cause — BOTH arms are gated by a defective conditional, so the failure occurs at the gate regardless of state)"
+  and_gate: >
+    yes, and this cycle answers it with a measurement rather than an argument. The remaining
+    defect count is NOT assumed to be one. That is precisely why the breadcrumbs are retained
+    rather than stripped: under a multi-defect world the next run reports a LATER letter, which
+    is progress plus localisation, instead of an ambiguous "same error" that would read as this
+    fix having failed — the exact failure mode that made cycle 1's correct fix look like a
+    refutation. The 14 unresolved WFConditionalActionString sites are a known, named, deferred
+    second condition on the post-menu path, not an unknown.
+
+CYCLE 7 reasoning_checkpoint (superseded, kept below for history):
   hypothesis: >
     TWO SEPARATE CLAIMS, DELIBERATELY KEPT APART, because conflating them is how three
     static "confirmations" got refuted on device in this session.
@@ -582,8 +656,68 @@ reasoning_checkpoint:
     independent but both gate the same user-visible outcome.
 
 next_action: >
-  CHECKPOINT — awaiting the cycle-7 device sitting. NO FIX WAS SHIPPED; this cycle ships a
-  MEASUREMENT. Protocol: artifacts/device-import-probes/TESTING-cycle7.md.
+  CHECKPOINT — awaiting the cycle-8 device sitting. A FIX IS SHIPPED this cycle (the first since
+  cycle 5), and the root cause is CONFIRMED, not ranked.
+  ROOT CAUSE: conditional WFInput.Variable held a WFTextTokenString TEXT TEMPLATE where a
+  WFTextTokenAttachment VARIABLE DESCRIPTOR is required. 25 sites; the first two are actions
+  149/158, inside span B->C, two actions after the breadcrumb the user last saw.
+  FIX: deleted the 13 generator lines that overwrote if_block()'s already-correct WFInput with
+  token(name). Verified programmatically that all 13 passed the SAME variable name, so the
+  deletion changes only the envelope. Added verify_conditional_inputs() as a build-failing
+  recurrence guard, wired into BOTH fork builders.
+  ARTIFACTS: artifacts/shortcuts/"PROSOCHĒ — Nine Circles — Dumb.shortcut" (AEA1, 188480 bytes,
+  3684 actions) and Sentient (AEA1, 192095 bytes, 3752 actions). Stamp "build 2026-08-14h"
+  verified INSIDE both signed files by decryption; "14g" verified absent. 307/317 conditional
+  inputs correct, 0 defective, confirmed in the DECRYPTED SIGNED artifacts. Both validate at
+  --target-macos 26 --target-platform all; plutil -lint OK.
+  PROTOCOL: artifacts/device-import-probes/TESTING-cycle8.md. Step 0 (delete, import, RE-POINT
+  the automation's Run Shortcut) remains unskippable. Step 1: menu prompt must read
+  "build 2026-08-14h".
+  BREADCRUMBS DELIBERATELY RETAINED. Rationale, stated so the next cycle does not re-litigate
+  it: under a multi-defect world a retained instrument turns "same error again" into "a LATER
+  letter", i.e. progress plus localisation in the same sitting, instead of a result that reads
+  as this fix having failed — the exact failure mode that made cycle 1's correct fix look like a
+  refutation. Strip with OPEN_BISECT = False once the OPEN path completes end to end.
+  READING THE RESULT:
+    last letter C or later -> span B->C CLEARED, fix correct, remaining failure is a DIFFERENT
+      and later defect; localise from the new letter.
+    all ten + the Leaving/Continue menu -> OPEN pipeline complete for the first time ever.
+    last letter B again -> HYPOTHESIS REFUTED. Re-examine the other 18 actions in the span
+      INDIVIDUALLY rather than by class; class-level device clearance would then be the wrong
+      standard and that is the lesson to record.
+  DELIBERATELY UNCHANGED, AND NOT CLAIMED CORRECT — the 14 WFConditionalActionString = token()
+  sites (generator lines 398/682/712 pre-edit). Same family, but the WFInput evidence does NOT
+  transfer: WFInput.Variable is a variable slot whereas WFConditionalActionString is a TEXT slot
+  that legitimately accepts mixed literal+variable content. Corpus coverage zero (all corpus
+  conditional operands are literals), catalog coverage zero (is.workflow.actions.conditional is
+  absent from the ToolKit catalog entirely), device coverage zero. All 14 sit past breadcrumb J
+  so they cannot confound this sitting. DONOR 4 IS REQUESTED in TESTING-cycle8.md as an optional
+  parallel task at zero device-testing cost; it settles them outright.
+  LATENT, NOT THIS BUG, AND NOW WEAKER THAN CYCLE 7 RANKED THEM: the two <integer> sites at
+  418/454. Left UNCHANGED. Cycle 7 inferred that because iOS never WRITES <integer>, <integer>
+  must be undecodable; that inference is refuted by our own <integer> WFNumberActionNumber at
+  action 1359, which has executed on device. Keeping them unchanged also keeps spans G and H
+  interpretable if the next run reaches them.
+  RECURRENCE GUARD ADDED: verify_conditional_inputs(). MUTATION-TESTED — re-introducing the exact
+  defect at line 802 makes the build exit non-zero and names "action 149: WFInput.Variable is
+  'WFTextTokenString', expected WFTextTokenAttachment". The generator now asserts KEY, ENVELOPE,
+  PICKER LITERAL and VARIABLE-SLOT shape. A verify_scalar_types() pass remains UNBUILT and is no
+  longer clearly warranted — see the scalar-type evidence entry.
+  PRESERVED BY CONSTRUCTION AND VERIFIED BY COMPARISON, not asserted: action counts unchanged
+  (3684 / 3752); the ONLY differing actions between build g and build h are the 25 conditional
+  WFInput envelopes plus TWO display-only build-stamp strings. All 147 setvalueforkey still carry
+  WFDictionaryValue (symptom 2); WFCreateNoteInput and both appendnote.text still carry
+  WFTextTokenString (symptom 3). Every internal UUID is unchanged.
+  REPO HAZARD — CHECK BEFORE ANY REBUILD: HEAD must be codex/automation-parameter-diagnosis.
+  A rebuild on codex/prosochedebug1 or codex/round1 emits a pre-cycle-1 artifact and all three
+  symptoms return looking like a regression.
+  HOUSEKEEPING, non-urgent and untouched: the DEV-03 collision in docs/BUILD-NOTES.md;
+  correcting .claude/CLAUDE.md §8's claim that signed artifacts cannot be decrypted; stripping
+  BUILD_STAMP / ROUTER_TRACE / OPEN_BISECT before ship.
+
+superseded_next_action_cycle7_checkpoint: >
+  CHECKPOINT — awaiting the cycle-7 device sitting. (ANSWERED: last letter "B" — localised to
+  span B->C.) NO FIX WAS SHIPPED; this cycle shipped a MEASUREMENT. Protocol: artifacts/device-import-probes/TESTING-cycle7.md.
   ARTIFACT: artifacts/shortcuts/"PROSOCHĒ — Nine Circles — Dumb.shortcut", AEA1, 188667 bytes,
   3684 actions, stamp "build 2026-08-14g" verified INSIDE the signed file by decryption ("14f"
   verified absent). Sentient rebuilt/re-signed identically (192807 bytes). Both forks validate at
@@ -907,6 +1041,37 @@ superseded_next_action_cycle2: >
   keep it as a build identifier or strip it before ship — do not let it leak silently.
 
 ## Evidence
+
+- timestamp: 2026-08-14 (cycle 8)
+  checked: "All 20 actions in bisection span B->C (build-h indices 148-167), read individually against all four defect axes established this session: parameter KEY NAME, value ENVELOPE, picker ENUM literal, and PLIST SCALAR TYPE"
+  found: "18 of the 20 actions belong to classes ALREADY EXECUTED ON DEVICE — comment; number with WFNumberActionNumber (proven at action 1359 inside Open Control Room); setvariable with an ActionOutput attachment (proven throughout PRE); setvalueforkey with WFDictionaryValue as WFTextTokenString (the device-CONFIRMED symptom-2 fix); and conditional modes 1/2, which carry only GroupingIdentifier + WFControlFlowMode. The remaining 2 are the block's two If actions, 149 and 158. BOTH carry WFInput = {'Type':'Variable','Variable': <WFTextTokenString TEXT TEMPLATE>} instead of a WFTextTokenAttachment variable descriptor."
+  implication: "ROOT CAUSE (symptom 1). WFInput.Variable is a VARIABLE SLOT. A text template ({'string':'\ufffc','attachmentsByRange':{...}}) is not a variable reference, so Shortcuts cannot resolve the If's input, renders the field unset, and refuses to run with 'Please choose a value for each parameter in this action'. Exactly 2 of 20 actions in the span carry a never-executed shape and both carry this defect."
+
+- timestamp: 2026-08-14 (cycle 8)
+  checked: "Every mode-0 conditional in the artifact (307 in Dumb), classified by the serialization shape of WFInput.Variable; cross-checked against Donor 3 and all 19 golden shortcuts"
+  found: "PERFECT SEPARATION, largest control group of the session. 282/307 carry the correct WFTextTokenAttachment descriptor form — including the DEVICE-PROVEN router at 37/39/41 (executed on every device run) and the Control Room refresh conditional at 3612 (executed when the user ran Open Control Room). Exactly 25 carry the text template. DONOR 3 action 4 (device export, a variable-vs-variable If built in Shortcuts.app on the target iPhone) writes WFInput.Variable as {'Value':{'Type':'Variable','VariableName':'A'},'WFSerializationType':'WFTextTokenAttachment'}. GOLDEN CORPUS: 20 of 20 WFInput-carrying conditionals use the attachment form; ZERO use a text template."
+  implication: "Three independent sources — device donor, corpus, and our own internal control group — agree against the 25 sites. This is the same natural-experiment evidence shape that settled cycles 2, 4 and 5."
+
+- timestamp: 2026-08-14 (cycle 8)
+  checked: "Position of all 25 defective conditionals relative to the ten breadcrumbs"
+  found: "23 of the 25 sit PAST breadcrumb J, on exit-selection and Circle-9 contract paths the user has never reached. The only two before J are 149 and 158 — BOTH inside span B->C. Action 149 is the FIRST occurrence of the defect class in the entire 3684-action artifact, two actions after breadcrumb B."
+  implication: "POSITIONAL CONFIRMATION, not merely structural. The user saw B and did not see C. The first instance of the artifact's only unproven shape sits two actions past the last breadcrumb they saw. No other candidate in the span has this property."
+
+- timestamp: 2026-08-14 (cycle 8)
+  checked: "Whether the priority-3 DATE ACTION lead (format.date / adjustdate / gettimebetweendates with conventional-but-unconfirmed shapes) is implicated"
+  found: "gettimebetweendates appears at action 15 at control-flow DEPTH 0, unconditionally, 22 actions before the router — so it executes on every run that reaches the manual menu, which cycles 3, 5, 6 and 7 all did. It carries WFTextTokenString in BOTH DateTime-typed slots (WFInput, WFTimeUntilFromDate) and the literal 'Seconds' in WFTimeUntilUnit. date at 11/13/19 and adjustdate at 17 are likewise at depth 0."
+  implication: "The date-action axis is ELIMINATED by direct device evidence rather than inference, and no donor is needed for it. The catalog records these slots as DateTime-typed and our shape is a text template, yet it demonstrably runs — which also shows iOS coerces on that slot."
+
+- timestamp: 2026-08-14 (cycle 8)
+  checked: "Donor 3's plist scalar types vs ours, re-examined after the cycle-7 prediction was killed"
+  found: "Donor writes WFNumberActionNumber as <string> ('5','3'), WFRandomNumberMinimum/Maximum as <string>, WFRepeatCount as <real>. Our generator writes <integer> for all of these. BUT our <integer> WFNumberActionNumber at action 1359 has EXECUTED SUCCESSFULLY ON DEVICE inside Open Control Room."
+  implication: "SELF-CORRECTION of cycle 7's reasoning. 'iOS never writes <integer>, therefore <integer> is undecodable' does not follow — iOS demonstrably coerces plist scalar type on at least one of these numeric fields. The scalar-type axis is a serialization-STYLE difference, not an established decode failure, and the two latent sites at 418/454 are weaker suspects than cycle 7 ranked them. They remain UNCHANGED this cycle."
+
+- timestamp: 2026-08-14 (cycle 8)
+  checked: "Whether each of the 13 generator lines overwriting a conditional's WFInput changes anything other than the envelope (verified programmatically, not by eye)"
+  found: "13 of 13 pass the SAME variable name that if_block() was called with on the line immediately above. Zero mismatches. if_block() already emits the correct WFInput = {'Type':'Variable','Variable': variable(name)}; each overwrite replaces variable(name) with token(name), changing the envelope and nothing else."
+  implication: "Deleting all 13 lines is provably semantics-preserving apart from the envelope, and restores a shape byte-identical to the 282 correct sites and to Donor 3. No shape is invented, so the project's never-fabricate rule is honoured."
+
 
 - timestamp: 2026-08-14
   checked: "Structural integrity of src/PROSOCHE-Dumb.xml (3675 actions)"
@@ -1776,7 +1941,36 @@ superseded_next_action_cycle2: >
     WFAlertActionMessage is corpus-verified in 5 of the 13 golden-corpus alerts. It references no
     variable and contains no control flow, so it cannot fail for a reason of its own.
 
+- timestamp: 2026-08-14 (cycle 7 result)
+  checked: "TEN-LETTER BISECTION on device, build 2026-08-14g. Ten flag-gated breadcrumb alerts A-J at OPEN-arm base depth. User-reported, verbatim."
+  found: '"B. Same error."'
+  implication: >
+    LOCALISED TO SPAN B->C: 20 actions, nesting depth 2, the DAY-ROLLOVER section.
+    Breadcrumb B was seen; C was not. Execution reached B and died before reaching C, still
+    producing "Please choose a value for each parameter in this action".
+    BEST-CASE OUTCOME the protocol allowed. B->C is the second-smallest span and is NOT one of
+    the C/E/I spans that would have bought only a region. NO SECOND BISECTION ROUND NEEDED —
+    20 actions at depth 2 is directly readable.
+    THE DONOR-DERIVED PREDICTION IS DEAD. Both nominated suspects — number.random (action 418,
+    span G->H) and repeat.count (action 454, span H->I) — sit hundreds of actions DOWNSTREAM of
+    where execution stopped. They cannot be the cause. Cycle 7's own stated criterion was that
+    any letter other than G or H kills the prediction; B does.
+    UNSTAGE THE DEFERRAL: the two <integer> sites at 418/454 no longer need holding back to
+    keep a measurement clean, because the measurement is COMPLETE. Decide them on their merits
+    — donor evidence says iOS writes <string> and <real> there while we write <integer>, so
+    they are plausibly real LATENT defects on a path that has never executed. They are NOT
+    this bug and must not be described as a fix for it.
+    DO NOT CONCLUDE THE <integer> AXIS IS EXONERATED. Cycle 7 cleared two PARTICULAR sites
+    because they had demonstrably executed on device, and nominated two others by elimination.
+    A THIRD site inside B->C would be entirely consistent with everything established and
+    would now carry the strongest possible evidence. The day-rollover section is exactly where
+    date arithmetic and numeric comparison live.
+
 ## Eliminated
+
+- hypothesis: "The failing OPEN-path action is one of the two donor-contradicted <integer> literal sites — number.random (action 418) or the nine-step repeat.count (action 454) — where iOS writes <string> and <real> respectively."
+  evidence: "Cycle 7 bisection, build 2026-08-14g: the user's last breadcrumb was B, so execution died in span B->C (actions ~145-165). Actions 418 and 454 sit in spans G->H and H->I, hundreds of actions downstream, and were never reached. Killed by cycle 7's own pre-stated criterion (only G or H would have confirmed). Retained as candidate LATENT defects, not as this bug."
+  timestamp: 2026-08-14 (cycle 7 result)
 
 - hypothesis: "A variable-backed WFNumberValue on a conditional resolves as an unfilled number field on the OPEN path (cycle 6's #1 ranked candidate A1; 13 sites, first on the guaranteed path, ZERO corpus precedent anywhere)."
   evidence: "Donor 3, built in Shortcuts.app on the target iPhone and decrypted 2026-08-14: iOS serializes a variable-vs-variable numeric If as WFInput {Type:Variable, Variable:<bare WFTextTokenAttachment>} plus WFNumberValue as a bare WFTextTokenAttachment. Our if_block()/variable() emit byte-identical shapes. Device ground truth, outranking every catalog and corpus inference."
@@ -1886,6 +2080,68 @@ superseded_next_action_cycle2: >
   timestamp: 2026-08-14 (cycle 2)
 
 ## Resolution
+
+cycle_8_root_cause: >
+  SYMPTOM 1, CONFIRMED. A conditional's WFInput is {"Type":"Variable","Variable": <token>}, and
+  that <token> slot must hold a WFTextTokenAttachment wrapping a Type-bearing descriptor. At 25
+  sites the generator overwrote if_block()'s already-correct value with token(name), which
+  returns a WFTextTokenString TEXT TEMPLATE ({"string":"\ufffc","attachmentsByRange":{...}}).
+  A text template is not a variable reference: Shortcuts cannot resolve the If's input, renders
+  the input field as UNSET, and refuses to run the action with exactly the reported message,
+  "Please choose a value for each parameter in this action".
+  This is the ENVELOPE axis (cycle 2's axis) INVERTED. Cycle 2 established that string-typed
+  PARAMETERS require WFTextTokenString; a variable SLOT requires the opposite. That inversion is
+  why 13 hand-written overwrites survived four static sweeps and six cycles.
+  Localised by the cycle-7 breadcrumb bisection (user reported last letter "B"), then confirmed
+  positionally: of the 25 sites, 23 sit past breadcrumb J on never-reached paths, and the only
+  two before J are actions 149 and 158 — both inside span B->C, with 149 the FIRST occurrence of
+  the class in the entire artifact, two actions after breadcrumb B.
+
+cycle_8_fix: >
+  tools/build_state_engine.py and tools/build_sentient.py only; both forks regenerated,
+  validated and re-signed. Nothing from cycles 2, 3, 4 or 5 is reverted.
+  (1) Deleted the 13 lines matching
+      <name>["WFWorkflowActionParameters"]["WFInput"] = {"Type":"Variable","Variable": token(...)}
+      (pre-edit lines 397, 555, 569, 611, 617, 627, 630, 683, 713, 730, 802, 810, 966).
+      VERIFIED PROGRAMMATICALLY before deletion: all 13 passed the SAME variable name that
+      if_block() was called with on the line above, so the deletion changes only the envelope.
+      No shape is invented; the result is byte-identical to the 282 already-correct sites and to
+      Donor 3 action 4.
+  (2) NEW verify_conditional_inputs() recurrence guard, wired into BOTH fork builders. Fails the
+      build if any mode-0 conditional's WFInput.Variable is missing, is not a
+      WFTextTokenAttachment, or wraps a text template rather than a Type-bearing descriptor.
+      Closes the VARIABLE-SLOT axis rather than the two instances.
+  (3) Documented the invariant at if_block() itself, with the donor and corpus citations, so the
+      next author who reaches for token() there sees why not.
+  (4) BUILD_STAMP bumped to "build 2026-08-14h". ROUTER_TRACE and OPEN_BISECT left ON —
+      see next_action for why the breadcrumbs stay.
+  DELIBERATELY NOT CHANGED: the 14 WFConditionalActionString = token() sites (no corpus, no
+  catalog, no device evidence; all past breadcrumb J; Donor 4 requested); the two <integer> sites
+  at 418/454 (not this bug, and the axis is weaker than cycle 7 recorded).
+
+cycle_8_verification: >
+  guardrail_verdict: static signals pass; the runtime signal is the open checkpoint.
+  - GUARD SENSITIVITY (MUTATION TEST, not merely "the guard runs"): re-introducing the exact
+    deleted line at 802 makes the build exit non-zero with
+    "action 149: WFInput.Variable is 'WFTextTokenString', expected WFTextTokenAttachment (1 total)".
+    Against the fixed artifacts all five guards accept. The guard bites at the true defect site.
+  - SHAPE EQUALITY WITH DEVICE GROUND TRUTH: the repaired WFInput at 149/158 is structurally
+    identical to Donor 3 action 4 (checked by recursive type comparison, not by eye).
+  - RESIDUAL SCAN: 0 remaining text-template conditional inputs in either fork.
+  - BLAST RADIUS, verified by action-by-action comparison of build g vs build h: action counts
+    unchanged (3684 / 3752); exactly 27 actions differ per fork — the 25 conditional WFInput
+    envelopes plus TWO display-only build-stamp strings (alert title, menu prompt). Every other
+    action, including every internal UUID, is byte-identical.
+  - SYMPTOMS 2 AND 3 PRESERVED BY CONSTRUCTION, verified rather than asserted: all 147
+    setvalueforkey still carry WFDictionaryValue; WFCreateNoteInput and both appendnote.text
+    still carry WFTextTokenString. None appears in the diff.
+  - SHIPPED-ARTIFACT VERIFICATION (not just the source): both signed .shortcut files were
+    DECRYPTED and inspected. AEA1 magic confirmed; Dumb 188480 bytes / 3684 actions, Sentient
+    192095 bytes / 3752 actions; 307 and 317 conditional inputs correct with 0 defective; stamp
+    "build 2026-08-14h" present and "14g" absent; 10 breadcrumbs present.
+  - VALIDATOR: both forks pass at --target-macos 26 --target-platform all. plutil -lint OK.
+  - RUNTIME: NOT YET VERIFIED. Requires the device sitting. The fix is not claimed to work until
+    the user reports a letter later than B.
 
 cycle_5_root_cause: >
   SYMPTOM 1 (OPEN routing) — IDENTIFIED, pending device confirmation.
