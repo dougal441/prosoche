@@ -874,3 +874,65 @@ conform to, and no donor request is owed.
   check guarding restore cannot match. Deserves its own cycle so it can be measured alone.
 - **`Spoken This Run` — investigated and dismissed.** Its tests use `WFCondition 101` ("does not
   have any value"), so `if not set → speak → set` is the correct once-per-run latch, not a defect.
+
+---
+
+## 17. DEV-06 — restore-ownership check DEFERRED by explicit user decision (2026-08-14)
+
+**Status: DEFERRED, decided. Not a bug to be fixed silently — a design decision with a recorded
+owner and a ship gate.**
+
+### The finding
+
+`settings_snapshot.brightness.changed_at`, `settings_snapshot.brightness.changed_by_session_id`,
+`settings_snapshot.volume.changed_at` and `settings_snapshot.volume.changed_by_session_id` are
+**written at 20 sites and read NOWHERE in either fork.**
+
+`changed_by_session_id` exists so the restore path can verify it **owns** a change before
+reverting it. Nothing reads it, so **that ownership check is not implemented at all.**
+
+### The decision
+
+Put to the user with four options — implement the check / drop the unused fields / leave as-is
+and decide before ship / explain the risk first. The user chose:
+
+> **"Leave as-is for now, decide before ship."**
+
+So: **keep** writing `changed_at` and `changed_by_session_id`; do **not** implement an ownership
+check; do **not** remove the fields.
+
+### Residual risk, stated plainly
+
+`.claude/CLAUDE.md` capability-audit items 8 and 9 require that a stateful brightness/volume
+change be reliably captured and restorable. That guarantee is currently **half-implemented**: an
+original value is captured and restored, but **nothing verifies that the restoring session owns
+the change it is reverting.**
+
+Exposure is narrow — it requires two overlapping runs where one restores what the other
+captured — and is acceptable while the OPEN path does not yet complete end-to-end. It stops
+being acceptable the moment the OPEN path ships.
+
+### Consequence for the `Session ID` scope defect — PRIORITY DROPPED
+
+`Session ID` is assigned only under [OPEN → not-in-cooldown → genuine-open]; only 2 of the 20
+`settings_snapshot.*.changed_by_session_id` writes share that ancestry, so the other 18 record an
+empty owner. **Correcting that scope only matters if something reads the owner** — and by the
+decision above, nothing will.
+
+The scope defect therefore **stays recorded as open but drops in priority**, tied to this same
+deferred decision. **If the ownership check is implemented before ship, the scope fix becomes a
+prerequisite, not a surprise.** Do not spend a cycle on the scope alone while DEV-06 is deferred.
+
+### SHIP CHECKLIST — must all be resolved before release
+
+| # | Item | Where |
+|---|---|---|
+| 1 | `BUILD_STAMP` — strip | `tools/build_state_engine.py` (single constant) |
+| 2 | `ROUTER_TRACE` — strip | `tools/build_state_engine.py` (single constant) |
+| 3 | `OPEN_BISECT` — strip the ten breadcrumb alerts | `OPEN_BISECT = False` |
+| 4 | **DEV-06 — decide the ownership check** | this entry |
+| 5 | **`Session ID` scope fix — REQUIRED IF AND ONLY IF item 4 resolves to "implement"** | tied to item 4 |
+
+Items 1–3 are mechanical. **Items 4 and 5 are a judgement call the user has explicitly reserved
+to themselves, and item 5 is conditional on item 4.** Neither may be resolved by an agent acting
+alone.
