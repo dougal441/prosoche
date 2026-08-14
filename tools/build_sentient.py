@@ -17,7 +17,9 @@ from build_state_engine import (
     verify_numeric_operands,
     verify_output_names,
     verify_required_pickers,
+    verify_restore_gates,
     verify_router_shape,
+    verify_sentinel_gates,
     verify_state_seed,
     verify_string_envelopes,
 )
@@ -206,6 +208,13 @@ def main() -> None:
     # survived the fork, and it fails loudly if a future Sentient-only insertion ever adds
     # a settings_snapshot read that the shared bootstrap does not establish.
     verify_state_seed(actions)
+    # Cycle 12, axis 7 -- GATE SEMANTICS.  Sentient inherits the restore block and every
+    # sentinel write from Dumb, so these assert the fork did not lose them; and because
+    # Sentient adds its own conditionals, they also cover any Sentient-only gate that a
+    # future insertion puts over a sentinel-written key.  A brightness/volume write reached
+    # with an empty value is a black screen, so this is asserted per fork, never inferred.
+    verify_restore_gates(actions)
+    verify_sentinel_gates(actions)
     # Sentient inherits the router verbatim from the built Dumb source, but assert it here
     # too: an inserted Sentient block must never land between the OPEN/CLOSE tests and the
     # MANUAL arm, and the absence gate must not reappear through a stale fork.

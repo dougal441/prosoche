@@ -18,7 +18,7 @@ SOURCE = Path("src/PROSOCHE-Dumb.xml")
 # matches an installed one can create a second copy and leave an automation
 # wrapper pointed at the old shortcut; without a visible stamp that stale-install
 # case is indistinguishable from a failed fix.  Bump on every device-bound build.
-BUILD_STAMP = "build 2026-08-14j"
+BUILD_STAMP = "build 2026-08-14k"
 # CYCLE 7 MEASUREMENT INSTRUMENT, not a fix.  Cycle 6 proved on device that the Run
 # Shortcut handoff DOES deliver "OPEN" (Probe 5 echoed it) while PROSOCHE still fails,
 # so the failing action is inside the OPEN arm, before the first OPEN menu.  Static
@@ -153,41 +153,48 @@ def text_token(parts: list[tuple[str, str | None]]):
             "WFSerializationType": "WFTextTokenString"}
 
 
-# CYCLE 11, axis 6b -- the CLEARED sentinel, single-sourced but DELIBERATELY UNCHANGED.
+# CYCLE 12, axis 6b -- the CLEARED sentinel, KEPT, and the gates moved to meet it.
 #
-# Four state keys are written back as "cleared" and every one of them is consumed by an
-# `If` with condition 100, HAS ANY VALUE: settings_snapshot.* (@181/186/200/205/1031/
-# 1125), pending_exit (@483) and active_session (@689/1094/1232/1248).  The literal
-# four-character string "null" is NON-EMPTY, so all of those gates read TRUE -- the exact
-# inverse of the intent -- and the guarded NESTED reads then run against a string parent
-# (active_session.id, active_session.declared_duration_seconds).  That is the same defect
-# class as the settings_snapshot failure this cycle fixes, latent one level over.
+# DONOR 6.1 (correctly wired, run on the target iPhone) measured the four semantics this
+# whole area turns on:
+#   flat read, MISSING key            -> returns nothing, no error -> `has any value` FALSE
+#   flat read, PRESENT BUT EMPTY      ->                              `has any value` TRUE
+#   DOTTED read, missing segment      -> HARD ERROR, "could not evaluate the key path"
+#   "null" -> WFNumberContentItem, >0 -> FALSE, no error
 #
-# THE OBVIOUS REPAIR -- clear to EMPTY text -- WAS BUILT AND THEN REVERTED, and the reason
-# is the whole finding.  It fails the project's mandatory validation gate at 12 sites:
-#   Empty parameter at index 188: is.workflow.actions.setvalueforkey
-#                                 -> WFDictionaryValue/Value/string
-# validate_shortcut.py's iter_empty_strings() rejects an empty string in ANY parameter,
-# with one narrow Send-Message-spacer exemption; "string" is in neither allow-list.  That
-# rule encodes exactly this session's DEVICE-CONFIRMED symptom 2 -- an unset Value on Set
-# Dictionary Value raises "No value was provided to the Set Dictionary Value action for
-# the key <key>".  Clearing to empty would therefore trade a read-side hard error for a
-# write-side one.
+# The third and second lines together make the READ-THEN-EXISTENCE-GATE pattern IMPOSSIBLE
+# for a dotted key: the read raises unless the final key exists, and if it exists the gate
+# is true.  There is NO state in which the gate reads false without the read having already
+# raised.  No sentinel swap can fix that -- the construct itself is the defect, and cycle
+# 11's "the sentinel is the open question" framing was one level too shallow.
 #
-# The device evidence offered for empty -- EMPTY: NO VALUE -- is a READ-side measurement:
-# a blank value reads as absent to condition 100.  It says nothing about whether Set
-# Dictionary Value ACCEPTS a blank value.  Applying read-side evidence to a write is the
-# same category error as the root cause being fixed this cycle, so it is refused here.
-# The sentinel question is now a PRODUCER-vs-CONSUMER design choice (change the write, or
-# change the six gates from cond 100 to cond 5 "is not null"), needs a donor to settle,
-# and is deliberately not decided inside a cycle whose measurement must stay clean.
+# So the sentinel STAYS "null" and the CONSUMERS change:
+#   * "null" is PRESENT, so a dotted read of a seeded leaf succeeds instead of raising.
+#   * "null" is NON-EMPTY, so it satisfies validate_shortcut.py's iter_empty_strings rule
+#     and the cycle-11 Half-2 write-side blocker DISSOLVES ENTIRELY.  Clearing to empty is
+#     no longer needed, so the empty-write question does not have to be settled at all.
+#   * The gate that must distinguish "cleared" from "captured" is a NUMERIC "> 0", not an
+#     existence test.  See restore_managed_settings() for why it is numeric and not code 5.
 #
-# NOT used for cooldown_until (3 further sites, left inline).  Its only consumer is the
-# NUMERIC comparison at action 170, device-measured as NULL COERCED FALSE with no error,
-# which is already the semantically correct reading of a cleared cooldown ("not in
-# cooldown").  Changing it would alter behaviour at the most critical position on the
-# OPEN path -- the conditional the build-i coercion fix just repaired.
+# COOLDOWN_UNTIL IS NOW DEVICE-VERIFIED SAFE and stays inline at its three sites.  Donor
+# 6.1 test 2 read the literal "null" out of the Dictionary, coerced it to Number and
+# compared it > 0: FALSE, no error.  That is already the semantically correct reading of a
+# cleared cooldown ("not in cooldown"), at the most critical position on the OPEN path --
+# action 170, the conditional the build-i coercion fix repaired.  Do not touch it.
 CLEARED_SENTINEL = "null"
+# Keys whose EXISTENCE gate is knowingly still condition 100 even though the key is written
+# with the sentinel.  Both are real instances of the same defect, both are LATENT (they sit
+# past breadcrumb J on paths the device has never reached) and NEITHER gates a
+# safety-critical write, so neither is fixed in the cycle that removes a black-screen risk.
+#
+# They are NOT fixable by flipping to code 5 or to "> 0" on their own.  Their bootstrap
+# state is ABSENT (pending_exit is not in the state.json template at all) or a bare JSON
+# null (active_session), and a flat read of an absent key returns nothing -- which passes
+# `is not "null"` and would then run the nested DOTTED read of .type / .id against a
+# missing parent, i.e. it would trade a latent hard error for an immediate one.  Fixing
+# them requires seeding both keys in the bootstrap template AND closing the state-rebind
+# gap recorded in the debug session, and that belongs in one cycle of its own.
+KNOWN_SENTINEL_EXISTENCE_GATES = ("pending_exit", "active_session")
 
 
 def cleared_value():
@@ -371,27 +378,68 @@ def set_media_volume(source):
 
 
 def clear_snapshot(key: str, dictionary_name="State"):
-    """Clear only a snapshot we have just restored from the full State."""
-    return set_value(f"settings_snapshot.{key}", cleared_value(), dictionary_name)
+    """Clear the captured ORIGINAL, never the container that holds it.
+
+    Cycle 10 finding 5: clearing `settings_snapshot.<key>` replaced the sub-DICTIONARY
+    with a string, so the very next run's dotted read of `.original_value` ran against a
+    string parent and hard-errored -- the identical failure the bootstrap seed exists to
+    prevent, reintroduced one run later and presenting as a regression.
+    Clearing the LEAF instead makes the seeded subtree a PERMANENT invariant: once
+    bootstrap has created the container it is never overwritten by anything, so the
+    container's own condition-100 gate can never be reached with a non-dictionary value
+    and the dotted read beneath it can never raise.  That is what licenses keeping the
+    container gates at 100 while the leaf gates change -- the split is enforced by
+    verify_sentinel_gates(), not asserted.
+    Same action count as clearing the container: one Set Dictionary Value, deeper key.
+    changed_at / changed_by_session_id are deliberately left: they are written at 20 sites
+    and READ AT NONE in either fork (the ownership check does not exist -- DEV-06, deferred
+    to the user as a design change), so stale values there have no consumer.
+    """
+    return set_value(f"settings_snapshot.{key}.original_value", cleared_value(), dictionary_name)
 
 
 def restore_managed_settings(dictionary_name="State"):
-    """Restore only captured values; never guess an original setting."""
+    """Restore only captured values; never guess an original setting.
+
+    THE LEAF GATES ARE NUMERIC "> 0", AND CODE 5 WAS VERIFIED AND THEN REJECTED.
+    Code 5 ("is not", string family, WFConditionalActionString) is a real construct --
+    CONTROL_FLOW.md's definitive table lists it, and four code-5 sites already ship in both
+    forks, one of them action 149 inside span B->C which the device has executed.  It is
+    also the obvious reading of "skip when the leaf holds the sentinel".
+    It is still WRONG HERE, because `is not "null"` is TRUE for an EMPTY value, and build
+    2026-08-14j seeded exactly "" into these leaves.  On any device that rebuilt state.json
+    under build j, a code-5 gate would pass empty straight into Set Brightness -- the black
+    screen this fix exists to remove.  Code 5 closes the sentinel case and leaves the empty
+    case open.
+    A numeric "> 0" closes BOTH, and both inputs are device-measured, not inferred:
+      "null" -> WFNumberContentItem -> > 0  ->  FALSE, no error   (Donor 6.1 test 2)
+      ""     -> WFNumberContentItem -> > 0  ->  FALSE, no error   (Donor 6 action 8)
+    It is also the safety property itself rather than a proxy for it -- only a strictly
+    positive reading is ever written back, so a zero or absent original can never darken the
+    screen -- and it is the EXACT test the CAPTURE side already uses on the same quantity
+    (dim(): if_block("Captured Brightness", 2, number=0)).  Capture and restore now agree on
+    what counts as a real reading.
+    The operand is gettext-fed, so normalise_numeric_operands() attaches Donor 4.1's
+    WFCoercionVariableAggrandizement automatically; this adds no new shape to the artifact.
+    The COST is stated rather than hidden: a genuine captured Media volume of exactly 0 is
+    not restored.  Skipping a restore leaves the current setting untouched, which is the
+    fail-safe direction and is what "never guess an original setting" already requires.
+    """
     a = [comment("""Restore managed settings only when a captured original exists:
 - Brightness uses the saved original value, never a new target.
 - Volume is always Media volume and never exceeds its saved original.
-- A restored snapshot key is cleared while all unrelated State remains intact.""")]
+- A restored original is cleared to the sentinel while its container and all unrelated State remain intact.""")]
     a += read_value("settings_snapshot.brightness", variable(dictionary_name), "Restore Brightness Snapshot")
     snapshot_g, snapshot_if = if_block("Restore Brightness Snapshot", 100)
     a += [snapshot_if] + read_value("settings_snapshot.brightness.original_value", variable(dictionary_name), "Restore Brightness")
-    bright_g, bright_if = if_block("Restore Brightness", 100)
+    bright_g, bright_if = if_block("Restore Brightness", 2, number=0)
     a += [bright_if, set_brightness(variable("Restore Brightness")), clear_snapshot("brightness", dictionary_name),
           otherwise(bright_g), action("is.workflow.actions.nothing"), end_if(bright_g), otherwise(snapshot_g),
           action("is.workflow.actions.nothing"), end_if(snapshot_g)]
     a += read_value("settings_snapshot.volume", variable(dictionary_name), "Restore Volume Snapshot")
     snapshot_g, snapshot_if = if_block("Restore Volume Snapshot", 100)
     a += [snapshot_if] + read_value("settings_snapshot.volume.original_value", variable(dictionary_name), "Restore Volume")
-    volume_g, volume_if = if_block("Restore Volume", 100)
+    volume_g, volume_if = if_block("Restore Volume", 2, number=0)
     a += [volume_if, set_media_volume(variable("Restore Volume")), clear_snapshot("volume", dictionary_name),
           otherwise(volume_g), action("is.workflow.actions.nothing"), end_if(volume_g), otherwise(snapshot_g),
           action("is.workflow.actions.nothing"), end_if(snapshot_g)]
@@ -1620,10 +1668,17 @@ SNAPSHOT_EMPTY = '"settings_snapshot": {},'
 def _snapshot_seed_text(indent: str) -> str:
     inner = ",\n".join(
         f'{indent}  "{group}": {{'
-        + ", ".join(f'"{leaf}": ""' for leaf in leaves)
+        + ", ".join(f'"{leaf}": "{CLEARED_SENTINEL}"' for leaf in leaves)
         + "}"
         for group, leaves in SNAPSHOT_SEED.items())
     return '"settings_snapshot": {\n' + inner + "\n" + indent + "},"
+
+
+# Build j seeded these leaves EMPTY.  That was the safety defect: Donor 6.1 then measured
+# that a present-but-empty value passes `has any value`, so the leaf gate read TRUE and the
+# restore wrote an empty value into Set Brightness.  Recognise that shape and correct it in
+# place, so a re-run over a build-j tree converges instead of silently keeping "".
+SNAPSHOT_SEEDED_EMPTY = '"original_value": "", "changed_at": "", "changed_by_session_id": ""'
 
 
 def _state_template(actions):
@@ -1672,6 +1727,11 @@ def _replace_in_token(inner: dict, old: str, new: str):
 def seed_settings_snapshot(actions):
     """Establish the complete settings_snapshot subtree in the bootstrap template."""
     _, inner = _state_template(actions)
+    while SNAPSHOT_SEEDED_EMPTY in inner["string"]:
+        # A build-j tree: right shape, wrong sentinel.  Correct the leaves in place.
+        _replace_in_token(inner, SNAPSHOT_SEEDED_EMPTY,
+                          ", ".join(f'"{leaf}": "{CLEARED_SENTINEL}"'
+                                    for leaf in SNAPSHOT_SEED["brightness"]))
     if SNAPSHOT_EMPTY not in inner["string"]:
         return  # already seeded; verify_state_seed() proves it is the right shape
     line = next(text for text in inner["string"].splitlines() if SNAPSHOT_EMPTY in text)
@@ -1728,9 +1788,216 @@ def verify_state_seed(actions):
         node = seed
         for part in key.split("."):
             node = node[part]
-        if node != "":
-            raise SystemExit(f"{key} is seeded as {node!r}; it must be EMPTY -- a fabricated "
-                             "original_value could restore a setting the user never had")
+        if node != CLEARED_SENTINEL:
+            # CYCLE 12 CORRECTION.  This assertion previously demanded EMPTY, and that was
+            # the build-j safety defect written down as an invariant: Donor 6.1 measured a
+            # present-but-empty value passing `has any value`, so an empty seed let the
+            # restore write an empty value into Set Brightness.  The leaf must carry the
+            # SENTINEL -- present, so the dotted read cannot raise; non-empty, so the write
+            # side needs no empty value; and numerically zero-or-absent, so the "> 0" leaf
+            # gate reads false.  Never a fabricated number: that could restore a setting the
+            # user never had.
+            raise SystemExit(f"{key} is seeded as {node!r}; it must be the cleared sentinel "
+                             f"{CLEARED_SENTINEL!r} -- an EMPTY seed passes `has any value` "
+                             "(Donor 6.1) and a fabricated number could restore a setting the "
+                             "user never had")
+
+
+# ---------------------------------------------------------------------------
+# CYCLE 12 -- GATE SEMANTICS, the seventh axis.  Axis 6 (STATE SHAPE) asserted that every
+# key a read reaches EXISTS.  This asserts that the GATE standing over it can actually
+# distinguish the states that key can be in.  The two are different failures: build j
+# satisfied axis 6 completely and still wrote an empty value into Set Brightness.
+#
+# The measured rule, from Donor 6.1 on the target iPhone:
+#   an EXISTENCE gate (condition 100 / 101) cannot distinguish "cleared" from "captured"
+#   for any key that is ever written with the sentinel, because the sentinel is PRESENT and
+#   NON-EMPTY -- so the gate reads TRUE in exactly the case it exists to exclude.
+# Everything the restore path got wrong follows from that one sentence, so it is the thing
+# asserted, rather than the individual condition codes at the individual sites.
+#
+# Two invariants, both of which FAIL on the build-j generator and pass on this one:
+#   (1) SAFETY.  A brightness/volume write whose value is a variable read out of
+#       settings_snapshot must be dominated by a NUMERIC conditional on that same variable.
+#       This is the invariant build j violated; it is stated over the WRITE, so no future
+#       re-gating can reintroduce an empty or zero write without tripping it.
+#   (2) GATES.  No sentinel-written key may be gated by condition 100/101, and no dotted
+#       read may hang beneath a sentinel-written parent.  This enforces the CONTAINER vs
+#       LEAF split automatically rather than by convention: once clear_snapshot() writes the
+#       leaf instead of the container, `settings_snapshot.brightness` stops being
+#       sentinel-written and its condition-100 container gate becomes legal again, while the
+#       leaf beneath it must be numeric.  Change the clear back to the container and the
+#       build fails.
+EXISTENCE_CONDITION_CODES = {100, 101}
+SNAPSHOT_ROOT = "settings_snapshot"
+
+
+def _sentinel_written_keys(actions):
+    """Literal dictionary keys ever written with the cleared sentinel."""
+    keys = set()
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.setvalueforkey":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        key, value = parameters.get("WFDictionaryKey"), parameters.get("WFDictionaryValue")
+        if not isinstance(key, str) or not isinstance(value, dict):
+            continue
+        inner = value.get("Value")
+        if isinstance(inner, dict) and inner.get("string") == CLEARED_SENTINEL \
+                and not inner.get("attachmentsByRange"):
+            keys.add(key)
+    return keys
+
+
+def _read_variable_keys(actions):
+    """Map each named variable to the literal dictionary key it is read from.
+
+    read_value() emits getvalueforkey -> gettext -> setvariable, so the variable's key is
+    recovered by walking that chain backwards through the two output UUIDs.
+    """
+    key_by_uuid, text_by_uuid = {}, {}
+    for item in actions:
+        identifier = item.get("WFWorkflowActionIdentifier")
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if identifier == "is.workflow.actions.getvalueforkey":
+            if isinstance(parameters.get("WFDictionaryKey"), str) and "UUID" in parameters:
+                key_by_uuid[parameters["UUID"]] = parameters["WFDictionaryKey"]
+        elif identifier == "is.workflow.actions.gettext" and "UUID" in parameters:
+            # normalise_string_envelopes() rewrites this parameter into a WFTextTokenString
+            # TEXT TEMPLATE, so the producing action is reached through attachmentsByRange
+            # rather than through a bare descriptor.  Accept both forms: reading only the
+            # bare form silently returns no provenance and the guard becomes decoration.
+            holder = parameters.get("WFTextActionText")
+            source = holder.get("Value") if isinstance(holder, dict) else None
+            if not isinstance(source, dict):
+                continue
+            sources = [source] + list((source.get("attachmentsByRange") or {}).values())
+            for candidate in sources:
+                if isinstance(candidate, dict) and candidate.get("Type") == "ActionOutput" \
+                        and candidate.get("OutputUUID") in key_by_uuid:
+                    text_by_uuid[parameters["UUID"]] = key_by_uuid[candidate["OutputUUID"]]
+                    break
+    keys = {}
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.setvariable":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        source = (parameters.get("WFInput") or {}).get("Value")
+        if not isinstance(source, dict) or source.get("Type") != "ActionOutput":
+            continue
+        key = text_by_uuid.get(source.get("OutputUUID"))
+        if key:
+            keys.setdefault(parameters.get("WFVariableName"), set()).add(key)
+    return keys
+
+
+def _enclosing_if_arms(actions):
+    """For each action index, the conditionals whose IF arm currently encloses it."""
+    stack, enclosing = [], []
+    for item in actions:
+        parameters = item.get("WFWorkflowActionParameters", {})
+        is_conditional = item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+        mode = parameters.get("WFControlFlowMode") if is_conditional else None
+        if mode == 2 and stack:
+            stack.pop()
+            enclosing.append([entry for entry, arm in stack if arm])
+            continue
+        enclosing.append([entry for entry, arm in stack if arm])
+        if mode == 0:
+            stack.append((parameters, True))
+        elif mode == 1 and stack:
+            stack[-1] = (stack[-1][0], False)
+    return enclosing
+
+
+def _tested_variable(parameters):
+    descriptor = (parameters.get("WFInput") or {}).get("Variable", {}).get("Value")
+    if isinstance(descriptor, dict) and descriptor.get("Type") == "Variable":
+        return descriptor.get("VariableName")
+    return None
+
+
+def verify_restore_gates(actions):
+    """Fail the build if a brightness/volume write is not numerically gated.
+
+    THE INVARIANT BUILD 2026-08-14j VIOLATED, stated over the write rather than the gate.
+    Its leaf gate was condition 100 and the leaf was seeded EMPTY, and a present-but-empty
+    value passes `has any value` (Donor 6.1), so Set Brightness was reached with an empty
+    value -- a runtime error or brightness 0, which .claude/CLAUDE.md forbids outright, on
+    the C->D span that runs on EVERY OPEN.
+    A value read out of settings_snapshot must be gated by a NUMERIC comparison on that
+    same variable, because only a numeric test excludes BOTH the sentinel and empty; the
+    string family (code 4/5) excludes one and passes the other.
+    """
+    reads, offenders = _read_variable_keys(actions), []
+    for index, enclosing in enumerate(_enclosing_if_arms(actions)):
+        item = actions[index]
+        identifier = item.get("WFWorkflowActionIdentifier")
+        if identifier not in {"is.workflow.actions.setbrightness", "is.workflow.actions.setvolume"}:
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        value = parameters.get("WFBrightness") or parameters.get("WFVolume")
+        descriptor = value.get("Value") if isinstance(value, dict) else None
+        if not isinstance(descriptor, dict) or descriptor.get("Type") != "Variable":
+            continue  # a literal target is not a state-derived write
+        name = descriptor.get("VariableName")
+        numeric = [parameters for parameters in enclosing
+                   if parameters.get("WFCondition") in NUMERIC_CONDITION_CODES]
+        from_snapshot = any(key.split(".")[0] == SNAPSHOT_ROOT for key in reads.get(name, ()))
+        if from_snapshot:
+            if not any(_tested_variable(gate) == name for gate in numeric):
+                offenders.append((index, f"writes {name!r}, read from {SNAPSHOT_ROOT}, with no "
+                                         f"numeric gate on {name!r} above it"))
+        elif not numeric:
+            offenders.append((index, f"writes {name!r} with no numeric gate above it"))
+    if offenders:
+        raise SystemExit(
+            "a brightness/volume write is not numerically gated -- an existence or string "
+            "gate passes the cleared sentinel or an empty value straight into the write, "
+            "which is a runtime error or a black screen: "
+            + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
+            + f" ({len(offenders)} total)")
+
+
+def verify_sentinel_gates(actions):
+    """Fail the build if an existence gate stands over a key written with the sentinel.
+
+    The sentinel is PRESENT and NON-EMPTY, so condition 100 reads TRUE in exactly the case
+    it exists to exclude, and any dotted read inside that branch then runs against a string
+    parent and raises "could not evaluate the key path" (Donor 6.1, line 3).
+    KNOWN_SENTINEL_EXISTENCE_GATES records the two keys still carrying this defect, with
+    the reason they cannot be flipped in isolation; see the note beside CLEARED_SENTINEL.
+    """
+    sentinel, reads, offenders = _sentinel_written_keys(actions), _read_variable_keys(actions), []
+    deferred = set(KNOWN_SENTINEL_EXISTENCE_GATES)
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("WFCondition") not in EXISTENCE_CONDITION_CODES:
+            continue
+        for key in sorted(reads.get(_tested_variable(parameters), set()) & sentinel):
+            if key.split(".")[0] not in deferred:
+                offenders.append((index, f"condition {parameters['WFCondition']} gates {key!r}, "
+                                         "which is written with the cleared sentinel"))
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.getvalueforkey":
+            continue
+        key = item.get("WFWorkflowActionParameters", {}).get("WFDictionaryKey")
+        if not isinstance(key, str) or "." not in key:
+            continue
+        parent = key.rsplit(".", 1)[0]
+        if parent in sentinel and parent.split(".")[0] not in deferred:
+            offenders.append((index, f"dotted read {key!r} hangs beneath {parent!r}, which is "
+                                     "written with the cleared sentinel and is therefore not "
+                                     "always a dictionary"))
+    if offenders:
+        raise SystemExit(
+            "an existence gate or a dotted read stands over a sentinel-written key -- the "
+            "sentinel is present and non-empty, so condition 100 reads TRUE for a cleared "
+            "key and the nested read then hard-errors on a string parent: "
+            + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
+            + f" ({len(offenders)} total)")
 
 
 # ---------------------------------------------------------------------------
@@ -2112,6 +2379,8 @@ def main():
     verify_conditional_inputs(actions)
     verify_numeric_operands(actions)
     verify_state_seed(actions)
+    verify_restore_gates(actions)
+    verify_sentinel_gates(actions)
     verify_router_shape(actions)
     # Declare that this shortcut consumes Shortcut Input.  The routing block reads the
     # ExtensionInput token, and PLIST_FORMAT.md defines this root key as "True if
