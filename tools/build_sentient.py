@@ -10,9 +10,11 @@ import uuid
 from pathlib import Path
 
 from build_state_engine import (
+    normalise_numeric_operands,
     normalise_output_names,
     normalise_string_envelopes,
     verify_conditional_inputs,
+    verify_numeric_operands,
     verify_output_names,
     verify_required_pickers,
     verify_router_shape,
@@ -188,10 +190,16 @@ def main() -> None:
     # holding a bare WFTextTokenAttachment resolves to empty at run time.
     normalise_string_envelopes(actions)
     normalise_output_names(actions)
+    # Sentient adds its own numeric conditionals (the Circle-bound and scope gates), so the
+    # cycle-9 operand-type normalisation and its invariant have to run on THIS fork too --
+    # running them only in build_state_engine.py would leave every Sentient-only comparison
+    # with a Text-typed operand and a red operator.
+    normalise_numeric_operands(actions)
     verify_string_envelopes(actions)
     verify_output_names(actions)
     verify_required_pickers(actions)
     verify_conditional_inputs(actions)
+    verify_numeric_operands(actions)
     # Sentient inherits the router verbatim from the built Dumb source, but assert it here
     # too: an inserted Sentient block must never land between the OPEN/CLOSE tests and the
     # MANUAL arm, and the absence gate must not reappear through a stale fork.

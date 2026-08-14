@@ -17,7 +17,7 @@ SOURCE = Path("src/PROSOCHE-Dumb.xml")
 # matches an installed one can create a second copy and leave an automation
 # wrapper pointed at the old shortcut; without a visible stamp that stale-install
 # case is indistinguishable from a failed fix.  Bump on every device-bound build.
-BUILD_STAMP = "build 2026-08-14h"
+BUILD_STAMP = "build 2026-08-14i"
 # CYCLE 7 MEASUREMENT INSTRUMENT, not a fix.  Cycle 6 proved on device that the Run
 # Shortcut handoff DOES deliver "OPEN" (Probe 5 echoed it) while PROSOCHE still fails,
 # so the failing action is inside the OPEN arm, before the first OPEN menu.  Static
@@ -1538,6 +1538,198 @@ def verify_conditional_inputs(actions):
                          + f" ({len(offenders)} total)")
 
 
+# ---------------------------------------------------------------------------
+# CYCLE 9 -- OPERAND TYPE, the fifth defect axis and the first invisible in the plist.
+#
+# A conditional's OPERATOR PICKER is populated from the STATIC TYPE of the variable in
+# WFInput.  read_value() defines its variable from an is.workflow.actions.gettext output,
+# so Shortcuts types it Text and offers only the EIGHT STRING operators -- is / is not /
+# has any value / does not have any value / contains / does not contain / begins with /
+# ends with.  A numeric WFCondition (0, 1, 2, 3, 1003) then has NO CASE TO RENDER: the
+# operator chip shows RED and iOS refuses to run the action.
+#
+# Every key, envelope, picker literal and condition code is well-formed at a defective
+# site, so verify_parameter_keys, verify_string_envelopes, verify_required_pickers and
+# verify_conditional_inputs all pass over it.  Decrypting the signed artifact does not
+# reveal it either.  It was found only because the user photographed red operators.
+#
+# DEVICE GROUND TRUTH -- Donor 4.1, built in Shortcuts.app on the target iPhone and
+# decrypted 2026-08-14 (.planning/debug/"Donor 4.1.shortcut").  A Get Dictionary Value
+# output compared with WFCondition 2 against WFNumberValue "10" serialises as:
+#
+#   "WFInput": {"Type": "Variable", "Variable": {
+#       "Value": {"Type": "ActionOutput", "OutputName": "Dictionary Value",
+#                 "OutputUUID": "...",
+#                 "Aggrandizements": [{"Type": "WFCoercionVariableAggrandizement",
+#                                      "CoercionItemClass": "WFNumberContentItem"}]},
+#       "WFSerializationType": "WFTextTokenAttachment"}}
+#
+# iOS does NOT insert a Number action and does NOT change the read chain.  It attaches a
+# COERCION AGGRANDIZEMENT to the variable reference in the conditional's own input slot --
+# which is precisely what the user did in the UI by tapping the chip and choosing "Number"
+# from its type list (screenshot .planning/debug/IMG_5636.jpg).  Donor 4, the same shortcut
+# before that tap, carries the identical descriptor with NO Aggrandizements and a code-100
+# test, which is the control case.
+#
+# Corroboration that the aggrandizement attaches to a NAMED variable as well as to an
+# ActionOutput: golden shortcut 332c12a0060043b388b22b806be7ab58 carries
+# WFCoercionVariableAggrandizement on both {Type: Variable, VariableName: ...} and
+# {Type: ActionOutput, ...} descriptors (24 instances across the corpus).
+#
+# WHY A COERCION AND NOT A Number ACTION.  Golden corpus 2e0fb675 does feed a Dictionary
+# Value straight into is.workflow.actions.number, so that construct is also real -- but it
+# is the shape for MATERIALISING a number into the data flow, not for typing a conditional
+# operand.  For this exact construct the device is unambiguous, and device evidence
+# outranks corpus composition.  The coercion is also strictly smaller: it adds no actions,
+# leaves every device-proven read chain byte-identical, and needs no null handling, because
+# coercing an absent value yields an absent value and the comparison simply evaluates false.
+# ---------------------------------------------------------------------------
+NUMERIC_CONDITION_CODES = {0, 1, 2, 3, 1003}
+NUMBER_COERCION = {"Type": "WFCoercionVariableAggrandizement",
+                   "CoercionItemClass": "WFNumberContentItem"}
+# Action identifiers whose output is already Number-typed, so their operands need no
+# coercion.  Derived from the cycle-9 provenance trace of all 87 (Dumb) / 94 (Sentient)
+# numeric conditionals; leaving these untouched keeps every device-proven site -- notably
+# the Control Room refresh conditionals that executed on the cycle-5 pass -- byte-identical.
+NUMERIC_SOURCE_ACTIONS = {
+    "is.workflow.actions.number",
+    "is.workflow.actions.number.random",
+    "is.workflow.actions.math",
+    "is.workflow.actions.round",
+    "is.workflow.actions.calculateexpression",
+    "is.workflow.actions.gettimebetweendates",
+    "is.workflow.actions.getdevicedetails",
+    "is.workflow.actions.count",
+    # Ask For Input is numeric ONLY when its picker is Number; the token is synthesised
+    # per action below so a Text-typed Ask can never satisfy this.
+    "is.workflow.actions.ask#Number",
+}
+# Built-in variables that are numeric without a Set Variable of their own.
+NUMERIC_BUILTIN_VARIABLES = {"Repeat Index"}
+
+
+def _numeric_operand_report(actions):
+    """Every numeric-code conditional, with its operand descriptor and provenance.
+
+    Shared by the normalise and verify passes so the two can never disagree about which
+    operands count as already-numeric.
+    """
+    produced = {}
+    for item in actions:
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if "UUID" not in parameters:
+            continue
+        identifier = item.get("WFWorkflowActionIdentifier")
+        if identifier == "is.workflow.actions.ask":
+            identifier += "#" + str(parameters.get("WFInputType"))
+        produced[parameters["UUID"]] = identifier
+    # Shortcuts types a NAMED variable from ALL of its Set Variable definitions, so one
+    # Text definition anywhere poisons every numeric comparison of that name -- including
+    # comparisons on an arm the Text definition can never reach.  Collect them all.
+    definitions = {}
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.setvariable":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        value = (parameters.get("WFInput") or {}).get("Value")
+        sources = definitions.setdefault(parameters.get("WFVariableName"), set())
+        if not isinstance(value, dict):
+            sources.add("<literal>")
+        elif value.get("Type") == "ActionOutput":
+            sources.add(produced.get(value.get("OutputUUID"), "<unknown>"))
+        elif value.get("Type") == "Variable":
+            sources.add("variable:" + str(value.get("VariableName")))
+        else:
+            sources.add(str(value.get("Type")))
+
+    def resolve(name, seen=()):
+        if name in seen:
+            return {"<cycle>"}
+        found = set()
+        for source in definitions.get(name, set()):
+            if source.startswith("variable:"):
+                found |= resolve(source[len("variable:"):], (*seen, name))
+            else:
+                found.add(source)
+        return found
+
+    report = []
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("WFControlFlowMode") != 0:
+            continue
+        if parameters.get("WFCondition") not in NUMERIC_CONDITION_CODES:
+            continue
+        descriptor = (parameters.get("WFInput") or {}).get("Variable", {}).get("Value")
+        if not isinstance(descriptor, dict):
+            report.append((index, None, {"<not-a-descriptor>"}))
+            continue
+        if descriptor.get("Type") == "ActionOutput":
+            sources = {produced.get(descriptor.get("OutputUUID"), "<unknown>")}
+        elif descriptor.get("VariableName") in NUMERIC_BUILTIN_VARIABLES:
+            sources = {"<builtin>"}
+        else:
+            sources = resolve(descriptor.get("VariableName")) or {"<undefined>"}
+        report.append((index, descriptor, sources))
+    return report
+
+
+def _already_numeric(sources):
+    return bool(sources) and sources <= (NUMERIC_SOURCE_ACTIONS | {"<builtin>"})
+
+
+def normalise_numeric_operands(actions):
+    """Type every numeric conditional's operand as a Number, the way iOS does.
+
+    Attaches Donor 4.1's WFCoercionVariableAggrandizement to the operand descriptor of any
+    numeric-code conditional whose operand is not already Number-typed.  Structural rather
+    than site-by-site: a future numeric comparison on a text-coerced value is corrected
+    automatically, and the matching invariant is asserted by verify_numeric_operands().
+    Operands that are already numeric are left untouched, so the numeric conditionals that
+    have executed on device stay byte-identical.
+    """
+    for _index, descriptor, sources in _numeric_operand_report(actions):
+        if descriptor is None or _already_numeric(sources):
+            continue
+        existing = descriptor.setdefault("Aggrandizements", [])
+        if not any(a.get("Type") == "WFCoercionVariableAggrandizement" for a in existing):
+            # Coercion goes FIRST: golden 332c12a0 orders coercion before any property
+            # aggrandizement, because the property is read from the coerced item.
+            existing.insert(0, dict(NUMBER_COERCION))
+
+
+def verify_numeric_operands(actions):
+    """Fail the build if a numeric conditional compares an untyped, non-numeric operand.
+
+    See the block comment above for the mechanism and the Donor 4.1 evidence.  This is the
+    fifth axis the generator asserts, after key name, value envelope, picker literal and
+    variable slot -- and the only one with no representation in the ToolKit catalog, the
+    bundled validator, or the signed artifact.
+    """
+    offenders = []
+    for index, descriptor, sources in _numeric_operand_report(actions):
+        if descriptor is None:
+            offenders.append((index, "operand is not a variable descriptor"))
+            continue
+        if _already_numeric(sources):
+            continue
+        coerced = any(a.get("Type") == "WFCoercionVariableAggrandizement"
+                      and a.get("CoercionItemClass") == "WFNumberContentItem"
+                      for a in descriptor.get("Aggrandizements", []))
+        if not coerced:
+            offenders.append((index, f"operand is fed by {', '.join(sorted(sources))} "
+                                     "and carries no Number coercion"))
+    if offenders:
+        raise SystemExit(
+            "numeric conditional operands are not Number-typed -- Shortcuts populates the "
+            "operator picker from the operand's type, so the numeric comparator has no case "
+            "to render, the chip shows RED and the action refuses to run: "
+            + "; ".join(f"action {i}: {why}" for i, why in offenders[:6])
+            + f" ({len(offenders)} total)")
+
+
 # Real output names, keyed by producing action identifier.  A magic-variable reference
 # carries OutputUUID (the binding) plus OutputName (the label iOS shows and re-resolves
 # against).  Hand-authored blocks in this artifact guessed some of these; where two
@@ -1716,11 +1908,13 @@ def main():
         index += 1
     normalise_string_envelopes(actions)
     normalise_output_names(actions)
+    normalise_numeric_operands(actions)
     verify_parameter_keys(actions)
     verify_string_envelopes(actions)
     verify_output_names(actions)
     verify_required_pickers(actions)
     verify_conditional_inputs(actions)
+    verify_numeric_operands(actions)
     verify_router_shape(actions)
     # Declare that this shortcut consumes Shortcut Input.  The routing block reads the
     # ExtensionInput token, and PLIST_FORMAT.md defines this root key as "True if
