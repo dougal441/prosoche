@@ -1,7 +1,26 @@
 # ⛔ DO NOT RUN BUILD `2026-08-14j` — SAFETY DEFECT
 
 **Status: build `j` is UNSAFE and must not be installed or run on device.**
-Superseded by the next build. Recorded 2026-08-14.
+**SUPERSEDED BY BUILD `2026-08-14k` (cycle 12), which is the artifact now on disk.**
+Recorded 2026-08-14.
+
+## Resolved in build `k` — with one correction to the prescribed fix
+
+The corrected fix below was implemented with **one deliberate change, and verifying the
+prescription is what produced it**: item 3 said to change the leaf gates to **code 5**
+(`is not "null"`). Code 5 was verified and is a real construct — CONTROL_FLOW.md's
+definitive table lists it, and one of the four code-5 sites already in the artifact
+(action 149) has EXECUTED on device. It was still rejected, because **`is not "null"` is
+TRUE for an EMPTY value**, and build `j` seeded exactly `""` into these leaves. On any
+device that rebuilt `state.json` under build `j`, a code-5 gate would pass empty straight
+into `setbrightness` — the same black screen. Code 5 closes the sentinel case and leaves
+the safety case open.
+
+The leaf gates are therefore **numeric `> 0`** (`WFCondition 2`, `WFNumberValue 0`), which
+closes both, is device-measured FALSE for `"null"` (Donor 6.1 test 2) *and* for `""`
+(Donor 6 action 8), and is the exact test the **capture** side already uses
+(`if_block("Captured Brightness", 2, number=0)`). Items 1, 2, 4, 5 and 6 were adopted as
+written. Full record in `open-routing-sequence-error.md` under `cycle_12_*`.
 
 ## The defect
 

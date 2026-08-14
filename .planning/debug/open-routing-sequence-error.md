@@ -100,7 +100,121 @@ independently, then check for a shared source before fixing.
 
 bug_class: Bohrbug (all three symptoms deterministic and reproducible on every run)
 
-CYCLE 11 reasoning_checkpoint (supersedes cycle 9, which is kept below for history):
+CYCLE 12 reasoning_checkpoint — BUILD 2026-08-14k SHIPPED, awaiting device
+(supersedes cycle 11, which is kept below for history):
+  hypothesis: >
+    AXIS 7, GATE SEMANTICS. Axis 6 (cycle 11, STATE SHAPE) asserted that every key a read
+    reaches EXISTS. It did not assert that the GATE standing over that key can DISTINGUISH
+    the states the key can be in. Build 2026-08-14j satisfied axis 6 completely and was
+    still UNSAFE: it seeded the snapshot leaves EMPTY, Donor 6.1 then measured that a
+    present-but-empty value passes `has any value`, so the leaf gate read TRUE and Set
+    Brightness was reached with an EMPTY value -- a runtime error or brightness 0, i.e. a
+    black screen, which .claude/CLAUDE.md forbids outright, on the C->D span that runs on
+    EVERY OPEN. The defect is not the sentinel and not the shape; it is that an EXISTENCE
+    test cannot separate "captured" from "cleared" for any key that carries a placeholder,
+    because every placeholder that makes the dotted read survive is by construction PRESENT.
+  confirming_evidence:
+    - "THE UNSAFE TRACE IS CONFIRMED AGAINST THE SHIPPED BUILD-j ARTIFACT AT THE EXACT ACTIONS NAMED: the new verify_restore_gates() fires on build j's decrypted plist at actions 187 and 206 (Dumb) / 189 and 208 (Sentient) -- the two Set Brightness / Set Volume writes -- and verify_sentinel_gates() fires at 181 and 200. Those are the same indices as the session-manager's independently-derived trace. The guard was run against the defect BEFORE the fix and it named it."
+    - "IT ALSO FIRES ON BUILD i, so this is not a build-j-only regression: the empty-write hazard was one seeding decision away in build i too, and the class has been latent since the restore block was written."
+    - "MEASURED SEMANTICS (Donor 6.1, correctly wired, target iPhone): flat+missing -> no value, no error; flat+present-but-empty -> HAS ANY VALUE TRUE; dotted+missing segment -> HARD ERROR; \"null\" -> WFNumberContentItem -> > 0 -> FALSE, no error. Lines 2 and 3 together make read-then-existence-gate IMPOSSIBLE for a dotted key: the read raises unless the leaf exists, and if it exists the gate is true. No sentinel swap can fix that."
+    - "THE SENTINEL DISSOLVES THE CYCLE-11 HALF-2 BLOCKER ENTIRELY. Keeping \"null\" means the leaf is PRESENT (so the dotted read cannot raise) AND NON-EMPTY (so validate_shortcut.py's iter_empty_strings rule never engages). The producer-vs-consumer choice cycle 11 deferred is settled in favour of the CONSUMER, and the empty-write question no longer has to be answered at all."
+    - "THE CAPTURE SIDE ALREADY USES THE GATE THE RESTORE SIDE NOW USES: dim() and silence() decide 'is this a real reading' with if_block(\"Captured Brightness\", 2, number=0). Capture and restore disagreed about what counts as a real value; they now agree. This is not a new construct in the artifact, it is an existing one applied symmetrically."
+    - "PER-ACTION BYTE DIFF AGAINST BUILD i (not j): 3684/3684 and 3752/3752 actions, exactly 23 differing per fork -- 1 bootstrap template, 4 restore-block instances x 5 actions (comment + 2 conditionals + 2 clear-keys), and 2 display-only BUILD_STAMP strings. The container gates at 181/200 are ABSENT from the diff, which is the container-vs-leaf split proven by byte-equality rather than asserted."
+  falsification_test: >
+    ONE device sitting on build 2026-08-14k. BREADCRUMB POSITIONS HOLD FOR THE FOURTH CYCLE
+    RUNNING and are verified in the DECRYPTED signed artifact, not asserted:
+      Dumb     A=92 B=147 C=168 D=286 E=306 F=415 G=424 H=458 I=473 J=527
+      Sentient A=94 B=149 C=170 D=288 E=308 F=417 G=426 H=460 I=475 J=529
+    PREDICTED LETTER: **C**, with a DIFFERENT error naming settings_snapshot.
+    That is a prediction of PARTIAL progress, and it is stated deliberately rather than
+    optimistically, because of a finding this cycle made while verifying the fix:
+    THE DEVICE'S state.json IS NOT REBUILT FROM THE SEEDED TEMPLATE. Actions 37-48 accept a
+    stored file as valid on three checks -- schema_version present, == "1", profile
+    non-empty -- and the device's stored file passes all three. The bootstrap branch at
+    52-81 writes a fresh state.json but NEVER REBINDS the `State` variable, which stays
+    bound to action 25's parse of the OLD file. So a seeded template reaches the device only
+    on a LATER run, and only if the stored file is first invalidated. Until that happens the
+    dotted read at 177 still traverses a missing segment and still hard-errors.
+      last letter C with a settings_snapshot error -> EXPECTED. The safety fix is in and the
+        stale-state gap is the remaining blocker. NOT a refutation.
+      last letter D or beyond -> the seed reached State (the user's stored file was rebuilt
+        or removed) and BOTH halves are confirmed.
+      last letter C with the error naming BRIGHTNESS OR VOLUME rather than a dictionary key,
+        or ANY report of the screen going black or dark -> THE FIX IS REFUTED, and refuted
+        hard. That is the specific outcome the numeric gate exists to make impossible.
+      any letter with an active_session or pending_exit error -> the PREDICTED next defect,
+        deliberately not fixed this cycle (see blind_spots). Progress plus localisation.
+    TO MAKE THE FIX OBSERVABLE IN ONE SITTING the user can delete PROSOCHE/state.json (Files
+    -> iCloud Drive -> Shortcuts -> PROSOCHE), run PROSOCHĒ once MANUALLY -- the bootstrap
+    save at action 79 happens before routing, so simply dismissing the menu is enough to
+    write the seeded file -- and only then open a watched app. Without that, C is expected.
+  fix_rationale: >
+    FOUR CHANGES AT THE GENERATOR, both forks regenerated, no action added or removed.
+    (1) THE SENTINEL STAYS "null" and the bootstrap leaves are seeded with it, not with "".
+        Present, so the dotted read cannot raise; non-empty, so no write-side empty.
+    (2) THE TWO LEAF GATES BECOME NUMERIC "> 0" (WFCondition 2, WFNumberValue 0).
+        CODE 5 WAS VERIFIED AND THEN REJECTED, and the verification is what killed it. Code
+        5 is real and documented -- CONTROL_FLOW.md's definitive table (5 = "is not", string
+        family, WFConditionalActionString), 4 code-5 sites already ship in both forks, and
+        one of them (action 149) sits INSIDE span B->C and has EXECUTED on device. Plain
+        string operands are equally evidenced: 122 in-artifact sites, 3 in the golden corpus.
+        It is still wrong HERE, because `is not "null"` is TRUE for an EMPTY value -- and
+        build j seeded exactly "" into these leaves, so on any device that rebuilt state.json
+        under build j a code-5 gate would pass empty straight into Set Brightness. Code 5
+        closes the sentinel case and leaves the black screen open.
+        The numeric gate closes both, and BOTH inputs are device-measured, not inferred:
+        "null" -> Number -> > 0 -> FALSE, no error (Donor 6.1 test 2); "" -> Number -> > 0 ->
+        FALSE, no error (Donor 6 action 8). It is also the safety property ITSELF rather than
+        a proxy for it: only a strictly positive reading is ever written back. The operand is
+        gettext-fed, so normalise_numeric_operands() attaches Donor 4.1's coercion
+        automatically -- no new shape enters the artifact.
+        STATED COST: a genuine captured Media volume of exactly 0 is not restored. Skipping
+        a restore leaves the current setting untouched, which is the fail-safe direction and
+        is what "never guess an original setting" already required.
+    (3) clear_snapshot() CLEARS THE LEAF, not the container. Cycle 10 finding 5: clearing the
+        container replaced the sub-dictionary with a string, so the next run's dotted read
+        hard-errored -- the axis-6 failure reintroduced one run later, presenting as a
+        regression. Clearing the leaf makes the seeded subtree a PERMANENT invariant, and
+        THAT is what licenses keeping the container gates at 100. Same action count.
+    (4) TWO NEW BUILD GUARDS, both run in BOTH forks' builders, both DEMONSTRATED FIRING on
+        builds i and j before the fix:
+        verify_restore_gates()  -- a brightness/volume write whose value is read out of
+          settings_snapshot must be dominated by a NUMERIC conditional on that same variable.
+          Stated over the WRITE, so no future re-gating can reintroduce an empty or zero
+          write. This is the invariant build j violated.
+        verify_sentinel_gates() -- no sentinel-written key may be gated by condition 100/101,
+          and no dotted read may hang beneath a sentinel-written parent. This enforces the
+          container-vs-leaf split MECHANICALLY: change clear_snapshot back to the container
+          and settings_snapshot.brightness becomes sentinel-written again and the build fails.
+    verify_state_seed()'s final assertion is inverted to match: leaves must equal the
+    sentinel. The old assertion demanded EMPTY -- the build-j safety defect written down as
+    an invariant -- and would have failed the corrected build.
+    The generator now asserts SEVEN axes: KEY NAME, VALUE ENVELOPE, PICKER LITERAL, VARIABLE
+    SLOT, OPERAND TYPE, STATE SHAPE, GATE SEMANTICS.
+  blind_spots:
+    - "THE STATE REBIND GAP IS THE NEWEST FINDING AND IS NOT FIXED. The bootstrap branch writes state.json and never rebinds `State`, so a rebuilt file is not consulted until a later run; and the validity check (schema_version present / == \"1\" / profile non-empty) accepts the device's stale file, so the rebuild is not even triggered. Together these mean a seeded template cannot reach the device by itself. The clean two-part repair is a schema_version bump (invalidate) plus a rebind (consult on the same run), it costs 2 actions and shifts every breadcrumb, and it was deliberately NOT taken in the cycle whose job was to remove a black-screen risk. It is the next cycle's first item. It also explains the long-open inconsistency about the clean-install error."
+    - "pending_exit AND active_session CARRY THE IDENTICAL CONSTRUCT AND ARE DELIBERATELY UNCHANGED, recorded in the generator as KNOWN_SENTINEL_EXISTENCE_GATES with the reason. They CANNOT be flipped in isolation: pending_exit is absent from the bootstrap template entirely and active_session is a BARE JSON null there, so a flat read returns nothing -- which PASSES `is not \"null\"` and would then run the nested dotted read of .type / .id against a missing parent. Flipping them alone trades a LATENT hard error for an IMMEDIATE one. Both sit past breadcrumb J on paths the device has never reached, and neither gates a safety-critical write. They belong with the rebind/seed work in one cycle."
+    - "cooldown_until IS NOW DEVICE-VERIFIED SAFE and all three sites are untouched, per instruction. Donor 6.1 test 2 read the literal \"null\" from the Dictionary, coerced to Number, compared > 0, and got FALSE with no error -- which is the semantically correct reading of a cleared cooldown at the most critical position on the OPEN path."
+    - "A DICTIONARY COERCED TO TEXT IS STILL UNMEASURED. The container gates at 181/200 read a sub-DICTIONARY through gettext and test it with condition 100. If iOS renders a dictionary as a non-empty description the gate is true and the leaf gate decides, as designed; if it renders empty the restore is skipped one level earlier -- the SAME safe outcome by a different route. Both paths are safe, which is why this is a blind spot and not a risk."
+    - "changed_at / changed_by_session_id ARE STILL WRITTEN AND NEVER READ, in either fork. clear_snapshot deliberately leaves them: they have no consumer, so a stale value cannot mislead anything. The ownership check remains a DESIGN change deferred to the user (DEV-06)."
+    - "DONOR 5 / THE 14 WFConditionalActionString SITES AND THE List/WFItems WRAPPER AT 1164 WERE NOT TOUCHED. Both sit past breadcrumb J and cannot affect this measurement. The optional work was skipped in favour of banking the safety fix, per instruction."
+  candidate_causes:
+    - "code/generator GATE SEMANTICS: an existence gate (cond 100) cannot distinguish a cleared placeholder from a captured value, because any placeholder that keeps the dotted read alive is by definition present (PRIMARY, this cycle's fix; guard demonstrated firing on builds i AND j at the exact actions of the verified trace)"
+    - "data/state STALE STORED FILE: the device's state.json passes the three validity checks and is used as-is, so a corrected bootstrap template never reaches State (SECONDARY, CONFIRMED BY READING THE VALIDITY CHECK AND THE BOOTSTRAP BRANCH, deliberately not fixed this cycle, and written into the predicted letter rather than discovered as a surprise)"
+    - "code/generator SENTINEL SCOPE: pending_exit and active_session carry the same construct one level over (KNOWN, EVIDENCED, ALLOW-LISTED IN THE GUARD rather than silently passing)"
+    - "config/environment: State bound to a document other than the one the bootstrap writes -- which is no longer a speculative alternative but a READ FACT, since the bootstrap branch never rebinds State"
+    - "design/absent OWNERSHIP: changed_by_session_id written 20 times, read never (NOT A CAUSE; a design gap for the user)"
+  and_gate: >
+    YES, AND IT FIRED TWICE. The observable "build k does not fix the OPEN path" needs TWO
+    conditions simultaneously: the gate defect (fixed here) AND the stale-state gap (not
+    fixed here). Neither alone produces it. That is exactly why the predicted letter is C
+    rather than D -- a single-cause reading of this cycle would predict D, be wrong, and the
+    correct fix would read as refuted for the FIFTH time this session. The AND-gate is also
+    why the refutation criterion is written in terms of the ERROR TEXT and the SCREEN, not
+    the letter: only "brightness/volume named, or the screen goes dark" falsifies the gate
+    fix, because only that outcome requires the gate fix to have failed.
+
+CYCLE 11 reasoning_checkpoint (superseded by cycle 12, kept below for history):
   hypothesis: >
     SYMPTOM 1'S THIRD DEFECT, and the SIXTH axis of this session -- the first that is NOT a
     wrong shape in the emitted plist. Every prior axis (key name, str envelope,
@@ -1309,6 +1423,31 @@ superseded_next_action_cycle2: >
   keep it as a build identifier or strip it before ship — do not let it leak silently.
 
 ## Evidence
+
+- timestamp: 2026-08-14 (cycle 12)
+  checked: "Condition code 5 ('is not') against CONTROL_FLOW.md's definitive table, the 19-shortcut golden corpus, and both generated forks — before emitting anything, per instruction"
+  found: "VERIFIED AS A CONSTRUCT. CONTROL_FLOW.md's table (stated as verified against an Apple-built sample) lists 5 = 'is not', string family, required field WFConditionalActionString. The golden corpus has ZERO code-5 sites but 3 code-4 sites, all with a PLAIN <string> operand — structurally identical, differing only in the integer. Our own forks already ship 4 code-5 sites, and 122 plain-string WFConditionalActionString operands across codes 4/5/99. Decisively, code-5 site action 149 sits INSIDE span B->C, which the device has EXECUTED (build h advanced the last letter from B to C), so code 5 with a Text-typed operand is DEVICE-PROVEN to render and run. Cycle 9's eight-string-operator finding independently confirms 'is not' is one of the operators a Text-typed operand offers."
+  implication: "Code 5 is real, evidenced and safe to emit. It is still the WRONG GATE HERE, and only verification revealed why — see the next entry. Verification was requested precisely because assumption is what produced the root cause; in this instance it changed the fix."
+
+- timestamp: 2026-08-14 (cycle 12)
+  checked: "Whether code 5 against the literal 'null' actually closes the build-j safety defect, enumerated over every value the leaf can hold"
+  found: "IT DOES NOT. `is not \"null\"` is TRUE for an EMPTY value. Build j seeded these leaves as EMPTY, so on any device that rebuilt state.json under build j the leaf reads '' -> 'is not null' TRUE -> Set Brightness receives ''. The prescribed code-5 fix closes the sentinel case and leaves the black-screen case open. A NUMERIC '> 0' gate closes BOTH and both inputs are device-measured: 'null' -> WFNumberContentItem -> > 0 -> FALSE with no error (Donor 6.1 test 2), and '' -> WFNumberContentItem -> > 0 -> FALSE with no error (Donor 6 action 8, the accidental measurement). It is also the exact test the CAPTURE side already uses on the same quantity — dim() and silence() both gate on if_block('Captured Brightness', 2, number=0)."
+  implication: "THE FIX CHANGED AS A RESULT OF VERIFYING IT. The leaf gates are numeric '> 0', not code 5. Capture and restore now agree on what counts as a real reading, the gate IS the safety property rather than a proxy for it, and no new shape enters the artifact because normalise_numeric_operands() supplies Donor 4.1's coercion automatically."
+
+- timestamp: 2026-08-14 (cycle 12)
+  checked: "The two new build guards run against the DECRYPTED shipped build-j artifact and the archived build-i source, before applying the fix"
+  found: "BOTH FIRE, AT THE EXACT ACTIONS OF THE INDEPENDENTLY-DERIVED UNSAFE TRACE. verify_restore_gates(): 'action 187: writes Restore Brightness, read from settings_snapshot, with no numeric gate above it' and the same at 206 (Dumb) / 189 and 208 (Sentient). verify_sentinel_gates(): 'action 181: condition 100 gates settings_snapshot.brightness, which is written with the cleared sentinel' and the same at 200. Build i fires identically, so this is a class latent since the restore block was written, not a build-j regression. Both pass on build k."
+  implication: "The recurrence guards were tested against the defect they target rather than authored alongside the fix. A guard that cannot be shown to fail on its own defect is decoration."
+
+- timestamp: 2026-08-14 (cycle 12)
+  checked: "Why a corrected bootstrap template did not change the device's behaviour — actions 21-48 (state load and validity) and 51-81 (bootstrap branch), read directly"
+  found: "TWO INDEPENDENT REASONS, BOTH READ FROM THE ARTIFACT. (a) The validity check is three tests — schema_version HAS ANY VALUE (37), schema_version IS '1' (39), profile HAS ANY VALUE (41). The device's stored state.json passes all three, so the bootstrap branch is NEVER ENTERED and the seeded template is never written. (b) Even when it IS entered, the branch at 52-81 builds the template, names it state.json and SAVES it — and never rebinds `State`, which stays bound to action 25's parse of the OLD file. So a rebuilt file cannot affect the run that rebuilt it."
+  implication: "SETTLES THE LONG-OPEN INCONSISTENCY (action 75 seeds settings_snapshot, yet the clean-install error said the top-level key was absent): the run reads the OLD document, not the one it just wrote. It also means build k's seed cannot reach the device unaided, which is why the predicted letter is C rather than D. The repair is a schema_version bump (invalidate the stored file) plus a rebind (consult the new one on the same run); it costs 2 actions and shifts every breadcrumb, and it was deliberately deferred out of the cycle whose job was to remove a black-screen risk."
+
+- timestamp: 2026-08-14 (cycle 12)
+  checked: "Whether the pending_exit and active_session gates can take the same treatment, enumerated over their bootstrap, written and cleared states"
+  found: "NO — NOT IN ISOLATION, AND FLIPPING THEM WOULD REGRESS. pending_exit is ABSENT from the bootstrap template entirely; active_session is a BARE JSON null there. A flat read of an absent key returns nothing (Donor 6.1 line 1), which PASSES `is not \"null\"` and would then run the nested DOTTED read of .type / .id / .declared_duration_seconds against a missing parent — an immediate hard error in place of a latent one. Their condition-100 gates are genuinely defective for the CLEARED case, and genuinely load-bearing for the ABSENT case."
+  implication: "Both are recorded in the generator as KNOWN_SENTINEL_EXISTENCE_GATES with the reason, so verify_sentinel_gates() passes them by name while failing any NEW occurrence. They sit past breadcrumb J on paths the device has never reached and neither gates a safety-critical write. Fixing them requires seeding both keys in the template AND closing the rebind gap, which is one coherent next cycle."
 
 - timestamp: 2026-08-14 (cycle 8)
   checked: "All 20 actions in bisection span B->C (build-h indices 148-167), read individually against all four defect axes established this session: parameter KEY NAME, value ENVELOPE, picker ENUM literal, and PLIST SCALAR TYPE"
@@ -2589,6 +2728,96 @@ superseded_next_action_cycle2: >
   timestamp: 2026-08-14 (cycle 2)
 
 ## Resolution
+
+cycle_12_root_cause: >
+  AXIS 7, GATE SEMANTICS — and the SAFETY DEFECT IN BUILD 2026-08-14j, which is withdrawn.
+  An EXISTENCE gate (condition 100) cannot distinguish a CLEARED key from a CAPTURED one,
+  because any placeholder that keeps a dotted read alive is by construction PRESENT, and
+  Donor 6.1 measured that a present-but-empty value passes `has any value`. Build j seeded
+  the settings_snapshot leaves EMPTY and left the leaf gates at 100, so the restore path
+  reached Set Brightness with an EMPTY value — a runtime error or brightness 0, forbidden
+  outright by .claude/CLAUDE.md, at actions 187/206 inside the C->D span that runs on EVERY
+  OPEN. Axis 6 (STATE SHAPE) was satisfied completely and the artifact was still unsafe:
+  asserting that a key EXISTS is not asserting that the gate over it can READ it.
+  A SECOND, INDEPENDENT CONDITION was found while verifying the fix and is NOT fixed here:
+  the device's stored state.json passes the three validity checks (schema_version present,
+  == "1", profile non-empty) so the bootstrap branch never runs, and when it does run it
+  saves the new file without rebinding `State`. A corrected template therefore cannot reach
+  the device unaided. This settles the long-open clean-install inconsistency.
+
+cycle_12_fix: >
+  tools/build_state_engine.py and tools/build_sentient.py only; both forks regenerated,
+  validated and re-signed. Nothing from cycles 2, 3, 4, 5, 8, 9 or 11 is reverted.
+  (1) CLEARED_SENTINEL stays "null" and the bootstrap leaves are SEEDED WITH IT rather than
+      with "". Present, so the dotted read cannot raise; non-empty, so cycle 11's Half-2
+      write-side validator blocker dissolves entirely and never has to be settled.
+      seed_settings_snapshot() also rewrites a build-j tree's empty leaves in place, so a
+      re-run over the defective source converges instead of silently keeping "".
+  (2) THE TWO LEAF GATES BECOME NUMERIC "> 0" (WFCondition 2, WFNumberValue 0), NOT code 5.
+      Code 5 was verified against CONTROL_FLOW.md, the golden corpus and the artifact's own
+      device-executed site at action 149 — and then REJECTED, because `is not "null"` is
+      TRUE for an EMPTY value and build j seeded exactly that. The numeric gate is
+      device-measured FALSE for both "null" (Donor 6.1 test 2) and "" (Donor 6 action 8),
+      is the safety property itself rather than a proxy, and is the same test the CAPTURE
+      side already uses (dim()/silence(): if_block("Captured Brightness", 2, number=0)).
+      normalise_numeric_operands() supplies Donor 4.1's coercion, so no new shape is added.
+      STATED COST: a genuine captured Media volume of exactly 0 is not restored; skipping is
+      the fail-safe direction and is what "never guess an original setting" already required.
+  (3) clear_snapshot() CLEARS settings_snapshot.<key>.original_value, NOT the container.
+      This kills cycle 10 finding 5 (the container was being replaced by a string, so the
+      next run's dotted read hard-errored) and makes the seeded subtree a permanent
+      invariant — which is precisely what licenses keeping the CONTAINER gates at condition
+      100 while the LEAF gates change. Same action count, deeper key.
+  (4) TWO NEW BUILD GUARDS, run in BOTH forks' builders, both DEMONSTRATED FIRING on the
+      decrypted build-j artifact AND on build i before the fix, at the exact actions of the
+      independently-derived unsafe trace (187/206 for the writes, 181/200 for the gates):
+        verify_restore_gates()  — a brightness/volume write whose value is read out of
+          settings_snapshot must be dominated by a NUMERIC conditional on that variable.
+          Stated over the WRITE, so no future re-gating can reintroduce an empty/zero write.
+        verify_sentinel_gates() — no sentinel-written key may be gated by condition 100/101
+          and no dotted read may hang beneath a sentinel-written parent. This enforces the
+          container-vs-leaf split MECHANICALLY: revert (3) and the build fails.
+          KNOWN_SENTINEL_EXISTENCE_GATES = ("pending_exit", "active_session") records the
+          two keys still carrying the defect, by name and with the reason, so they pass while
+          any NEW occurrence fails.
+  (5) verify_state_seed()'s final assertion INVERTED: leaves must equal the sentinel. The old
+      assertion demanded EMPTY — the build-j safety defect written down as an invariant — and
+      would have failed this build.
+  The generator now asserts SEVEN axes: KEY NAME, VALUE ENVELOPE, PICKER LITERAL, VARIABLE
+  SLOT, OPERAND TYPE, STATE SHAPE, GATE SEMANTICS.
+  BUILD_STAMP "build 2026-08-14k". OPEN_BISECT and ROUTER_TRACE remain ON; no action is
+  added, removed or reordered, so breadcrumb positions are UNCHANGED for the fourth cycle:
+  Dumb A=92 B=147 C=168 D=286 E=306 F=415 G=424 H=458 I=473 J=527; Sentient uniformly +2.
+
+cycle_12_verification: >
+  NOT device-confirmed. Build-side only, and stated as such.
+  - GUARDS TESTED AGAINST THE DEFECT FIRST: verify_restore_gates and verify_sentinel_gates
+    both FIRE on build j and on build i, naming actions 187/206 and 181/200 (Dumb) and
+    189/208 and 183/202 (Sentient). Both PASS on build k.
+  - Both forks: validate-shortcut --target-macos 26 --target-platform all -> "Validation
+    passed." (the project's documented invocation, per artifacts/shortcuts/MANIFEST.md).
+    NOTE: --target-platform ios floods with "requires macOS 27+" on EVERY action; build i
+    does the same, so it is a pre-existing bundled-data gap, not something introduced here.
+  - SHIPPED SIGNED ARTIFACTS DECRYPTED AND INSPECTED (not read back from the build tree),
+    both AEA1: Dumb 3684 actions, Sentient 3752. Stamp "build 2026-08-14k" x2 in each with
+    ZERO stale "14j" or "14i". ROUTER TRACE present. Ten breadcrumbs at
+    A=92 B=147 C=168 D=286 E=306 F=415 G=424 H=458 I=473 J=527 (Dumb) and +2 (Sentient).
+    ALL EIGHT restore writes (4 per fork) are immediately preceded by a conditional with
+    WFCondition 2 / WFNumberValue 0. The seed line reads
+    "brightness": {"original_value": "null", "changed_at": "null", "changed_by_session_id": "null"}
+    and zero empty-string leaves remain.
+  - SYMPTOMS 2 AND 3 PRESERVED BY CONSTRUCTION AND PROVEN BY PER-ACTION BYTE DIFF AGAINST
+    BUILD i (not j — j is withdrawn): 3684/3684 and 3752/3752 actions, exactly 23 differing
+    per fork — 1 bootstrap template, 4 restore-block instances x 5 actions, and 2
+    display-only BUILD_STAMP strings. The container gates at 181/200 are ABSENT from the
+    diff, which proves the container-vs-leaf split by byte-equality rather than asserting it.
+    Every other Set Dictionary Value and the entire Notes family are byte-identical to the
+    build that device-confirmed them.
+  Awaiting the build-k device pass. PREDICTED LETTER AND REFUTATION CRITERION ARE STATED IN
+  ADVANCE in Current Focus: C with a settings_snapshot error is EXPECTED (the stale-state
+  gap, not a refutation); D or beyond confirms both halves; the fix is REFUTED only by the
+  error naming brightness/volume rather than a dictionary key, or by any report of the
+  screen going dark.
 
 cycle_9_root_cause: >
   SYMPTOM 1, SECOND DEFECT — the fifth axis of this session, and the first that is invisible
