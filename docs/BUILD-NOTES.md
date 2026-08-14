@@ -565,7 +565,7 @@ What is lost: a mis-typed automation now reaches the manual menu instead of an e
 
 Guard: `verify_router_shape()` fails the build if the absence gate reappears, if the `Input Key` tests drift from exactly `OPEN` then `CLOSE`, or if the MANUAL arm leaves the CLOSE `Otherwise` branch. It runs in both fork builders.
 
-### DEV-03 — `speaktext` parameter key remains unverified
+### DEV-C3-03 — `speaktext` parameter key remains unverified
 
 `is.workflow.actions.speaktext` is emitted with `WFInput` (10 sites). The ToolKit v78 catalog lists **no parameters at all** for that identifier, so there is no verified replacement key. Left unchanged deliberately: inventing a key would violate the project's no-fabrication rule. Needs its own device probe.
 
@@ -656,7 +656,7 @@ The artifact contained its own control group: eight picker classes already carri
 
 **Recurrence guard:** `REQUIRED_PICKER_PARAMS` + `verify_required_pickers()` in `tools/build_state_engine.py`, run by both fork builders. It fails the build if any of nine picker classes is missing or non-literal. Verified sensitive: it rejects the pre-fix artifacts naming the exact sites (32 Dumb / 33 Sentient), and it caught a genuine second `count` defect in the Sentient-only insertion path (`build_sentient.py:140`) that the Dumb pass could not see.
 
-### DEV-03 — **CLOSED.** `speaktext` uses `WFText`, not `WFInput`
+### DEV-C3-03 — **CLOSED.** `speaktext` uses `WFText`, not `WFInput`
 
 §13 recorded that `speaktext` "lists no parameters at all" in the catalog and that no verified replacement key existed. **That premise was wrong.** The ToolKit v78 first-party catalog defines six parameters for `is.workflow.actions.speaktext`: `WFSpeakTextWait`, `WFSpeakTextRate`, `WFSpeakTextPitch`, `WFSpeakTextLanguage`, `WFSpeakTextVoice`, and **`WFText`** (type `str`, display name `Text`). `WFInput` is not among them, so the spoken text was never being read. All 10 sites now emit `WFText`, and because it is `str`-typed it is registered in `STRING_ENVELOPE_PARAMS` and takes the `WFTextTokenString` envelope per CAP-05/CAP-05a. No fabrication was required.
 
@@ -668,9 +668,15 @@ This looked like the leading candidate for the same defect class: a required enu
 
 `is.workflow.actions.openapp` emits a legacy `WFAppIdentifier` alongside the donor-verified `WFSelectedApp`, and omits `WFWindowingFormat`. Both left unchanged: extra undefined keys are provably inert in this artifact (`WFShowFilePicker`, `ShowWhenRun` and `WFAppIdentifier` all coexist on device-proven working paths), and `WFWindowingFormat` is OS27-gated, so emitting it would violate the iOS-26 target. Likewise `count` retains an undefined `WFInput` beside the catalog-defined `Input` so the input binds whichever key iOS actually reads.
 
-### Correction owed to `.claude/CLAUDE.md` §8 (carried, not applied)
+### Correction to `.claude/CLAUDE.md` §8 — **APPLIED**
 
-§8 states a signed `.shortcut` "cannot be read back as a plaintext plist". §14's recipe disproves that. Flagged to the user; not edited unilaterally.
+§8 previously stated that a signed `.shortcut` "cannot be read back as a plaintext plist". It now permits and documents the verified `aea decrypt` → `aa extract` workflow, including conversion of `Shortcut.wflow` to XML for inspection or remixing.
+
+### Repository provenance guard — stale pre-cycle-1 branches archived
+
+Cycle 6 found the checkout on `codex/prosochedebug1` / `efb5a79`, before every cycle 1–5 generator fix. The equally stale `codex/round1` ref pointed at the same commit. Both risky names are now archived locally as `codex/archive-stale-prosochedebug1-pre-cycle1` and `codex/archive-stale-round1-pre-cycle1`; the active checkout is `codex/automation-parameter-diagnosis` on the verified `7ca8ebb` lineage.
+
+Before either generator runs, enforce `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678 HEAD`. A nonzero result means the checkout predates the verified cycle-5 baseline: abort without regenerating or signing anything.
 
 ### Scaffolding debt (carried forward, unchanged)
 

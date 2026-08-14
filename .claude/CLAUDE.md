@@ -19,6 +19,7 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → inte
 - **AI**: Apple On-Device Intelligence via the iOS 26 `Use Model` action, Sentient fork only — never cloud, never PCC, never ChatGPT
 - **Privacy**: no behavioural data leaves the device; Sentient receives only a compact local context window, never the whole Note
 - **Capability**: every iOS action identifier and parameter shape must be verified before use — if it cannot be verified, use the safest fallback, record the deviation, and keep the Shortcut runnable. Never fabricate an action because the strategy asks for it.
+- **Build provenance**: before running `tools/build_state_engine.py` or `tools/build_sentient.py`, require `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678 HEAD`; abort the rebuild if it fails. The former `codex/prosochedebug1` and `codex/round1` refs were stale at pre-cycle-1 commit `efb5a79` and are archived locally as `codex/archive-stale-*-pre-cycle1`.
 - **Safety**: no zero brightness, no unsafe or startling volume, no accessibility-stranding state, Emergency Restore always available
 - **Determinism**: the model never controls arithmetic, thresholds, timers, Circle IX, or any safety decision
 - **Device split**: Dumb targets all iOS 26 iPhones; Sentient requires Apple Intelligence-capable hardware (iPhone 15 Pro and later)
