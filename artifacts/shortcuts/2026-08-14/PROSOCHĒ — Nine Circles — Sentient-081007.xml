@@ -1823,11 +1823,41 @@ Guard against empty fields before reading anything nested inside them. Six field
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>WFCommentActionText</key>
-				<string>Route this run by POSITIVE identification of the normalised Input Key, never by its absence:
+				<string>Route this run based on whether the normalised Input Key has a value, never the raw Shortcut Input:
 - Input Key is built just above by composing the Shortcut Input into text, trimming surrounding whitespace, then uppercasing the result.
-- If Input Key is exactly OPEN this is Automation A; if it is exactly CLOSE this is Automation B; anything else — including a plain manual tap with no input at all — is a manual run and falls through to the MANUAL menu.
-- This deliberately does NOT gate on "Input Key has any value". That earlier gate assumed an absent Shortcut Input normalises to a completely empty string. It does not: once Trim Whitespace and Change Case were given the text serialization iOS actually reads, the empty case stopped being empty, the gate passed, and every manual tap was rejected as unrecognised input. Absence is not a reliable signal; presence is.
-- A mis-typed automation therefore reaches the manual menu rather than an explicit rejection. That is intended: the menu is inert until the person chooses something, so no phantom open is ever injected into Heat or Pressure.</string>
+- Trimming an all-whitespace value leaves an empty string, and an empty string has no value, so a plain manual tap (no input at all) and a whitespace-only input both fall through to this gate's Otherwise below, the MANUAL branch, rather than being treated as unrecognised input. The very first run of a freshly imported Shortcut is exactly this case, since neither Personal Automation exists yet to send OPEN or CLOSE.
+- If Input Key has a value, this run came from an automation (or a stray caller) and is classified into OPEN, CLOSE, or an unrecognised fail-safe outcome below.
+- If Input Key is empty, this is a manual run and continues below to check for existing setup.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>F646324A-A01B-4D3A-B205-0C9ED3BF1C57</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>100</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Input Key</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
 			</dict>
 		</dict>
 		<dict>
@@ -12866,8 +12896,6 @@ Guard against empty fields before reading anything nested inside them. Six field
 			<dict>
 				<key>UUID</key>
 				<string>19A735B0-B8EB-57D4-A605-9B190931AB51</string>
-				<key>WFCountType</key>
-				<string>Items</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -12984,8 +13012,6 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<key>UUID</key>
 				<string>4E710C1A-5503-5F0F-8123-F47E2F8F9856</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -22941,8 +22967,6 @@ Prior respected: ￼</string>
 			<dict>
 				<key>UUID</key>
 				<string>1B235B60-03A8-5B59-A6B6-2941EBD2A2B6</string>
-				<key>WFCountType</key>
-				<string>Items</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -25292,8 +25316,6 @@ Prior respected: ￼</string>
 				<key>UUID</key>
 				<string>069F0BB5-51C7-567F-8535-F1F888B3C9CE</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -25590,8 +25612,6 @@ Prior respected: ￼</string>
 				<key>UUID</key>
 				<string>5C9724DF-8D37-5800-A330-761FC1774070</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -25899,8 +25919,6 @@ Prior respected: ￼</string>
 				<key>UUID</key>
 				<string>22B7527A-A41A-5FBA-9519-C3E09AA0917E</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -26187,25 +26205,17 @@ Prior respected: ￼</string>
 			<string>is.workflow.actions.speaktext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFText</key>
+				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Mirror Text</string>
-							</dict>
-						</dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Mirror Text</string>
 					</dict>
 					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
+					<string>WFTextTokenAttachment</string>
 				</dict>
 			</dict>
 		</dict>
@@ -29472,24 +29482,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>WFCommentActionText</key>
-				<string>Input Key was neither OPEN nor CLOSE, so this run is MANUAL.
-- A plain manual tap sends no Shortcut Input at all and lands here, which is the normal first-run case for a freshly imported Shortcut, before either Personal Automation exists.
-- A stray or mis-typed caller also lands here. Nothing below reads, writes, or mutates anything until the person picks a menu item, so an unrecognised caller still injects no event into Heat or Pressure.
-- OPEN and CLOSE never reach this arm.</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.comment</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFCommentActionText</key>
-				<string>--- ROUTER TRACE ---
-
-- Debug scaffolding only; it reads nothing, writes nothing, and branches nowhere.
-- It shows the normalised Input Key in brackets beside an empty-string reference.
-- Identical-looking brackets mean Input Key holds a non-printing character, since cycle 2 already proved on device that it is non-empty here.
-- Remove by setting ROUTER_TRACE = False in tools/build_state_engine.py and rebuilding.</string>
+				<string>Input Key was neither OPEN nor CLOSE, and is not empty: unrecognised input, a mis-typed automation, or a stray caller (BOOT-02). This branch is inert by construction - it performs no file read, no file write, no dictionary mutation, no Note creation or append, and waits on nothing, because treating this as a real tracked-app open would inject a phantom event into Heat and Pressure, and a branch that waits on anything is a branch that can hang. It shows one diagnostic alert and ends.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -29498,41 +29491,64 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>WFAlertActionTitle</key>
-				<string>PROSOCHĒ build 2026-08-14f</string>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>Unrecognised Input</string>
+						<key>attachmentsByRange</key>
+						<dict/>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
 				<key>WFAlertActionMessage</key>
 				<dict>
 					<key>Value</key>
 					<dict>
 						<key>string</key>
-						<string>MANUAL arm reached.
-
-Input Key: [￼]
-Empty ref: []
-
-If those two lines look the same, Input Key is a non-printing character rather than visible text.</string>
+						<string>PROSOCHĒ received input it did not recognise and took no action. Nothing was read, written, or changed.</string>
 						<key>attachmentsByRange</key>
-						<dict>
-							<key>{33, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Input Key</string>
-							</dict>
-						</dict>
+						<dict/>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenString</string>
 				</dict>
+				<key>WFAlertActionCancelButtonShown</key>
+				<false/>
 			</dict>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.comment</string>
+			<string>is.workflow.actions.conditional</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFCommentActionText</key>
-				<string>--- ROUTER TRACE END ---</string>
+				<key>GroupingIdentifier</key>
+				<string>A2F7247B-3920-4B4A-B5FF-C7C5C2F95D7D</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>FA045F2B-237A-447C-A256-63490608FC0D</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>F646324A-A01B-4D3A-B205-0C9ED3BF1C57</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -29569,7 +29585,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFMenuPrompt</key>
-				<string>PROSOCHĒ · build 2026-08-14f</string>
+				<string>PROSOCHĒ · build 2026-08-14c</string>
 				<key>WFMenuItems</key>
 				<array>
 					<string>Status</string>
@@ -35202,8 +35218,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>03F4BB1A-A634-5537-A190-15B78D4AA4C9</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -35500,8 +35514,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>C498BB0E-1B9E-5B49-B035-F470EE62C299</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -35809,8 +35821,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>6D133609-432E-5B5C-AF34-B294C9F6B768</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -36097,25 +36107,17 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 			<string>is.workflow.actions.speaktext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFText</key>
+				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Mirror Text</string>
-							</dict>
-						</dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Mirror Text</string>
 					</dict>
 					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
+					<string>WFTextTokenAttachment</string>
 				</dict>
 			</dict>
 		</dict>
@@ -40356,8 +40358,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>2D362F75-0E95-572A-8067-18C9A38AC7D2</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -40654,8 +40654,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>57A1D66E-33E2-531A-A8A8-BAEFE6C39270</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -40963,8 +40961,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>6DC97CD0-3A4F-5569-9731-211E8E151B8C</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -41251,25 +41247,17 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 			<string>is.workflow.actions.speaktext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFText</key>
+				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Mirror Text</string>
-							</dict>
-						</dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Mirror Text</string>
 					</dict>
 					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
+					<string>WFTextTokenAttachment</string>
 				</dict>
 			</dict>
 		</dict>
@@ -45510,8 +45498,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>CD0C832B-B811-5C70-98CA-95F703A7C1F3</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -45808,8 +45794,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>5E94AF48-99F7-5D22-A059-2BFABD10A24F</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -46117,8 +46101,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>BD355E0E-8297-5B39-B528-91BA9A2F55D4</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -46405,25 +46387,17 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 			<string>is.workflow.actions.speaktext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFText</key>
+				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Mirror Text</string>
-							</dict>
-						</dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Mirror Text</string>
 					</dict>
 					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
+					<string>WFTextTokenAttachment</string>
 				</dict>
 			</dict>
 		</dict>
@@ -50664,8 +50638,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>1BAFBF61-375F-5A35-977A-49A62F7F1A4E</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -50962,8 +50934,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>F27A5985-F0CE-5FAC-B201-9E9AF1280F3B</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -51271,8 +51241,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>16D4ECE9-1144-57B2-B455-2DA94BC2ADD4</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -51559,25 +51527,17 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 			<string>is.workflow.actions.speaktext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFText</key>
+				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Mirror Text</string>
-							</dict>
-						</dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Mirror Text</string>
 					</dict>
 					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
+					<string>WFTextTokenAttachment</string>
 				</dict>
 			</dict>
 		</dict>
@@ -55818,8 +55778,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>32A99057-EA45-5576-8A43-4E27868D2AD7</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -56116,8 +56074,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>7521127B-5585-5AD7-A848-591100DC5C93</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -56425,8 +56381,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>894FE143-10B8-50E4-AF26-CC4CF78AC7CE</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -56713,25 +56667,17 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 			<string>is.workflow.actions.speaktext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFText</key>
+				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Mirror Text</string>
-							</dict>
-						</dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Mirror Text</string>
 					</dict>
 					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
+					<string>WFTextTokenAttachment</string>
 				</dict>
 			</dict>
 		</dict>
@@ -60972,8 +60918,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>E61D7A71-7D2D-59B4-A0EC-774B0E0721AA</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -61270,8 +61214,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>48AF0A69-8664-547D-A6EE-D8EBE7BF0256</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -61579,8 +61521,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>D03CFA22-F621-5147-BF2B-7C56F30C5769</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -61867,25 +61807,17 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 			<string>is.workflow.actions.speaktext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFText</key>
+				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Mirror Text</string>
-							</dict>
-						</dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Mirror Text</string>
 					</dict>
 					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
+					<string>WFTextTokenAttachment</string>
 				</dict>
 			</dict>
 		</dict>
@@ -66126,8 +66058,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>8B1A18E6-CD1A-593E-BF92-E72B9EBCA42D</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -66424,8 +66354,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>FF3F4A14-DD77-5A0E-AF4D-0B8264822560</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -66733,8 +66661,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>46D6EA37-6D27-5B19-97CB-0798D21E3E0E</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -67021,25 +66947,17 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 			<string>is.workflow.actions.speaktext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFText</key>
+				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Mirror Text</string>
-							</dict>
-						</dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Mirror Text</string>
 					</dict>
 					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
+					<string>WFTextTokenAttachment</string>
 				</dict>
 			</dict>
 		</dict>
@@ -71280,8 +71198,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>094AFBEF-873D-5281-B1A8-F182A575804F</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -71578,8 +71494,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>05C5C627-A116-5E09-9EE8-51E3875354F5</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -71887,8 +71801,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>CE09F2ED-DA53-5A99-A34D-91E8BD95E61A</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -72175,25 +72087,17 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 			<string>is.workflow.actions.speaktext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFText</key>
+				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Mirror Text</string>
-							</dict>
-						</dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Mirror Text</string>
 					</dict>
 					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
+					<string>WFTextTokenAttachment</string>
 				</dict>
 			</dict>
 		</dict>
@@ -76434,8 +76338,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>D9D9794D-D678-52F2-8E2F-37FF5B58A14C</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -76732,8 +76634,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>AF2623B5-C3EC-5D20-A2FC-2DB81C8075C5</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -77041,8 +76941,6 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>C48F3E87-D8FF-5092-A375-9259AB88AD53</string>
 				<key>WFItemSpecifier</key>
-				<string>Item At Index</string>
-				<key>WFItemIndex</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -77329,25 +77227,17 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 			<string>is.workflow.actions.speaktext</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFText</key>
+				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Mirror Text</string>
-							</dict>
-						</dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Mirror Text</string>
 					</dict>
 					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
+					<string>WFTextTokenAttachment</string>
 				</dict>
 			</dict>
 		</dict>
@@ -79623,23 +79513,15 @@ Reserved. Nothing is asked for here yet.</string>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>OutputUUID</key>
-								<string>45700A78-28DD-4A3A-A5F0-598AE9C48194</string>
-								<key>OutputName</key>
-								<string>Rich Text from Markdown</string>
-								<key>Type</key>
-								<string>ActionOutput</string>
-							</dict>
-						</dict>
+						<key>OutputUUID</key>
+						<string>45700A78-28DD-4A3A-A5F0-598AE9C48194</string>
+						<key>OutputName</key>
+						<string>Rich Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
 					</dict>
 					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
+					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>name</key>
 				<string>PROSOCHĒ — Control Room</string>
@@ -80488,23 +80370,15 @@ Reserved. Nothing is asked for here yet.</string>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>OutputUUID</key>
-								<string>9888F4B6-9AB2-5371-801A-8C760E84B50B</string>
-								<key>OutputName</key>
-								<string>Text</string>
-								<key>Type</key>
-								<string>ActionOutput</string>
-							</dict>
-						</dict>
+						<key>OutputUUID</key>
+						<string>9888F4B6-9AB2-5371-801A-8C760E84B50B</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
 					</dict>
 					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
+					<string>WFTextTokenAttachment</string>
 				</dict>
 			</dict>
 		</dict>
@@ -80991,18 +80865,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>A2F7247B-3920-4B4A-B5FF-C7C5C2F95D7D</string>
-				<key>WFControlFlowMode</key>
-				<integer>2</integer>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.conditional</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>FA045F2B-237A-447C-A256-63490608FC0D</string>
+				<string>F646324A-A01B-4D3A-B205-0C9ED3BF1C57</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>

@@ -542,3 +542,136 @@ Consequences:
 The shipped Phase 5 graph uses a validator-clean Ash fallback: a self-contained low-salience pause. It deliberately emits neither Color Filters identifier because the mandatory bundled validator has no waivable unknown-action exception. Brightness and Media volume are changed only after `Get Device Details` captures their originals under `settings_snapshot`; an existing unrestored snapshot is never overwritten. Dimming skips an already-dim display and uses `Config.safety.dim_target`, so it cannot brighten the display or set zero. Silence never writes non-Media volume or a value above its captured original.
 
 `python3 docs/phase5_self_check.py` verifies semantic markers, the nine configuration entries, snapshot/restore safety, control-flow balance, pinned imports, unsupported-action exclusion, and two identical builder hashes. The project-wide validator command is `--target-macos 26 --target-platform all`: it passes. The plan's literal `--target-platform ios` command is retained as device-target evidence but presently reports every pre-existing core action from index 0 as a macOS-27 catalog false negative; it is not used to waive a Phase 5 action.
+
+---
+
+## 13. Recorded deviations — 2026-08-14 (debug cycle 3, session `open-routing-sequence-error`)
+
+### DEV-01 — validator invocation: `--target-platform ios` is not used
+
+`.claude/CLAUDE.md` mandates `--target-macos 26 --target-platform ios`. **The project builds with `--target-macos 26 --target-platform all` instead.** This is a deliberate, now-measured deviation, not an inherited assumption.
+
+Measurement: at `--target-platform ios` the validator rejects **every action in the file** — 3675 of 3675 on the pre-cycle-3 Dumb build — including `is.workflow.actions.comment` and `is.workflow.actions.nothing`, both of which are *present* in the bundled iOS-27 snapshot the flag claims to consult. Rejection is therefore not driven by identifier presence. The snapshots are independently demonstrably incomplete: `is.workflow.actions.conditional` is absent from **both** the iOS-27 and v63 snapshots.
+
+Consequence: the flag carries zero signal. A check that fails 100% of its inputs cannot conceal a real failure among them, so nothing is being waived by not running it. `--target-platform all` passes cleanly for both forks and is the invocation of record. Re-evaluate if a future plugin release ships a corrected iOS snapshot.
+
+### DEV-02 — router no longer distinguishes "no input" from "unrecognised input"
+
+The router was restructured to route on positive identification (`OPEN` / `CLOSE` / else MANUAL) rather than on absence of input. The former `Input Key has any value` gate and its "Unrecognised Input" fail-safe alert are removed.
+
+Rationale: gating manual invocation on the normalised input being *empty* only worked while the Trim/Change Case chain was silently discarding its input. Once those parameters were given the text serialization iOS actually reads, the empty case stopped being empty, the gate passed, and **every manual tap was rejected as unrecognised input** — a device-visible regression. Absence is not a reliable signal; presence is.
+
+What is lost: a mis-typed automation now reaches the manual menu instead of an explicit rejection alert. What is preserved: the safety property. The menu is inert until the person chooses an item, so a stray caller still injects no phantom event into Heat or Pressure. Both automation comparisons are byte-identical to before; only their enclosing level changed.
+
+Guard: `verify_router_shape()` fails the build if the absence gate reappears, if the `Input Key` tests drift from exactly `OPEN` then `CLOSE`, or if the MANUAL arm leaves the CLOSE `Otherwise` branch. It runs in both fork builders.
+
+### DEV-03 — `speaktext` parameter key remains unverified
+
+`is.workflow.actions.speaktext` is emitted with `WFInput` (10 sites). The ToolKit v78 catalog lists **no parameters at all** for that identifier, so there is no verified replacement key. Left unchanged deliberately: inventing a key would violate the project's no-fabrication rule. Needs its own device probe.
+
+### Scaffolding debt (must be resolved before ship)
+
+| Item | Where | Purpose |
+|---|---|---|
+| `BUILD_STAMP` in the manual menu prompt | `tools/build_state_engine.py` | Discriminates a stale duplicate install from a failed fix |
+| `ROUTER_TRACE` alert on the MANUAL arm | `tools/build_state_engine.py` | Measures what an absent Shortcut Input normalises to on device |
+
+Both are single-constant strips (`ROUTER_TRACE = False`; remove the stamp from the prompt) and both are intentionally visible rather than silent. Do not ship either.
+
+## 14. Recorded deviations and device evidence — 2026-08-14 (debug cycle 4, session `open-routing-sequence-error`)
+
+### CAP-05a — Notes body parameters are `AttributedString`, and `AttributedString` needs the text envelope
+
+Cycle 2 established that a parameter iOS types as a plain string must carry a `WFTextTokenString` (a `￼` placeholder plus `attachmentsByRange`); a bare `WFTextTokenAttachment` imports cleanly, passes the bundled validator, and **resolves to empty at run time**. That rule was implemented against catalog type `str` only.
+
+The ToolKit v78 catalog types the two Notes body parameters as **`AttributedString`** — `com.apple.mobilenotes.SharingExtension.contents` and `is.workflow.actions.appendnote.text`. `AttributedString` is a text type, not a content item, and it obeys the same rule. Because the cycle-2 allowlist keyed on `str`, both parameters were invisible to the normaliser **and to its recurrence guard**.
+
+Consequence on device: the Control Room Note was **created with an empty body** — the create call succeeds, only the body parameter resolves to nothing. The manual Control Room refresh appended empty content for the same reason.
+
+Evidence, in order of authority:
+
+1. **Device donor, target iPhone.** `.planning/debug/"Donor - notes.shortcut"` (an Apple-signed Create Note shortcut exported from the owner's own iPhone, decrypted 2026-08-14 — see the decrypt recipe below) serialises `WFCreateNoteInput` as `{"string": "￼", "attachmentsByRange": {"{0, 1}": <token>}}` with `WFSerializationType` `WFTextTokenString`. This build emitted a bare attachment. Ground truth from the target device, not catalog inference.
+2. **Golden corpus + donor agree on the output name.** Golden shortcut `f44f5caf5e3e48d4817e73af450c4404.xml` action 14 and the device donor both reference `is.workflow.actions.getrichtextfrommarkdown`'s output as **`Rich Text from Markdown`**. This build said `Rich Text`.
+3. **Internal control group.** The artifact already carried one `appendnote` whose `text` was a `WFTextTokenString` (the state-recovery line, a composite template) beside one carrying a bare attachment (the Control Room refresh snapshot) — the same natural experiment that settled cycle 2.
+4. **Runtime-confirmed mechanism.** Symptom 2 (`Set Dictionary Value` / key `sequence`) passed on device in cycle 3 precisely because its bare attachment became a `WFTextTokenString`.
+
+Verified correct and deliberately unchanged: `is.workflow.actions.getrichtextfrommarkdown.WFInput` is catalog-typed `com_apple_shortcuts_wfcontent_item`, and both the device donor and golden `f44f5caf` action 13 pass it as a **bare attachment**. A content-item parameter must not be given the text envelope.
+
+Guards: `STRING_ENVELOPE_PARAMS` now covers both Notes parameters, so `verify_string_envelopes()` fails the build if either regresses. A new `verify_output_names()` fails the build if a magic-variable reference carries an output name that differs from the producing action's real one. Both run in both fork builders.
+
+### DEV-04 — the device donor's `folder` / `WFNoteGroup` parameters are not emitted
+
+The donor's Create Note carries `folder` and `WFNoteGroup` (both naming the default iCloud `Notes` folder). This build emits neither, and also emits a `name` parameter the donor does not have.
+
+Left as-is deliberately. The note demonstrably **is** created without `folder`/`WFNoteGroup`, so they are not blocking, and adding unproven parameters to an AppIntent payload is exactly how the resolved `unsupported-device-import` session's import blocker was created. `name` is not implicated in an empty *body*, and removing it would risk the Find-Notes reuse path that looks the note up by name. Revisit only if the note body is still empty after the `AttributedString` envelope fix.
+
+### Device evidence — reading a signed `.shortcut` back (new capability, 2026-08-14)
+
+`.claude/CLAUDE.md` and the plugin docs both record that a signed `.shortcut` is an AEA1 archive that "cannot be read back as a plaintext plist." That is true of `plutil`/`xxd`/`file`, but the archive **can** be opened with the signing certificate that travels inside its own header:
+
+```bash
+# 1. auth data at offset 12 is a bplist holding SigningCertificateChain
+python3 -c 'import struct,plistlib,pathlib,sys; d=pathlib.Path(sys.argv[1]).read_bytes(); \
+  sz=struct.unpack_from("<I",d,8)[0]; \
+  pathlib.Path("leaf.der").write_bytes(plistlib.loads(d[12:12+sz])["SigningCertificateChain"][0])' "Signed.shortcut"
+# 2. the leaf certificate's public key, in PEM (aea rejects raw/DER here, PEM works)
+openssl x509 -inform DER -in leaf.der -noout -pubkey > pub.pem
+# 3. decrypt, then unwrap the Apple Archive to Shortcut.wflow
+aea decrypt -i "Signed.shortcut" -o out.aa -sign-pub pub.pem
+aa extract -i out.aa -d out/          # -> out/Shortcut.wflow, a normal binary plist
+```
+
+This is how the target-iPhone donor was read, and it closes a verification gap that stood through cycles 1–3: the build side could previously only confirm freshness from the *unsigned* XML plus file mtime. The signed cycle-4 Dumb artifact was decrypted and confirmed to carry 3674 actions, `WFCreateNoteInput` as `WFTextTokenString`, both `appendnote.text` as `WFTextTokenString`, and the stamp `PROSOCHĒ · build 2026-08-14e`. Retain this recipe — it makes "did the device get the artifact we think it got" answerable from the shipped file itself.
+
+### Automation-wrapper design record — one shared automation is correct
+
+PROSOCHĒ's master shortcut consumes **no app identity**: `CurrentApp` appears zero times in either fork, and `.planning/research/ARCHITECTURE.md` §5 states the design decision explicitly — "Heat, Gravity, Pressure, Circle, and `active_session` are GLOBAL across all tracked apps, not per-app… there is exactly one `active_session` pointer at a time." The only thing the shortcut needs from the automation is the literal text `OPEN` or `CLOSE`.
+
+Therefore **one App automation covering all watched apps is correct**, and splitting per-app is unnecessary. What must stay split is OPEN from CLOSE: two automations, one per trigger, because they pass different literals. This matches the shipped Control Room copy (Automation A / Automation B).
+
+Operational hazard recorded: **deleting the shortcut orphans the automation's Run Shortcut reference.** Every clean-install debug cycle deletes and re-imports the shortcut, which leaves the Personal Automation's Run Shortcut action with no target selected — and a Run Shortcut with no target selected produces exactly `"…encountered an error: Please choose a value for each parameter in this action."` Re-point the Run Shortcut action after every re-import.
+
+### Scaffolding debt (carried forward, unchanged)
+
+`BUILD_STAMP` (now `build 2026-08-14e`) and `ROUTER_TRACE` both remain ON while the session iterates. See §13's debt table; neither ships.
+
+## 15. Recorded deviations and capability findings — 2026-08-14 (debug cycle 5, session `open-routing-sequence-error`)
+
+### CAP-06 — required picker (enum) parameters must be PRESENT and must hold a LITERAL enum case
+
+The third axis on which an emitted parameter can be wrong, after the key-name axis (cycle 1) and the value-envelope axis (cycles 2 and 4). A parameter whose ToolKit type is a picker enum must carry a **plain literal string** naming one of its cases. If it is **absent**, or if it holds a **variable / attachment token**, Shortcuts renders an unfilled picker and iOS refuses to run the action with:
+
+> Please choose a value for each parameter in this action.
+
+Two sites violated this, and they were the only two in either fork:
+
+| Site | Defect | Corpus evidence |
+|---|---|---|
+| `is.workflow.actions.count` → `WFCountType` | **missing entirely** (1 Dumb, 2 Sentient) | 11/11 golden-corpus `count` actions emit it; 0 omit it |
+| `is.workflow.actions.getitemfromlist` → `WFItemSpecifier` | held a **variable token** at 31/33 sites, with `WFItemIndex` absent | every corpus instance uses a literal (`First Item` / `Item At Index` / `Items in Range`) and puts the dynamic index in `WFItemIndex`; golden `332c12a0060043b388b2` does exactly that with a `Repeat Index` variable |
+
+The artifact contained its own control group: eight picker classes already carried literal enum cases (`searchweb` `Google`, `text.changecase` `UPPERCASE`, `getdevicedetails` `Current Volume`/`Current Brightness`, `setvolume` `Media`, `gettimebetweendates` `Seconds`, `round` `Ones Place`, `searchmaps` `Maps`, and `getitemfromlist` `First Item` at the two sites the generator authored with a literal). Only the two above deviated — in both forks.
+
+**Why it surfaced only in cycle 5.** The OPEN branch had never once executed on device. Before the cycle-2 envelope fix, `Input Key` resolved empty, so every automation run took the MANUAL arm and skipped the OPEN pipeline entirely. Build `d` was the first build ever to *enter* the OPEN branch. Note this also refutes whole-shortcut pre-flight validation: the 2026-08-13 build carried these identical picker defects and ran from the automation all the way to the MANUAL menu. iOS errors on the action it reaches, not on load.
+
+**Recurrence guard:** `REQUIRED_PICKER_PARAMS` + `verify_required_pickers()` in `tools/build_state_engine.py`, run by both fork builders. It fails the build if any of nine picker classes is missing or non-literal. Verified sensitive: it rejects the pre-fix artifacts naming the exact sites (32 Dumb / 33 Sentient), and it caught a genuine second `count` defect in the Sentient-only insertion path (`build_sentient.py:140`) that the Dumb pass could not see.
+
+### DEV-03 — **CLOSED.** `speaktext` uses `WFText`, not `WFInput`
+
+§13 recorded that `speaktext` "lists no parameters at all" in the catalog and that no verified replacement key existed. **That premise was wrong.** The ToolKit v78 first-party catalog defines six parameters for `is.workflow.actions.speaktext`: `WFSpeakTextWait`, `WFSpeakTextRate`, `WFSpeakTextPitch`, `WFSpeakTextLanguage`, `WFSpeakTextVoice`, and **`WFText`** (type `str`, display name `Text`). `WFInput` is not among them, so the spoken text was never being read. All 10 sites now emit `WFText`, and because it is `str`-typed it is registered in `STRING_ENVELOPE_PARAMS` and takes the `WFTextTokenString` envelope per CAP-05/CAP-05a. No fabrication was required.
+
+### DEV-05 — `math.WFMathOperation` is deliberately left absent at 25 sites
+
+This looked like the leading candidate for the same defect class: a required enum picker (`Operation`) missing wherever the generator's `math()` helper is called with `op=None` or `op="+"`. It is **refuted by the corpus**, which outranks catalog inference under the cycle-2 `openurl` precedent: golden shortcut `2e0fb675e459` (client `1146.11.1`, minimum client `900` — our exact vintage) omits `WFMathOperation` with our exact key shape (`WFInput` + `WFMathOperand`). Addition is genuinely the implicit default. `math` is therefore **excluded** from `REQUIRED_PICKER_PARAMS`, deliberately and with the reason recorded in source.
+
+### DEV-06 — `openapp` legacy `WFAppIdentifier` retained; `WFWindowingFormat` deliberately omitted
+
+`is.workflow.actions.openapp` emits a legacy `WFAppIdentifier` alongside the donor-verified `WFSelectedApp`, and omits `WFWindowingFormat`. Both left unchanged: extra undefined keys are provably inert in this artifact (`WFShowFilePicker`, `ShowWhenRun` and `WFAppIdentifier` all coexist on device-proven working paths), and `WFWindowingFormat` is OS27-gated, so emitting it would violate the iOS-26 target. Likewise `count` retains an undefined `WFInput` beside the catalog-defined `Input` so the input binds whichever key iOS actually reads.
+
+### Correction owed to `.claude/CLAUDE.md` §8 (carried, not applied)
+
+§8 states a signed `.shortcut` "cannot be read back as a plaintext plist". §14's recipe disproves that. Flagged to the user; not edited unilaterally.
+
+### Scaffolding debt (carried forward, unchanged)
+
+`BUILD_STAMP` (now `build 2026-08-14f`) and `ROUTER_TRACE` both remain ON while the session iterates. See §13's debt table; neither ships.

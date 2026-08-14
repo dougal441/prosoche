@@ -9,6 +9,15 @@ import tempfile
 import uuid
 from pathlib import Path
 
+from build_state_engine import (
+    normalise_output_names,
+    normalise_string_envelopes,
+    verify_output_names,
+    verify_required_pickers,
+    verify_router_shape,
+    verify_string_envelopes,
+)
+
 SOURCE = Path("src/PROSOCHE-Dumb.xml")
 TARGET = Path("src/PROSOCHE-Sentient.xml")
 MODEL = "Apple Intelligence on Device"  # direct device-export evidence
@@ -128,7 +137,8 @@ def audit_block():
         comment("Completed latency gate:\n- Use the dates immediately around Use Model.\n- A result over eight seconds takes the Dumb path."), fast,
         action("is.workflow.actions.text.match", UUID=matches, text=output(model, "Model Result"),
                WFMatchTextPattern=r"(?i)^\s*(ALLOW|CHALLENGE|DENY)\b"),
-        action("is.workflow.actions.count", UUID=count, WFInput=output(matches, "Matches"), Input=output(matches, "Matches")),
+        action("is.workflow.actions.count", UUID=count, WFCountType="Items",
+               WFInput=output(matches, "Matches"), Input=output(matches, "Matches")),
         set_var("Audit Match Count", output(count, "Count")),
         comment("Parsed-token gate:\n- Only a matched first token is considered.\n- Empty or malformed output takes the Dumb path."), found,
         action("is.workflow.actions.getitemfromlist", UUID=first, WFItemSpecifier="First Item", WFInput=output(matches, "Matches")),
@@ -171,6 +181,19 @@ def main() -> None:
             break
     else:
         raise SystemExit("semantic Confession contract marker not found")
+    # Sentient-only actions are inserted after the Dumb generator has already run, so
+    # they never passed its string-envelope pass.  Reuse the same rule and the same
+    # build guard rather than duplicating the allowlist: a string-typed parameter
+    # holding a bare WFTextTokenAttachment resolves to empty at run time.
+    normalise_string_envelopes(actions)
+    normalise_output_names(actions)
+    verify_string_envelopes(actions)
+    verify_output_names(actions)
+    verify_required_pickers(actions)
+    # Sentient inherits the router verbatim from the built Dumb source, but assert it here
+    # too: an inserted Sentient block must never land between the OPEN/CLOSE tests and the
+    # MANUAL arm, and the absence gate must not reappear through a stale fork.
+    verify_router_shape(actions)
     payload = plistlib.dumps(root, fmt=plistlib.FMT_XML, sort_keys=False)
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=TARGET.parent, delete=False) as tmp:

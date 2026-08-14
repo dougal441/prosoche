@@ -12,6 +12,23 @@ from pathlib import Path
 
 
 SOURCE = Path("src/PROSOCHE-Dumb.xml")
+# Shown in the manual menu prompt so a device run states, in its first seconds,
+# which build is actually executing.  Importing a .shortcut whose display name
+# matches an installed one can create a second copy and leave an automation
+# wrapper pointed at the old shortcut; without a visible stamp that stale-install
+# case is indistinguishable from a failed fix.  Bump on every device-bound build.
+BUILD_STAMP = "build 2026-08-14f"
+# One-run debug scaffolding on the MANUAL arm: report the cond-100 verdict and the
+# bracketed Input Key value.  It exists because what an ABSENT Shortcut Input resolves
+# to after normalisation is not determinable on the build Mac, and guessing it is what
+# cost cycle 2.  Set False to strip it; the router fix does not depend on it.
+ROUTER_TRACE = True
+TRACE_MARKER = "--- ROUTER TRACE ---"
+TRACE_END_MARKER = "--- ROUTER TRACE END ---"
+# comment_index matches on startswith, so this prefix is a structural locator, not prose.
+# replace_branch_body uses it to bound the CLOSE arm; keep it as the literal start of that
+# comment's text.
+ROUTE_FALLBACK_MARKER = "Input Key was neither OPEN nor CLOSE"
 DISPATCH_MARKER = "--- PHASE 5 PRIMITIVE DISPATCH ---"
 RESTORE_MARKER = "--- PHASE 5 RESTORE MANAGED SETTINGS ---"
 MANUAL_MARKER = "--- PHASE 5 MANUAL EMERGENCY RESTORE ---"
@@ -74,6 +91,23 @@ def action(identifier: str, **parameters):
             "WFWorkflowActionParameters": parameters}
 
 
+APPS = {
+    "Notes": "com.apple.mobilenotes",
+    "Voice Memos": "com.apple.VoiceMemos",
+    "Camera": "com.apple.camera",
+    "Reminders": "com.apple.reminders",
+    "Calendar": "com.apple.mobilecal",
+    "Contacts": "com.apple.MobileAddressBook",
+}
+
+
+def open_app(name: str):
+    bundle_identifier = APPS[name]
+    return action("is.workflow.actions.openapp", WFAppIdentifier=bundle_identifier,
+                  WFSelectedApp={"BundleIdentifier": bundle_identifier, "Name": name,
+                                 "TeamIdentifier": "0000000000"})
+
+
 def output(uuid_value: str, name: str):
     return {"Value": {"OutputUUID": uuid_value, "OutputName": name,
                       "Type": "ActionOutput"},
@@ -133,8 +167,13 @@ def read_value(key, source, name: str):
 
 
 def set_value(key: str, value, dictionary_name="State"):
+    # Set Dictionary Value reads its Value from WFDictionaryValue, never WFInput.
+    # ToolKit v78 first-party catalog, is.workflow.actions.setvalueforkey:
+    # WFDictionaryKey (Key), WFDictionaryValue (Value), WFDictionary (Dictionary).
+    # Passing the value as WFInput leaves the Value field empty and iOS raises
+    # "No value was provided to the Set Dictionary Value action for the key <key>".
     return action("is.workflow.actions.setvalueforkey", UUID=uid(), WFDictionaryKey=key,
-                  WFDictionary=variable(dictionary_name), WFInput=value)
+                  WFDictionary=variable(dictionary_name), WFDictionaryValue=value)
 
 
 def if_block(value_name: str, condition: int, *, number=None, string=None):
@@ -188,7 +227,7 @@ def elapsed(later_name: str, earlier_name: str, result_name: str):
 def round_down(source_name: str, result_name: str):
     round_id = uid()
     return [action("is.workflow.actions.round", UUID=round_id, WFInput=variable(source_name),
-                   WFRoundMode="Down", WFRoundTo="Ones Place"),
+                   WFRoundMode="Always Round Down", WFRoundTo="Ones Place"),
             set_var(result_name, output(round_id, "Rounded Number"))]
 
 
@@ -393,7 +432,8 @@ def mirror_text(items, name: str):
     list_id, item_id = uid(), uid()
     a = [action("is.workflow.actions.list", UUID=list_id, WFItems=list(items)),
          action("is.workflow.actions.getitemfromlist", UUID=item_id,
-                WFItemSpecifier=variable("Circle Next"), WFInput=output(list_id, "List")),
+                WFItemSpecifier="Item At Index", WFItemIndex=variable("Circle Next"),
+                WFInput=output(list_id, "List")),
          set_var(name, output(item_id, "Item from List"))]
     return a
 
@@ -422,7 +462,10 @@ def mirror_and_voice():
     a += read_value("voice_enabled", variable("State"), "Voice Enabled")
     voice_g, voice_if = if_block("Voice Enabled", 2, number=0)
     spoken_g, spoken_if = if_block("Spoken This Run", 101)
-    a += [voice_if, spoken_if, action("is.workflow.actions.speaktext", WFInput=variable("Mirror Text"))]
+    # DEV-03 closed: the ToolKit v78 catalog DOES define speaktext parameters, and its text
+    # parameter is WFText (type str, name "Text").  WFInput is not among them, so the spoken
+    # text was never being read.  str-typed, so it also takes the WFTextTokenString envelope.
+    a += [voice_if, spoken_if, action("is.workflow.actions.speaktext", WFText=variable("Mirror Text"))]
     a += number(1, "Spoken This Run")
     a += [otherwise(spoken_g), action("is.workflow.actions.nothing"), end_if(spoken_g),
           otherwise(voice_g), action("is.workflow.actions.nothing"), end_if(voice_g)]
@@ -507,10 +550,14 @@ def select_exit():
     a += [sparse, *number(1, "Sparse Selection"), otherwise(sparse_group), action("is.workflow.actions.nothing"), end_if(sparse_group),
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=enough, WFControlFlowMode=2)]
     count_id = uid()
-    a += [action("is.workflow.actions.count", UUID=count_id, WFInput=variable("Enabled Exits"), Input=variable("Enabled Exits")), set_var("Enabled Exit Count", output(count_id, "Count"))]
+    # WFCountType is a required picker ("Type"): golden corpus 11/11 emit it, 0 omit it.
+    a += [action("is.workflow.actions.count", UUID=count_id, WFCountType="Items",
+                 WFInput=variable("Enabled Exits"), Input=variable("Enabled Exits")),
+          set_var("Enabled Exit Count", output(count_id, "Count"))]
     a += expression([( "(", None), ("", "Exit Selection Counter"), (" % ", None), ("", "Enabled Exit Count"), (") + 1", None)], "Rotation Index")
     item_id = uid()
-    a += [action("is.workflow.actions.getitemfromlist", UUID=item_id, WFItemSpecifier=variable("Rotation Index"), WFInput=variable("Enabled Exits")),
+    a += [action("is.workflow.actions.getitemfromlist", UUID=item_id, WFItemSpecifier="Item At Index",
+                 WFItemIndex=variable("Rotation Index"), WFInput=variable("Enabled Exits")),
           set_var("Selected Exit", output(item_id, "Item from List"))]
     # Keep the sparse selection as the default, then replace it only when all exits have evidence.
     exploit_group, exploit = if_block("Sparse Selection", 2, number=0)
@@ -575,7 +622,7 @@ def route_exit(choice_name: str):
     routes = {
         "Capture": [menu(uid(), 0, prompt="Capture", items=["Notes", "Voice Memos", "Camera"])],
         "Coordinate": [menu(uid(), 0, prompt="Coordinate", items=["Reminders", "Calendar"])],
-        "Connect": [action("is.workflow.actions.openapp", WFSelectedApp="Contacts", WFAppName="Contacts")],
+        "Connect": [open_app("Contacts")],
         "Close": [action("is.workflow.actions.returntohomescreen")],
     }
     for name, actions in routes.items():
@@ -583,13 +630,13 @@ def route_exit(choice_name: str):
         a += [comment("Route check:\n- Compare the owned Selected Exit with this fixed first-party route.\n- The otherwise arm makes no route or state change."), check]
         if name == "Capture":
             capture = actions[0]["WFWorkflowActionParameters"]["GroupingIdentifier"]
-            a += actions + [menu(capture, 1, title="Notes"), action("is.workflow.actions.openapp", WFSelectedApp="Notes", WFAppName="Notes"),
-                            menu(capture, 1, title="Voice Memos"), action("is.workflow.actions.openapp", WFSelectedApp="Voice Memos", WFAppName="Voice Memos"),
-                            menu(capture, 1, title="Camera"), action("is.workflow.actions.openapp", WFSelectedApp="Camera", WFAppName="Camera"), menu(capture, 2)]
+            a += actions + [menu(capture, 1, title="Notes"), open_app("Notes"),
+                            menu(capture, 1, title="Voice Memos"), open_app("Voice Memos"),
+                            menu(capture, 1, title="Camera"), open_app("Camera"), menu(capture, 2)]
         elif name == "Coordinate":
             coordinate = actions[0]["WFWorkflowActionParameters"]["GroupingIdentifier"]
-            a += actions + [menu(coordinate, 1, title="Reminders"), action("is.workflow.actions.openapp", WFSelectedApp="Reminders", WFAppName="Reminders"),
-                            menu(coordinate, 1, title="Calendar"), action("is.workflow.actions.openapp", WFSelectedApp="Calendar", WFAppName="Calendar"), menu(coordinate, 2)]
+            a += actions + [menu(coordinate, 1, title="Reminders"), open_app("Reminders"),
+                            menu(coordinate, 1, title="Calendar"), open_app("Calendar"), menu(coordinate, 2)]
         else:
             a += actions
         a += [otherwise(group), action("is.workflow.actions.nothing"), end_if(group)]
@@ -619,9 +666,9 @@ def route_exit(choice_name: str):
           menu(consult_menu, 0, prompt="Consult", items=["Search Web", "Search Maps", "Open Notes", "Open Reminders", "Open Calendar", "Back"]),
           menu(consult_menu, 1, title="Search Web"), action("is.workflow.actions.searchweb", WFSearchWebDestination="Google", WFInputText=variable("Consult Query")),
           menu(consult_menu, 1, title="Search Maps"), action("is.workflow.actions.searchmaps", WFInput=variable("Consult Query"), WFSearchMapsActionApp="Maps"),
-          menu(consult_menu, 1, title="Open Notes"), action("is.workflow.actions.openapp", WFSelectedApp="Notes", WFAppName="Notes"),
-          menu(consult_menu, 1, title="Open Reminders"), action("is.workflow.actions.openapp", WFSelectedApp="Reminders", WFAppName="Reminders"),
-          menu(consult_menu, 1, title="Open Calendar"), action("is.workflow.actions.openapp", WFSelectedApp="Calendar", WFAppName="Calendar"),
+          menu(consult_menu, 1, title="Open Notes"), open_app("Notes"),
+          menu(consult_menu, 1, title="Open Reminders"), open_app("Reminders"),
+          menu(consult_menu, 1, title="Open Calendar"), open_app("Calendar"),
           menu(consult_menu, 1, title="Back"), action("is.workflow.actions.nothing"),
           menu(consult_menu, 2), otherwise(consult_group), action("is.workflow.actions.nothing"), end_if(consult_group)]
     return a
@@ -794,7 +841,10 @@ def open_pipeline():
     a += math("Opens Today", variable("Open Base"), "Opens Today Next")
     a += [set_value("opens_today", variable("Opens Today Next")), set_value("last_open_at", variable("Now Epoch")), set_value("last_app", text_token([("tracked", None)]))]
     random_id, session_id = uid(), uid()
-    a += [action("is.workflow.actions.number.random", UUID=random_id, WFNumberMin=1, WFNumberMax=2147483647),
+    # Random Number takes WFRandomNumberMinimum/WFRandomNumberMaximum (ToolKit v78
+    # catalog); WFNumberMin/WFNumberMax are not parameters of this action.
+    a += [action("is.workflow.actions.number.random", UUID=random_id,
+                 WFRandomNumberMinimum=1, WFRandomNumberMaximum=2147483647),
           set_var("Random Suffix", output(random_id, "Random Number")),
           action("is.workflow.actions.gettext", UUID=session_id,
                  WFTextActionText=text_token([("session-", "Now Epoch"), ("-", None), ("", "Random Suffix")])),
@@ -968,6 +1018,148 @@ def insert_or_replace_after(actions, anchor: str, start: str, end: str, replacem
         actions[at + 1:at + 1] = replacement
 
 
+def flow_index(actions, group: str, mode: int):
+    """Index of one endpoint of a named control-flow block."""
+    for index, item in enumerate(actions):
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("GroupingIdentifier") == group and parameters.get("WFControlFlowMode") == mode:
+            return index
+    raise SystemExit(f"control-flow group {group} has no mode {mode} endpoint")
+
+
+def input_key_tests(actions):
+    """Every conditional that tests the normalised Input Key, in document order."""
+    found = []
+    for index, item in enumerate(actions):
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if (item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+                and parameters.get("WFControlFlowMode") == 0
+                and parameters.get("WFInput", {}).get("Variable", {})
+                              .get("Value", {}).get("VariableName") == "Input Key"):
+            found.append((index, parameters.get("WFCondition"),
+                          parameters.get("WFConditionalActionString")))
+    return found
+
+
+def find_absence_gate(actions):
+    """Index of the legacy 'Input Key has any value' gate, or None once it is gone."""
+    for index, condition, _ in input_key_tests(actions):
+        if condition == 100:
+            return index
+    return None
+
+
+# The routing overview comment that replaces the one explaining the deleted gate.  The
+# skill requires a repair-oriented bulleted comment immediately before every control-flow
+# start; this is that comment for the OPEN test.
+ROUTER_OVERVIEW = """Route this run by POSITIVE identification of the normalised Input Key, never by its absence:
+- Input Key is built just above by composing the Shortcut Input into text, trimming surrounding whitespace, then uppercasing the result.
+- If Input Key is exactly OPEN this is Automation A; if it is exactly CLOSE this is Automation B; anything else — including a plain manual tap with no input at all — is a manual run and falls through to the MANUAL menu.
+- This deliberately does NOT gate on "Input Key has any value". That earlier gate assumed an absent Shortcut Input normalises to a completely empty string. It does not: once Trim Whitespace and Change Case were given the text serialization iOS actually reads, the empty case stopped being empty, the gate passed, and every manual tap was rejected as unrecognised input. Absence is not a reliable signal; presence is.
+- A mis-typed automation therefore reaches the manual menu rather than an explicit rejection. That is intended: the menu is inert until the person chooses something, so no phantom open is ever injected into Heat or Pressure."""
+
+ROUTE_FALLBACK_COMMENT = ROUTE_FALLBACK_MARKER + """, so this run is MANUAL.
+- A plain manual tap sends no Shortcut Input at all and lands here, which is the normal first-run case for a freshly imported Shortcut, before either Personal Automation exists.
+- A stray or mis-typed caller also lands here. Nothing below reads, writes, or mutates anything until the person picks a menu item, so an unrecognised caller still injects no event into Heat or Pressure.
+- OPEN and CLOSE never reach this arm."""
+
+
+def router_trace():
+    """Report what an absent Shortcut Input actually normalises to, on device.
+
+    Placed at the head of the MANUAL arm so ONE round-trip measures two things: what
+    Input Key is on a manual tap, and — if the OPEN automation still misroutes — what
+    Input Key is on the automation path, which is the single most valuable unknown left.
+
+    Deliberately contains NO control flow. An earlier draft tested "Input Key has any
+    value" here to report the cond-100 verdict; that conditional was byte-identical to the
+    router gate this build removes, so both find_absence_gate() and verify_router_shape()
+    matched it and the pass stopped being idempotent. The verdict is not needed anyway:
+    cycle 2 already established on device that cond 100 passes on a manual tap, because the
+    unrecognised-input alert is unreachable otherwise. What remains unknown is the VALUE,
+    and a printed empty-string reference on the adjacent line discriminates it: if the two
+    bracket pairs render identically the value is present but non-printing.
+    """
+    return [comment(TRACE_MARKER + """
+
+- Debug scaffolding only; it reads nothing, writes nothing, and branches nowhere.
+- It shows the normalised Input Key in brackets beside an empty-string reference.
+- Identical-looking brackets mean Input Key holds a non-printing character, since cycle 2 already proved on device that it is non-empty here.
+- Remove by setting ROUTER_TRACE = False in tools/build_state_engine.py and rebuilding."""),
+            alert("PROSOCHĒ " + BUILD_STAMP,
+                  text_token([("MANUAL arm reached.\n\nInput Key: [", "Input Key"),
+                              ("]\nEmpty ref: []\n\nIf those two lines look the same, Input Key is a "
+                               "non-printing character rather than visible text.", None)])),
+            comment(TRACE_END_MARKER)]
+
+
+def restructure_router(actions):
+    """Route on positive identification (OPEN / CLOSE / else MANUAL), not on absence.
+
+    Before:  If Input Key HAS ANY VALUE -> If OPEN | If CLOSE | unrecognised alert
+             Otherwise                  -> MANUAL
+    After:   If OPEN -> OPEN | Otherwise If CLOSE -> CLOSE | Otherwise -> MANUAL
+
+    The old shape made manual invocation depend on the normalised input being byte-empty.
+    That held only by accident: Trim Whitespace and Change Case carried bare
+    WFTextTokenAttachments and their output evaporated. Correcting those envelopes made
+    the empty case non-empty, so the gate passed and every manual tap hit the
+    unrecognised-input fail-safe. The new shape is correct for EVERY value the empty case
+    can take, which is the point — it does not require knowing what that value is.
+
+    Both literal comparisons on the automation path are carried over untouched: the same
+    conditionals, the same cond-4 tests against OPEN and CLOSE, the same bodies. Those
+    arms simply lose one enclosing level.
+
+    Idempotent: returns immediately once the absence gate is gone.
+    """
+    gate = find_absence_gate(actions)
+    if gate is None:
+        return
+    gate_group = actions[gate]["WFWorkflowActionParameters"]["GroupingIdentifier"]
+    gate_else, gate_end = flow_index(actions, gate_group, 1), flow_index(actions, gate_group, 2)
+    fallback = comment_index(actions, ROUTE_FALLBACK_MARKER)
+    close_else = actions[fallback - 1]
+    close_parameters = close_else.get("WFWorkflowActionParameters", {})
+    if not (close_else.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+            and close_parameters.get("WFControlFlowMode") == 1):
+        raise SystemExit("the routing fallback comment is not the first action of the CLOSE Otherwise arm")
+    close_end = flow_index(actions, close_parameters["GroupingIdentifier"], 2)
+    manual = actions[gate_else + 1:gate_end]
+    if not (gate < fallback < close_end < gate_else < gate_end) or not manual:
+        raise SystemExit("unexpected router topology; refusing to restructure")
+    overview = gate - 1
+    if actions[overview].get("WFWorkflowActionIdentifier") != "is.workflow.actions.comment":
+        raise SystemExit("no routing overview comment precedes the input gate")
+    actions[overview] = comment(ROUTER_OVERVIEW)
+    actions[fallback] = comment(ROUTE_FALLBACK_COMMENT)
+    actions[:] = (actions[:gate]                    # everything up to and including the overview
+                  + actions[gate + 1:fallback + 1]  # OPEN and CLOSE arms, ending at the fallback comment
+                  + manual                          # MANUAL now occupies the CLOSE Otherwise arm
+                  + actions[close_end:gate_else]    # the CLOSE and OPEN End Ifs, in order
+                  + actions[gate_end + 1:])         # anything that followed the old gate's End If
+
+
+def verify_router_shape(actions):
+    """Fail the build if manual invocation is ever gated on absence of input again.
+
+    This is the recurrence guard for cycle 3. The defect class is "the router treats an
+    empty normalised input as its manual signal", which is invisible to the validator and
+    only shows up as a device-visible regression one round-trip later.
+    """
+    if find_absence_gate(actions) is not None:
+        raise SystemExit("router gates MANUAL on 'Input Key has any value': manual invocation must be "
+                         "the non-matching fallback, never the empty case (see restructure_router)")
+    literals = [(condition, string) for _, condition, string in input_key_tests(actions)]
+    if literals != [(4, "OPEN"), (4, "CLOSE")]:
+        raise SystemExit(f"router must test Input Key against OPEN then CLOSE only, found {literals}")
+    close_index = input_key_tests(actions)[1][0]
+    close_group = actions[close_index]["WFWorkflowActionParameters"]["GroupingIdentifier"]
+    manual = comment_index(actions, MANUAL_MARKER)
+    if not flow_index(actions, close_group, 1) < manual < flow_index(actions, close_group, 2):
+        raise SystemExit("the MANUAL arm must sit inside the CLOSE conditional's Otherwise branch")
+
+
 def install_cooldown_branches(actions):
     """Install Ice only in the true/otherwise arms of the named cooldown If."""
     # Removing both first repairs builds made by the earlier broad-anchor helpers.
@@ -1027,7 +1219,7 @@ def manual_emergency_restore():
     group = uid()
     choices = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore"]
     a = [comment(MANUAL_MARKER + "\n\n- Manual control is the only path that refreshes the Control Room or reads its proforma.\n- OPEN and CLOSE never enter this menu or parse the Note.\n- Test Circle copies recorded values into test variables and never writes Pressure."),
-         menu(group, 0, prompt="PROSOCHĒ", items=choices)]
+         menu(group, 0, prompt=f"PROSOCHĒ · {BUILD_STAMP}", items=choices)]
     for title in ("Status", "Open Control Room"):
         a += [menu(group, 1, title=title), *number(1, "Manual Refresh Requested")]
     a += [menu(group, 1, title="Sync My Profile"), *number(1, "Manual Refresh Requested"), *number(1, "Manual Sync Requested")]
@@ -1097,6 +1289,293 @@ def normalize_setters(actions):
     actions[:] = normalized
 
 
+# Parameter keys verified against the Shortcuts Playground ToolKit v78 first-party
+# catalog (data/toolkit-v78-first-party-parameter-keys.json), each confirmed present
+# on "iOS 27 Simulator".  The bundled validator cannot catch parameter-key drift at
+# --target-macos 26 because it never loads that catalog, so this build-time guard is
+# the only gate standing between a renamed key and a runtime "No value provided".
+VERIFIED_PARAMETER_KEYS = {
+    "is.workflow.actions.setvalueforkey": {"WFDictionaryKey", "WFDictionaryValue", "WFDictionary"},
+    "is.workflow.actions.getvalueforkey": {"WFGetDictionaryValueType", "WFDictionaryKey", "WFInput"},
+    "is.workflow.actions.number.random": {"WFRandomNumberMinimum", "WFRandomNumberMaximum"},
+    "is.workflow.actions.setvariable": {"WFInput", "WFVariableName"},
+    "is.workflow.actions.gettext": {"WFTextActionText"},
+    "is.workflow.actions.text.trimwhitespace": {"WFInput"},
+    "is.workflow.actions.text.changecase": {"text", "WFCaseType", "ShowWhenRun"},
+    # count: catalog defines WFCountType + Input.  WFInput is NOT defined and is therefore
+    # ignored by iOS; it is retained deliberately (extra keys are provably inert here -- see
+    # WFShowFilePicker / ShowWhenRun / WFAppIdentifier on device-proven working paths) so the
+    # input binds whichever key iOS actually reads.
+    "is.workflow.actions.count": {"WFCountType", "Input", "WFInput"},
+    "is.workflow.actions.getitemfromlist": {"WFItemSpecifier", "WFItemIndex",
+                                            "WFItemRangeStart", "WFItemRangeEnd", "WFInput"},
+    "is.workflow.actions.speaktext": {"WFText", "WFSpeakTextWait", "WFSpeakTextRate",
+                                      "WFSpeakTextPitch", "WFSpeakTextLanguage",
+                                      "WFSpeakTextVoice"},
+}
+STRUCTURAL_KEYS = {"UUID", "GroupingIdentifier", "WFControlFlowMode", "CustomOutputName"}
+
+# Parameters whose iOS type is a plain string.  A string-typed parameter must carry
+# a WFTextTokenString (a "￼" placeholder plus attachmentsByRange); a bare
+# WFTextTokenAttachment is accepted by the importer and by the bundled validator but
+# resolves to EMPTY at run time.  That silent-empty behaviour is what produced all
+# three reported failures, and the artifact itself contains the control group:
+# every path that worked already used WFTextTokenString on its string parameter
+# (the state.json template, the Shortcut Input read, the Control Room body), while
+# every path that failed used a bare attachment.
+#
+# Evidence per entry -- catalog type is "str" in the ToolKit v78 first-party
+# parameter catalog for all of them, plus:
+#   gettext.WFTextActionText        36/36 golden-corpus actions use WFTextTokenString, 0 use attachment
+#   text.match.text                  8/8 golden-corpus actions use WFTextTokenString
+#   alert.WFAlertActionMessage       8/8 golden corpus + VARIABLES.md display-parameter table
+#   text.trimwhitespace.WFInput      by analogue with text.replace.WFInput (3/3 golden) and
+#                                    BEST_PRACTICES.md: Replace Text WFInput must not be a bare attachment
+#   text.changecase.text             by analogue with text.match.text
+#   setvalueforkey.WFDictionaryValue no golden instance exists; catalog type "str" and this is the
+#                                    exact action named in the reported runtime error
+#   searchweb.WFInputText            no golden instance exists; catalog type "str" -- DEVIATION, see below
+#
+# Deliberately EXCLUDED despite a "str" catalog type, because the golden corpus shows
+# real shortcuts using a bare attachment there and corpus evidence outranks catalog
+# inference: openurl.WFInput (2/2 attachment), text.combine.text (4/4), text.split.text (4/4).
+# Float/File/Placemark/content-item parameters are excluded for the same reason -- the
+# corpus uses attachments for those.
+#
+# CYCLE 4 -- the same rule extends to catalog type "AttributedString", which the original
+# allowlist missed because it was scoped to "str" alone.  AttributedString is a TEXT type,
+# not a content item, so it needs the placeholder envelope exactly like "str" does.  Both
+# entries below are evidenced against a Create Note shortcut exported from the TARGET
+# iPhone itself (.planning/debug/"Donor - notes.shortcut", decrypted 2026-08-14):
+#   mobilenotes.SharingExtension.WFCreateNoteInput
+#       device donor serialises this as {"string": "￼", "attachmentsByRange": {...}}
+#       with WFSerializationType WFTextTokenString.  A bare attachment here creates the
+#       note with an EMPTY BODY -- the create call still succeeds, which is exactly the
+#       reported "note exists but is empty".  Catalog names this parameter "contents",
+#       typePythonName AttributedString; the donor proves iOS 26.6 reads WFCreateNoteInput.
+#   appendnote.text
+#       catalog typePythonName AttributedString.  No golden-corpus instance exists, so this
+#       rests on the catalog type plus the donor's AttributedString analogue plus an
+#       internal control group: this artifact already carries one appendnote whose `text`
+#       is a WFTextTokenString (the state-recovery line, a composite template) beside one
+#       carrying a bare attachment (the Control Room refresh snapshot).
+STRING_ENVELOPE_PARAMS = {
+    "is.workflow.actions.gettext": {"WFTextActionText"},
+    "is.workflow.actions.setvalueforkey": {"WFDictionaryValue"},
+    "is.workflow.actions.text.trimwhitespace": {"WFInput"},
+    "is.workflow.actions.text.changecase": {"text"},
+    "is.workflow.actions.text.match": {"text"},
+    "is.workflow.actions.alert": {"WFAlertActionMessage", "WFAlertActionTitle"},
+    "is.workflow.actions.searchweb": {"WFInputText"},
+    "com.apple.mobilenotes.SharingExtension": {"WFCreateNoteInput"},
+    "is.workflow.actions.appendnote": {"text"},
+    "is.workflow.actions.speaktext": {"WFText"},
+}
+
+# CYCLE 5 -- the THIRD axis on which an emitted parameter can be wrong.
+#
+# Cycle 1 fixed the KEY NAME axis (WFInput -> WFDictionaryValue).  Cycles 2 and 4 fixed the
+# VALUE ENVELOPE axis (bare WFTextTokenAttachment -> WFTextTokenString, for catalog types
+# "str" and then "AttributedString").  Neither pass ever asked whether a REQUIRED PICKER
+# (enum) parameter was present at all, or whether it held a literal enum case.
+#
+# A picker parameter that is ABSENT, or that holds a variable/attachment token instead of a
+# literal enum case, renders in Shortcuts as an unfilled picker.  iOS then refuses to run the
+# action with "Please choose a value for each parameter in this action" -- attributing the
+# failure to the outermost caller (a Personal Automation, by its own name), never naming the
+# offending action.
+#
+# The artifact contained its own control group: eight picker classes already carried literal
+# enum cases and only two deviated --
+#   count.WFCountType              MISSING entirely
+#   getitemfromlist.WFItemSpecifier  held a VARIABLE token at 31 of 33 sites, WFItemIndex absent
+# Golden corpus is unanimous on both: 11/11 count actions emit WFCountType; every corpus
+# getitemfromlist puts a LITERAL in WFItemSpecifier and the DYNAMIC index in WFItemIndex
+# (golden 332c12a0060043b388b2 does exactly that with a Repeat Index variable).
+#
+# DELIBERATELY ABSENT from this table: math.WFMathOperation.  It looks like the same defect --
+# 25 sites omit it -- but golden 2e0fb675e459 (client 1146.11.1, minClient 900, our vintage)
+# omits it with our exact key shape, so "+" is genuinely the implicit default.  Corpus
+# evidence outranks catalog inference, per the cycle-2 openurl precedent.
+REQUIRED_PICKER_PARAMS = {
+    "is.workflow.actions.count": {"WFCountType"},
+    "is.workflow.actions.getitemfromlist": {"WFItemSpecifier"},
+    "is.workflow.actions.setvolume": {"WFVolumeSetting"},
+    "is.workflow.actions.gettimebetweendates": {"WFTimeUntilUnit"},
+    "is.workflow.actions.round": {"WFRoundTo", "WFRoundMode"},
+    "is.workflow.actions.searchweb": {"WFSearchWebDestination"},
+    "is.workflow.actions.searchmaps": {"WFSearchMapsActionApp"},
+    "is.workflow.actions.text.changecase": {"WFCaseType"},
+    "is.workflow.actions.getdevicedetails": {"WFDeviceDetail"},
+}
+
+
+def verify_required_pickers(actions):
+    """Fail the build if a required enum picker is missing or holds a non-literal value.
+
+    Both failure modes present identically on device: an unfilled picker, and the runtime
+    error "Please choose a value for each parameter in this action".
+    """
+    offenders = []
+    for index, item in enumerate(actions):
+        keys = REQUIRED_PICKER_PARAMS.get(item.get("WFWorkflowActionIdentifier"))
+        if not keys:
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        # Control-flow end markers carry no parameters of their own.
+        if parameters.get("WFControlFlowMode") in (1, 2):
+            continue
+        for key in sorted(keys):
+            if key not in parameters:
+                offenders.append((index, item["WFWorkflowActionIdentifier"], key, "missing"))
+            elif not isinstance(parameters[key], str):
+                offenders.append((index, item["WFWorkflowActionIdentifier"], key, "non-literal"))
+    if offenders:
+        raise SystemExit("required picker parameters are unset or non-literal "
+                         "(iOS: 'Please choose a value for each parameter in this action'): "
+                         + "; ".join(f"action {i} {ident}.{key} {why}"
+                                     for i, ident, key, why in offenders[:5])
+                         + f" ({len(offenders)} total)")
+
+# Real output names, keyed by producing action identifier.  A magic-variable reference
+# carries OutputUUID (the binding) plus OutputName (the label iOS shows and re-resolves
+# against).  Hand-authored blocks in this artifact guessed some of these; where two
+# independent sources give the real name, normalise to it rather than keep the guess.
+#   getrichtextfrommarkdown -> "Rich Text from Markdown"
+#       device donor (.planning/debug/"Donor - notes.shortcut") AND golden shortcut
+#       f44f5caf5e3e48d4817e73af450c4404.xml action 14 both reference this action's
+#       output by that name.  This artifact said "Rich Text".
+ACTION_OUTPUT_NAMES = {
+    "is.workflow.actions.getrichtextfrommarkdown": "Rich Text from Markdown",
+}
+
+
+def to_string_envelope(value):
+    """Re-wrap a single bare token as the WFTextTokenString form iOS expects.
+
+    Shape mirrors the golden corpus exactly: one "￼" placeholder whose
+    attachmentsByRange entry is the original token dict, unchanged.
+    """
+    if not isinstance(value, dict) or value.get("WFSerializationType") != "WFTextTokenAttachment":
+        return value
+    inner = value.get("Value")
+    if not isinstance(inner, dict) or "string" in inner:
+        return value
+    return {"Value": {"string": "￼", "attachmentsByRange": {"{0, 1}": inner}},
+            "WFSerializationType": "WFTextTokenString"}
+
+
+def normalise_string_envelopes(actions):
+    """Convert bare attachments to WFTextTokenString on every string-typed parameter."""
+    for item in actions:
+        keys = STRING_ENVELOPE_PARAMS.get(item.get("WFWorkflowActionIdentifier"))
+        if not keys:
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        for key in keys & set(parameters):
+            parameters[key] = to_string_envelope(parameters[key])
+
+
+def verify_string_envelopes(actions):
+    """Fail the build if a string-typed parameter still holds a bare attachment."""
+    offenders = []
+    for index, item in enumerate(actions):
+        keys = STRING_ENVELOPE_PARAMS.get(item.get("WFWorkflowActionIdentifier"))
+        if not keys:
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        for key in sorted(keys & set(parameters)):
+            value = parameters[key]
+            if isinstance(value, dict) and value.get("WFSerializationType") == "WFTextTokenAttachment":
+                offenders.append((index, item["WFWorkflowActionIdentifier"], key))
+    if offenders:
+        head = offenders[:5]
+        raise SystemExit("string-typed parameters carry a bare WFTextTokenAttachment "
+                         "(resolves to empty at run time): "
+                         + "; ".join(f"action {i} {ident}.{key}" for i, ident, key in head)
+                         + f" ({len(offenders)} total)")
+
+
+def _walk_action_output_tokens(node):
+    """Yield every {"Type": "ActionOutput", ...} token dict nested anywhere in a value."""
+    if isinstance(node, dict):
+        if node.get("Type") == "ActionOutput" and "OutputUUID" in node:
+            yield node
+        for child in node.values():
+            yield from _walk_action_output_tokens(child)
+    elif isinstance(node, list):
+        for child in node:
+            yield from _walk_action_output_tokens(child)
+
+
+def _expected_output_names(actions):
+    """Map producing-action UUID -> its real output name, for the actions we know."""
+    names = {}
+    for item in actions:
+        expected = ACTION_OUTPUT_NAMES.get(item.get("WFWorkflowActionIdentifier"))
+        uuid_value = item.get("WFWorkflowActionParameters", {}).get("UUID")
+        if expected and uuid_value:
+            names[uuid_value] = expected
+    return names
+
+
+def normalise_output_names(actions):
+    """Point every magic-variable reference at the producing action's REAL output name."""
+    names = _expected_output_names(actions)
+    if not names:
+        return
+    for item in actions:
+        for token_dict in _walk_action_output_tokens(item.get("WFWorkflowActionParameters", {})):
+            expected = names.get(token_dict.get("OutputUUID"))
+            if expected:
+                token_dict["OutputName"] = expected
+
+
+def verify_output_names(actions):
+    """Fail the build if a reference still carries a guessed output name."""
+    names = _expected_output_names(actions)
+    offenders = []
+    for index, item in enumerate(actions):
+        for token_dict in _walk_action_output_tokens(item.get("WFWorkflowActionParameters", {})):
+            expected = names.get(token_dict.get("OutputUUID"))
+            if expected and token_dict.get("OutputName") != expected:
+                offenders.append((index, token_dict.get("OutputName"), expected))
+    if offenders:
+        raise SystemExit("magic-variable references carry a wrong OutputName: "
+                         + "; ".join(f"action {i} says {got!r}, real name is {want!r}"
+                                     for i, got, want in offenders[:5])
+                         + f" ({len(offenders)} total)")
+
+
+def verify_parameter_keys(actions):
+    """Fail the build when an action emits a key its iOS action does not define."""
+    offenders = []
+    for index, item in enumerate(actions):
+        allowed = VERIFIED_PARAMETER_KEYS.get(item.get("WFWorkflowActionIdentifier"))
+        if allowed is None:
+            continue
+        unknown = set(item.get("WFWorkflowActionParameters", {})) - allowed - STRUCTURAL_KEYS
+        if unknown:
+            offenders.append((index, item["WFWorkflowActionIdentifier"], sorted(unknown)))
+    if offenders:
+        head = offenders[:5]
+        raise SystemExit("unverified parameter keys emitted: "
+                         + "; ".join(f"action {i} {ident} -> {keys}" for i, ident, keys in head)
+                         + f" ({len(offenders)} total)")
+
+
+def normalize_open_apps(actions):
+    """Rewrite legacy app-picker strings left by earlier generated blocks."""
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.openapp":
+            continue
+        parameters = item["WFWorkflowActionParameters"]
+        name = parameters.get("WFAppName") or parameters.get("WFSelectedApp", {}).get("Name")
+        if name in APPS:
+            parameters.clear()
+            parameters.update(open_app(name)["WFWorkflowActionParameters"])
+
+
 def main():
     global UUID_COUNTER
     UUID_COUNTER = 0
@@ -1112,7 +1591,15 @@ def main():
                             "--- PHASE 5 MANUAL EMERGENCY RESTORE END ---", manual_emergency_restore())
     insert_or_replace_after(actions, "Check whether this run had to rebuild the setup file", "--- PHASE 7 MANUAL CONTROL ROOM REFRESH ---",
                             "--- PHASE 7 MANUAL CONTROL ROOM REFRESH END ---", manual_note_refresh())
+    # Runs last of the structural passes: it moves the whole MANUAL arm, so every
+    # marker-addressed replacement above should already have landed.
+    restructure_router(actions)
+    remove_marker_block(actions, TRACE_MARKER, TRACE_END_MARKER)
+    if ROUTER_TRACE:
+        fallback = comment_index(actions, ROUTE_FALLBACK_MARKER)
+        actions[fallback + 1:fallback + 1] = router_trace()
     normalize_setters(actions)
+    normalize_open_apps(actions)
     # The skill requires a repair-oriented, bulleted Comment immediately before
     # every control-flow start.  Make this invariant structural, not index-based.
     index = 0
@@ -1126,6 +1613,22 @@ def main():
             actions.insert(index, comment("Control-flow check:\n- Use the named value prepared directly above.\n- Keep each branch or iteration balanced.\n- Continue with the full State dictionary unchanged unless this branch explicitly updates it."))
             index += 1
         index += 1
+    normalise_string_envelopes(actions)
+    normalise_output_names(actions)
+    verify_parameter_keys(actions)
+    verify_string_envelopes(actions)
+    verify_output_names(actions)
+    verify_required_pickers(actions)
+    verify_router_shape(actions)
+    # Declare that this shortcut consumes Shortcut Input.  The routing block reads the
+    # ExtensionInput token, and PLIST_FORMAT.md defines this root key as "True if
+    # shortcut uses input variables"; every modern golden shortcut that references
+    # Shortcut Input sets it.  Derived from the actions so it can never drift.
+    uses_shortcut_input = "ExtensionInput" in str(actions)
+    if uses_shortcut_input:
+        data["WFWorkflowHasShortcutInputVariables"] = True
+        if not data.get("WFWorkflowInputContentItemClasses"):
+            raise SystemExit("Shortcut Input is referenced but no input content classes are declared")
     if plistlib.dumps(actions[:5], fmt=plistlib.FMT_XML) != pinned:
         raise SystemExit("pinned actions 0-4 changed")
     SOURCE.write_bytes(plistlib.dumps(data, fmt=plistlib.FMT_XML, sort_keys=False))  # exactly one serialization/write

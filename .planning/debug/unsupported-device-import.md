@@ -2,17 +2,28 @@
 status: resolved
 trigger: "Ok, I got an error when testing both. I have an iphone 15 pro on 26.6. Can you identify what features could be causing this and tell me. \"can't import shortcut because it contains features not supported on this device\""
 created: 2026-08-13T19:30:00+10:00
-updated: 2026-08-13T21:20:31+10:00
+updated: 2026-08-13T21:38:00+10:00
 ---
 
 ## Current Focus
 
-hypothesis: Confirmed — the serialized `com.apple.Notes.CreateNoteFromMarkdownLinkAction` payload is the first iOS 26.6 importer blocker. Open App and Round mode are separate runtime serialization defects, not import blockers.
-test: Completed four-probe iPhone import matrix and inspected two Apple-signed donor shortcuts exported from the affected iPhone.
-expecting: Matched. The donors provide native iOS 26.6 payloads for all six Open App targets and for Text → Rich Text from Markdown → Create Note.
-next_action: Apply the donor-backed payloads in the source generator, change downward rounding to `Always Round Down`, rebuild and sign both shortcuts, then repeat full-device import and runtime verification.
+hypothesis: Confirmed — the synthetic Notes AppIntent serialization is rejected by iOS 26.6; the Apple-exported `com.apple.mobilenotes.SharingExtension` pipeline is supported. Bare-string Open App values and `Down` rounding are independent runtime serialization defects.
+test: Replace each generator-created Open App action with an app descriptor and `WFAppIdentifier`, replace the Note action with Text → Rich Text from Markdown → Create Note, then validate and sign both forks.
+expecting: Sources contain no legacy Notes AppIntent or bare app strings, every downward-round action uses `Always Round Down`, and signed artifacts are non-empty with archives matching their sources.
+next_action: Resolved — target-device import and first-run Note creation confirmed for both rebuilt forks.
 bug_class: bohrbug
-reasoning_checkpoint: null
+reasoning_checkpoint:
+  hypothesis: "The unsupported synthetic Notes AppIntent causes the importer rejection; replacing it with the target device's native Create Note representation removes that unsupported feature while preserving the Control Room body."
+  confirming_evidence:
+    - "The isolated synthetic Notes probe reproduced the exact import error on iOS 26.6."
+    - "The target iPhone donor uses Text → Rich Text from Markdown → com.apple.mobilenotes.SharingExtension with CreateNoteLinkAction."
+  falsification_test: "A rebuilt signed shortcut that still contains no synthetic Notes action but fails the same device import error would disprove this being the first blocker."
+  fix_rationale: "The replacement uses the native action identifier, parameter names, and variable wiring emitted by the target device rather than an inferred AppIntent."
+  blind_spots: "Only the user can run final import and first-run Notes behavior on the target iPhone."
+  candidate_causes:
+    - "code: an inferred/unsupported Notes AppIntent action identifier and payload"
+    - "environment: iOS 26.6 rejects that inferred action during import"
+  and_gate: "no — the isolated Notes probe reproduces the symptom; environment is the compatibility boundary, but a supported donor payload alone avoids it."
 tdd_checkpoint: null
 
 ## Symptoms
@@ -38,6 +49,21 @@ started: First real-device import test after the shortcuts were built and signed
   timestamp: 2026-08-13T19:30:00+10:00
 
 ## Evidence
+
+- timestamp: 2026-08-13T21:38:00+10:00
+  checked: Target-device acceptance check on the iPhone 15 Pro running iOS 26.6.
+  found: The user confirmed both rebuilt forks imported successfully and the first Manual/Control Room action created the Note successfully.
+  implication: The donor-backed native Notes replacement removes the importer blocker and preserves the required first-run Notes behavior on the affected device.
+
+- timestamp: 2026-08-13T21:35:00+10:00
+  checked: Shared source generator and static Dumb Notes action.
+  found: The generator now emits full Open App descriptors plus `WFAppIdentifier` and uses `Always Round Down`; both rebuilt forks replace the synthetic Notes AppIntent with `gettext` → `getrichtextfrommarkdown` → `com.apple.mobilenotes.SharingExtension` using `CreateNoteLinkAction` and a Rich Text output attachment.
+  implication: The unsupported isolated-probe identifier and the known runtime-serialization defects are absent from the rebuilt sources.
+
+- timestamp: 2026-08-13T21:37:00+10:00
+  checked: Rebuilt Dumb and Sentient XML plus new signed artifacts.
+  found: Both XML sources pass `plutil`, the Shortcuts Playground macOS-26/all validator, and an agent-authored structural check covering all 18 Open App actions, three downward-round actions, the absence of the legacy Notes action, and the Create Note Rich Text wiring. Both signing runs completed and produced non-empty distribution artifacts with dated archives.
+  implication: The static, signing, and source-to-artifact gates pass; target-device import and first-run Notes creation remain the required acceptance check.
 
 - timestamp: 2026-08-13T21:20:31+10:00
   checked: Apple-signed `.planning/debug/Donor - apps.shortcut` exported from the affected iPhone.
@@ -77,7 +103,8 @@ started: First real-device import test after the shortcuts were built and signed
 ## Resolution
 
 root_cause: The serialized `com.apple.Notes.CreateNoteFromMarkdownLinkAction` payload is rejected by the iOS 26.6 importer and reproduces the original error in isolation. The probe does not distinguish whether the unsupported component is the action identifier, AppIntentDescriptor, or one of its parameters. Bare-string `WFSelectedApp` and `WFRoundMode="Down"` are additional runtime defects but do not block import.
-fix: Not applied; diagnosis only. Use an iPhone-native iOS 26.6 Notes export or supported fallback, then also repair the Open App descriptor and use `Always Round Down` where downward rounding is intended.
-verification: Four signed isolated probes tested on the target iPhone: baseline pass, Open App import pass/runtime fail, Notes AppIntent import fail with matching error, Round import/runtime pass with default-normal result.
+fix: Replaced the unsupported Notes AppIntent with native `getrichtextfrommarkdown` → `com.apple.mobilenotes.SharingExtension` / `CreateNoteLinkAction` wiring; normalized every Open App descriptor and changed all downward rounding to `Always Round Down`.
+verification: Both XML files pass `plutil` and `validate_shortcut.py --target-macos 26 --target-platform all`; structural assertions, signing, and archive/source parity pass. On the target iPhone 15 Pro/iOS 26.6, both rebuilt forks imported and the first Manual/Control Room action created the Note successfully.
 oracle_type: Target-device iPhone import and runtime behavior.
-files_changed: [artifacts/device-import-probes/01-baseline.xml, artifacts/device-import-probes/02-open-app.xml, artifacts/device-import-probes/03-notes-app-intent.xml, artifacts/device-import-probes/04-round-mode.xml, artifacts/device-import-probes/PROSOCHĒ Probe 1 — Baseline.shortcut, artifacts/device-import-probes/PROSOCHĒ Probe 2 — Open App.shortcut, artifacts/device-import-probes/PROSOCHĒ Probe 3 — Notes Intent.shortcut, artifacts/device-import-probes/PROSOCHĒ Probe 4 — Round Mode.shortcut, artifacts/device-import-probes/TESTING.md]
+files_changed: [tools/build_state_engine.py, src/PROSOCHE-Dumb.xml, src/PROSOCHE-Sentient.xml, artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut, artifacts/shortcuts/PROSOCHĒ — Nine Circles — Sentient.shortcut]
+prevention: why not caught: no iPhone import gate existed for inferred AppIntent payloads; guard: retain a signed target-device donor-export compatibility probe plus target-iPhone import/first-run smoke check for new native actions.
