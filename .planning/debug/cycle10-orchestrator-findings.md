@@ -255,3 +255,52 @@ one level over. Fixing `active_session` is not cosmetic.
 Whether **empty** survives a Number coercion. Not needed for these four keys — all are
 gate-consumed — but it decides whether empty is a single universal sentinel or whether
 gate-consumed and numerically-consumed keys need different ones as a documented choice.
+
+---
+
+## 10. DONOR 6.1 — correctly wired, verified, AWAITING A RUN
+
+Decrypted and structurally verified by the session-manager. **All three Donor 6 faults are
+fixed** and the third test was added:
+
+```
+[0] dictionary        keys=['empty','nullish']  vals=['', 'null']
+[1] getvalueforkey    KEY='empty'          <- act0   (trailing space FIXED)
+[2] cond 100  AGG=WFStringContentItem      <- act1   -> 'EMPTY: HAS VALUE' / 'EMPTY: NO VALUE'
+[7] getvalueforkey    KEY='nullish'        <- act0   (REWIRED to the Dictionary, was act1)
+[8] cond 2 >0 AGG=WFNumberContentItem      <- act7   -> 'NULL COERCED OK' / 'NULL COERCED FALSE'
+[13] getvalueforkey   KEY='missing.nested' <- act0   (NEW dotted-path test)
+[14] cond 100 AGG=WFStringContentItem      <- act13  -> 'Path ok' / 'Path none'
+```
+
+Action 7 now genuinely reads the literal string `null` from the Dictionary, so line 2 measures
+what we thought Donor 6 measured. Action 13 reads a dotted path where nothing exists.
+
+**It has not been run. The three reported lines settle three open questions at once:**
+
+| line | settles |
+|---|---|
+| 1 | whether a present-but-empty value reads as absent to code 100 — the sentinel premise |
+| 2 | **what `"null"` does under `WFNumberContentItem`** — decides `cooldown_until` |
+| 3 | **flat-vs-dotted read semantics** — decides the root-cause statement |
+
+If line 3 **errors outright** rather than printing either branch, that is the strongest possible
+confirmation of the dotted-path refinement, and the error text should be captured verbatim.
+
+## 11. `cooldown_until` — DOWNGRADED to unproven-and-deferred
+
+Donor 6's `NULL COERCED FALSE` did **not** measure `"null"`. Action 7 read `nullish` out of
+action 1's result (an empty value) rather than out of the Dictionary, so it measured empty
+coerced to Number, not the literal string.
+
+**The three `cooldown_until` sites (generator lines 1292, 1301, 1343) remain untouched — which is
+still the right default — but they are recorded as UNPROVEN, not proven-safe.** What `"null"`
+does under `WFNumberContentItem` at action 170 is unknown until Donor 6.1 line 2 is reported.
+
+The consumption map in §9 is unaffected: `cooldown_until` is still consumed solely by code 2 at
+action 170 via the read at 102. Only the *safety of leaving the literal there* is unestablished.
+
+Note the one thing Donor 6 did establish accidentally: action 8 coerced an **empty** value to
+`WFNumberContentItem` and returned false **without erroring**. So empty survives Number coercion
+cleanly — evidence that empty is viable as a single universal sentinel, though it came from a
+miswired shortcut and Donor 6.1 line 2 re-confirms it properly.
