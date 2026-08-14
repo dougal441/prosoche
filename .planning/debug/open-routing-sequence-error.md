@@ -2012,6 +2012,57 @@ superseded_next_action_cycle2: >
     NOT FIXED THIS CYCLE, deliberately: shipping a speculative fix now would confound the
     letter measurement already in flight.
 
+- timestamp: 2026-08-14 (cycle 8 device result)
+  checked: "ON-DEVICE test of build 2026-08-14h (cycle-8 WFInput.Variable envelope fix, 25 sites/fork). Clean install + automation re-point. User-reported, verbatim."
+  found: '"ok, I ran build h and got to C, then same error."'
+  implication: >
+    CYCLE-8 FIX CONFIRMED ON DEVICE. The letter ADVANCED from B to C, so execution now passes
+    actions 149 and 158 — the two WFInput.Variable text-template sites. Symptom 1's FIRST
+    defect is device-verified, not merely statically argued.
+    TWO INDEPENDENT PREDICTIONS BOTH LANDED IN ONE RUN:
+      (1) the letter would advance from B to C rather than repeat B, with "B again" stated in
+          advance as meaning the envelope fix had not taken. It advanced.
+      (2) the next failure would be at ACTION 170 — the first numeric-operator-on-text-operand
+          site — which sits immediately after breadcrumb C. The run reached C and then failed.
+    RETROACTIVELY CONFIRMS THE REFUTATION OF THE UNIFICATION HYPOTHESIS. If the red operators
+    had been a mere rendering artefact of the envelope defect, fixing 149/158 would have
+    carried execution well past 170. It did not. The two defects are genuinely distinct, as the
+    programmatic cross-check found, and the user's screenshots identified a real second cause
+    that no static sweep could have seen.
+    THE BISECTION MEASUREMENT IS NOW COMPLETE. The confounding argument that withheld the
+    numeric-operator fix for two cycles no longer applies.
+
+- timestamp: 2026-08-14 (session-manager provenance trace)
+  checked: "Operand provenance for ALL 87 (Dumb) / 94 (Sentient) numeric-condition-code conditionals, traced Set Variable -> feeding action via OutputUUID."
+  found: >
+    DEFECTIVE — operand fed by `gettext` (text-coerced): 18 per fork.
+      Dumb:     170, 377, 384, 409, 579, 1187, 1260, 1300, 1443, 1658, 1890, 2122, 2354,
+                2586, 2818, 3050, 3282, 3514
+      Sentient: 172, 379, 386, 411, 581, 1255, 1328, 1368, 1511, 1726, 1958, 2190, 2422,
+                2654, 2886, 3118, 3350, 3582
+      Eight distinct variables: Cooldown Until, Declared Duration, Heat Clamped, Manual Voice,
+      Previous Declared Duration, Previous Overrun, Stats Count, Voice Enabled.
+    NOT DEFECTIVE:
+      40 fed by getdevicedetails — only two distinct sources, 'Current Volume' and
+         'Current Brightness', both numeric.
+      10 fed by ask — the numerically-compared one is action 1079, WFInputType='Number'.
+      13 fed by number / math / gettimebetweendates / round — genuinely numeric.
+       4 Repeat Index — built-in numeric.
+       1 calculateexpression; 1 Heat After Contract (fed by math at 380).
+  implication: >
+    THE FIX SIZE IS 18 PER FORK — not 87, and not the 6 visible by eye.
+    ALL SIX PHOTOGRAPHED RED SITES FALL INSIDE THE 18, AND ZERO FALL OUTSIDE IT. Voice Enabled
+    — the site that broke the "five" sample — is fed by gettext at action 1184, so it was
+    always in this bucket. Six-for-six correspondence between the classifier and independent
+    UI evidence.
+    Confirms the user's instinct exactly: there were more than five, the visual sample was not
+    exhaustive, and the rest are unfixed.
+    ROUTING TENSION TO SETTLE BEFORE FIXING: all 18 are dictionary values routed through Text —
+    and that routing exists deliberately, because .claude/CLAUDE.md warns that a Dictionary
+    Value compared directly in an If renders blank. So "replace Text with Number" is the very
+    substitution the project docs caution against, and Donor 3 does NOT cover it (its operands
+    came from Number actions, not dictionary values). Needs a donor or corpus proof.
+
 ## Eliminated
 
 - hypothesis: "The five red If operators seen in the user's screenshots are the visible symptom of the cycle-8 WFInput.Variable envelope defect — an unresolvable input cannot be typed, so Shortcuts falls back to offering only the eight string operators and the numeric comparator renders red. (Unification: one defect, two presentations.)"
