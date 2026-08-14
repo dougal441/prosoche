@@ -7,8 +7,8 @@ current_phase_name: Sentient Fork & Dual Distribution
 status: verifying
 stopped_at: Phase 08 Plan 03 awaiting real-iPhone DIST-03 UAT
 last_updated: "2026-08-13T08:58:14.171Z"
-last_activity: 2026-08-13
-last_activity_desc: Delivered both validated and signed forks; real-iPhone DIST-03 UAT remains pending
+last_activity: 2026-08-14
+last_activity_desc: "Completed quick task 260814-kqm: corrected signed .shortcut recovery instructions"
 progress:
   total_phases: 8
   completed_phases: 6
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 Phase: 8 of 8 (Sentient Fork & Dual Distribution)
 Plan: 3 of 3 complete
 Status: Automated verification passed; awaiting real-iPhone import / Manual UAT
-Last activity: 2026-08-13 — Delivered both validated and signed forks; DIST-03 remains pending
+Last activity: 2026-08-14 — Completed quick task 260814-kqm: corrected signed `.shortcut` recovery instructions
 
 Progress: [██████████] 100%
 
@@ -127,6 +127,12 @@ Recent decisions affecting current work:
 
 - [Phase 1]: Four capability blockers are unresolved pending live on-device verification — grayscale/Color Filters availability, brightness/volume read-back, the `Use Model` On-Device pinning literal, and Notes actions on iOS. All downstream phases assume these get resolved (favorably or via documented fallback) in Phase 1.
 - DIST-03 real-iPhone import and first Manual UAT blocked: xcrun devicectl reports no connected devices.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260814-kqm | Correct signed AEA1 `.shortcut` recovery instructions | 2026-08-14 | adc96a3 | [260814-kqm-correct-8-signed-aea1-shortcut-artifacts](./quick/260814-kqm-correct-8-signed-aea1-shortcut-artifacts/) |
 
 ## Deferred Items
 
