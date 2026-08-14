@@ -1966,7 +1966,57 @@ superseded_next_action_cycle2: >
     would now carry the strongest possible evidence. The day-rollover section is exactly where
     date arithmetic and numeric comparison live.
 
+- timestamp: 2026-08-14 (cycle 8 addendum)
+  checked: "SIX USER SCREENSHOTS (.planning/debug/IMG_5624.jpg .. IMG_5629.jpg, 15:38-15:40) — first UI-level evidence in the session. Cross-checked by session-manager against the 25 sites fixed in cycle 8."
+  found: >
+    User, verbatim: "I can eyeball the shortcut and see that a few of the if operators are red,
+    so not accepted. you can't do is greater than or is less than."
+    Five distinct If actions render their OPERATOR IN RED (invalid): Cooldown Until >,
+    Previous Declared Duration >, Previous Overrun >, Heat Clamped >, Stats Count <. All five
+    operand chips are orange-x named variables. The operator picker, opened on four of the
+    five, offers EXACTLY EIGHT options — is / is not / has any value / does not have any value
+    / contains / does not contain / begins with / ends with. NO numeric comparator appears.
+    SESSION-MANAGER CROSS-CHECK (programmatic, plistlib, pre-fix vs post-fix Dumb):
+    - The 25 cycle-8 sites carry condition codes 4, 5 and 99 ONLY — all STRING conditions.
+      Their variables are Stored Day, Exit/Contract/Session Owner IDs, counters and flags.
+    - The five red Ifs map to actions 170, 377, 384, 409, 579, all with NUMERIC codes
+      (2 = is greater than, 0 = is less than).
+    - NONE of the five is among the 25. Zero overlap.
+    - All 87 numeric-code conditionals in the POST-FIX build already carry the correct
+      ser=WFTextTokenAttachment envelope with WFNumberValue present.
+  implication: >
+    THE UNIFICATION HYPOTHESIS IS REFUTED. The red operators are NOT the visible symptom of
+    the cycle-8 envelope defect. They are a SECOND, GENUINELY DISTINCT defect on the
+    operator/operand-TYPE axis — a FIFTH axis for this session. Per the coordinator's own
+    stated criterion ("if any of the five is NOT among your 25, that site is a distinct defect
+    and you have found it for free"), all five qualify.
+    MECHANISM (well-supported, not yet device-confirmed): the operand variables are TEXT-typed
+    — image 1's own comment says the cooldown deadline is "routed through text". Shortcuts
+    types the operand as text, a text-typed operand offers only the eight STRING operators, so
+    the numeric comparator the plist specifies has no valid case to render and shows red.
+    Donor 3 is the contrast case: it fed its operands from NUMBER actions and the numeric
+    comparators rendered correctly with the identical envelope — which is exactly why the
+    envelope check passes here while the UI still rejects the operator.
+    .claude/CLAUDE.md anticipated this trap for EQUALITY ("there is no numeric-equals code;
+    use string code 4 on text-coerced numbers") but the generator walked into it for ORDERING
+    comparisons.
+    KEY PREDICTION FOR THE BUILD-h DEVICE TEST: action 170 (Cooldown Until >) is the FIRST red
+    site and sits immediately after breadcrumb C. The cycle-8 fix should carry execution past
+    149/158 and reach C — then fail at 170. EXPECT THE LETTER TO ADVANCE FROM B TO C. That is
+    progress plus a new location, not a failed fix. "B again" would instead mean the cycle-8
+    fix did not take.
+    NEW EVIDENCE CHANNEL, first-class: operator/operand-TYPE validity is visible in the
+    Shortcuts UI and INVISIBLE in the plist file. Every static sweep in eight cycles was blind
+    to it by construction. The on-device eyeball is not a nicety here — it is the only
+    instrument that can see this defect class.
+    NOT FIXED THIS CYCLE, deliberately: shipping a speculative fix now would confound the
+    letter measurement already in flight.
+
 ## Eliminated
+
+- hypothesis: "The five red If operators seen in the user's screenshots are the visible symptom of the cycle-8 WFInput.Variable envelope defect — an unresolvable input cannot be typed, so Shortcuts falls back to offering only the eight string operators and the numeric comparator renders red. (Unification: one defect, two presentations.)"
+  evidence: "Session-manager programmatic cross-check: the 25 cycle-8 sites carry ONLY string condition codes (4, 5, 99) with variables Stored Day / Owner IDs / counters. The five red Ifs are actions 170, 377, 384, 409, 579 with NUMERIC codes (0, 2) and entirely different variables. Zero overlap. Furthermore all 87 numeric-code conditionals in the POST-FIX build already carry the correct WFTextTokenAttachment envelope, so the envelope fix cannot be what makes them render — they were never envelope-defective."
+  timestamp: 2026-08-14 (cycle 8 addendum)
 
 - hypothesis: "The failing OPEN-path action is one of the two donor-contradicted <integer> literal sites — number.random (action 418) or the nine-step repeat.count (action 454) — where iOS writes <string> and <real> respectively."
   evidence: "Cycle 7 bisection, build 2026-08-14g: the user's last breadcrumb was B, so execution died in span B->C (actions ~145-165). Actions 418 and 454 sit in spans G->H and H->I, hundreds of actions downstream, and were never reached. Killed by cycle 7's own pre-stated criterion (only G or H would have confirmed). Retained as candidate LATENT defects, not as this bug."

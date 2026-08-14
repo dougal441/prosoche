@@ -691,3 +691,60 @@ Before either generator runs, enforce `git merge-base --is-ancestor 7ca8ebbfe467
 ### Scaffolding debt (carried forward, unchanged)
 
 `BUILD_STAMP` (now `build 2026-08-14g`), `ROUTER_TRACE` and — added in cycle 7 — `OPEN_BISECT` all remain ON while the session iterates. See §13's debt table; none of them ships. `OPEN_BISECT = False` strips all ten OPEN-path breadcrumb alerts; nothing else depends on them, and with them removed the artifact is byte-identical to build `14f` across all 3,674 actions apart from the two display-only stamp strings.
+
+---
+
+## 15. CAP-06 — operator/operand TYPE validity is a UI-only signal (debug cycle 8 addendum, 2026-08-14)
+
+**The finding.** Six user screenshots (`.planning/debug/IMG_5624.jpg` … `IMG_5629.jpg`) show five
+`If` actions whose **operator chip renders in RED** — rejected by Shortcuts — while the plist
+that produced them is, by every static check this project can run, correct.
+
+| action | condition | code | operand variable |
+|---|---|---|---|
+| 170 | is greater than | 2 | `Cooldown Until` |
+| 377 | is greater than | 2 | `Previous Declared Duration` |
+| 384 | is greater than | 2 | `Previous Overrun` |
+| 409 | is greater than | 2 | `Heat Clamped` |
+| 579 | is less than | 0 | `Stats Count` |
+
+All five carry `WFSerializationType = WFTextTokenAttachment` with `WFNumberValue` present —
+**the shape Donor 3 proved correct on this exact device.** Nothing in the file is wrong by any
+catalog, corpus or donor comparison available here.
+
+**Mechanism.** The operand variables are **text-typed** (the cooldown deadline is, in the
+generator's own comment, "routed through text"). Shortcuts types the operand from its
+provenance, and a text-typed operand offers only eight operators:
+
+> `is` · `is not` · `has any value` · `does not have any value` · `contains` ·
+> `does not contain` · `begins with` · `ends with`
+
+No numeric comparator is offered, so condition codes 0/1/2/3/1003 have **no valid case to
+render** and the chip shows red. Donor 3 is the contrast case: its operands came from **Number**
+actions, and the identical envelope rendered numeric comparators correctly.
+
+`.claude/CLAUDE.md` anticipated this trap for **equality** — *"there is no numeric-equals code;
+use string code 4 on text-coerced numbers"* — but the generator walked into it for **ordering**
+comparisons, which that guidance does not cover.
+
+### Why this matters beyond the immediate bug
+
+**Operator/operand-type validity is visible in the Shortcuts UI and INVISIBLE in the plist
+file.** Every static sweep across eight debug cycles was blind to it *by construction* — not
+through oversight, but because the signal does not exist in the artifact being swept. The
+validator cannot see it, the ToolKit catalog cannot express it, and decrypting the signed
+artifact does not reveal it either.
+
+**Therefore: the on-device eyeball is a first-class evidence channel for this project**, ranking
+alongside device donors and above catalog inference. When an action's correctness depends on the
+*type* of a value flowing into it rather than on the serialisation of the value itself, only the
+UI can adjudicate. Ask the user to look, and treat what they see as ground truth.
+
+This is the fifth distinct parameter-defect axis found in one session, after key name, value
+envelope (`str`), value envelope (`AttributedString`), and required picker enum. Each was
+invisible to the sweep that caught the previous one.
+
+**Status:** not fixed at time of writing — a fix was deliberately withheld so it could not
+confound the bisection measurement already in flight. Fix direction indicated by Donor 3: route
+numeric operands through a **Number** action before comparison so Shortcuts types them
+numerically, rather than relying on text coercion.
