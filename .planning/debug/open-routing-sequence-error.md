@@ -209,6 +209,50 @@ CYCLE 11 reasoning_checkpoint (supersedes cycle 9, which is kept below for histo
     That is the whole purpose of retaining the breadcrumbs and of stating the falsification
     criterion before the run.
 
+## DONOR 6 — decrypted at the end of cycle 11, and it has a TYPO THAT MATTERS
+
+Donor 6 (`.planning/debug/Donor 6.shortcut`, 22,957 bytes, 13 actions) is the probe that
+produced this session's `EMPTY: NO VALUE` and `NULL COERCED FALSE` results. Decrypting it
+was worth doing, and it yields one confirmation and one problem.
+
+**Confirmation.** Action 0 is `is.workflow.actions.dictionary` built in Shortcuts.app on the
+target iPhone, and iOS writes the `empty` entry's value as an **empty `WFTextTokenString`** —
+`{"Value": {"string": ""}, "WFSerializationType": "WFTextTokenString"}`. So an empty string
+value is legal in a Shortcuts dictionary, written by iOS itself. That means
+`validate_shortcut.py`'s blanket empty-string rule — the rule that blocked the cleared-sentinel
+half of this cycle's fix — **would reject this donor too, and the donor is device-built and
+device-run.** The rule is a lint with a false positive here, not a statement of iOS truth. The
+decision not to ship the empty sentinel still stands (it is a mandatory gate, and
+`setvalueforkey`'s `WFDictionaryValue` is a *different* parameter on a *different* action from
+`dictionary`'s `WFValue`), but the path forward is now cheap and specific: **a donor that uses
+Set Dictionary Value to write an empty value settles it directly.**
+
+**The problem.** The dictionary's keys are `empty` and `nullish`. Action 1 reads
+`WFDictionaryKey = 'empty '` — **with a trailing space**. That key does not exist in the
+dictionary. So the reported `EMPTY: NO VALUE` result has two readings:
+
+- **(b) Shortcuts trims the lookup key**, `'empty '` resolves to `'empty'`, the value is `""`,
+  and condition 100 reads false. The probe measured what it intended, and "empty reads as
+  absent" holds.
+- **(a) Shortcuts does not trim**, in which case the probe measured a **MISSING key** — and a
+  missing key returned *no value instead of erroring*, which would invert this cycle's root-cause
+  premise and simultaneously leave "empty reads as absent" with no evidence at all.
+
+**(b) is much the likelier**, because reading (a) is contradicted by the session's own primary
+device evidence: the two reported error strings — `In '', no value was found for dictionary key
+'settings_snapshot'` and `In 'settings_snapshot', no value was found for dictionary key
+'brightness'` — *are* Get Dictionary Value hard-failing on a missing key, observed on device.
+Those strings are more direct evidence than an inference from a stray space. The cycle-11 fix
+rests on them, not on Donor 6, and is shape-correct and fail-safe regardless of which reading
+holds.
+
+But this is exactly the class of unexamined assumption that has burned this session six times,
+so it is recorded rather than waved through, and the falsification test above already covers the
+outcome it would produce ("C again with the identical error text"). **The follow-up is one line:
+rebuild the probe with the key spelled exactly `empty`, and add a third branch that reads a key
+which genuinely does not exist.** That single donor would settle the missing-key semantics, the
+empty-value semantics, and the sentinel choice together.
+
 ## PATTERN: three times this session a CORRECT fix would have read as REFUTED
 
 Recorded as one pattern rather than three incidents, because it is the strongest argument
