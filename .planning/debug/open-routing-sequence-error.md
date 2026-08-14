@@ -3,7 +3,7 @@ slug: open-routing-sequence-error
 status: awaiting_human_verify
 trigger: "Fix OPEN routing and Test Circle sequence error (from .planning/todos/pending/2026-08-13-fix-open-routing-and-test-circle-sequence-error.md)"
 created: 2026-08-14
-updated: 2026-08-14 (cycle 9)
+updated: 2026-08-14 (cycle 11)
 severity: blocker
 ---
 
@@ -100,7 +100,139 @@ independently, then check for a shared source before fixing.
 
 bug_class: Bohrbug (all three symptoms deterministic and reproducible on every run)
 
-CYCLE 9 reasoning_checkpoint (supersedes cycle 8, which is kept below for history):
+CYCLE 11 reasoning_checkpoint (supersedes cycle 9, which is kept below for history):
+  hypothesis: >
+    SYMPTOM 1'S THIRD DEFECT, and the SIXTH axis of this session -- the first that is NOT a
+    wrong shape in the emitted plist. Every prior axis (key name, str envelope,
+    AttributedString envelope, picker enum, variable slot, operand type) was a serialization
+    defect visible to a sufficiently clever static sweep. THIS ONE IS A WRONG BELIEF ABOUT
+    iOS SEMANTICS, held by the generator's own authors and written into a comment as if it
+    were a fact.
+    THE DEFECT: restore_managed_settings() reads settings_snapshot.brightness at action 177
+    and gates it on condition 100, HAS ANY VALUE. Its stated intent -- "never guess an
+    original setting" -- is careful and correct. But the design assumes A MISSING DICTIONARY
+    KEY READS AS EMPTY, so the gate would evaluate false and the guarded branch would be
+    skipped. It does not. Get Dictionary Value on a missing key raises a HARD RUNTIME ERROR.
+    The read at 177 dies BEFORE the gate at 181 can evaluate. The guard cannot protect
+    anything, because the condition it guards against kills the read first.
+    THE SHAPE: the bootstrap state.json template seeded settings_snapshot as {}. The
+    TOP-LEVEL key exists; neither sub-key does. Reads sit at depth 2 and 3 (first read 177);
+    the writes that would create them sit at depth 4 and 7 (1132-1136, 1038-1042) on Circle
+    paths a first run never reaches. So the reads are reachable on paths where the writes
+    never ran.
+    NOTE A CORRECTION TO THE CYCLE-10 ACCOUNT, made by verifying rather than trusting it, as
+    that document itself asked: it states "the bootstrap dictionary actions at 8 and 25 are
+    built with ZERO keys" and "no action anywhere creates the top-level settings_snapshot
+    key". Both are false in detail. Actions 8 and 25 are detect.dictionary parsing JSON, and
+    the template at action 75 DOES create settings_snapshot -- as {}. The DIAGNOSIS AND THE
+    FIX ARE UNAFFECTED and in fact better supported: {} is exactly what predicts the second
+    device error at the second path component. Recorded because the location was wrong by
+    ~67 actions and a future reader following the cycle-10 text would look in the wrong place.
+  confirming_evidence:
+    - "THE TEMPLATE ITSELF, read from the artifact: action 75 (Dumb) / 77 (Sentient) carries the bootstrap state.json as a WFTextTokenString whose settings_snapshot value is the two-character literal {}. Not inferred -- decoded and printed."
+    - "BOTH DEVICE ERRORS ARE PREDICTED EXACTLY AND IN ORDER by that one literal. Clean state -> settings_snapshot resolves to an EMPTY dict, so the depth-2 read of .brightness fails -> 'In 'settings_snapshot', no value was found for dictionary key 'brightness''. After a save round-trip drops the empty container, or on state written before this key existed, the depth-1 component itself is absent -> 'In '', no value was found for dictionary key 'settings_snapshot''. The user's Change Profile / Change Sequence / Test a Circle exploration wrote settings_snapshot.volume.* and produced precisely the intermediate state that distinguishes 'subtree missing' from 'subtree incomplete'. It should be treated as a deliberate experiment; it is what pins the diagnosis."
+    - "THE GUARD FIRES ON THE PRE-FIX ARTIFACT AND NAMES ALL EIGHT UNRESOLVED KEYS, run before the fix was applied: settings_snapshot.brightness, .brightness.changed_at, .brightness.changed_by_session_id, .brightness.original_value, and the four volume equivalents. It passes after seeding and is idempotent across re-runs. A guard that cannot be shown to fail on the defect it targets is decoration; this one was tested against it."
+    - "WRITES CREATE, READS DO NOT -- and this is what makes the empty-leaf seed safe rather than merely tidy. Cycle 10 established from device behaviour that the subtree came into existence as a SIDE EFFECT of the nested writes at 1038-1042, so Set Dictionary Value with a dot path creates its intermediate levels. Get Dictionary Value does not. The asymmetry is the whole bug, and it is also why clear_snapshot writing a string parent is not a latent hazard: the next capture recreates the dict."
+    - "SENTIENT ENUMERATED AND MATCHED (the cycle-10 open item, closed). Decrypted from the shipped signed artifact: 4 literal settings_snapshot read keys, identical set to Dumb, all resolving in the inherited template. verify_state_seed() runs in build_sentient.py too, so the fork cannot silently drift."
+  falsification_test: >
+    ONE device sitting on build 2026-08-14j. BREADCRUMB POSITIONS ARE UNCHANGED from build i
+    for the second cycle running -- A=92, B=147, C=168, D=286, E=306, F=415, G=424, H=458,
+    I=473, J=527 (Dumb; Sentient is uniformly +2) -- because the fix edits template TEXT and
+    adds no actions. The next report is therefore directly comparable with the last one.
+      last letter D or beyond -> THE FIX IS CONFIRMED. Action 177, inside span C->D, has
+        executed, and the restore block that killed builds h and i is cleared.
+      last letter C again, WITH THE SAME 'no value was found for dictionary key' TEXT ->
+        THE HYPOTHESIS IS WRONG. The seed is present in the shipped artifact (verified by
+        decryption), so a repeat of the identical error would mean the read is not reading
+        the bootstrapped dictionary at all -- i.e. State is bound to something other than
+        the seeded document, which reopens the load path rather than the snapshot shape.
+      last letter C again with DIFFERENT error text -> the fix took and a SECOND defect sits
+        in the same span. This is the cycle-9 outcome repeating, and it is the reason the
+        error text must be reported verbatim and not summarised as "same error".
+      a LATER letter with an active_session error -> the predicted next defect (see
+        blind_spots); progress plus localisation, NOT a refutation of this fix.
+      all ten letters + the Leaving/Continue menu -> the OPEN pipeline has completed
+        end-to-end for the first time in the project's history.
+    Because the artifact differs from build i by exactly THREE actions per fork -- the
+    template plus two display-only stamp strings -- "C again" cannot be blamed on collateral
+    change. This is a genuine falsification test.
+  fix_rationale: >
+    ONE generator-level change, at the generator, regenerating both forks. The bootstrap
+    establishes the COMPLETE subtree so the shape exists before any read regardless of
+    execution history. The required shape was taken from the READ SET, because reads are the
+    authority: six leaves under brightness and volume (original_value, changed_at,
+    changed_by_session_id).
+    EVERY LEAF IS SEEDED EMPTY, NEVER A FABRICATED NUMBER. A fabricated original_value could
+    restore brightness or volume to a value the user never had. Empty plus the existing
+    condition-100 gates means "no capture recorded -> skip restore", which fails safe and is
+    exactly what CLAUDE.md requires of a stateful brightness/volume change. The outer gate on
+    the seeded sub-dictionary reads true, the inner gate on the empty leaf reads false, the
+    restore is skipped, and no read on any path hard-errors.
+    IT ADDS NO ACTIONS. A text edit to an existing template preserves every breadcrumb
+    position and keeps the measurement comparable -- the same property that made cycle 9's
+    fix cleanly falsifiable. The four attachmentsByRange offsets are recomputed and then
+    ASSERTED to land on their placeholders (one sits after the edit and shifts 1109 -> 1285);
+    VARIABLES.md warns an out-of-bounds range can crash Shortcuts on import, so a text edit
+    that ignored them would not be a smaller change, it would be a corrupt one.
+    RECURRENCE GUARD: verify_state_seed() fails the build if any settings_snapshot READ key
+    does not resolve in the bootstrap template at the full depth it is read at, or if any
+    seeded leaf is non-empty. It also refuses a composite (token-built) settings_snapshot key
+    rather than silently skipping one it cannot resolve. Both forks' builders run it. The
+    generator now asserts SIX axes: KEY NAME, VALUE ENVELOPE, PICKER LITERAL, VARIABLE SLOT,
+    OPERAND TYPE, STATE SHAPE.
+    SYMPTOMS 2 AND 3 ARE PRESERVED BY CONSTRUCTION AND VERIFIED BY COMPARISON, not asserted:
+    a per-action byte diff against build i shows 3684/3684 actions unchanged in count and
+    exactly three differing -- action 75 (the template, the fix) and 1360/1364 (the two
+    display-only BUILD_STAMP strings). Sentient likewise: 3752 actions, 77/1428/1432.
+  blind_spots:
+    - "THE CLEARED SENTINEL IS UNFIXED AND IS THE PREDICTED NEXT DEFECT. active_session is written as the literal string 'null' at three sites; 'null' is NON-EMPTY, so the condition-100 gates at 689/1094/1232/1248 read TRUE and the NESTED reads of active_session.id and .declared_duration_seconds then run against a string parent -- the identical failure one level over. pending_exit (@483) and settings_snapshot (via clear_snapshot) are the same class. THE OBVIOUS REPAIR WAS BUILT AND THEN REVERTED: clearing to empty text fails validate-shortcut at 12 sites ('Empty parameter at index 188: is.workflow.actions.setvalueforkey -> WFDictionaryValue/Value/string'), and iter_empty_strings' near-universal rule encodes this session's DEVICE-CONFIRMED symptom 2 -- an unset Value raises 'No value was provided to the Set Dictionary Value action for the key <key>'. The EMPTY: NO VALUE device result is READ-side evidence and does not license an empty WRITE; applying it to a write would be the same category error as the root cause fixed this cycle, so it was refused. This is now a PRODUCER-vs-CONSUMER design choice (change the write, or change the six gates from cond 100 to cond 5 'is not null') that needs a donor, and it is single-sourced as CLEARED_SENTINEL so cycle 12 changes one line."
+    - "cooldown_until IS DELIBERATELY LEFT AS 'null' AND THAT IS NOT AN OVERSIGHT. Its only consumer is the NUMERIC comparison at action 170, device-measured as NULL COERCED FALSE with no error, which is already the semantically correct reading of a cleared cooldown ('not in cooldown'). Changing it would alter behaviour at the most critical position on the OPEN path -- the conditional the build-i coercion fix just repaired. That would be a regression, not a fix."
+    - "THE OWNERSHIP CHECK DOES NOT EXIST. changed_at and changed_by_session_id are written at 20 sites and READ AT NONE, in either fork. changed_by_session_id exists so a restore can verify it owns a change before reverting it; nothing consults it. This reframes the Session ID scope defect found earlier: correcting the scope would not help, because no code reads the owner. Per CLAUDE.md's rule that stateful brightness/volume changes must be reliably restorable, the OWNERSHIP HALF of that guarantee is ABSENT, not merely mis-scoped. They are seeded here because the guard derives its required shape from the write set as well as the read set, and seeding them costs nothing. IMPLEMENTING THE CHECK IS A DESIGN CHANGE, NOT A BUG FIX, and belongs to the user, not to a debug cycle."
+    - "THE SEEDED SUB-DICTIONARY'S TEXT COERCION IS UNMEASURED. read_value routes settings_snapshot.brightness through gettext; a DICTIONARY coerced to Text is expected to render as a non-empty description, so the outer gate reads true and the inner empty leaf then correctly blocks the restore. If iOS instead coerces a dictionary to empty text, the outer gate reads false and the restore is skipped one level earlier -- the SAME safe outcome by a different route. Both paths are safe, which is why this is a blind spot and not a risk, but it is unmeasured and is not claimed."
+    - "THE 14 WFConditionalActionString SITES AND THE List/WFItems WRAPPER AT 1164 ARE UNCHANGED, carried forward from cycles 8-10. Both sit past breadcrumb J and cannot affect this measurement. Donor 5 was not opened this cycle; the fix was prioritised over it per instruction."
+    - "iOS STILL DOES NOT NAME THE OFFENDING ACTION. Unchanged since cycle 5. The breadcrumbs remain the only instrument, which is why they stay in."
+  candidate_causes:
+    - "code/generator + data/state STATE SHAPE: the bootstrap seeds settings_snapshot as {}, so a depth-2/3 read hard-errors on any path reaching it before a depth-4/7 write created the key (PRIMARY, this cycle's fix; predicts both device error strings exactly and in order; guard demonstrated firing on the pre-fix artifact)"
+    - "code/generator SENTINEL: the literal 'null' is non-empty, so condition-100 gates on active_session / pending_exit / settings_snapshot read TRUE and their nested reads run against a string parent (SAME CLASS, KNOWN, UNFIXED, blocked on a validator conflict and a producer-vs-consumer design choice; named in blind_spots as the predicted next defect rather than left as an unknown)"
+    - "design/absent OWNERSHIP: changed_by_session_id is written 20 times and never read, so the restore path's ownership guarantee does not exist (NOT A CAUSE of symptom 1; a design gap for the user to rule on)"
+    - "config/environment: State bound to a dictionary other than the bootstrapped document, so the seed is present but not consulted (NOT SUPPORTED by current evidence, and named only because it is the ONE thing an identical 'C again' error would imply -- it is written into the falsification test rather than argued away)"
+    - "code/generator ENVELOPE: WFConditionalActionString at 14 sites; List/WFItems wrapper at 1164 (SAME FAMILY, UNRESOLVED, all past breadcrumb J, deliberately unchanged)"
+  and_gate: >
+    yes, and it fired -- which is why this cycle shipped ONE half of a two-half fix rather
+    than treating the halves as independent. The instruction was explicit that fixing
+    settings_snapshot alone would surface active_session as a fresh unexplained error, and it
+    is right. The second half turned out to be BLOCKED by a validator rule encoding a
+    device-confirmed failure, so it is now a NAMED, EVIDENCED, SINGLE-SOURCED deferral with a
+    stated next step, not an unknown. Under a multi-defect world the next run therefore
+    reports either a later letter (progress plus localisation) or an active_session error
+    that was PREDICTED IN ADVANCE -- in neither case does it read as this fix having failed.
+    That is the whole purpose of retaining the breadcrumbs and of stating the falsification
+    criterion before the run.
+
+## PATTERN: three times this session a CORRECT fix would have read as REFUTED
+
+Recorded as one pattern rather than three incidents, because it is the strongest argument
+this session produced for the class-fix discipline and for always stating a falsification
+criterion in advance.
+
+1. **Cycle 1's key-name fix** was correct, and read as refuted because the envelope defect
+   beneath it produced the same user-visible failure.
+2. **Cycle 9's coercion fix** was correct, and the breadcrumb letter stayed at **C**. Only
+   the ERROR TEXT changed. A summary of "same error, still C" would have discarded a working
+   fix; the verbatim text is what showed the run had moved on.
+3. **Cycle 11 (this one)** would have done it again had the fix been scoped to
+   `settings_snapshot` alone: `active_session` carries the identical defect one level over
+   and would have surfaced as a fresh, unexplained error attributed to the fix.
+
+The three share one mechanism: **a correct fix to defect N is invisible when defect N+1
+produces the same observable.** Two disciplines follow, and both are now standing practice
+here — fix the CLASS rather than the instance, so N and N+1 die together; and state IN
+ADVANCE what result would refute the fix, including which outcomes are *progress* rather
+than refutation. The breadcrumbs exist for exactly this reason: they convert "same error"
+into a position, and a position can distinguish progress from failure where an error string
+cannot.
+
+CYCLE 9 reasoning_checkpoint (superseded by cycle 11, kept below for history):
   hypothesis: >
     SYMPTOM 1'S SECOND DEFECT, and the fifth axis of this session. A conditional's OPERATOR
     PICKER is populated from the STATIC TYPE of the variable sitting in WFInput. read_value()
