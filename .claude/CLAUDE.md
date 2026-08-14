@@ -257,7 +257,103 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → inte
 
 ## Conventions
 
-Conventions not yet established. Will populate as patterns emerge during development.
+### Generator authoring rules — the seven parameter-defect axes
+
+Every rule below was established by on-device failure during the 2026-08-13/14 OPEN-path
+debug session and is asserted by a build guard in `tools/build_state_engine.py`. Each axis
+was invisible to the sweep that caught the previous one. **Violating any of these produces
+a plist that validates, signs, imports, and then fails at runtime** — usually with a
+misleading message attributed to the outermost caller.
+
+1. **Parameter key names** must match the ToolKit catalog exactly.
+   `setvalueforkey` takes `WFDictionaryValue`, not `WFInput`. A key the action does not
+   define is silently ignored and the field reads empty.
+2. **String-typed parameters** (catalog type `str`) require a `WFTextTokenString`
+   (`￼` placeholder + `attachmentsByRange`). A bare `WFTextTokenAttachment` resolves to
+   empty at runtime.
+3. **`AttributedString`-typed parameters** — e.g. `WFCreateNoteInput` — need the same
+   `WFTextTokenString` treatment. `AttributedString` is a text type; a type-scoped sweep
+   that only looks for `str` will miss it.
+4. **Required picker (enum) parameters** must be present and hold a literal enum case.
+   `count.WFCountType` and `getitemfromlist.WFItemSpecifier` are the known instances. An
+   unfilled picker reports as "Please choose a value for each parameter in this action."
+5. **Variable slots take the opposite envelope from string parameters.**
+   `WFInput.Variable` requires a bare `WFTextTokenAttachment` wrapping a Type-bearing
+   descriptor. A `WFTextTokenString` there is not a variable reference and cannot resolve.
+   Rules 2 and 5 are inverses; check which position you are in before choosing.
+6. **Non-text parameters fed by a variable reference require an explicit coercion
+   aggrandizement.** This is the most general and most under-applied rule:
+
+   ```xml
+   Aggrandizements = [{ Type: WFCoercionVariableAggrandizement,
+                        CoercionItemClass: WFNumberContentItem }]
+   ```
+
+   Without it the operand is untyped or text-typed. Confirmed necessary for numeric
+   comparison; confirmed **missing** for date parameters (`gettimebetweendates.WFInput`,
+   `WFTimeUntilFromDate`, `adjustdate.WFDate`, `format.date.WFDate`). Booleans, files,
+   dictionaries and entity references are **unaudited**. Establish each `CoercionItemClass`
+   from donor or corpus evidence — never guess it.
+7. **State shape must exist before it is read.** See the runtime semantics below: a dotted
+   read raises if any segment is absent, so bootstrap must seed the full subtree.
+
+### Verified iOS Shortcuts runtime semantics
+
+Established by user-built donor shortcuts on the target iPhone. These are **not** in the
+Playground bundle and cannot be derived from the plist.
+
+| construct | behaviour |
+|---|---|
+| flat read of a **missing** key | returns nothing, no error → `has any value` **false** |
+| flat read of a **present but empty** value | → `has any value` **true** |
+| **dotted** read (`a.b`) with any missing segment | **hard error**, "could not evaluate the key path" |
+| `"null"` or `""` coerced to `WFNumberContentItem` | **false**, no error |
+
+**Consequence — a read-then-`has any value` gate on a dotted path is unimplementable.**
+The read raises unless the final key exists; if it exists, the gate is true. There is no
+state in which the gate reads false without the read having already thrown. No sentinel
+value fixes this. Gate on a numeric `> 0` test, or restructure to a flat read.
+
+### Operator/operand type validity is invisible in the plist
+
+Shortcuts offers comparison operators based on the **left** operand's resolved type:
+
+- **Dictionary Value** (uncoerced) → only `has any value` / `does not have any value`
+- **text-coerced** → the eight string operators only
+- **Number-coerced** → numeric comparators available
+
+A numeric `WFCondition` on a text-typed operand renders **red** in the UI, is structurally
+valid in the file, and fails at runtime. **No file-level analysis can detect this** — not
+the validator, not the catalog, not decrypting the signed artifact. Inspecting the
+imported shortcut on device is a first-class evidence channel here, not a fallback.
+
+### Evidence hierarchy
+
+When sources disagree, prefer in this order:
+
+1. **User-built donor shortcuts**, decrypted — device ground truth from the target iPhone
+2. **The golden-shortcut corpus** — real-world shipped plists
+3. **The ToolKit catalog** — incomplete; carries no required/optional bit, and the
+   control-flow identifiers (`conditional`, `choosefrommenu`, `repeat.*`) are absent from
+   it entirely, so catalog-driven sweeps are blind to them
+4. Inference — last resort, and record it as a deviation
+
+### Signed `.shortcut` files ARE recoverable
+
+See §8. `aea decrypt` + `aa extract` recovers the plist from the AEA1 container. Use it to
+verify what actually shipped rather than trusting the unsigned source plus a file mtime.
+
+### Debugging technique
+
+- **Breadcrumb bisection** — flag-gated alerts at control-flow base depth localise a
+  failure to a span in one device run. Keep them in across cycles: a second defect then
+  reports as a *later letter* rather than an ambiguous repeat.
+- **Read the error text, not just the letter.** Three times this session a correct fix
+  looked refuted because the letter was unchanged while the error text had changed
+  completely.
+- **Fix whole classes, never site-by-site.** Bisection only ever reveals the earliest
+  remaining site, so incremental fixing costs one device round trip per site. Every defect
+  found this session was systematic: 147, 367, 25, 20 and 8 sites respectively.
 <!-- GSD:conventions-end -->
 
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
