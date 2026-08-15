@@ -18,7 +18,7 @@ SOURCE = Path("src/PROSOCHE-Dumb.xml")
 # matches an installed one can create a second copy and leave an automation
 # wrapper pointed at the old shortcut; without a visible stamp that stale-install
 # case is indistinguishable from a failed fix.  Bump on every device-bound build.
-BUILD_STAMP = "build 2026-08-15n"
+BUILD_STAMP = "build 2026-08-15o"
 # CYCLE 7 MEASUREMENT INSTRUMENT, not a fix.  Cycle 6 proved on device that the Run
 # Shortcut handoff DOES deliver "OPEN" (Probe 5 echoed it) while PROSOCHE still fails,
 # so the failing action is inside the OPEN arm, before the first OPEN menu.  Static
@@ -185,19 +185,31 @@ def text_token(parts: list[tuple[str, str | None]]):
 # cleared cooldown ("not in cooldown"), at the most critical position on the OPEN path --
 # action 170, the conditional the build-i coercion fix repaired.  Do not touch it.
 CLEARED_SENTINEL = "null"
-# Keys whose EXISTENCE gate is knowingly still condition 100 even though the key is written
-# with the sentinel.  Both are real instances of the same defect, both are LATENT (they sit
-# past breadcrumb J on paths the device has never reached) and NEITHER gates a
-# safety-critical write, so neither is fixed in the cycle that removes a black-screen risk.
+# Keys whose EXISTENCE gate was knowingly still condition 100 even though the key is
+# written with the sentinel.
 #
-# They are NOT fixable by flipping to code 5 or to "> 0" on their own.  Their bootstrap
-# state is ABSENT (pending_exit is not in the state.json template at all) or a bare JSON
-# null (active_session), and a flat read of an absent key returns nothing -- which passes
-# `is not "null"` and would then run the nested DOTTED read of .type / .id against a
-# missing parent, i.e. it would trade a latent hard error for an immediate one.  Fixing
-# them requires seeding both keys in the bootstrap template AND closing the state-rebind
-# gap recorded in the debug session, and that belongs in one cycle of its own.
-KNOWN_SENTINEL_EXISTENCE_GATES = ("pending_exit", "active_session")
+# pending_exit FIXED CYCLE 16, device-confirmed LIVE, not latent: a flat read of
+# "pending_exit" -- entirely absent from the bootstrap template -- hard-errored on the
+# very first OPEN this session's device pass exercised ("In '', no value was found for
+# dictionary key 'pending_exit'"), on the OPEN critical path itself, between breadcrumbs
+# I and J (complete_pending_exit()). Fixed with the SAME container/leaf split
+# settings_snapshot already uses (see clear_snapshot()'s docstring for the original
+# cycle-10 finding this mirrors): seed_pending_exit() establishes pending_exit as a
+# PERMANENT {"type", "timestamp"} container, never again replaced wholesale, so its own
+# existence is now an invariant; record_exit_and_route() and complete_pending_exit()
+# write and clear only the .type/.timestamp LEAVES, gated by a STRING "is not sentinel"
+# test (condition 5), not an existence test. Full trace in seed_pending_exit()'s docstring.
+#
+# active_session remains LATENT and UNCHANGED this cycle: the confirmed device run
+# reached breadcrumb I (past every active_session read on the OPEN critical path) with
+# no active_session-related error, so it is not live -- the cycle-16 directive against
+# fixing a non-reachable defect speculatively applies. Its bootstrap state is a bare JSON
+# null (present, unlike pending_exit's former total absence), and a flat read of an
+# absent key returns nothing -- which passes `is not "null"` and would then run the
+# nested DOTTED read of .id against a missing parent, i.e. it would trade a latent hard
+# error for an immediate one. Fixing it needs the same container/leaf treatment
+# pending_exit just received; recorded as a candidate follow-up, not done here.
+KNOWN_SENTINEL_EXISTENCE_GATES = ("active_session",)
 
 
 def cleared_value():
@@ -879,8 +891,18 @@ def record_exit_and_route(choice_name: str):
     cap_group, cap = if_block("Repeat Index", 0, number=20)
     a += [cap, action("is.workflow.actions.appendvariable", WFInput=variable("Repeat Item"), WFVariableName="Exit Events Next"), otherwise(cap_group), action("is.workflow.actions.nothing"), end_if(cap_group),
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=cap_loop, WFControlFlowMode=2)]
+    # CYCLE 16: write the pending_exit LEAVES (.type, .timestamp), never the container
+    # itself -- the container is a PERMANENT invariant established once by
+    # seed_pending_exit() and must never again be replaced wholesale (the exact
+    # cycle-10-finding-5 anti-pattern the old set_value("pending_exit", ...) reproduced
+    # at the top level: complete_pending_exit() clears the container to the sentinel, and
+    # a NEXT exit's dotted read of .type against a string parent would hard-error). Both
+    # values are the same source variables event_text already interpolates into "Exit
+    # Event" above, so this introduces no new value, only a different destination shape.
     a += [set_value("exit_events", variable("Exit Events Next"), "Reloaded State"),
-          set_value("pending_exit", variable("Exit Event"), "Reloaded State"), *read_value("exit_selection_counter", variable("Reloaded State"), "Reloaded Exit Counter")]
+          set_value("pending_exit.type", variable(choice_name), "Reloaded State"),
+          set_value("pending_exit.timestamp", variable("Now Epoch"), "Reloaded State"),
+          *read_value("exit_selection_counter", variable("Reloaded State"), "Reloaded Exit Counter")]
     missing_counter, counter = if_block("Reloaded Exit Counter", 5, string=None)
     counter["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
     a += [counter] + number(0, "Reloaded Exit Counter") + [otherwise(missing_counter), action("is.workflow.actions.nothing"), end_if(missing_counter)]
@@ -901,9 +923,17 @@ def universal_leaving():
 def complete_pending_exit():
     """The one guarded genuine OPEN that follows an exit records its time away once."""
     a = [comment("--- PHASE 6 PENDING EXIT OUTCOME ---\n\n- This runs only after cooldown and duplicate OPEN guards.\n- A pending exit records one elapsed sample, then is cleared before the new session begins.")]
-    a += read_value("pending_exit", variable("State"), "Pending Exit")
-    pending_group, pending = if_block("Pending Exit", 100)
-    a += [pending] + read_value("pending_exit.type", variable("State"), "Pending Exit Type") + read_value("pending_exit.timestamp", variable("State"), "Pending Exit Timestamp")
+    # CYCLE 16: read pending_exit.type FIRST and gate on IT directly (condition 5, "is
+    # not" the cleared sentinel) instead of a flat existence read of the "pending_exit"
+    # container. The container is now a PERMANENT invariant (seed_pending_exit()): it is
+    # never absent, so a condition-100 existence gate on it would never distinguish
+    # "genuinely captured" from "cleared" (the sentinel is present and non-empty) -- the
+    # exact GATE SEMANTICS failure verify_sentinel_gates() checks for. "Pending Exit
+    # Type" is read once here and reused unmodified as the exit_stats.<type> key below;
+    # no second read of it is needed.
+    a += read_value("pending_exit.type", variable("State"), "Pending Exit Type")
+    pending_group, pending = if_block("Pending Exit Type", 5, string=CLEARED_SENTINEL)
+    a += [pending] + read_value("pending_exit.timestamp", variable("State"), "Pending Exit Timestamp")
     a += elapsed_since("Pending Exit Timestamp", "Return Seconds")
     # CYCLE 15: get_value(), not read_value() -- .samples is a compound Array
     # consumed below by Repeat With Each; read_value()'s gettext step would
@@ -923,7 +953,10 @@ def complete_pending_exit():
     a += [set_value(text_token([("exit_stats.", "Pending Exit Type"), (".samples", None)]), variable("Exit Samples Next")),
           set_value(text_token([("exit_stats.", "Pending Exit Type"), (".count", None)]), variable("Exit Count Next")),
           set_value(text_token([("exit_stats.", "Pending Exit Type"), (".sum_return_seconds", None)]), variable("Exit Sum Next")),
-          set_value("pending_exit", cleared_value()),
+          # Clear the LEAF, never the container -- clear_snapshot()'s own established
+          # rule. .timestamp is deliberately left stale: it is read nowhere outside this
+          # same branch, which this very clear makes unreachable on the next OPEN.
+          set_value("pending_exit.type", cleared_value()),
           otherwise(pending_group), action("is.workflow.actions.nothing"), end_if(pending_group),
           comment("--- PHASE 6 PENDING EXIT OUTCOME END ---")]
     return a
@@ -1552,6 +1585,14 @@ VERIFIED_PARAMETER_KEYS = {
     # site outside every prior sweep.  fix_shownote_key() corrects it; this entry is the
     # recurrence guard so the wrong key can never ship silently again.
     "is.workflow.actions.shownote": {"WFInput"},
+    # CYCLE 16 -- Donor 8 (device ground truth): filter.notes ("Find Notes") as genuinely
+    # authored on the target iPhone carries AppIntentDescriptor and an explicit
+    # WFContentItemLimitEnabled/WFContentItemLimitNumber result bound. This artifact's one
+    # filter.notes site (same hand-authored block as shownote above) carried neither --
+    # fix_notes_filter_limit() adds them; this entry is the recurrence guard so they can
+    # never be silently dropped again.
+    "is.workflow.actions.filter.notes": {"AppIntentDescriptor", "WFContentItemFilter",
+                                         "WFContentItemLimitEnabled", "WFContentItemLimitNumber"},
 }
 STRUCTURAL_KEYS = {"UUID", "GroupingIdentifier", "WFControlFlowMode", "CustomOutputName"}
 
@@ -1901,6 +1942,66 @@ def verify_state_seed(actions):
                              "user never had")
 
 
+# CYCLE 16 -- pending_exit gets the SAME container/leaf treatment as settings_snapshot
+# (axis 6, STATE SHAPE), confirmed live by device error rather than inferred: "In '', no
+# value was found for dictionary key 'pending_exit'" -- the identical error SHAPE cycle 11
+# found for settings_snapshot ("In '', no value was found for dictionary key
+# 'settings_snapshot'"), on a key the bootstrap template never declared at all. See the
+# note beside KNOWN_SENTINEL_EXISTENCE_GATES for the full before/after.
+PENDING_EXIT_SEED = {"type": CLEARED_SENTINEL, "timestamp": CLEARED_SENTINEL}
+PENDING_EXIT_ANCHOR = '"active_session": null,'
+
+
+def seed_pending_exit(actions):
+    """Establish pending_exit as a permanent {type, timestamp} container in bootstrap.
+
+    A naive "just seed the flat key with the cleared sentinel" fix would reintroduce the
+    OTHER half of this defect family the moment any exit is later recorded and cleared:
+    the FORMER complete_pending_exit() cleared the whole "pending_exit" key wholesale
+    (cycle-10 finding 5's exact anti-pattern -- see clear_snapshot()'s docstring --
+    replayed at the top level instead of a nested leaf), so the SECOND OPEN following any
+    exit would gate a sentinel-written key with a condition-100 existence test and then
+    dotted-read beneath a string parent -- axis 7, GATE SEMANTICS, "could not evaluate
+    the key path". The container/leaf split closes both halves at once: the CONTAINER is
+    established once, here, and is never again replaced wholesale by any write (matching
+    settings_snapshot's own already-verified invariant); record_exit_and_route() and
+    complete_pending_exit() now write and clear only the LEAVES.
+    Idempotent: a second run finds "pending_exit" already in the template and returns;
+    verify_pending_exit_seed() re-proves the shape either way.
+    """
+    _, inner = _state_template(actions)
+    if '"pending_exit"' in inner["string"]:
+        return  # already seeded; verify_pending_exit_seed() proves it is the right shape
+    line = next(text for text in inner["string"].splitlines() if PENDING_EXIT_ANCHOR in text)
+    indent = line[:len(line) - len(line.lstrip())]
+    leaves = ", ".join(f'"{leaf}": "{value}"' for leaf, value in PENDING_EXIT_SEED.items())
+    _replace_in_token(inner, PENDING_EXIT_ANCHOR,
+                      PENDING_EXIT_ANCHOR + f'\n{indent}"pending_exit": {{{leaves}}},')
+
+
+def verify_pending_exit_seed(actions):
+    """Fail the build unless pending_exit is seeded exactly as a {type, timestamp} container.
+
+    Same discipline as verify_state_seed(): the invariant seed_pending_exit() establishes
+    is asserted separately so the two cannot silently drift.
+    """
+    _, inner = _state_template(actions)
+    document = inner["string"].replace('"￼"', '"x"').replace("￼", "0")
+    try:
+        seed = json.loads(document)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"bootstrap state.json template is not valid JSON: {error}")
+    pending = seed.get("pending_exit")
+    if not isinstance(pending, dict) or any(pending.get(leaf) != value
+                                            for leaf, value in PENDING_EXIT_SEED.items()):
+        raise SystemExit(
+            f"pending_exit is seeded as {pending!r}; it must be exactly {PENDING_EXIT_SEED!r} "
+            "-- an absent or malformed seed reproduces the confirmed cycle-16 hard error "
+            "(\"no value was found for dictionary key 'pending_exit'\"), and any other "
+            "leaf value risks the same sentinel-vs-real-value confusion axis 7 already "
+            "closed for settings_snapshot")
+
+
 # ---------------------------------------------------------------------------
 # CYCLE 12 -- GATE SEMANTICS, the seventh axis.  Axis 6 (STATE SHAPE) asserted that every
 # key a read reaches EXISTS.  This asserts that the GATE standing over it can actually
@@ -2063,8 +2164,10 @@ def verify_sentinel_gates(actions):
     The sentinel is PRESENT and NON-EMPTY, so condition 100 reads TRUE in exactly the case
     it exists to exclude, and any dotted read inside that branch then runs against a string
     parent and raises "could not evaluate the key path" (Donor 6.1, line 3).
-    KNOWN_SENTINEL_EXISTENCE_GATES records the two keys still carrying this defect, with
-    the reason they cannot be flipped in isolation; see the note beside CLEARED_SENTINEL.
+    KNOWN_SENTINEL_EXISTENCE_GATES records the key(s) still carrying this defect (pending_exit
+    was CLOSED cycle 16 via the container/leaf split and removed from this set; only
+    active_session remains, deliberately, per the note beside that constant), with the
+    reason they cannot be flipped in isolation; see the note beside CLEARED_SENTINEL.
     """
     sentinel, reads, offenders = _sentinel_written_keys(actions), _read_variable_keys(actions), []
     deferred = set(KNOWN_SENTINEL_EXISTENCE_GATES)
@@ -2589,6 +2692,52 @@ def fix_shownote_key(actions):
             parameters["WFInput"] = parameters.pop("target")
 
 
+# Donor 8's OWN filter.notes action (device ground truth, decrypted 2026-08-15, the SAME
+# donor that settled fix_shownote_key()) carries an AppIntentDescriptor identifying it as
+# the NoteEntity query, plus WFContentItemLimitEnabled=true / WFContentItemLimitNumber=1.
+NOTES_FILTER_APP_INTENT = {
+    "ActionRequiresAppInstallation": True,
+    "AppIntentIdentifier": "NoteEntity",
+    "BundleIdentifier": "com.apple.mobilenotes",
+    "Name": "Notes",
+    "TeamIdentifier": "0000000000",
+}
+
+
+def fix_notes_filter_limit(actions):
+    """Bound the Control Room note search to exactly one result, Donor-8-matched.
+
+    CYCLE 16 -- reported symptom: choosing "Open Control Room" correctly opens the
+    resolved Control Room Note (fix_shownote_key()'s own fix, confirmed working: "it
+    takes me to the control room note (good)") but a list of every note ALSO appears.
+    "Control Room Note" itself is bound correctly in both the found and created branches
+    (fix_shownote_key()'s own finding; unaffected by this fix) -- the extra list is not a
+    binding defect, it is the ONE is.workflow.actions.filter.notes ("Find Notes") site in
+    this artifact having no declared result bound at all: only UUID and WFContentItemFilter
+    were ever emitted (hand-authored, outside every prior sweep -- same discovery class as
+    the adjacent shownote site fix_shownote_key() corrects in this exact hand-authored
+    block). Donor 8's OWN Find Notes action (device-authored in Shortcuts.app on the target
+    iPhone) carries AppIntentDescriptor + WFContentItemLimitEnabled=true +
+    WFContentItemLimitNumber=1 -- an explicit "exactly one result, never a chooser" bound;
+    this artifact's site had none of the three. This artifact's own search predicate
+    (Name contains "PROSOCHĒ — Control Room") and its Get Item From List "First Item"
+    consumer are unchanged and already correctly find the intended note (per the reported
+    symptom itself) -- only the missing result bound is added, matching Donor 8's shape
+    exactly rather than guessing which subset of the three fields matters.
+    Idempotent: a second run finds WFContentItemLimitEnabled already present and returns.
+    """
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.filter.notes":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if "WFContentItemLimitEnabled" in parameters:
+            return
+        parameters["AppIntentDescriptor"] = dict(NOTES_FILTER_APP_INTENT)
+        parameters["WFContentItemLimitEnabled"] = True
+        parameters["WFContentItemLimitNumber"] = 1.0
+        return
+
+
 def fix_date_format_key(actions):
     """Correct the behavioural-day format.date action's pattern key.
 
@@ -2705,9 +2854,11 @@ def main():
     normalize_setters(actions)
     normalize_open_apps(actions)
     seed_settings_snapshot(actions)
+    seed_pending_exit(actions)
     fix_state_rebind(actions)
     fix_date_format_key(actions)
     fix_shownote_key(actions)
+    fix_notes_filter_limit(actions)
     # The skill requires a repair-oriented, bulleted Comment immediately before
     # every control-flow start.  Make this invariant structural, not index-based.
     index = 0
@@ -2731,6 +2882,7 @@ def main():
     verify_conditional_inputs(actions)
     verify_numeric_operands(actions)
     verify_state_seed(actions)
+    verify_pending_exit_seed(actions)
     verify_restore_gates(actions)
     verify_sentinel_gates(actions)
     verify_compound_value_reads(actions)

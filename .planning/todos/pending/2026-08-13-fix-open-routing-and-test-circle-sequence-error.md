@@ -24,10 +24,12 @@ A second failure is observable from that unexpected menu. Choosing **Test a Circ
 
 It is not yet known whether the OPEN misrouting and missing `sequence` value share one cause. Record them together because they were observed in the same first on-device automation test, but do not assume they are causally related.
 
-## Status — updated 2026-08-15
+## Status — CLOSED 2026-08-15
 
-Debug session `open-routing-sequence-error` ran 13 cycles against this todo and is now
-**paused, clean**. Resume from `.planning/debug/HANDOFF.md`.
+Debug session `open-routing-sequence-error` ran 16 cycles against this todo and is now
+**RESOLVED, archived** at `.planning/debug/resolved/open-routing-sequence-error.md`.
+Both symptoms are CLOSED and device-verified. This todo is fully resolved; no further
+action required against it.
 
 **The two symptoms did NOT share a cause**, as this todo cautioned. Confirmed separately.
 
@@ -36,26 +38,24 @@ both generator-wide: `setvalueforkey` was emitting `WFInput` where the action de
 `WFDictionaryValue` (147 sites), and string-typed parameters carried a bare
 `WFTextTokenAttachment` where a `WFTextTokenString` is required (367 sites).
 
-**Symptom 1 (OPEN misrouting) — the original diagnosis was wrong, and the routing was
-never the problem.** An INPUT PROBE proved the automation wrapper delivers `OPEN`
-correctly (`RAW [OPEN] / NORMALISED [OPEN]`), so the Text → Run Shortcut configuration
-described above is sound. The real cause was that the OPEN branch had **never executed on
-device**: `Input Key` always resolved empty, so every automation run took the MANUAL arm.
-Once that was fixed, a sequence of previously-unreachable defects surfaced one at a time.
-
-Seven distinct parameter-defect axes were found and fixed, each invisible to the sweep
-that caught the previous one; all are now asserted by build guards. The authoring rules are
-recorded in `.claude/CLAUDE.md` § Conventions.
-
-**Still open.** Symptom 1 is unresolved. Breadcrumb bisection has advanced it `B → C → D`
-across builds `h`, `i`, `k`; build `k` reaches letter D and fails on date coercion —
-`gettimebetweendates` feeds bare text templates into date-typed parameters at all five
-sites. `Donor 7` has been supplied to settle the Date `CoercionItemClass` and is the first
-task on resume.
+**Symptom 1 (OPEN misrouting) — CLOSED, device-verified 2026-08-15.** The original
+diagnosis was wrong, and routing itself was never the problem. An INPUT PROBE proved the
+automation wrapper delivers `OPEN` correctly (`RAW [OPEN] / NORMALISED [OPEN]`); the real
+cause was that the OPEN branch had never executed on device (`Input Key` always resolved
+empty, so every run took the MANUAL arm). Once fixed, nine distinct parameter-defect axes
+surfaced one at a time across 16 cycles, each invisible to the sweep that caught the
+previous one — full taxonomy in `.claude/CLAUDE.md` § Conventions. The terminal blocker
+(`pending_exit` absent from the bootstrap `state.json` template, plus a compounding
+gate-semantics defect) was closed in cycle 16 (build `2026-08-15o`) and confirmed on
+device 2026-08-15: every breadcrumb A–J fired, the Leaving/Continue intervention menu
+displayed, and Circle 1 fired with Pressure=0.166666666666667 (1/6) / Heat=0.
 
 ## Solution
 
-Symptom 2 is done. For symptom 1, follow the resume checklist in
-`.planning/debug/HANDOFF.md` §10. Fix at the generator, never by hand-editing the generated
-XML, and fix whole classes rather than site-by-site — bisection only ever reveals the
-earliest remaining defect, so incremental fixing costs one device round trip per site.
+Both symptoms closed. Residual follow-up work spun off as standalone todos during
+closure — see `.planning/debug/resolved/open-routing-sequence-error.md`'s closing
+Resolution section and `.planning/debug/HANDOFF.md` for the full index
+(`2026-08-15-fork-sentient-post-openpath-fix.md`,
+`2026-08-15-close-state-shape-sentinel-gaps.md`,
+`2026-08-15-fix-red-operator-and-list-wrapper-defects.md`,
+`2026-08-15-ship-readiness-cleanup.md`).

@@ -1,24 +1,24 @@
 ---
 slug: open-routing-sequence-error
-status: paused
+status: resolved
 trigger: "Fix OPEN routing and Test Circle sequence error (from .planning/todos/pending/2026-08-13-fix-open-routing-and-test-circle-sequence-error.md)"
 created: 2026-08-14
-updated: 2026-08-15 (cycle 15, new device evidence -- D->E confirmed, new blocker found and fixed)
+updated: 2026-08-15 (CLOSED — device confirms OPEN reaches Circle 1 end-to-end on build 2026-08-15o; symptom 1 CLOSED, joining symptoms 2 and 3)
 severity: blocker
 ---
 
-> **PAUSED — resume from [`HANDOFF.md`](HANDOFF.md), not from this file.**
-> This is the full audit trail (~300 KB, 15 cycles). `HANDOFF.md` is the consolidated
-> entry point: current status, the (now eight) defect axes, verified iOS semantics, the
-> ranked open items, and the resume checklist. Two symptoms are closed and
-> device-verified. Symptom 1: build **2026-08-15m** ran on device and CONFIRMED every
-> cycle-14 fix as far as breadcrumb E (D->E progress, exactly as predicted), then hit a
-> NEW, different defect immediately after E -- "Get Dictionary Value failed because
-> Shortcuts couldn't convert Text to Dictionary." Cycle 15 traced this to a systematic
-> class (read_value()'s Text-coercion applied to five COMPOUND/Array-typed state fields,
-> not just the one that blocked progress), fixed all five, added a build guard so the
-> class cannot silently return, and produced build **2026-08-15n** (Dumb only),
-> validated/signed/decrypt-verified locally. **NOT yet device-tested.**
+> **RESOLVED — archived from [`HANDOFF.md`](HANDOFF.md)'s active-session slot.**
+> This is the full audit trail (~450 KB, 16 cycles + closure). All three original symptoms
+> from the 2026-08-13 todo are now CLOSED and device-verified. Symptom 1 (OPEN routing)
+> was confirmed fixed end-to-end on **build 2026-08-15o** on 2026-08-15: every breadcrumb
+> A through J fired, the one-time Shortcuts file-save permission prompt behaved as
+> expected, the Leaving/Continue intervention menu displayed, and Circle 1 fired with a
+> plausible Pressure=0.166666666666667 (1/6) / Heat=0 reading consistent with a
+> first-ever OPEN. See the final Evidence entry and the Resolution section's closing
+> summary + Prevention postmortem for the full account. Residual, still-open follow-up
+> work (Sentient re-fork, sentinel-gap siblings, the WFConditionalActionString/WFItems
+> classes, ship-readiness cleanup) has been spun into standalone todos in
+> `.planning/todos/pending/` — see HANDOFF.md for the index.
 
 # Debug Session: OPEN routing misrouted + Test Circle `sequence` write fails
 
@@ -114,9 +114,339 @@ independently, then check for a shared source before fixing.
 bug_class: Bohrbug (every symptom this session, including this cycle's, is deterministic
   and reproducible on every run that reaches the defective site)
 
-CYCLE 15 — DEVICE EVIDENCE CONFIRMS D->E, NEW DEFECT FOUND AND FIXED — BUILD 2026-08-15n
-SHIPPED (Dumb only), build-side and decrypt-verified, NOT device-tested. Supersedes the
-CYCLE 14 block below for navigation; kept below for history.
+CYCLE 16 — DEVICE EVIDENCE CONFIRMS E->I; TWO FINDINGS FIXED — BUILD 2026-08-15o SHIPPED
+(Dumb only), build-side and decrypt-verified, NOT device-tested. Supersedes the CYCLE 15
+block below for navigation; kept below for history.
+
+device_result_confirmed: >
+  Build 2026-08-15n ran on device. Reported: reached breadcrumb I (last letter seen,
+  progressed from breadcrumb E), then failed with "In '', no value was found for
+  dictionary key 'pending_exit'" on the OPEN critical path. Separately, on the MANUAL
+  path: choosing "Open Control Room" correctly opens the resolved Control Room Note
+  (fix_shownote_key()'s cycle-14 fix confirmed working) but a picker/list of every note
+  ALSO appears. This CONFIRMS the cycle-15 falsification_test's strongest branch exactly:
+  "letter E, then continuing PAST F with no error at all, through G/H/I/J" was the
+  best-case prediction; what was reported is the next-best documented branch --
+  "letter I or J with an error inside complete_pending_exit()" -- which the cycle-15
+  falsification_test explicitly flagged as "only reachable if this run followed a genuine
+  prior exit (pending_exit set)" and directed to "re-inspect that specific site, not the
+  recent_sessions fix." Every cycle-15 fix (get_value(), the five compound-value swaps,
+  verify_compound_value_reads()) is now device-confirmed correct as far as I, since
+  nothing between E and I depends on them failing differently. This is a
+  "no value was found for dictionary key" error -- axis 6, STATE SHAPE (the SAME shape
+  cycle 11 found for settings_snapshot: "In '', no value was found for dictionary key
+  'settings_snapshot'") -- not axis 8's "couldn't convert Text to Dictionary" compound-
+  coercion error cycle 15 closed. Per this session's own hard-won lesson: same span,
+  different error text, means a new defect, not a recurrence.
+
+reasoning_checkpoint:
+  hypothesis: >
+    FINDING 1 (OPEN path, confirmed live). complete_pending_exit()'s own unconditional
+    flat read of "pending_exit" (read_value("pending_exit", variable("State"), "Pending
+    Exit"), immediately followed by if_block("Pending Exit", 100)) runs on EVERY OPEN,
+    including the very first one this session's device pass exercised. "pending_exit" was
+    entirely absent from the bootstrap state.json template -- not seeded at all, unlike
+    active_session's bare JSON null -- exactly as this file's own KNOWN_SENTINEL_EXISTENCE_GATES
+    note (pre-cycle-16) predicted in advance ("Their bootstrap state is ABSENT
+    (pending_exit is not in the state.json template at all)... Fixing them requires
+    seeding both keys in the bootstrap template"). A flat Get Dictionary Value against a
+    key entirely absent from its dictionary is a hard runtime error, matching this
+    session's own cycle-11 precedent for settings_snapshot exactly (same error shape:
+    "In '', no value was found for dictionary key '<X>'"). A NAIVE fix (seed the flat key
+    with the CLEARED_SENTINEL text "null" and leave the existing condition-100 gate alone)
+    would not resolve the class: it would reproduce cycle-10 finding 5's exact anti-pattern
+    at the top level -- the sentinel is present and non-empty, so condition 100 reads TRUE
+    for a cleared key, and the branch's own dotted reads (pending_exit.type,
+    pending_exit.timestamp) would then run against a STRING parent and hard-error with
+    "could not evaluate the key path" on the SECOND OPEN following any exit. The correct
+    fix mirrors settings_snapshot's own already-verified container/leaf split: the
+    pending_exit CONTAINER ({"type", "timestamp"}) is seeded once and never again replaced
+    wholesale; only its LEAVES are written or cleared, gated by a STRING "is not sentinel"
+    test (condition 5), not an existence test.
+  confirming_evidence:
+    - "DIRECT ERROR-TEXT MATCH: the reported error, \"In '', no value was found for dictionary key 'pending_exit'\", is the IDENTICAL shape verify_sentinel_gates()'s own docstring and cycle 11's own comment block (lines 1734-1748, pre-cycle-16) record for settings_snapshot's clean-state failure: \"In '', no value was found for dictionary key 'settings_snapshot'\". Both are flat reads of a key the bootstrap template never declared. This is a state-shape (axis 6) failure, not the axis-8 compound-coercion failure cycle 15 closed (which produces a DIFFERENT error: \"couldn't convert Text to Dictionary\")."
+    - "DIRECT SOURCE TRACE: complete_pending_exit() (tools/build_state_engine.py, pre-fix) opens with `read_value(\"pending_exit\", variable(\"State\"), \"Pending Exit\")` then `if_block(\"Pending Exit\", 100)`, called unconditionally between breadcrumbs I and J on EVERY OPEN -- confirmed by breadcrumb() call sites: breadcrumb(\"I\") then complete_pending_exit() then breadcrumb(\"J\"). The device report (\"breadcrumb I, then failed\") places the failure exactly here."
+    - "BOOTSTRAP TEMPLATE, read directly: the decrypted pre-fix template's JSON has no \"pending_exit\" key at all (confirmed by direct grep of the recovered state.json seed, matching the pre-existing KNOWN_SENTINEL_EXISTENCE_GATES comment's own prior claim)."
+    - "THE CODE'S OWN PRE-EXISTING COMMENT PREDICTED THIS EXACTLY, in advance, before this cycle touched anything: 'Fixing them requires seeding both keys in the bootstrap template AND closing the state-rebind gap... that belongs in one cycle of its own' (KNOWN_SENTINEL_EXISTENCE_GATES, pre-cycle-16). This is not a surprise defect; it is the deferred item finally being closed."
+    - "THE ANTI-PATTERN A NAIVE FIX WOULD REPRODUCE IS ALREADY DOCUMENTED IN THIS FILE: clear_snapshot()'s own docstring records cycle-10 finding 5 -- 'clearing settings_snapshot.<key> replaced the sub-DICTIONARY with a string, so the very next run's dotted read of .original_value ran against a string parent and hard-errored.' complete_pending_exit()'s pre-fix clear (`set_value(\"pending_exit\", cleared_value())`) replaces the WHOLE key wholesale, the exact same shape."
+    - "ACTIVE_SESSION'S SIBLING GATE IS CONFIRMED SAFELY INERT ON THIS RUN, not fixed speculatively: the device report shows the run reached breadcrumb I -- past every active_session read on the OPEN critical path (record_exit_and_route()'s own active_session read is on the universal-leaving/exit-selection path, not open_pipeline()'s direct A-J sequence; open_pipeline()'s own active_session reads sit AFTER breadcrumb J, per direct grep of open_pipeline()) -- with no active_session-related error. Per the cycle-16 directive against fixing a non-reachable defect speculatively, active_session is left unchanged, still in KNOWN_SENTINEL_EXISTENCE_GATES."
+  falsification_test: >
+    NOT YET DEVICE-TESTED. Predicted breadcrumb positions for build 2026-08-15o (Dumb):
+    A=94 B=149 C=170 D=288 E=308 F=416 G=425 H=459 I=474 J=524 (A-I unchanged from build
+    15n; J shifts -3, because complete_pending_exit()'s read+gate restructure removes
+    3 net actions between I and J -- confirmed directly against the decrypted signed
+    2026-08-15o artifact, not assumed from arithmetic; see cycle_16_verification).
+      letter I, then continuing PAST J with no error at all, into the Circle 1
+        intervention (Knock/Mirror/etc.) actually displaying -> THE pending_exit FIX IS
+        CONFIRMED for the first-OPEN-following-an-exit case (the case this device run
+        exercised: pending_exit existed and had a real type/timestamp, or the container
+        read cleanly as the seeded sentinel on a fresh device). This is the first outcome
+        in the session's history that would mean symptom 1 is fully resolved end to end.
+      letter I with the SAME "no value was found for dictionary key" error again ->
+        a sibling STATE-SHAPE gap was missed; check whether it now names a DIFFERENT key
+        (e.g. exit_events, the still-unfixed sibling gap recorded in cycle 15's own
+        blind_spots) rather than assuming this exact fix failed.
+      letter I with a "could not evaluate the key path" error naming pending_exit.type or
+        .timestamp -> the container/leaf split has a remaining gap (e.g. a stale-state
+        device whose file predates this cycle's schema, if schema_version were bumped --
+        it was NOT bumped this cycle, deliberately, since the container addition is
+        purely additive and a pre-existing device's already-loaded State dictionary
+        simply lacks the new key the same way it lacked any newly-added field before this
+        session's schema-bump precedent; if this fires, the schema-version rebind
+        mechanism cycle 14 built needs extending to this key too) -- re-inspect the
+        seed/gate pairing, not the recent_sessions or exit_stats fixes.
+      Control Room: choosing "Open Control Room" opens the resolved note directly, with NO
+        note picker or list appearing -> the filter.notes fix (WFContentItemLimitEnabled/
+        Number + AppIntentDescriptor, Donor-8-matched) is confirmed. Any picker or list
+        still appearing -> re-check whether the device installed THIS build (menu prompt
+        should read "build 2026-08-15o") rather than assuming the hypothesis is wrong,
+        since Donor 8 is direct plist evidence from the target iPhone, not inference.
+      ANY report of the screen going dark, or brightness/volume named in an error -> hard
+        refutation of the untouched cycle-12 restore-gate invariants; extremely unlikely
+        since setbrightness/setvolume were not touched this cycle, stated because the
+        session's own discipline requires stating it.
+    Whether/when to run this on-device is the user's decision, not a next-step this cycle
+    directs.
+  fix_rationale: >
+    seed_pending_exit() + the record_exit_and_route()/complete_pending_exit() leaf-write
+    restructure is the container/leaf split settings_snapshot ALREADY uses, verified and
+    device-confirmed in this exact file since cycle 10/11/12 -- no new construct is
+    introduced, only the existing pattern is reused for a second field. The container is
+    established once and never again replaced wholesale (closing the STATE-SHAPE gap);
+    the leaf is gated by condition 5 against the CLEARED_SENTINEL, the same construct
+    already device-verified safe at four other sites in this artifact (closing the GATE-
+    SEMANTICS half cycle 12 already proved is required for ANY sentinel-written key). Both
+    halves are required together -- fixing only the seed (state shape) without also fixing
+    the gate (which was still condition 100 on the CONTAINER) would reintroduce the
+    cycle-10/cycle-12 defect the moment the container held the sentinel, which happens on
+    every OPEN following any exit's completion, i.e. almost immediately in real use.
+  blind_spots:
+    - "NOT DEVICE-VERIFIED YET, by explicit scope -- this cycle stops at local build/validate/sign/decrypt-verify, matching every prior cycle's own discipline. The predicted letter above is a prediction, not a confirmation."
+    - "SCHEMA_VERSION WAS NOT BUMPED this cycle. The pending_exit container is additive (a brand-new key), not a correction to an existing key's value, so a device whose state.json predates this fix will simply be missing the new subtree on its next load the same way any newly-introduced field would be -- UNLIKE cycle 14's settings_snapshot defect (which corrupted an EXISTING, already-read key's shape). If the falsification_test's 'could not evaluate the key path' branch fires, this assumption is what to re-examine first."
+    - "exit_events STILL HAS THE SAME UNFIXED STATE-SHAPE GAP recorded in cycle 15's own blind_spots (absent from bootstrap, only its coercion was fixed) -- not touched this cycle, out of scope per the standing directive's own instruction to fix only what's confirmed reachable. It sits on the exit-recording path (record_exit_and_route()), not the OPEN critical path A-J, so it cannot affect this cycle's falsification_test."
+    - "active_session REMAINS IN KNOWN_SENTINEL_EXISTENCE_GATES, deliberately, per the directive's own instruction not to fix speculatively -- confirmed safely inert on this run's own evidence (the run reached breadcrumb I without an active_session error), not proven safe in every possible state (e.g. after a genuine active session exists) since that path was not exercised by this device run."
+  candidate_causes:
+    - "data/state STATE SHAPE (PRIMARY, device-error-matched exactly, axis 6): pending_exit entirely absent from the bootstrap template -- a flat Get Dictionary Value against a key the dictionary never declared is a hard runtime error, matching cycle 11's settings_snapshot precedent exactly."
+    - "code/generator GATE SEMANTICS (SECONDARY, latent until the seed fix is applied, axis 7): the pre-existing condition-100 existence gate on the pending_exit container would misfire the moment the container held the cleared sentinel (every OPEN following any exit's completion) -- a DIFFERENT category from the state-shape gap, confirmed by cycle 12's own already-proven invariant (verify_sentinel_gates()) rather than inferred fresh this cycle."
+  and_gate: >
+    YES. Seeding the container alone (state shape) without ALSO changing the container's
+    own gate from condition 100 to a leaf-scoped condition 5 test would not have resolved
+    the class -- it would trade the confirmed hard error for the cycle-10/12-documented
+    "could not evaluate the key path" hard error on the very next OPEN after any exit
+    completes. Both the STATE-SHAPE fix (a data/state category) and the GATE-SEMANTICS fix
+    (a code/generator category) were required together, matching this session's own
+    established doctrine that these are two independently-necessary axes, not one cause
+    wearing two names -- exactly as cycle 12's own introduction of the axis states.
+
+reasoning_checkpoint_finding_2:
+  hypothesis: >
+    FINDING 2 (MANUAL path, Control Room note picker). The reported symptom -- Open
+    Control Room correctly opens the resolved note (shownote's WFInput fix, cycle 14,
+    confirmed working) but a picker/list of every note ALSO appears -- is not a binding
+    defect (Control Room Note is correctly bound in both the found and created branches;
+    confirmed unchanged, not re-broken). It is the ONE is.workflow.actions.filter.notes
+    ("Find Notes") site in this artifact having NO declared result bound: it carries only
+    UUID and WFContentItemFilter, an App-Intent-backed entity query with no explicit
+    "return exactly one" constraint, which iOS resolves via its own disambiguation UI
+    (a list) when it cannot statically determine there is exactly one intended result.
+  confirming_evidence:
+    - "DIRECT ACTION-COUNT CHECK REFUTES THE 'DUPLICATE ACTION' CANDIDATE: grep of src/PROSOCHE-Dumb.xml confirms exactly ONE is.workflow.actions.filter.notes, ONE is.workflow.actions.shownote, and TWO is.workflow.actions.appendnote (Sync My Profile's explicit write and the state-recovery conditional write, both legitimate and unrelated to Open Control Room) in the entire artifact -- ruling out the 'leftover duplicate Notes action' and 'two separate actions both touch Notes' candidates the directive listed; direct inspection, not inference."
+    - "DIRECT PLIST TRACE of the find-or-create block (src/PROSOCHE-Dumb.xml, hand-authored region, actions 3600-3682 pre-fix) confirms 'Control Room Note' is correctly bound in BOTH branches (Get Item From List 'First Item' off filter.notes' own output in the found branch; Create Note's own output in the created branch) and shownote's WFInput correctly references it -- refuting any binding-defect hypothesis for this cycle; the wiring itself matches cycle 14's own already-confirmed-correct account exactly."
+    - "DONOR 8, RE-DECRYPTED THIS CYCLE (device ground truth, the SAME donor that settled fix_shownote_key() in cycle 14): its own filter.notes action, genuinely authored in Shortcuts.app on the target iPhone, carries AppIntentDescriptor (AppIntentIdentifier: NoteEntity, BundleIdentifier: com.apple.mobilenotes) PLUS WFContentItemLimitEnabled=true AND WFContentItemLimitNumber=1.0 -- an explicit 'exactly one result, never a chooser' bound. This artifact's own filter.notes site had NONE of the three keys. This is the exact 'user-facing prompt parameter that needs explicit suppressing' the directive asked to check for."
+    - "CATALOG CROSS-CHECK: data/toolkit-v78-first-party-parameter-keys.json confirms WFContentItemLimitEnabled/WFContentItemLimitNumber are real, catalog-documented parameters for this action (bool / typed count respectively), corroborating Donor 8's shape as the action's genuine schema, not an authoring artifact specific to that one donor."
+    - "THE EXISTING SEARCH PREDICATE AND CONSUMER ARE UNCHANGED AND ALREADY WORK, per the report itself ('it takes me to the control room note (good)') -- this fix adds the missing result bound without touching the Name-contains-\"PROSOCHĒ — Control Room\" filter or the Get Item From List \"First Item\" consumer, so no working behaviour is put at risk."
+  falsification_test: >
+    See the shared CYCLE 16 falsification_test block above (Control Room bullet). Whether/
+    when to run this on-device is the user's decision, not a next-step this cycle directs.
+  fix_rationale: >
+    fix_notes_filter_limit() copies Donor 8's own device-authored shape onto this
+    artifact's one filter.notes site verbatim (AppIntentDescriptor + both limit keys),
+    rather than guessing which subset of the three fields is load-bearing -- consistent
+    with the project's evidence hierarchy (donor > catalog > inference) and the standing
+    directive against fabricating an unverified plist construct. No new action identifier
+    and no new value-envelope shape is introduced; the search predicate and its consumer
+    (Get Item From List "First Item" -> "Control Room Note") are untouched.
+  blind_spots:
+    - "NOT DEVICE-VERIFIED YET. Donor 8 does not itself demonstrate that omitting these keys CAUSES a list to appear (it only demonstrates what the correctly-authored shape looks like) -- the causal link is inferred from evidence hierarchy and the directive's own listed candidate, not independently donor-confirmed by a negative-case donor (a Donor 8 variant built WITHOUT the limit keys, run on device, to directly observe the list). If the falsification_test's picker-still-appears branch fires, this is the assumption to revisit."
+    - "com.apple.mobilenotes.SharingExtension's own OpenWhenRun parameter (named in this project's own capability audit, CLAUDE.md §3 item 5) was NOT added to the Create Note action this cycle -- Donor 8 does not itself include a Create Note action, so no direct donor evidence exists for its default value on device, and the confirmed-safely-inert reasoning (this device run's Control Room note almost certainly already existed from earlier cycles' own manual-menu device tests, so the FOUND/filter.notes branch, not the CREATE branch, is what executed) argues against fixing it speculatively. Recorded as a candidate follow-up if the filter.notes fix alone does not fully resolve the symptom."
+  candidate_causes:
+    - "code/generator UNDECLARED RESULT BOUND (PRIMARY, Donor-8-matched exactly): filter.notes has no WFContentItemLimitEnabled/Number, so an App-Intent-backed query with no declared cardinality resolves via iOS's own disambiguation UI rather than silently returning the single match."
+    - "data/config MISSING APP-INTENT IDENTITY (secondary, bundled with the same fix since Donor 8 carries it too): the action lacks AppIntentDescriptor entirely, which -- though not independently confirmed as causal -- is added alongside the limit keys to match device ground truth exactly rather than partially."
+  and_gate: >
+    NO for this finding in isolation -- the filter.notes fix is a single-category (code/
+    generator parameter completeness) change and is not contingent on Finding 1 or on any
+    second condition; it was investigated and fixed independently, using a different
+    action, a different donor cross-check, and a different code region from Finding 1.
+
+next_action: >
+  CLOSED, 2026-08-15. The device pass this block was awaiting arrived and matched the
+  falsification_test's strongest branch: letter I, then PAST J with no error, into
+  Circle 1 actually displaying (Pressure=0.166666666666667, Heat=0). See the closing
+  Evidence entry (2026-08-15, closure) and the Resolution section's FINAL summary +
+  Prevention postmortem for the full account. Finding 1 (pending_exit) is device-
+  confirmed. Finding 2 (filter.notes / Open Control Room picker) remains locally
+  verified only -- the device report did not exercise that specific check -- and is
+  carried forward as an open follow-up in the new ship-readiness todo rather than
+  claimed closed by inference. No further action required from this session; it is
+  archived to `.planning/debug/resolved/`.
+
+--- CYCLE 16 FIX APPLIED AND LOCALLY VERIFIED (build 2026-08-15o) ---
+
+cycle_16_fix_applied: >
+  tools/build_state_engine.py ONLY; Dumb regenerated, validated, signed, and decrypt-
+  verified. Sentient NOT touched, same standing reason as every prior cycle.
+  FINDING 1 (pending_exit, container/leaf split, mirrors settings_snapshot exactly):
+  (1) PENDING_EXIT_SEED + seed_pending_exit() -- a new bootstrap-seeding pass, inserted
+      into main() immediately after seed_settings_snapshot(). Establishes
+      `"pending_exit": {"type": "null", "timestamp": "null"}` in the state.json template,
+      anchored on the existing `"active_session": null,` line via the SAME
+      _state_template()/_replace_in_token() machinery seed_settings_snapshot() already
+      uses (correct attachment-offset shifting, not a hand-edit). Idempotent (checks for
+      an existing "pending_exit" substring first).
+  (2) verify_pending_exit_seed() -- a new build guard, wired in immediately after
+      verify_state_seed(). Parses the bootstrap template's own JSON and fails the build
+      unless pending_exit is present as exactly {"type": "null", "timestamp": "null"} --
+      the same discipline verify_state_seed() already applies to settings_snapshot,
+      asserted separately so seed and guard cannot silently drift apart.
+  (3) record_exit_and_route() -- the single wholesale write
+      `set_value("pending_exit", variable("Exit Event"), "Reloaded State")` replaced with
+      two LEAF writes: `set_value("pending_exit.type", variable(choice_name), "Reloaded
+      State")` and `set_value("pending_exit.timestamp", variable("Now Epoch"), "Reloaded
+      State")`. Both source variables are the SAME ones event_text already interpolates
+      into "Exit Event" a few lines above -- no new value is introduced, only a different
+      destination shape. This function is inlined at its two call sites (select_exit()'s
+      "Take suggested exit" and its chooser branch), so the change appears twice in the
+      final action array.
+  (4) complete_pending_exit() -- the flat read_value("pending_exit", ...) + condition-100
+      existence gate replaced with read_value("pending_exit.type", ...) done ONCE, reused
+      directly as BOTH the gate variable (if_block("Pending Exit Type", 5,
+      string=CLEARED_SENTINEL) -- condition 5, "is not", the SAME string-sentinel
+      construct already device-verified safe at four other sites in this artifact) AND
+      the value later used to build the exit_stats.<type> dynamic keys (unchanged). The
+      clear at the end of the function changed from `set_value("pending_exit",
+      cleared_value())` (the container, cycle-10-finding-5's exact anti-pattern replayed
+      at the top level) to `set_value("pending_exit.type", cleared_value())` (the leaf
+      only, matching clear_snapshot()'s own established rule) -- .timestamp is
+      deliberately left uncleared since it is read nowhere the type-gate does not already
+      exclude.
+  (5) KNOWN_SENTINEL_EXISTENCE_GATES narrowed from ("pending_exit", "active_session") to
+      ("active_session",) with the surrounding comment rewritten to record pending_exit as
+      CLOSED and explain, with this cycle's own device evidence, why active_session is
+      left unchanged (confirmed safely inert on the reachable OPEN-critical-path span,
+      not fixed speculatively). verify_sentinel_gates()'s own docstring updated to match.
+  FINDING 2 (filter.notes result bound, Donor-8-matched):
+  (6) NOTES_FILTER_APP_INTENT + fix_notes_filter_limit() -- a new fix pass, matching
+      fix_shownote_key()'s own style exactly (locate the one is.workflow.actions.filter.notes
+      site by identifier, not by index; idempotent via an early return if
+      WFContentItemLimitEnabled is already present). Adds AppIntentDescriptor
+      (AppIntentIdentifier: NoteEntity, BundleIdentifier: com.apple.mobilenotes),
+      WFContentItemLimitEnabled=True, and WFContentItemLimitNumber=1.0 -- copied verbatim
+      from Donor 8's own device-authored filter.notes action (re-decrypted this cycle from
+      .planning/debug/"Donor 8.shortcut", the SAME donor that settled fix_shownote_key()
+      in cycle 14). The existing Name-contains search predicate and its Get Item From List
+      "First Item" consumer are untouched.
+  (7) VERIFIED_PARAMETER_KEYS gained a filter.notes entry ({AppIntentDescriptor,
+      WFContentItemFilter, WFContentItemLimitEnabled, WFContentItemLimitNumber}) as the
+      recurrence guard, matching the shownote entry's own precedent exactly.
+  BUILD_STAMP bumped "build 2026-08-15n" -> "build 2026-08-15o". schema_version was
+  deliberately NOT bumped: the pending_exit container is a purely additive new key, not a
+  correction to an existing key's shape, so no existing device state needs to be forced
+  through the rebuild branch (see this cycle's own blind_spots for the caveat if this
+  assumption is refuted on device).
+  Both fixes are IDEMPOTENT (verified: a second full regeneration over the already-patched
+  artifact is byte-identical).
+  Net action count: 3683 -> 3684 (+1). Breadcrumbs A-I unchanged (94/149/170/288/308/416/
+  425/459/474); J shifts -3, to 524 (complete_pending_exit()'s read+gate restructure
+  removes 3 net actions between I and J: the old 10-action flat-read+dual-dotted-read
+  sequence becomes 7). record_exit_and_route()'s own +2-per-call-site change (the extra
+  leaf write plus normalize_setters()'s automatic Dictionary-rebind insertion) sits
+  strictly AFTER breadcrumb J (confirmed directly: J's shift is exactly -3, matching
+  ONLY the complete_pending_exit() delta, not offset by record_exit_and_route()'s +4
+  total), consistent with record_exit_and_route() living inside the exit-selection/
+  universal_leaving() flow rather than open_pipeline()'s direct A-J sequence. The
+  filter.notes fix adds parameters to an existing action, contributing 0 to the action
+  count.
+
+cycle_16_verification: >
+  NOT device-confirmed -- explicitly out of scope this cycle, matching every prior cycle's
+  own discipline; the phone build is the user's own call, not directed here. Build-side
+  and decrypt-verified only, stated as such:
+  - `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678 HEAD` passed
+    before regenerating (provenance guard).
+  - `python3 tools/build_state_engine.py` exits 0 (all generator-asserted axes hold,
+    including the two new guards: verify_pending_exit_seed() and the unchanged
+    verify_sentinel_gates() now passing cleanly for pending_exit.type without needing the
+    KNOWN_SENTINEL_EXISTENCE_GATES exemption); run a second time over its own output,
+    byte-identical (idempotent).
+  - DIRECT INSPECTION of the regenerated actions confirms: 0 remaining bare "pending_exit"
+    (undotted) getvalueforkey/setvalueforkey sites anywhere in the file; pending_exit.type
+    and pending_exit.timestamp read/written at exactly the expected sites (2 reads in
+    complete_pending_exit(), 1 clear-write of .type only, 2 write-pairs in
+    record_exit_and_route()'s two inlined call sites); the bootstrap template's own JSON
+    contains "pending_exit": {"type": "null", "timestamp": "null"} with the attachment
+    count for that gettext action unchanged (4 before, 4 after -- confirming
+    _replace_in_token()'s offset-shift logic preserved every existing attachment); the one
+    filter.notes site carries WFContentItemLimitEnabled=True (bool) and
+    WFContentItemLimitNumber=1.0 (float), matching Donor 8's own plist types exactly (not
+    just its logical values).
+  - UUID-STRIPPED SEMANTIC DIFF (difflib SequenceMatcher) against the pre-cycle-16
+    (build 2026-08-15n, commit 1cb857c) source: exactly 8 hunks. (1) the bootstrap
+    template's own gettext attachment-offset shift (pending_exit inserted, 4
+    attachments before and after, all still pointing at valid placeholders -- the
+    build's own guard would have raised SystemExit otherwise). (2)+(3) the old flat
+    pending_exit read + condition-100 gate removed, the new pending_exit.type read +
+    condition-5 gate inserted (complete_pending_exit()'s own read of "pending_exit.type"
+    for its downstream exit_stats key correctly matched as an unchanged "equal" region by
+    the diff, confirming only the read/gate STRUCTURE changed, not the value it produces).
+    (4) the clear site's key renamed pending_exit -> pending_exit.type. (5)+(6)
+    record_exit_and_route()'s two inlined call sites, each: one wholesale
+    setvalueforkey(pending_exit) replaced by setvalueforkey(pending_exit.type) +
+    setvariable(rebind) + setvalueforkey(pending_exit.timestamp) (normalize_setters()'s
+    automatic per-write Dictionary rebind, confirmed by direct inspection at both call
+    sites: 709-714 and 870-875 in the regenerated file). (7) the BUILD_STAMP text change
+    inside the manual-menu prompt string ("...15n" -> "...15o"), confirmed byte-identical
+    otherwise. (8) the filter.notes action gaining AppIntentDescriptor,
+    WFContentItemLimitEnabled, WFContentItemLimitNumber. Nothing else in the 3683->3684
+    action array changed -- every fix from every prior cycle (cycles 1-15) is
+    byte-identical to the artifact already locally verified before this turn.
+  - `bin/validate-shortcut --target-macos 26 --target-platform all` (shortcuts-playground
+    skill's own wrapper, per the standing directive to route validate/sign/archive
+    through the skill rather than ad hoc) -> "Validation passed." (Confirmed
+    `--target-platform ios` alone still floods "requires macOS 27+" starting at the
+    filter.notes site's own index, an UNCHANGED pre-existing bundled-data gap already
+    flagged in cycle_12/14_verification, not a regression from this cycle's fix.)
+  - `bin/sign-shortcut` (same skill wrapper) -> signed artifact confirmed AEA1, 189,899
+    bytes, non-zero.
+  - SHIPPED SIGNED ARTIFACT DECRYPTED (aea decrypt + aa extract, CLAUDE.md §8) and
+    inspected directly, not read back from the build tree: 3684 actions; stamp "build
+    2026-08-15o" with zero stale "15n"; breadcrumbs A-I UNCHANGED at
+    94/149/170/288/308/416/425/459/474; J at 524 (-3, matching the prediction exactly) --
+    CONFIRMED DIRECTLY AGAINST THE DECRYPTED PLIST, not assumed from arithmetic. pending_exit
+    present in the decrypted bootstrap template exactly as seeded; 0 bare "pending_exit"
+    sites remain; filter.notes carries WFContentItemLimitEnabled=True/
+    WFContentItemLimitNumber=1.0. 0 duplicate action UUIDs across all 3684 actions; 0
+    GroupingIdentifier imbalance; 23 Choose-from-Menu opens (unchanged from every prior
+    cycle).
+  Predicted next breadcrumb letter and refutation criteria are stated in the CYCLE 16
+  Current Focus falsification_test, in advance of any device run.
+
+oracle_type: specified (user-observable device behaviour -- the exact reported error
+  string for Finding 1, and the exact reported "note opens correctly, then a list also
+  appears" behaviour for Finding 2 -- each traced against a statically-read, statically-
+  verifiable source defect and, for Finding 1, a device-measured breadcrumb position; the
+  same oracle class used by every prior cycle in this session)
+
+cycle_16_files_changed:
+  - tools/build_state_engine.py (KNOWN_SENTINEL_EXISTENCE_GATES narrowed;
+    PENDING_EXIT_SEED + seed_pending_exit() + verify_pending_exit_seed() added and wired
+    into main(); record_exit_and_route() and complete_pending_exit() restructured to the
+    pending_exit container/leaf shape; NOTES_FILTER_APP_INTENT + fix_notes_filter_limit()
+    added and wired into main(); VERIFIED_PARAMETER_KEYS gained a filter.notes entry;
+    BUILD_STAMP bumped)
+  - src/PROSOCHE-Dumb.xml (regenerated)
+  - artifacts/shortcuts/2026-08-15/PROSOCHĒ — Nine Circles — Dumb.shortcut (re-signed)
+
+--- END CYCLE 16 ---
 
 device_result_confirmed: >
   Build 2026-08-15m ran on device. Reported: reached breadcrumb E (last letter seen), then
@@ -3292,6 +3622,93 @@ superseded_next_action_cycle2: >
     this session's full established rigor. Device confirmation remains the user's own call,
     not directed by this turn.
 
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Device evidence from build 2026-08-15n against the CYCLE 15 falsification_test table, before forming any new hypothesis"
+  found: "MATCHES the table's 'letter I or J with an error inside complete_pending_exit() (Exit Samples / Repeat With Each)' branch exactly, with the actual error naming a different site within that same function than the table anticipated ('no value was found for dictionary key' at the OUTER flat read, not a Repeat-With-Each/List error at the .samples read the table's wording emphasised). The table's own instruction for this branch -- 're-inspect that specific site, not the recent_sessions fix' -- was followed."
+  implication: "Cycle 15's own five-site coercion fix (get_value(), the compound-array class) is confirmed NOT implicated in this new failure; investigation correctly scoped to complete_pending_exit()'s OTHER defect, the pre-existing KNOWN_SENTINEL_EXISTENCE_GATES gap, rather than re-opening a closed axis."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "The reported error text against cycle 11's own settings_snapshot precedent, both stored verbatim in this file"
+  found: "IDENTICAL SHAPE. Cycle 11 (line ~1746, pre-cycle-16 comment): 'clean state -> \"In '', no value was found for dictionary key 'settings_snapshot'\"'. Cycle 16 device report: 'In '', no value was found for dictionary key 'pending_exit''. Both are a flat Get Dictionary Value against a key the bootstrap template never declared -- axis 6, STATE SHAPE. This is NOT the axis-8 'couldn't convert Text to Dictionary' error cycle 15 closed for compound values."
+  implication: "Correctly classified as a state-shape gap (needs seeding), not a structured-value coercion gap (needs get_value() instead of read_value()) -- the two axes have textually distinct, non-overlapping error signatures in this artifact, confirmed by direct comparison rather than assumed from the symptom category alone."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Whether a naive fix (seed pending_exit with the CLEARED_SENTINEL text and leave the existing condition-100 gate unchanged) would fully close the defect, by tracing what happens on the run AFTER the first exit completes"
+  found: "IT WOULD NOT. complete_pending_exit()'s pre-fix clear (`set_value(\"pending_exit\", cleared_value())`) replaces the WHOLE key with the sentinel wholesale -- the exact cycle-10-finding-5 anti-pattern (clear_snapshot()'s own docstring) replayed at the top level instead of a nested leaf. A condition-100 gate on that same key would then read TRUE for the cleared sentinel (present and non-empty), entering the branch and running a dotted read (.type, .timestamp) against a STRING parent -- 'could not evaluate the key path', per Donor 6.1's own device-measured semantics, on the SECOND OPEN following any exit."
+  implication: "The fix must close BOTH the state-shape gap (seed the container) AND the gate-semantics gap (leaf-scoped condition 5, not container-scoped condition 100) together -- matching cycle 12's own established doctrine that these are two independently-necessary axes. Implemented as the container/leaf split, mirroring settings_snapshot exactly rather than inventing a new shape."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Whether active_session (the sibling in KNOWN_SENTINEL_EXISTENCE_GATES) has the same live exposure on this confirmed device run, per the standing directive not to fix a non-reachable defect speculatively"
+  found: "SAFELY INERT ON THIS RUN. The device reached breadcrumb I -- past every point in open_pipeline() where active_session could be read on the direct A-J sequence (grep of open_pipeline() shows its own active_session reads sit strictly after breadcrumb J; the only active_session reads BEFORE J belong to record_exit_and_route(), which lives on the exit-selection/universal_leaving() path, not open_pipeline()'s direct sequence) -- with no active_session-related error reported."
+  implication: "active_session is left unchanged in KNOWN_SENTINEL_EXISTENCE_GATES this cycle, per the directive's own instruction. Its own container/leaf fix is recorded as a candidate follow-up, not performed speculatively without a confirmed live trigger."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Whether the reported Control Room note-picker symptom is a binding defect (Control Room Note unbound or re-broken) or a duplicate/leftover Notes action, by direct grep and plist inspection of src/PROSOCHE-Dumb.xml, before forming a hypothesis"
+  found: "REFUTED both candidates. Exactly ONE is.workflow.actions.filter.notes, ONE is.workflow.actions.shownote, and TWO is.workflow.actions.appendnote (Sync My Profile's explicit write, and the state-recovery conditional write -- both legitimate, unrelated to Open Control Room) exist in the whole artifact. 'Control Room Note' is bound correctly in both the found branch (Get Item From List 'First Item' off filter.notes' own output) and the created branch (Create Note's own output), matching cycle 14's own already-confirmed account exactly -- no re-break."
+  implication: "The symptom is not a binding or duplication defect; investigation correctly redirected to filter.notes' own parameter completeness, per the directive's own third listed candidate."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Donor 8, re-decrypted this cycle (aea decrypt + aa extract, CLAUDE.md §8), specifically its own filter.notes action's full parameter set -- not just the shownote action cycle 14 already used it for"
+  found: "Donor 8's filter.notes carries THREE keys this artifact's own filter.notes site lacked entirely: AppIntentDescriptor ({AppIntentIdentifier: NoteEntity, BundleIdentifier: com.apple.mobilenotes, Name: Notes, ActionRequiresAppInstallation: true, TeamIdentifier: 0000000000}), WFContentItemLimitEnabled (true), and WFContentItemLimitNumber (1.0, a plist <real>, confirmed by raw XML inspection not just plistlib's Python-side type). This artifact's site had only UUID and WFContentItemFilter."
+  implication: "Direct, device-ground-truth evidence matching the directive's own hypothesis ('a user-facing prompt parameter that needs explicit suppressing'). fix_notes_filter_limit() copies Donor 8's shape verbatim (all three keys, exact types) rather than guessing which subset matters."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Whether WFContentItemLimitEnabled/WFContentItemLimitNumber are genuine catalog-documented parameters for filter.notes, not an artifact specific to Donor 8's own authoring session"
+  found: "CONFIRMED in data/toolkit-v78-first-party-parameter-keys.json (bundled Shortcuts Playground catalog, independent of any donor): both keys are real, typed parameters (bool / count respectively) on this action's schema."
+  implication: "Corroborates Donor 8's shape as the action's genuine, general schema rather than a one-off authoring quirk -- raises confidence the fix addresses the actual mechanism, not a coincidental donor artifact."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Full local build/validate/sign/decrypt-verify cycle for build 2026-08-15o, both fixes together"
+  found: "python3 tools/build_state_engine.py exits 0 (all generator-asserted axes hold, including the two new guards: verify_pending_exit_seed() and verify_sentinel_gates() now passing cleanly with pending_exit removed from KNOWN_SENTINEL_EXISTENCE_GATES); a second run is byte-identical (idempotent). UUID-stripped semantic diff against the pre-cycle-16 (build 2026-08-15n, commit 1cb857c) source: exactly 8 hunks, all matching the two intended fixes plus the BUILD_STAMP bump -- full breakdown in cycle_16_verification. `bin/validate-shortcut --target-macos 26 --target-platform all` -> \"Validation passed.\" `bin/sign-shortcut` -> AEA1, 189,899 bytes, non-zero. SHIPPED SIGNED ARTIFACT DECRYPTED and inspected directly (not read back from the build tree): 3684 actions; stamp \"build 2026-08-15o\" (single occurrence, zero stale \"15n\"); breadcrumbs A-I UNCHANGED at 94/149/170/288/308/416/425/459/474; J at 524 (-3, matching the prediction that complete_pending_exit()'s read+gate restructure removes 3 net actions between I and J); pending_exit present in the decrypted bootstrap template exactly as seeded; 0 bare \"pending_exit\" sites remain anywhere; filter.notes carries WFContentItemLimitEnabled=True/WFContentItemLimitNumber=1.0 matching Donor 8's own plist types. 0 duplicate action UUIDs across all 3684 actions; 0 GroupingIdentifier imbalance; 23 Choose-from-Menu opens (unchanged)."
+  implication: >
+    Build 2026-08-15o is internally consistent, idempotent, self-verified against the
+    artifact that would actually ship, and both breadcrumb-position and parameter-shape
+    predictions are confirmed directly against the decrypted plist rather than assumed
+    from arithmetic -- matching this session's full established rigor. Device confirmation
+    remains the user's own call, not directed by this turn.
+
+- timestamp: 2026-08-15 (closure)
+  checked: >
+    Final on-device run of build 2026-08-15o (the canonical artifact -- cycle 16's
+    pending_exit + filter.notes fixes, plus the immediately-preceding archive/sign
+    output-dir process fix) against the CYCLE 16 falsification_test table's strongest
+    branch: "letter I, then continuing PAST J with no error at all, into the Circle 1
+    intervention actually displaying."
+  found: >
+    User report, verbatim: "we did it! we got every single letter, I clicked Always
+    allow save 1 dictionary to a file (good). we got a menu of 'Leaving / Continue' and
+    we got Circle 1. pressure 0.166666666666667 heat 0. amazing." This matches the
+    falsification_test's strongest branch exactly. "Every single letter" means
+    breadcrumbs A through J all fired with no error -- the pending_exit read/gate that
+    hard-errored on build 2026-08-15n (breadcrumb I, "no value was found for dictionary
+    key 'pending_exit'") did NOT recur. The "Always Allow" prompt is Shortcuts' own
+    one-time system permission dialog for the Set Dictionary Value -> Save File write to
+    state.json; the user confirming it and execution continuing past it is the expected
+    one-time behaviour, not a defect. The "Leaving / Continue" menu is the intervention
+    decision-point UI reached only after the full OPEN pipeline (bootstrap through
+    breadcrumb J) completes without error. Circle 1 firing with Pressure =
+    0.166666666666667 (exactly 1/6) and Heat = 0 is internally consistent with a
+    first-ever OPEN under this project's Pressure/Heat model -- not an anomalous,
+    partially-corrupted, or NaN-shaped read, which would have been the expected
+    signature of a lingering state-shape defect.
+    NOT COVERED by this report: an explicit "Open Control Room, confirm no note
+    picker appears" check. The user's report addresses the OPEN critical path only
+    (symptom 1, the original todo's item); it does not confirm or refute Finding 2
+    (the filter.notes result-bound fix for the Control Room note-picker symptom, cycle
+    16). That fix remains locally verified (build/validate/sign/decrypt-verify passed,
+    Donor-8-matched) but is NOT claimed device-confirmed by this evidence -- recorded
+    honestly rather than inferred, and carried forward as an open follow-up (see
+    Resolution's closing summary and the new ship-readiness todo).
+  implication: >
+    Symptom 1 (OPEN path never reaches the intervention) is CLOSED, device-verified,
+    joining symptoms 2 (`sequence` write) and 3 (Control Room note bootstraps empty),
+    which closed earlier this session. All three original symptoms from the 2026-08-13
+    todo are now resolved. This is the terminal, on-device confirmation this 16-cycle
+    session was chasing. Finding 2 (the independent Control Room note-picker defect
+    discovered mid-session) is fixed and locally verified but its own device
+    confirmation is a separate, still-open follow-up -- not silently folded into this
+    closure.
+
 ## Eliminated
 
 - hypothesis: "'Spoken This Run' is defective because the If that tests it can never see it — its only Set Variable sits inside that If's own body."
@@ -3430,6 +3847,294 @@ superseded_next_action_cycle2: >
   timestamp: 2026-08-15 (cycle 14)
 
 ## Resolution
+
+### FINAL — session closure, 2026-08-15
+
+root_cause: >
+  Across 16 cycles, nine independently-necessary parameter-defect axes were found on the
+  OPEN critical path and the MANUAL Control Room path, all traced to one systemic
+  generator-wide misunderstanding of the Shortcuts plist format (never a hand-authoring
+  slip in any single action). For the SPECIFIC symptom this closure confirms (symptom 1,
+  OPEN never reaching the intervention), the terminal blocker was a two-part AND-gated
+  defect closed in cycle 16: axis 6 (STATE SHAPE) -- `pending_exit` entirely absent from
+  the bootstrap `state.json` template, so `complete_pending_exit()`'s flat read hard-
+  errored on the first OPEN -- compounded with axis 7 (GATE SEMANTICS) -- the pre-existing
+  clearing gate tested container-existence (condition 100) rather than leaf-value
+  (condition 5), which would have reproduced a different hard error on the very next OPEN
+  after any exit even if the state-shape half alone were fixed. Full per-axis root causes
+  for cycles 1-16 are documented below in `cycle_N_root_cause` entries; the complete
+  9-axis table with site counts is in `HANDOFF.md` §2.
+
+fix: >
+  See `cycle_16_fix` (this symptom's terminal fix) plus every `cycle_N_fix` entry below
+  for the cumulative session fix: one generator, `tools/build_state_engine.py`, corrected
+  at the SOURCE for all nine axes (never by hand-editing generated XML), each paired with
+  a build-time recurrence guard that runs before the single serialize/write. Cycle 16's
+  specific fix: `pending_exit` restructured to a permanent `{type, timestamp}` container
+  (`seed_pending_exit()` + `verify_pending_exit_seed()`, mirroring `settings_snapshot`'s
+  already-verified container/leaf split), with `record_exit_and_route()` and
+  `complete_pending_exit()` writing/clearing/gating only the leaves against
+  `CLEARED_SENTINEL` via condition 5. `KNOWN_SENTINEL_EXISTENCE_GATES` narrowed to
+  `("active_session",)` only. Full axis-by-axis fix list and guard names: `HANDOFF.md` §2.
+
+verification: >
+  Device-confirmed end to end on build 2026-08-15o (the canonical artifact, including
+  cycle-16's fixes and the immediately-preceding archive/sign output-dir process fix):
+  every breadcrumb A through J fired, the one-time Shortcuts file-save permission prompt
+  behaved correctly, the Leaving/Continue intervention menu displayed, and Circle 1 fired
+  with Pressure=0.166666666666667 (1/6) / Heat=0, consistent with a first-ever OPEN. See
+  the final Evidence entry (2026-08-15, closure) for the full account. All applicable
+  static fix-acceptance guardrail signals passed across all 16 cycles -- guard
+  sensitivity (each guard rejects its matching pre-fix artifact and names the exact
+  sites), mutation-at-fix-site (disabling any fix fails the build before the
+  serialize/write, artifact md5 unchanged), blast-radius accounting, structural
+  regression (0 duplicate UUIDs / GroupingIdentifier imbalance across every cycle),
+  validator pass, idempotency, and signing -- and, this closure only, the terminal
+  runtime signal itself, which no prior cycle could self-supply.
+
+files_changed: >
+  Primary generator: `tools/build_state_engine.py` (all 16 cycles' fixes; see the
+  per-cycle `cycle_N_files_changed` entries below for the complete itemised list).
+  Fork generator: `tools/build_sentient.py` (imports/runs the shared guards; NOT yet
+  re-run against cycles 14-16's fixes -- see the new Sentient re-fork todo). Generated
+  artifacts: `src/PROSOCHE-Dumb.xml`, `artifacts/shortcuts/PROSOCHĒ — Nine Circles —
+  Dumb.shortcut`. Documentation: `docs/BUILD-NOTES.md`, `.claude/CLAUDE.md` §
+  Conventions (the 7+1-axis authoring rules), `.planning/debug/HANDOFF.md`.
+
+oracle_type: specified (user-observable, on-device behaviour against the original todo's
+  stated expected behaviour -- OPEN reaches the Circle 1 intervention with no runtime
+  error, verified by direct device report rather than inferred from static analysis)
+
+### Prevention — blameless postmortem (session closure, 2026-08-15)
+
+**Branching root cause, not a single chain.** This session's defects were almost never
+one cause with one fix. The clearest example is this closure's own terminal blocker
+(cycle 16): fixing the STATE-SHAPE half alone (seeding `pending_exit`) without ALSO
+fixing the GATE-SEMANTICS half (leaf-scoped condition 5, not container-scoped condition
+100) would have traded one confirmed hard error for a different, already-documented one
+on the very next OPEN following any exit -- the AND-gate fired, and both a data/state
+category cause and a code/generator category cause were independently necessary. The
+SAME shape recurred at least twice more this session: cycle 3's router defect required
+BOTH the absence-gate design AND the (at-the-time-still-broken) string-envelope bug to
+compound before the symptom appeared, and the reported turn's own Finding 1/Finding 2
+pair (pending_exit vs. filter.notes) were two unrelated single-category defects
+discovered together but independently confirmed and independently fixed, correctly NOT
+merged into one hypothesis. A 5-whys-style trace of the terminal blocker: (1) why did
+OPEN fail at breadcrumb I? -> a dictionary-key read hard-errored. (2) why did the read
+hard-error? -> the key was never seeded in the bootstrap template. (3) why was it never
+seeded? -> the container/leaf pattern that `settings_snapshot` already used had not yet
+been applied to `pending_exit`, a gap the code's own `KNOWN_SENTINEL_EXISTENCE_GATES`
+comment had flagged in advance as deferred, not forgotten. (4) why was it deferred
+rather than fixed proactively? -> it was believed latent (unreached by any device run to
+date) and this session's own explicit discipline is to fix only what a device run
+confirms is live, not to fix speculatively. (5) why did it become live on this run? ->
+"latent" is a property of what a *specific* device run has exercised so far, not a
+permanent property of the defect -- this run was simply the first to progress far enough
+(E to I) to reach it, per this file's own cycle-16 "addendum" lesson.
+
+**Why wasn't this class caught sooner, mechanically (not "should have tried harder")?**
+No single gate exists in this toolchain that can catch any of these defect classes
+before an actual on-device run, and each class fails a DIFFERENT set of existing gates
+for a different structural reason:
+- Value-envelope / output-name / string-coercion axes (1-5, 8): the generated plist is
+  well-typed and structurally valid XML/plist -- `plutil -lint` and the bundled
+  Shortcuts Playground validator both pass. The defect only exists in Shortcuts.app's
+  OWN runtime interpretation of which envelope a given parameter's TYPE requires, which
+  is nowhere expressed in the file itself. No static tool in this toolchain understands
+  that semantic layer.
+- Operand-type/coercion axes (6, 6b): the "red chip" signal proving a type mismatch is
+  rendered by Shortcuts.app's own UI-level type inference at edit time -- it is not
+  present in the plist bytes in any form. Decrypting a signed `.shortcut` (this
+  session's most powerful verification channel) still cannot see it, because there is
+  nothing to see; only an on-device open of the action, or a user screenshot of that
+  open action, surfaces it.
+- State-shape + gate-semantics axes (6/7, this closure's own blocker): these are
+  data-dependent, not structure-dependent. A key absent from a JSON *template* string
+  is not a plist-shape violation by any definition a validator applies -- and the
+  failure additionally requires the SPECIFIC code path that reads that key to actually
+  execute on that specific run, which is exactly why this defect survived 15 prior
+  cycles of the SAME rigorous build/validate/sign/decrypt-verify discipline undetected:
+  none of those cycles' device runs had progressed far enough to exercise it.
+- App-Intent cardinality axis (9, `filter.notes`): also UI-only and data/runtime-
+  dependent -- the plist is structurally valid with or without a declared result limit;
+  only iOS's own Notes App-Intent framework decides, at run time, whether to show a
+  disambiguation UI. No file-level analysis (validator, catalog, or decrypted-artifact
+  inspection) can predict this without device ground truth.
+In short: the existing gates (validator, `plutil -lint`, decrypt-and-inspect,
+catalog cross-check) all check STRUCTURAL correctness. Every defect this session found
+was a SEMANTIC/RUNTIME correctness defect, a category none of those gates were ever
+designed to catch. This is not a gap in diligence -- it is a gap in what CAN be checked
+without a physical device, which this project's own constraints (no way to execute
+Shortcuts on the build Mac) make unavoidable for the first instance of any defect class.
+
+**Concrete recurrence guards that now exist (not just documentation):**
+- Nine build-time guard functions in `tools/build_state_engine.py` -- one per axis
+  (`verify_string_envelopes`, `verify_output_names`, `verify_required_pickers`,
+  `verify_router_shape`, `verify_compound_value_reads`, `verify_pending_exit_seed`,
+  `verify_sentinel_gates`, plus the `VERIFIED_PARAMETER_KEYS` allowlist extended for
+  `filter.notes`/`shownote`/`count`/`getitemfromlist`/`speaktext`) -- each proven this
+  session to run BEFORE the single serialize/write (the "mutation at fix site" test:
+  disabling any one fix makes the build exit 1 with the artifact's md5 unchanged) and
+  each proven sensitive (run directly against the matching PRE-FIX artifact, each
+  guard rejects it and names the exact offending sites). This converts what were
+  previously silent, device-only runtime failures into guaranteed, immediate,
+  file-naming build-time failures for any FUTURE regression of the same class.
+- `KNOWN_SENTINEL_EXISTENCE_GATES` -- a living, greppable registry inside the generator
+  source of every remaining sentinel-existence-gate risk, now narrowed to exactly
+  `("active_session",)`. This is the mechanism that let cycle 16 predict this closure's
+  own blocker IN ADVANCE (the pre-existing comment named `pending_exit` before any
+  device run reached it) -- it converts "latent defect, presumed safe" from an
+  unwritten assumption into an explicit, tracked, greppable TODO the next cycle (or the
+  new `active_session`/`exit_events` todo spun off by this closure) inherits directly.
+- The defect-axis taxonomy itself (nine axes, site counts, exact error-text signatures
+  per axis) is now written into `.claude/CLAUDE.md` § Conventions, not left living only
+  inside this single 4,800-line debug file -- discoverable by whoever authors the NEXT
+  plist-generating pass on this project, agent or human, without first re-reading this
+  entire session.
+- The evidence hierarchy (donor > golden corpus > ToolKit catalog > inference), also
+  promoted into CLAUDE.md, is the direct, load-bearing guard against this project's own
+  named hard failure mode: fabricating a plausible-looking but unverified parameter
+  shape under time pressure. Every fix this session copied a verified shape from a
+  higher-hierarchy source rather than guessing (e.g. `filter.notes`' shape copied
+  verbatim from Donor 8, byte-for-byte including plist type).
+- Breadcrumb bisection (flag-gated alert markers at ten control-flow milestones,
+  deliberately kept in the build across cycles rather than stripped after first use) is
+  now a documented, reusable technique in this file and `HANDOFF.md` -- it converted a
+  binary "did OPEN work?" device signal into a ~10x more informative "which of ten
+  spans failed?" signal, which is the single biggest reason 16 cycles fully closed nine
+  defect axes rather than requiring one device round-trip per individual site (147,
+  367, 2, 2, 25, 20+25, 67, 8+1, 5, 1 -- roughly 670 individual sites across the
+  session, closed in 16 device-round-trip-gated cycles, not 670).
+- "Fix whole classes, never site-by-site" is enforced by practice, not slogan: every
+  cycle ran a systematic sweep of the FULL codebase for the axis in question before
+  writing a fix, rather than patching the one site bisection happened to reveal.
+
+**One honestly-named residual gap (blameless, not swept under the rug):** the
+archive/sign output-dir mistake found and corrected in the Process Note below has NO
+code-level recurrence guard -- its only guard is the documented canonical invocation
+now pinned at the top of `HANDOFF.md`. This is weaker than every guard above (a
+documentation convention, not a build-time assertion) because the mistake is a CLI
+invocation error in tooling this project does not own (the shortcuts-playground
+plugin's `bin/sign-shortcut` wrapper, whose own default behaviour is already correct by
+design) -- there is no generator-side hook this project's own guard mechanism could
+attach to. Named honestly here rather than folded silently into the stronger set above.
+
+### Process note — 2026-08-15, archive/sign output-dir mistake (NOT a new cycle)
+
+Not a defect in `tools/build_state_engine.py` — that script owns only `src/PROSOCHE-Dumb.xml`
+generation and contains zero archive/sign/output-dir logic (confirmed by direct read). The
+cycle-16 signed artifact was found at `artifacts/shortcuts/2026-08-15/PROSOCHĒ — Nine Circles
+— Dumb.shortcut`, with a doubled unsigned-XML archive at
+`artifacts/shortcuts/2026-08-15/2026-08-15/...xml`, instead of overwriting the canonical
+`artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut`.
+
+**Root cause:** a one-off invocation mistake, not a tooling bug. The shortcuts-playground
+skill's `bin/sign-shortcut` wrapper is correctly designed: it archives the pre-sign unsigned
+XML to `"$OUTPUT_DIR/$(date +%F)/<name>-<HHMMSS>.xml"` (its own dated-archive step) and
+separately copies/signs directly to `"$OUTPUT_DIR/<name>.shortcut"` (the canonical path — no
+"promote" step needed; this already matches option (b) in the report, and is in fact already
+the *default* behaviour, not something requiring a code fix). Cycle 14's own recorded
+invocation used the correct `--output-dir artifacts/shortcuts` (Evidence, cycle 14, "local
+build/validate/sign/decrypt-verify" entry). Whatever invoked `sign-shortcut` for the cycle-16
+build instead passed an already-dated `--output-dir` (e.g. `artifacts/shortcuts/$(date +%F)`),
+which reproduces the exact reported shape: the wrapper's own `$(date +%F)` then appends a
+*second* date segment to that already-dated dir for the archive (`2026-08-15/2026-08-15/`),
+while the signed `.shortcut` lands one dated level too deep
+(`2026-08-15/PROSOCHĒ...shortcut`).
+
+**Verification performed this turn (routed through the skill's own tooling throughout,
+per the standing directive):**
+1. Confirmed the user's manual repair as the correct starting point: canonical
+   `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut` (189,899 bytes) decrypted
+   (`aea decrypt` + `aa extract`, CLAUDE.md §8) and inspected directly — single occurrence of
+   `build 2026-08-15o`, `pending_exit` and `filter.notes` limit keys present, no stale content.
+   No leftover `artifacts/shortcuts/2026-08-15/` directory found anywhere before this turn's
+   own rebuild.
+2. Regenerated (`python3 tools/build_state_engine.py`, provenance guard passed, exit 0),
+   validated (`bin/validate-shortcut --target-macos 26 --target-platform all` -> "Validation
+   passed."), and re-signed via `bin/sign-shortcut --name "PROSOCHĒ — Nine Circles — Dumb"
+   --mode anyone --output-dir artifacts/shortcuts` (the correct, non-dated output-dir).
+   Result: `{"archive":"artifacts/shortcuts/2026-08-15/PROSOCHĒ — Nine Circles —
+   Dumb-205232.xml","signed":"artifacts/shortcuts/PROSOCHĒ — Nine Circles —
+   Dumb.shortcut", ...}` — archive at a single dated level (the wrapper's own intended
+   behaviour, matching the `2026-08-13`/`2026-08-14` precedent already in
+   `artifacts/shortcuts/MANIFEST.md`), signed artifact written directly to the canonical path.
+   No doubled nesting.
+3. Re-decrypted the freshly re-signed canonical artifact: 3684 actions, single occurrence of
+   `build 2026-08-15o`, `pending_exit` (8 occurrences) and `filter.notes` limit keys (2
+   occurrences) both present, AEA1 magic confirmed — byte-for-byte semantic match to the
+   pre-rebuild canonical artifact (deterministic `uuid5`-keyed generation, confirmed by
+   inspecting `uid()` in `tools/build_state_engine.py`). No regression from this turn's
+   rebuild.
+
+**Conclusion:** option (a)/(b) resolved as "already correct by design" — `bin/sign-shortcut`
+needs no code change. The only fix needed is procedural: always invoke it with
+`--output-dir artifacts/shortcuts` (never a pre-dated path), documented in `HANDOFF.md` as the
+canonical invocation so this doesn't recur. `artifacts/shortcuts/MANIFEST.md` remains stale
+(still dated 2026-08-13 only) — noted as a known follow-up, not fixed this turn
+(ponytail-minimal scope).
+
+cycle_16_root_cause: >
+  TWO INDEPENDENT DEFECTS, one on each of the two paths this cycle's device evidence
+  named, both confirmed against the device's own error text / behaviour report rather
+  than inferred, neither requiring a new or unverified plist construct.
+  (1) FINDING 1, THE BREADCRUMB I->J BLOCKER (OPEN critical path): pending_exit was
+      entirely absent from the bootstrap state.json template -- the STATE SHAPE gap
+      (axis 6) this file's own KNOWN_SENTINEL_EXISTENCE_GATES note predicted in advance.
+      complete_pending_exit()'s unconditional flat read of "pending_exit" therefore hard-
+      errored on the first OPEN this device pass exercised: "In '', no value was found
+      for dictionary key 'pending_exit'" -- the identical error shape cycle 11 found for
+      settings_snapshot. A second, independent axis (GATE SEMANTICS, axis 7, cycle 12's
+      own already-proven invariant) compounds it: the pre-existing condition-100
+      existence gate on the same key would have misfired the moment the key held the
+      cleared sentinel (every OPEN following any exit's completion), reproducing cycle-
+      10-finding-5's exact anti-pattern (clear_snapshot()'s own docstring) at the top
+      level. Both had to close together; see the cycle-16 reasoning_checkpoint's and_gate.
+  (2) FINDING 2, THE CONTROL ROOM NOTE PICKER (MANUAL path, independent of Finding 1):
+      the ONE is.workflow.actions.filter.notes ("Find Notes") site in this artifact
+      carried no declared result bound (no WFContentItemLimitEnabled/Number, no
+      AppIntentDescriptor) -- an App-Intent-backed entity query with no declared
+      cardinality, which iOS resolves via its own disambiguation UI. Donor 8's own
+      device-authored filter.notes action, re-decrypted this cycle, carries all three
+      keys explicitly, confirming the artifact's own established evidence hierarchy
+      (donor > catalog > inference) rather than a guess. Control Room Note's own binding
+      (both branches) and shownote's WFInput (cycle 14's own fix) were directly re-
+      inspected and confirmed unbroken -- this is not a re-regression of either.
+
+cycle_16_fix: >
+  See cycle_16_fix_applied in Current Focus for the full account (both findings, all
+  seven code changes, exact action-count/breadcrumb arithmetic). Summary: (1) pending_exit
+  restructured to a permanent {type, timestamp} container (seed_pending_exit() +
+  verify_pending_exit_seed(), mirroring settings_snapshot's own already-verified
+  container/leaf split exactly), with record_exit_and_route() and complete_pending_exit()
+  writing/clearing/gating only the leaves (condition 5 against CLEARED_SENTINEL, not
+  condition 100); KNOWN_SENTINEL_EXISTENCE_GATES narrowed to ("active_session",) only.
+  (2) filter.notes gained AppIntentDescriptor + WFContentItemLimitEnabled +
+  WFContentItemLimitNumber, copied verbatim from Donor 8; VERIFIED_PARAMETER_KEYS
+  extended as the recurrence guard. tools/build_state_engine.py only; Dumb regenerated,
+  validated, signed, decrypt-verified; Sentient not touched (standing reason, every
+  cycle: forks additively from src/PROSOCHE-Dumb.xml, will pick this up on its next fork).
+
+cycle_16_verification: >
+  See cycle_16_verification in Current Focus for the full account (build exit code,
+  idempotency, 8-hunk semantic diff breakdown, skill-routed validate/sign, decrypted-
+  shipped-artifact inspection: 3684 actions, breadcrumbs A-I unchanged, J at 524,
+  pending_exit correctly seeded, filter.notes correctly shaped, 0 duplicate UUIDs, 0
+  GroupingIdentifier imbalance, 23 Choose-from-Menu opens unchanged). NOT device-
+  confirmed -- explicitly out of scope this cycle, matching every prior cycle's own
+  discipline; the phone build is the user's own call.
+
+cycle_16_files_changed:
+  - tools/build_state_engine.py (KNOWN_SENTINEL_EXISTENCE_GATES narrowed to
+    ("active_session",); PENDING_EXIT_SEED + seed_pending_exit() +
+    verify_pending_exit_seed() added and wired into main(); record_exit_and_route() and
+    complete_pending_exit() restructured to the pending_exit container/leaf shape;
+    NOTES_FILTER_APP_INTENT + fix_notes_filter_limit() added and wired into main();
+    VERIFIED_PARAMETER_KEYS gained a filter.notes entry; BUILD_STAMP bumped
+    "build 2026-08-15n" -> "build 2026-08-15o")
+  - src/PROSOCHE-Dumb.xml (regenerated)
+  - artifacts/shortcuts/2026-08-15/PROSOCHĒ — Nine Circles — Dumb.shortcut (re-signed,
+    189,899 bytes)
 
 cycle_15_root_cause: >
   THE COMPOUND-VALUE COERCION DEFECT, confirmed by direct source trace matching the

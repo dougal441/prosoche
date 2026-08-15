@@ -54,5 +54,10 @@ Two further confirmations from that session:
   literals — not because of per-app handling.
 
 This todo is therefore **unblocked and low-risk**: the replacement instructions are known
-good, and the only work is propagating them into the generator and both Note bodies. It is
-independent of the OPEN-path defects still being debugged.
+good, and the only work is propagating them into the generator and both Note bodies. It
+was independent of the OPEN-path defects and remains so now that the
+`open-routing-sequence-error` debug session has fully closed (2026-08-15, both symptoms
+device-verified, see `.planning/debug/resolved/open-routing-sequence-error.md`) — nothing
+about that closure changes this todo's own scope or status. Still unfixed; still the next
+concrete unblocked task in this project's queue if no higher-priority item is picked
+first.
