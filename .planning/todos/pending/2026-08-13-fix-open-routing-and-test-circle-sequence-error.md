@@ -24,6 +24,38 @@ A second failure is observable from that unexpected menu. Choosing **Test a Circ
 
 It is not yet known whether the OPEN misrouting and missing `sequence` value share one cause. Record them together because they were observed in the same first on-device automation test, but do not assume they are causally related.
 
+## Status — updated 2026-08-15
+
+Debug session `open-routing-sequence-error` ran 13 cycles against this todo and is now
+**paused, clean**. Resume from `.planning/debug/HANDOFF.md`.
+
+**The two symptoms did NOT share a cause**, as this todo cautioned. Confirmed separately.
+
+**Symptom 2 (`sequence` / Set Dictionary Value) — CLOSED, device-verified.** Two defects,
+both generator-wide: `setvalueforkey` was emitting `WFInput` where the action defines
+`WFDictionaryValue` (147 sites), and string-typed parameters carried a bare
+`WFTextTokenAttachment` where a `WFTextTokenString` is required (367 sites).
+
+**Symptom 1 (OPEN misrouting) — the original diagnosis was wrong, and the routing was
+never the problem.** An INPUT PROBE proved the automation wrapper delivers `OPEN`
+correctly (`RAW [OPEN] / NORMALISED [OPEN]`), so the Text → Run Shortcut configuration
+described above is sound. The real cause was that the OPEN branch had **never executed on
+device**: `Input Key` always resolved empty, so every automation run took the MANUAL arm.
+Once that was fixed, a sequence of previously-unreachable defects surfaced one at a time.
+
+Seven distinct parameter-defect axes were found and fixed, each invisible to the sweep
+that caught the previous one; all are now asserted by build guards. The authoring rules are
+recorded in `.claude/CLAUDE.md` § Conventions.
+
+**Still open.** Symptom 1 is unresolved. Breadcrumb bisection has advanced it `B → C → D`
+across builds `h`, `i`, `k`; build `k` reaches letter D and fails on date coercion —
+`gettimebetweendates` feeds bare text templates into date-typed parameters at all five
+sites. `Donor 7` has been supplied to settle the Date `CoercionItemClass` and is the first
+task on resume.
+
 ## Solution
 
-TBD after debugging. Reproduce and trace the received Shortcut Input through OPEN/MANUAL routing, then independently trace Test a Circle's state and `sequence` write. Fix each at its shared source, propagate to both variants, and leave a minimal regression check for OPEN routing and the Test Circle path.
+Symptom 2 is done. For symptom 1, follow the resume checklist in
+`.planning/debug/HANDOFF.md` §10. Fix at the generator, never by hand-editing the generated
+XML, and fix whole classes rather than site-by-site — bisection only ever reveals the
+earliest remaining defect, so incremental fixing costs one device round trip per site.

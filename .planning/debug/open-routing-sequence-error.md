@@ -1,11 +1,17 @@
 ---
 slug: open-routing-sequence-error
-status: awaiting_human_verify
+status: paused
 trigger: "Fix OPEN routing and Test Circle sequence error (from .planning/todos/pending/2026-08-13-fix-open-routing-and-test-circle-sequence-error.md)"
 created: 2026-08-14
 updated: 2026-08-14 (cycle 11)
 severity: blocker
 ---
+
+> **PAUSED — resume from [`HANDOFF.md`](HANDOFF.md), not from this file.**
+> This is the full audit trail (~300 KB, 13 cycles). `HANDOFF.md` is the consolidated
+> entry point: current status, the seven defect axes, verified iOS semantics, the
+> ranked open items, and the resume checklist. Two symptoms are closed and
+> device-verified; symptom 1 is open at breadcrumb span D→E on date coercion.
 
 # Debug Session: OPEN routing misrouted + Test Circle `sequence` write fails
 
