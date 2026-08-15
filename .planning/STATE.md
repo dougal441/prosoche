@@ -119,9 +119,17 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
+- [blocker] Fix OPEN routing and Test Circle sequence error — `.planning/todos/pending/2026-08-13-fix-open-routing-and-test-circle-sequence-error.md` (CLOSED 2026-08-15, device-verified; file retained as the debug session's origin record)
 - [cosmetic] Apply Build Addendum 01 — `.planning/todos/pending/2026-08-14-apply-build-addendum-01.md`
 - [major] Repair iOS 26 automation onboarding — `.planning/todos/pending/2026-08-14-repair-ios-26-automation-onboarding.md`
-- [blocker] Fix OPEN routing and Test Circle sequence error — `.planning/todos/pending/2026-08-13-fix-open-routing-and-test-circle-sequence-error.md`
+- [major] Close the remaining state-shape sentinel gaps (exit_events, active_session) — `.planning/todos/pending/2026-08-15-close-state-shape-sentinel-gaps.md`
+- [major] Fix the WFConditionalActionString red-operator sites and the WFItems List wrapper — `.planning/todos/pending/2026-08-15-fix-red-operator-and-list-wrapper-defects.md`
+- [major] Re-fork Sentient now that Dumb's OPEN path is device-confirmed — `.planning/todos/pending/2026-08-15-fork-sentient-post-openpath-fix.md`
+- [major] Ship-readiness cleanup for PROSOCHĒ Dumb — `.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md`
+- [major] Optimise and streamline the UX — onboarding and in-run functionality — `.planning/todos/pending/2026-08-16-optimise-ux-onboarding-and-functionality.md`
+- [major] Build the VALUE / LIFE RETURNED functionality — `.planning/todos/pending/2026-08-16-build-value-life-returned.md`
+- [minor] Build the low-salience "Support PROSOCHĒ" contribution path — `.planning/todos/pending/2026-08-16-build-support-prosoche-low-salience.md`
+- [major] Physical unlock (QR scan or NFC tap) to exit Circle IX / Frozen — `.planning/todos/pending/2026-08-16-physical-unlock-for-circle-ix-ice.md`
 
 ### Blockers/Concerns
 
