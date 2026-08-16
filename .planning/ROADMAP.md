@@ -294,3 +294,81 @@ Plans:
 - [x] 09-02-PLAN.md — Device-proving safety verdict: sign both forks, author and complete `09-UAT.md`, DEV-06 design write-up, written verdict (Wave 2, depends on 09-01)
 
 Full context: `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md`
+
+### Phase 10: Ship-readiness remainder and UX-lite pass
+
+**Goal:** Make Dumb quiet, predictable, and actually testable — no stray dialogs, no
+unexplained prompts — while closing out the leftover ship-readiness chores. Two strands,
+one phase.
+
+**Strand A — ship-readiness remainder.** Items 2, 3 and 4 of
+`.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md` (item 1, the
+`BUILD_STAMP`/`ROUTER_TRACE`/`OPEN_BISECT` breadcrumb strip, is already DONE; item 5 is
+superseded — see below): add a `.gitignore` for `.DS_Store`/`__pycache__`/`*.pyc`;
+refresh `artifacts/shortcuts/MANIFEST.md` with the 2026-08-14/15 archive entries;
+device-confirm the cycle-16 Control Room note-picker fix by tapping "Open Control Room".
+Also repair the **three of six structural self-checks that already FAIL at `HEAD`**
+(`10-RESEARCH.md` Finding 5c).
+
+**Dimming and Silence are NOT cut — the brightness/volume MVP cut is cancelled.** User
+decision 2026-08-16, reaffirmed 2026-08-17: both stay, each as its own distinct Circle,
+**with working brightness and volume capture-and-restore**. Phase 9 merged the
+numeric-coercion fix for all 28 `setbrightness`/`setvolume` sites to main (`2e2261e`).
+This phase must keep `dimming()`, `silence()`, `restore_managed_settings()`, the
+`settings_snapshot` subtree, and all 28 coerced sites; `verify_numeric_operands()` must
+keep *not* exempting them. Two consequences: the **SAFE-05 conflict resolves** rather
+than being deferred to milestone close, and **DEV-06** (restore-ownership,
+`changed_at`/`changed_by_session_id`) is **live again** rather than moot, bringing the
+`Session ID` scope defect back with it. `10-RESEARCH.md` Finding 2 and Pitfalls 2 and 3
+document the cancelled cut and are **superseded — ignore them**; the rest of that
+document stands.
+
+**Strand B — UX lite, go quiet by default.** The product currently shows three surfaces
+on every genuine OPEN — a `Circle X · pressure Y · heat Z` notification, the
+`Leaving / Continue` menu, and the Circle-1 Knock alert — starting from the very first
+open of the day. A user buried in pop-ups deletes the Shortcut, which is canonical
+strategy §12's stated key failure. Deliverables:
+
+- **Circle 0 silent band.** State still accumulates and saves exactly as now, but
+  nothing is shown at all — no notification, no menu, no primitive. `Circle Next`
+  currently floors at 1 and the threshold scan only raises it, so Circle 0 is
+  unreachable; entry thresholds must rise (all three profiles start at `1` and
+  `heat.open_base` is `1`, so any first open scores Circle 1). Shift each profile's
+  curve up so band widths stay as designed and only entry is delayed. The numbers are
+  explicitly for on-device tuning.
+- **Remove the OPEN notification entirely.** Users learn their Circle because something
+  happens, not because they are told a number.
+- **Reword `Leaving / Continue`** so it says what is being left, what continuing means,
+  and why it is being asked. It stays as §6.4's easy-dismissal mechanism wherever it
+  fires; it simply no longer fires in the silent band.
+- **Gate the ungated `shownote`** behind an explicit request flag, so only "Open Control
+  Room" opens the Note instead of all nine menu items ending in the Notes app. The
+  cycle-16 `filter.notes` picker fix is already applied in source — do not re-patch it.
+- **Add a `Setup Check` menu item** reporting which of the two Personal Automations has
+  ever fired, via a numeric `> 0` gate on the existing flat `last_open_at`/`last_close_at`
+  keys. No new state, no schema bump, no migration.
+- **Amend the canonical strategy** to record the silent band, since §Primitive A and
+  §Circle I both currently prescribe the Knock as Circle 1's intervention.
+
+**Deferred to the heavy UX round, not this phase:** funnel instrumentation in
+`state.json`; the full nine-Circle interaction-cost and latency pass; rolling telemetry
+into the Confession/Mirror headers; the §29 voice copy rewrite; the proforma deferral and
+READ THIS FIRST shortening; the read-once-vs-return-to Note restructure coordinated with
+the Build Addendum 01 rename; full fresh-import funnel re-verification.
+
+**Known open defect deliberately NOT fixed here:** Circle 8 dispatches nothing — the
+`"Voice"` sequence entry matches no branch under condition-99 "contains" matching. A
+later phase fixes it. If this phase adds a sequence/dispatch checker, that checker must
+**record** the orphan rather than fail on it, and must **not** hard-code condition 99 or
+substring matching as an invariant: BD-06 moves dispatch to condition 4 exact matching
+and abolishes combined entries.
+
+**Severity:** major
+**Requirements**: TBD (no new IDs expected; touches AUDIT-03/04, SESS-07,
+CIRC-01/03/05/13/14, ROOM-01/02/03/10, SAFE-01/02/03/05, DIST-01/02/03/04/05/06)
+**Depends on:** Phase 9
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 10 to break down)
