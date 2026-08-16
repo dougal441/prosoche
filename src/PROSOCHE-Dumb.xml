@@ -79139,20 +79139,24 @@ PROSOCHĒ is bypassable. You can dismiss any interruption it shows you, at any t
 
 Build this in the Shortcuts app, with this Note open beside you.
 
+You need two automations in total, not two for every app. Put every app you want watched into this one automation. PROSOCHĒ measures your reaching as a whole rather than app by app, so a second app never needs a second pair. Automation A and Automation B are separate only because they send different words.
+
 1. Open the Shortcuts app.
 2. Go to the Automation tab.
 3. Tap the button to create a new Personal Automation.
 4. Choose the App trigger.
 5. Select the apps you want PROSOCHĒ to watch.
 6. Choose Is Opened.
-7. Turn off "Ask Before Running", so the automation runs immediately without asking.
-8. Add the Run Shortcut action.
-9. For the shortcut, choose the one named exactly PROSOCHĒ — Nine Circles — Dumb.
-10. Set the Run Shortcut action's input to the text OPEN, typed exactly as those four capital letters and nothing else.
+7. Choose Run Immediately, not Run After Confirmation.
+8. The next screen asks you to pick a shortcut. Do not pick one. Tap Create New Shortcut instead.
+9. Add a Text action and type OPEN into it. Type it exactly: four capital letters, nothing before it and nothing after it. OPENED, Open, or a stray space will not be recognised, and nothing on screen will tell you it went wrong.
+10. Below the Text action, add the Run Shortcut action, and for its shortcut choose the one named exactly PROSOCHĒ — Nine Circles — Dumb.
+11. Expand the Run Shortcut action and check that its Input is the Text action directly above it. If Input is empty, tap Choose Variable and select Text.
+12. Save with the blue checkmark.
 
 ### Automation B — CLOSE
 
-Build a second Personal Automation the same way as Automation A, with three differences: the same apps, the Is Closed trigger in place of Is Opened, and the input text CLOSE in place of OPEN.
+Build a second Personal Automation the same way as Automation A, with three differences: the same apps, the Is Closed trigger in place of Is Opened, and the word CLOSE in place of OPEN.
 
 1. Open the Shortcuts app.
 2. Go to the Automation tab.
@@ -79160,10 +79164,12 @@ Build a second Personal Automation the same way as Automation A, with three diff
 4. Choose the App trigger.
 5. Select the same apps you chose for Automation A.
 6. Choose Is Closed, not Is Opened.
-7. Turn off "Ask Before Running", so the automation runs immediately without asking.
-8. Add the Run Shortcut action.
-9. For the shortcut, choose the one named exactly PROSOCHĒ — Nine Circles — Dumb.
-10. Set the Run Shortcut action's input to the text CLOSE, typed exactly as those five capital letters and nothing else, not OPEN.
+7. Choose Run Immediately, not Run After Confirmation.
+8. The next screen asks you to pick a shortcut. Do not pick one. Tap Create New Shortcut instead.
+9. Add a Text action and type CLOSE into it. Type it exactly: five capital letters, nothing before it and nothing after it. CLOSED is the mistake most often made here, and it fails silently — PROSOCHĒ will simply never record the end of a session.
+10. Below the Text action, add the Run Shortcut action, and for its shortcut choose the one named exactly PROSOCHĒ — Nine Circles — Dumb.
+11. Expand the Run Shortcut action and check that its Input is the Text action directly above it. If Input is empty, tap Choose Variable and select Text.
+12. Save with the blue checkmark.
 
 Both automations are needed. Without CLOSE, PROSOCHĒ has no way to measure how long a session actually lasted, so it cannot tell whether a boundary you set for yourself was kept or exceeded.
 
@@ -79227,14 +79233,14 @@ Reserved. Nothing is measured here yet.
 Reserved. Nothing is asked for here yet.</string>
 						<key>attachmentsByRange</key>
 						<dict>
-							<key>{4389, 1}</key>
+							<key>{5478, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
 								<key>VariableName</key>
 								<string>Import Descent</string>
 							</dict>
-							<key>{4420, 1}</key>
+							<key>{5509, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
