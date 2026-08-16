@@ -121,7 +121,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 5 uses semantic plist markers plus deterministic UUID5 generation, so the full shortcut rebuild is idempotent without numeric action indices.
 - [Phase ?]: Ash remains a validator-clean non-environmental pause; Dimming and Silence act only after capturing a restorable original.
 - [Phase ?]: Leaving wraps primitive dispatch only after the initial session save.
-- [Phase ?]: Exit selection remains deterministic and Config-driven without model, random, or network actions.
+- [Phase ?]: Exit selection remains deterministic and Config-driven without model, random, or network actions. **Reaffirmed and extended 2026-08-16 (user decision):** the Exile split offers deterministic exit *or* home, and nothing else — no random exits. Both Exile Circles are bound by this, not just the voluntary Leaving path. No `number.random`, shuffle, or other nondeterminism enters the exit path.
 - [Phase ?]: Sentient uses the device-evidenced Apple Intelligence on Device model literal; no OS-27-only keys.
 - [Phase ?]: Completed-slow, empty, or malformed audit output falls through to Dumb; hung model cancellation is unavailable at target 26.
 - [Phase ?]: Kept the numeric-coercion fix purely additive at the NUMERIC_OPERAND_FIELDS table per plan instruction; no other function edited.

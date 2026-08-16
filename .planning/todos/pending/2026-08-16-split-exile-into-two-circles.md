@@ -54,35 +54,38 @@ device, and `exit_events` is absent from the bootstrap `state.json` template, so
 real exit against clean state will very likely hard-error
 (`2026-08-15-close-state-shape-sentinel-gaps.md`).
 
-**Selection method.** The user's framing is random vs predetermined. The existing selector
-(`select_exit()`, `tools/build_state_engine.py:695`) is neither — it is deterministic and
-learned: rotate by a persisted counter under 10 observations, then exploit the lowest
-average return-time with a 20% exploration roll. Note there is no random-number action in
-the exit path at all, deliberately: `.planning/STATE.md` records the decision that "exit
-selection remains deterministic and Config-driven without model, random, or network
-actions." **Introducing genuine randomness reverses a recorded decision** — do it
-knowingly, or implement "random" as rotation/shuffle over enabled exits rather than a real
-`number.random` call.
+**Selection method — SETTLED, user decision 2026-08-16: deterministic exit, or home.
+No random exits.** The two Circles are exactly those two options and nothing else. This
+reaffirms the standing decision recorded in `.planning/STATE.md` — "exit selection remains
+deterministic and Config-driven without model, random, or network actions" — and closes the
+question rather than reopening it. Do not introduce `is.workflow.actions.number.random`, a
+shuffle, or any other nondeterminism into the exit path; there is none there today and
+there is to be none.
+
+The existing selector (`select_exit()`, `tools/build_state_engine.py:695`) is already the
+deterministic mechanism this needs: rotate by a persisted counter under 10 observations,
+then exploit the lowest average return-time, with a Config-driven epsilon step that is
+itself a counter-modulo test rather than a random roll.
 
 ## Solution
 
 1. **Name and define the two Circles.** Suggested split, to be confirmed:
    - **Exile (straight)** — the current behaviour. Immediate, no menu, no question, Home
      Screen. Its virtue is that it is instant and cannot be negotiated with.
-   - **Exile (routed)** — ejects *into* a destination rather than to a void. Reuses
-     `select_exit()` / `record_exit_and_route()` so the exit is recorded, the return-time
-     sample is captured, and the learning loop applies — the involuntary path feeds the
-     same evidence base as the voluntary one.
-2. **Settle random vs predetermined explicitly**, and record it as a decision:
-   - *predetermined* — user picks a fixed exit at onboarding or in the Control Room; Exile
-     always lands there. Most defensible: the user chose their own landing pad while calm.
-   - *random* — rotation or shuffle across enabled exits. Cheap, and it prevents the
-     landing pad becoming its own habit.
-   - *learned* — reuse the existing selector unchanged. Free, consistent with the recorded
-     no-randomness decision, but means the involuntary Circle inherits explore/exploit
-     behaviour the user did not ask for at that moment.
-   Whichever wins, it needs a Config key (`exits.exile_selection_mode` or similar) rather
-   than being hardcoded, per the Config Block's own rule.
+   - **Exile (routed)** — ejects *into* a deterministically selected destination rather
+     than to a void. Reuses `select_exit()` / `record_exit_and_route()` unchanged, so the
+     exit is recorded, the return-time sample is captured, and the learning loop applies —
+     the involuntary path feeds the same evidence base as the voluntary one.
+2. **Selection is settled — do not re-litigate it.** Deterministic exit, or home. The
+   routed Circle reuses `select_exit()` unchanged; the straight Circle takes no selection
+   at all. No random-number action, no shuffle, nowhere in the exit path.
+
+   The one sub-question left open, and it is a small one: whether the routed Circle should
+   *offer* the selected exit (the "Take suggested exit / Choose another" menu
+   `universal_leaving()` already uses) or land the user in it without asking. Offering is
+   consistent with the voluntary path and keeps the user's agency; landing directly is the
+   stronger friction and is arguably what makes it a *Circle* rather than a second Leaving
+   menu. Decide and record; either way the selection itself stays deterministic.
 3. **Deepen each of the six routes** — one design pass, then plan, then execute. For each,
    answer: what does it actually open, what context crosses the boundary, and what does the
    user see one second after landing? Concrete leads, all against verified actions:
@@ -121,4 +124,5 @@ knowingly, or implement "random" as rotation/shuffle over enabled exits rather t
   `2026-08-16-build-circle-8-voice-primitive.md` — the other two claimants on the nine
   slots; see step 5.
 - `.planning/STATE.md` Decisions — "exit selection remains deterministic and Config-driven
-  without model, random, or network actions." Step 2 may reverse this; do so explicitly.
+  without model, random, or network actions." **Reaffirmed 2026-08-16** and extended to
+  cover both Exile Circles; step 2 does not reverse it.
