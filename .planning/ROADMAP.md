@@ -109,7 +109,13 @@ Plans:
   4. Rapid switching between two tracked apps in a test sequence never corrupts state or produces a phantom session.
   5. CLOSE clears the active session, appends the completed session to the rolling window, and restores any environmental setting PROSOCHĒ itself changed during the session.
 
-**Plans:** 1/1 plans executed
+**Plans:** 1/3 plans executed (04-UAT.md device testing found gaps G-04-1, G-04-3, G-04-4b; 04-02 and 04-03 close them)
+
+Plans:
+
+- [x] 04-01-PLAN.md — CLOSE pipeline generator: semantic anchor replacement, race-safe ownership check, bounded session history
+- [ ] 04-02-PLAN.md — Fix the WFConditionalActionString wiring defect class (close_pipeline ownership gate + 9 sibling sites) that made CLOSE a permanent no-op (G-04-1, G-04-3)
+- [ ] 04-03-PLAN.md — Add unconditional OPEN/CLOSE Notification confirmations and improve the Leaving menu's copy (G-04-4b)
 
 ### Phase 5: Nine Primitives & Environmental Safety
 
