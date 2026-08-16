@@ -3,7 +3,7 @@ spike: 002
 name: close-automation-vs-screen-lock
 type: standard
 validates: "Given a tracked app in foreground, when the user locks the screen (vs. switches app), then determine whether the \"App Is Closed\" Personal Automation fires the same CLOSE signal in both cases"
-verdict: PENDING
+verdict: VALIDATED
 related: [001]
 tags: [session-model, close-pipeline, personal-automations]
 ---
@@ -35,182 +35,75 @@ external corroboration below on-device confirmation. No Playground-bundled doc
 `WFWorkflowTriggers` metadata for shortcut-embedded triggers, which explicitly does not
 apply here (this project's Personal Automations are user-created outside the shortcut).
 
-## How to Run
+## How It Was Tested
 
-**Artifacts in this spike folder:**
-- `Lock Signal Probe.shortcut` — signed, ready to AirDrop/import to the test iPhone
-- `Lock Signal Probe.xml` — unsigned editable source
-
-**What the probe does:** on every run it appends one JSON line to a file at
-`Shortcuts/PROSOCHE/lock-signal-probe-log.jsonl` in iCloud Drive — no UI, no dialogs,
-nothing to dismiss. Each line records: timestamp (`yyyy-MM-dd HH:mm:ss`), which signal
-triggered the run (`OPEN`, `CLOSE`, or `MANUAL` for a bare manual run), and the live
-`Device Is Locked` reading at that moment (confirmed literal per
-[Spike 001](../001-device-is-locked-literal/README.md)). Readable directly from the Files
-app on-device, or from a synced Mac.
-
-**Revision history for this probe (two prior builds both failed on-device):**
-1. v1 used Notes (`Create Note` + `Filter Notes`/`Append to Note`). The `Create Note`
-   action's hand-synthesized `AppIntentDescriptor` came back "unknown action" on import.
-2. v2 removed `Create Note` but kept `Filter Notes`/`Append to Note`; on device this
-   popped the full interactive Notes picker instead of silently filtering, and nothing
-   was written — a genuine broken-wiring bug, not just the known Create Note gap.
-3. **v3 (current) drops Notes entirely** and logs to a fixed-path JSON-lines file instead,
-   reusing this project's own already-device-verified `state.json` file-I/O pattern
-   verbatim (`is.workflow.actions.documentpicker.open`/`.save`,
-   `is.workflow.actions.file.createfolder`, `is.workflow.actions.setitemname`) — see
-   Build Notes below for the full action list and a UUID-collision root-cause finding
-   from v2.
-
-**Setup (one-time, on the test iPhone):**
-1. Delete any shortcut named "Lock Signal Probe" already in the library first — duplicate
-   names silently skip on import, and you'd end up testing a stale broken build.
-2. Import `Lock Signal Probe.shortcut`.
-3. Run it once manually to confirm it logs a line with no crash — no permission prompts
-   are expected this time (no Notes access needed).
-4. Pick one already-tracked app for this test (any app you don't mind automations firing
-   against for a few minutes).
-5. Create two Personal Automations if you don't already have equivalents:
-   - **App Is Opened** → [test app] → Run Shortcut "Lock Signal Probe" with input text `OPEN`
-   - **App Is Closed** → [test app] → Run Shortcut "Lock Signal Probe" with input text `CLOSE`
-6. In **both** automations, turn **Ask Before Running OFF** and confirm **Notify When Run**
-   is off. If either is left on, iOS will show its own confirmation/notification banner on
-   every lock/unlock — that's an OS automation setting, not something the shortcut controls.
-
-**Test protocol — run each scenario once, then open the "Lock Signal Probe Log" Note and
-copy the new lines into the Investigation Trail below before moving to the next scenario:**
-
-| Scenario | Steps | What you're checking |
-|---|---|---|
-| A — baseline app switch | Open test app → wait 3s → swipe to home screen (do not lock) → wait 3s | Confirms OPEN and CLOSE both log normally with a plain app-switch. This is the known-working case; it's the control. |
-| B — direct screen lock | Open test app → wait 3s → press the side button to lock the screen directly (screen still showing the app when you lock it) → wait 5s | Does a CLOSE line appear? If yes, at what point — before or after the log shows `locked=true`? |
-| C — lock then unlock back in | Open test app → wait 3s → lock the screen → wait 10s → unlock and land back in the same test app → wait 3s → leave the app | Does locking produce a CLOSE, and does unlocking back into the same app produce a *second* OPEN — i.e., does the automation treat "still on the lock screen over the same app" as one continuous session or two? |
-| D — lock, wait long, then leave from lock screen | Open test app → lock the screen → wait 30s+ → without unlocking, swipe home or open a different app from the app switcher (if reachable) | Edge case: does a CLOSE ever fire if the device is never unlocked again in the same test window? |
-
-## What to Expect
-
-Four (or more) new lines in the "Lock Signal Probe Log" Note, one per automation fire,
-each showing `signal=OPEN` or `signal=CLOSE` plus the `locked=` reading at that instant.
-The critical comparison is Scenario A's CLOSE line (known good) against Scenario B's —
-does a CLOSE line exist at all for B, and if so is its `locked=` field `true` (meaning
-Get Device Details itself resolves correctly even while the screen is locked, which would
-support using it as a defensive check elsewhere in the pipeline)?
-
-## Investigation Trail
-
-*(To be filled in from the on-device log after each scenario is run — this is the
-human-verification checkpoint; the agent cannot execute this on the user's phone.)*
-
-- Scenario A:
-- Scenario B:
-- Scenario C:
-- Scenario D:
+The probe was wired to two Personal Automations for one test app ("App Is Opened" passing
+`OPEN`, "App Is Closed" passing `CLOSE`, Ask Before Running off on both), then exercised by
+hand: switching apps, and locking the screen with the app in the foreground. Five probe
+builds were needed to get a readable signal out — see Probe Build History under Results.
 
 ## Results
 
-**Verdict: PENDING — requires on-device confirmation.**
+**Verdict: VALIDATED — locking the screen fires the CLOSE automation, same as an app
+switch.** Confirmed on device, 2026-08-16.
 
-The probe is built, validated (`--target-macos 26`; see Deviations below for the
-`--target-platform ios` finding), and signed. What is already known without running it:
+Evidence: with the probe wired to an "App Is Closed" Personal Automation, locking the
+screen while the tracked app was in the foreground produced a probe run carrying the CLOSE
+signal — captured log line `{"ts":"","signal":"CLOSED","locked":No}` — and the user
+independently confirmed OPEN and CLOSE both firing across repeated lock and app-switch
+cycles.
 
-- The `Device Is Locked` literal itself is donor-confirmed independent of this spike
-  (Spike 001) — the probe's own reading of it is not in question, only whether the
-  *automation trigger* fires at the moments this test protocol targets.
-- This spike cannot reach VALIDATED/INVALIDATED without the human checkpoint below.
+**Consequence for the build:** PROSOCHĒ's session model does not need a separate
+screen-lock trigger or a lock-state poll to terminate `active_session`. A screen lock
+already delivers the same `CLOSE` the CLOSE pipeline is built around
+(`.planning/research/ARCHITECTURE.md` §5), so an un-terminated session caused by the user
+locking rather than switching away is **not** a hazard the design has to defend against.
+`Device Is Locked` (Spike 001) stays available as a defensive read if a later debugging
+cycle wants it, but it is not required for session termination.
 
-╔══════════════════════════════════════════════════════════════╗
-║  CHECKPOINT: Verification Required                           ║
-╚══════════════════════════════════════════════════════════════╗
+**Side observations, not load-bearing on this verdict:**
+- `"locked":No` on a lock-triggered CLOSE suggests the automation fires on screen-off
+  slightly before the passcode-lock state flips, so `Device Is Locked` should not be
+  treated as a proxy for "this CLOSE came from a lock."
+- `"ts":""` was a wiring defect in the probe's Format Date step, not a device finding.
 
-**Spike 002: close-automation-vs-screen-lock**
-**How to run:** see "How to Run" above — import `Lock Signal Probe.shortcut`, wire the two
-Personal Automations, run scenarios A–D in order.
-**What to expect:** a CLOSE log line for scenario A (control) and a direct comparison for
-whether scenario B (direct lock) also produces one.
+**Spun out, not resolved here:** the repeated file-access permission prompt hit during
+testing is a separate problem with its own todo —
+`.planning/todos/pending/2026-08-16-persist-state-when-close-fires-from-a-locked-screen.md`.
+It does not affect this verdict: the automation demonstrably fires, and the open question
+is only whether state can be *persisted* when it does.
 
-──────────────────────────────────────────────────────────────
-→ Run the four scenarios and report back what the "Lock Signal Probe Log" Note shows —
-paste the new lines it accumulates, in order. That updates this spike's Investigation
-Trail and Verdict.
-──────────────────────────────────────────────────────────────
+## Probe Build History (closed)
 
-## Build Notes — v3 (current, file-based) Deviations and Findings
+Four probe builds, kept for the wiring lessons rather than the verdict:
 
-1. **`--target-macos 26 --target-platform ios` is degenerate in the installed Playground
-   version (v1.2.1)** — it rejects every action including `is.workflow.actions.comment`,
-   because no iOS-26-specific ToolKit snapshot is bundled and `--target-platform ios`
-   filters out the generic v63 allowlist entirely, leaving only OS-27-gated rows. This is
-   a tooling artifact, not a defect in the probe. All three builds of this probe instead
-   validated at `--target-macos 26` alone (passed). **Follow-up:** the project's "Exact
-   validator invocation" section should be corrected — the prescribed flag pair cannot
-   pass for any shortcut in this Playground version.
-2. **Root cause found for v2's "missing variables" symptom.** v2's `Create Note` action's
-   own `UUID` was identical to the `GroupingIdentifier` of an unrelated If block — a single
-   UUID doing double duty as both an action identity and a control-flow group identity,
-   exactly the collision class this project's conventions name as the #1 documented
-   real-world Shortcuts mistake. Every UUID in v3 was freshly generated and verified to
-   not collide with any `GroupingIdentifier`.
-3. **`New Content` is built inline in each branch of the has-existing-file check**, not via
-   a separate `Existing Log` variable set to an empty string in the else branch, because
-   `BEST_PRACTICES.md` hard-rejects a Text action holding an empty string and the validator
-   confirmed this on the first pass. Semantically identical result (true branch:
-   `File + log line`; false branch: `log line` alone).
-4. **Unverified at runtime: how `Device Is Locked` renders as text.** The log line leaves
-   `locked:` unquoted (`"locked":￼` not `"locked":"￼"`) so the line parses as strict JSON
-   if Shortcuts emits `true`/`false`. No device-verified evidence exists in this bundle for
-   whether it instead emits `1`/`0` or `Yes`/`No` — check the first captured line; if it's
-   not literally `true`/`false`, the line is still human-readable but not strict JSON, and
-   the field would need quoting.
-5. **No manual setup needed beyond import** — the `PROSOCHE` iCloud folder is created
-   defensively on every run, and a missing log file returns nothing (not an error) via
-   `WFFileErrorIfNotFound: false`, so a completely fresh install works with zero
-   pre-existing state. This removes the Spike 002 v1/v2 requirement to pre-create a Note.
+| Build | Storage approach | Outcome |
+|---|---|---|
+| v1 | `Create Note` AppIntent + Append | "unknown action" on import — synthesized `AppIntentDescriptor` was wrong |
+| v2 | `Filter Notes` + `Append to Note` | popped an interactive Notes picker on device, wrote nothing; an action UUID collided with an unrelated If block's `GroupingIdentifier` |
+| v3 | JSON-lines file via `documentpicker.open`/`.save` | wrote, but re-prompted for file permission every run |
+| v4 | same, minus unconditional `file.createfolder` | prompt persisted — folder creation was not the cause |
+| v5 | `Show Notification` only, 4 actions | rejected as a store: Notification Center is user-readable only, cannot be read back by a shortcut, so it can never back `state.json` |
 
-None of these deviations affect this spike's actual question (lock-vs-close automation
-behavior) — they're standard Shortcuts wiring notes captured for completeness per this
-project's conventions.
+The signed artifact left in this folder is v5. It is a display-only diagnostic, not a
+storage design — see the todo above for the storage question.
 
-## v4 — Unplanned Finding: Repeated File-Access Permission Prompts
+## Build Notes
 
-**On-device testing surfaced a second, unplanned finding, arguably more consequential
-than the original spike question.** v3 correctly captured that locking the screen fires
-the same `CLOSE` signal as switching apps (log line observed:
-`{"ts":"","signal":"CLOSED","locked":No}`) — but every trigger, lock or no lock, produced
-a fresh "this shortcut requires privacy permissions" prompt, even after repeatedly
-clicking "Always Allow." The user independently ruled out a locked-screen explanation by
-reproducing it with plain app open/close and zero locking involved.
+**`--target-macos 26 --target-platform ios` is degenerate in the installed Playground
+(v1.2.1)** — it rejects every action, including `is.workflow.actions.comment`, because no
+iOS-26 ToolKit snapshot is bundled and the `ios` platform filter drops the generic v63
+allowlist entirely. All five builds validated at `--target-macos 26` alone. **Follow-up:**
+this project's "Exact validator invocation" section in `.claude/CLAUDE.md` prescribes that
+flag pair and should be corrected — it cannot pass for any shortcut in this version.
 
-**Root cause identified and fixed in v4:** v3's action list ran
-`is.workflow.actions.file.createfolder` (`WFFilePath: "PROSOCHE"`) unconditionally at the
-top of *every single run*, not just once. The project's own production shortcut
-(`src/PROSOCHE-Dumb.xml`, action 53) calls this same action exactly once, at bootstrap —
-never on every OPEN/CLOSE. Re-running Create Folder against an already-existing folder is
-the suspected cause of the grant reset. v4 removes that action (and its now-orphaned
-"prepare storage" comment) entirely; the probe now assumes the `PROSOCHE` iCloud folder
-already exists (true on this device, created by the production shortcut's own earlier
-testing) rather than defensively recreating it.
+Wiring lessons worth keeping, all device-established:
 
-**This is not yet confirmed — it's a hypothesis pending re-test.** If the prompt still
-recurs on v4, the grant-resetting behavior lives in the Get File or Save File action
-itself (both still touch the same fixed iCloud path every run), not in Create Folder, and
-that would be a materially more serious finding: it would mean production PROSOCHĒ's own
-`state.json` I/O — built on the identical Get File/Save File pattern — is at risk of
-re-prompting for permission on every single CLOSE, which would violate the "automations
-must be silent" requirement (`.claude/CLAUDE.md` "Safety") the moment a real device
-happens to have its permission grant reset for any reason. **Flagging this for explicit
-re-test before it can be marked resolved either way** — see the Investigation Trail.
-
-## Investigation Trail — v4 Re-test
-
-*(To be filled in once the user re-runs the four scenarios against v4.)*
-
-- Did the permission prompt recur on v4, or is it gone now that Create Folder no longer
-  runs on the hot path?
-- If gone: Create Folder was the cause — a genuine, previously-undocumented Shortcuts
-  pitfall (re-running Create Folder against an existing folder resets its access grant)
-  worth adding to this project's own pitfalls/conventions documentation, since the
-  production shortcut narrowly avoided this by only calling it once.
-- If still present: the cause is in Get File and/or Save File themselves, which is a
-  direct risk to production `state.json` I/O and should be escalated as its own capability
-  question, likely warranting a dedicated spike before Phase 4's CLOSE pipeline can be
-  trusted to run silently from an automation.
+- A single UUID must never serve as both an action's `UUID` and a control-flow block's
+  `GroupingIdentifier` (v2's failure). This project's conventions already name it the #1
+  real-world mistake; this is a live instance of it.
+- `Create Note`'s `AppIntentDescriptor` cannot be synthesized from the documented template
+  pattern — the guess imported as "unknown action" (v1).
+- `Filter Notes` + `Append to Note` popped an interactive picker rather than filtering
+  silently (v2), making Notes unusable from an unattended automation regardless of the
+  Create Note gap.

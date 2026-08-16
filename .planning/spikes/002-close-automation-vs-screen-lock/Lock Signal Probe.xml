@@ -10,13 +10,11 @@
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>WFCommentActionText</key>
-				<string>Lock Signal Probe — standalone diagnostic.
+				<string>Diagnostic probe: answers whether locking the screen fires the same signal as switching apps.
 
-Wire this shortcut into two Personal Automations for ONE test app: "App Is Opened" passing the text OPEN, and "App Is Closed" passing the text CLOSE. Then exercise the phone by hand: switch apps, lock the screen with the app in front, unlock, go to Home Screen, and so on.
+Posts one notification per run. iOS Notification Center timestamps and stacks them for you, so it is already the append-only log — no file, no note, no storage permission.
 
-Every run appends one JSON line to the file PROSOCHE/lock-signal-probe-log.jsonl inside the Shortcuts folder in iCloud Drive, recording the time, which signal arrived, and whether the device was locked at that instant. Open the Files app and read that file to review the results. Comparing the CLOSE lines that carry locked true against the ones that carry locked false tells you whether iOS fires the App Is Closed trigger on screen lock the same way it fires on an app switch.
-
-This build deliberately uses a plain text file instead of a Note. Notes actions popped a picker on device and wrote nothing. This shortcut shows no alerts, dialogs, pickers or results, so it never interrupts you while running in the background.</string>
+Wire it to two Personal Automations for one test app: App Is Opened passes the text OPEN, App Is Closed passes the text CLOSE. Turn Ask Before Running off on both. Run it manually once and the signal reads empty, which is your baseline.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -29,22 +27,7 @@ This build deliberately uses a plain text file instead of a Note. Notes actions 
 
 This shortcut was created via the following user prompt:
 
-&gt; Rebuild the "Lock Signal Probe" diagnostic shortcut for the PROSOCHE project from scratch, replacing its unreliable Notes-based logging with file-based JSON-lines logging. Abandon Notes entirely for this probe. Log to a fixed-path JSON-lines file instead, using this project's own already-proven, device-verified file I/O pattern. It accepts OPEN or CLOSE as Shortcut Input from a Personal Automation (or nothing when run by hand), reads Get Device Details for Device Is Locked, formats the current date to the second, builds one single-line JSON log entry, appends it to the running log file and saves it back. No UI anywhere: no Show Result, no Show Alert, nothing that requires the user to dismiss anything.</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.comment</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFCommentActionText</key>
-				<string>--- READ SIGNALS ---
-
-ALLOW_DATETIME_FORMAT — the probe needs precision down to the second to line up a screen lock with the automation that fired next to it, so Format Date deliberately uses a custom date AND time pattern rather than a date-only string.
-
-- Get Device Details is set to Device Is Locked
-- Date is left on Current Date so it stamps the exact moment of the run
-- Format Date takes its Date from the Date action above</string>
+&gt; Rebuild the Lock Signal Probe as small as it can possibly be. Three prior builds tried to persist a log — first to a Note, then to a JSON file in iCloud Drive — and every one of them fought a permission prompt or wrote nothing. Drop persistence entirely. Show a notification instead: iOS Notification Center already timestamps and stacks every notification, so it is the append-only log we were trying to build, and it needs no storage permission at all. Read Device Is Locked, post one notification naming which signal arrived, done.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -53,201 +36,40 @@ ALLOW_DATETIME_FORMAT — the probe needs precision down to the second to line u
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>48EE07F9-DA48-4D1C-AAA8-71D58DF93CBF</string>
+				<string>5AF98584-648C-4274-ADF7-F13CA79153A3</string>
 				<key>WFDeviceDetail</key>
 				<string>Device Is Locked</string>
 			</dict>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.date</string>
+			<string>is.workflow.actions.comment</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>UUID</key>
-				<string>C5B2EEA7-8A2A-4AF8-AE47-F57F8774AF53</string>
+				<key>WFCommentActionText</key>
+				<string>Notification wiring:
+- Body starts with the Shortcut Input, which is the OPEN or CLOSE text the automation passes in
+- Body ends with the Device Details reading from the action above</string>
 			</dict>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.format.date</string>
+			<string>is.workflow.actions.notification</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>353A5BF0-0F95-4E93-A56D-B0A1D4496983</string>
-				<key>WFDate</key>
+				<string>4823B6D0-8F9C-4EA4-A46D-076761C33E9A</string>
+				<key>WFNotificationActionTitle</key>
 				<dict>
 					<key>Value</key>
 					<dict>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>OutputName</key>
-								<string>Date</string>
-								<key>OutputUUID</key>
-								<string>C5B2EEA7-8A2A-4AF8-AE47-F57F8774AF53</string>
-								<key>Type</key>
-								<string>ActionOutput</string>
-							</dict>
-						</dict>
 						<key>string</key>
-						<string>￼</string>
+						<string>PROSOCHĒ Probe</string>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenString</string>
 				</dict>
-				<key>WFDateFormat</key>
-				<string>Custom</string>
-				<key>WFDateFormatString</key>
-				<string>yyyy-MM-dd HH:mm:ss</string>
-				<key>WFDateFormatStyle</key>
-				<string>Custom</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.comment</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFCommentActionText</key>
-				<string>--- RESOLVE WHICH SIGNAL FIRED ---
-
-- If checks whether Shortcut Input has any value
-- When it does, Trigger Label is set straight from Shortcut Input, which will read OPEN or CLOSE
-- Otherwise a Text action supplies the word MANUAL and Trigger Label is set from that Text action, so baseline runs started by hand are still logged and are easy to tell apart</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.conditional</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>33975220-1CCC-421D-B64A-8AA58899F533</string>
-				<key>WFCondition</key>
-				<integer>100</integer>
-				<key>WFControlFlowMode</key>
-				<integer>0</integer>
-				<key>WFInput</key>
-				<dict>
-					<key>Type</key>
-					<string>Variable</string>
-					<key>Variable</key>
-					<dict>
-						<key>Value</key>
-						<dict>
-							<key>Type</key>
-							<string>ExtensionInput</string>
-						</dict>
-						<key>WFSerializationType</key>
-						<string>WFTextTokenAttachment</string>
-					</dict>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.setvariable</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>E084D2FC-B3C7-4670-9650-72C4BA32E454</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>Type</key>
-						<string>ExtensionInput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFVariableName</key>
-				<string>Trigger Label</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.conditional</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>33975220-1CCC-421D-B64A-8AA58899F533</string>
-				<key>WFControlFlowMode</key>
-				<integer>1</integer>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.gettext</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>FC6475CF-66A3-4326-A769-9F6E656A24D9</string>
-				<key>WFTextActionText</key>
-				<string>MANUAL</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.setvariable</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>30D2B1E5-2E77-468F-A131-1F5972531475</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>OutputName</key>
-						<string>Text</string>
-						<key>OutputUUID</key>
-						<string>FC6475CF-66A3-4326-A769-9F6E656A24D9</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFVariableName</key>
-				<string>Trigger Label</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.conditional</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>33975220-1CCC-421D-B64A-8AA58899F533</string>
-				<key>WFControlFlowMode</key>
-				<integer>2</integer>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.comment</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFCommentActionText</key>
-				<string>--- BUILD THE LOG LINE ---
-
-The Text action below produces one JSON object on its own line, ending in a line break so the next run starts a fresh line:
-{"ts":"2026-08-16 19:31:02","signal":"CLOSE","locked":true}
-
-- the first value is the formatted timestamp from Format Date
-- the middle value is Trigger Label
-- the last value is the Device Is Locked reading from Get Device Details</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.gettext</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>FE774A1D-4173-4173-A15B-ED0A1779FA36</string>
-				<key>WFTextActionText</key>
+				<key>WFNotificationActionBody</key>
 				<dict>
 					<key>Value</key>
 					<dict>
@@ -255,307 +77,27 @@ The Text action below produces one JSON object on its own line, ending in a line
 						<dict>
 							<key>{7, 1}</key>
 							<dict>
-								<key>OutputName</key>
-								<string>Formatted Date</string>
-								<key>OutputUUID</key>
-								<string>353A5BF0-0F95-4E93-A56D-B0A1D4496983</string>
 								<key>Type</key>
-								<string>ActionOutput</string>
+								<string>ExtensionInput</string>
 							</dict>
-							<key>{20, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Trigger Label</string>
-							</dict>
-							<key>{32, 1}</key>
+							<key>{16, 1}</key>
 							<dict>
 								<key>OutputName</key>
 								<string>Device Details</string>
 								<key>OutputUUID</key>
-								<string>48EE07F9-DA48-4D1C-AAA8-71D58DF93CBF</string>
+								<string>5AF98584-648C-4274-ADF7-F13CA79153A3</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
 						</dict>
 						<key>string</key>
-						<string>{"ts":"￼","signal":"￼","locked":￼}
-</string>
+						<string>signal=￼ locked=￼</string>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenString</string>
 				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.documentpicker.open</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>8AF59508-A6D7-4E4E-B336-5D0F66F12351</string>
-				<key>WFFileErrorIfNotFound</key>
+				<key>WFNotificationActionSound</key>
 				<false/>
-				<key>WFGetFilePath</key>
-				<string>PROSOCHE/lock-signal-probe-log.jsonl</string>
-				<key>WFShowFilePicker</key>
-				<false/>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.comment</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFCommentActionText</key>
-				<string>--- BUILD THE FILE CONTENTS ---
-
-Get File above reads the running log at the fixed path with the file picker switched off and Error If Not Found switched off, so on the very first run it simply returns nothing instead of stopping the shortcut.
-
-New Content is built inside the branches rather than by combining a separate Existing Log variable, because a Text action holding a genuinely empty string is not a permitted shape.
-
-- If checks whether Get File returned anything
-- When it did, Text joins the existing file first and the new log line second, so every earlier line is preserved, and New Content is set from that Text
-- Otherwise Text holds only the new log line and New Content is set from that, which is what makes the very first run write a brand new file containing a single line
-- Either way the join is plain concatenation with nothing between the two values, and no dictionary or list parsing is involved anywhere</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.conditional</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>1A5793CF-B4E6-479C-9C1F-24152A164DDD</string>
-				<key>WFCondition</key>
-				<integer>100</integer>
-				<key>WFControlFlowMode</key>
-				<integer>0</integer>
-				<key>WFInput</key>
-				<dict>
-					<key>Type</key>
-					<string>Variable</string>
-					<key>Variable</key>
-					<dict>
-						<key>Value</key>
-						<dict>
-							<key>OutputName</key>
-							<string>File</string>
-							<key>OutputUUID</key>
-							<string>8AF59508-A6D7-4E4E-B336-5D0F66F12351</string>
-							<key>Type</key>
-							<string>ActionOutput</string>
-						</dict>
-						<key>WFSerializationType</key>
-						<string>WFTextTokenAttachment</string>
-					</dict>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.gettext</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>1F38EED7-7401-49EA-9761-8A9BD6E13515</string>
-				<key>WFTextActionText</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>OutputName</key>
-								<string>File</string>
-								<key>OutputUUID</key>
-								<string>8AF59508-A6D7-4E4E-B336-5D0F66F12351</string>
-								<key>Type</key>
-								<string>ActionOutput</string>
-							</dict>
-							<key>{1, 1}</key>
-							<dict>
-								<key>OutputName</key>
-								<string>Text</string>
-								<key>OutputUUID</key>
-								<string>FE774A1D-4173-4173-A15B-ED0A1779FA36</string>
-								<key>Type</key>
-								<string>ActionOutput</string>
-							</dict>
-						</dict>
-						<key>string</key>
-						<string>￼￼</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.setvariable</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>4C3ABCA5-506B-4A8F-885E-C6F8DAB79767</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>OutputName</key>
-						<string>Text</string>
-						<key>OutputUUID</key>
-						<string>1F38EED7-7401-49EA-9761-8A9BD6E13515</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFVariableName</key>
-				<string>New Content</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.conditional</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>1A5793CF-B4E6-479C-9C1F-24152A164DDD</string>
-				<key>WFControlFlowMode</key>
-				<integer>1</integer>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.gettext</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>3B49725D-878F-41BD-BDF4-647D1BFC0B49</string>
-				<key>WFTextActionText</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>OutputName</key>
-								<string>Text</string>
-								<key>OutputUUID</key>
-								<string>FE774A1D-4173-4173-A15B-ED0A1779FA36</string>
-								<key>Type</key>
-								<string>ActionOutput</string>
-							</dict>
-						</dict>
-						<key>string</key>
-						<string>￼</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.setvariable</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>D6F9189C-CF31-4123-9A2A-FE2A3A82F69E</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>OutputName</key>
-						<string>Text</string>
-						<key>OutputUUID</key>
-						<string>3B49725D-878F-41BD-BDF4-647D1BFC0B49</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFVariableName</key>
-				<string>New Content</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.conditional</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>1A5793CF-B4E6-479C-9C1F-24152A164DDD</string>
-				<key>WFControlFlowMode</key>
-				<integer>2</integer>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.comment</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFCommentActionText</key>
-				<string>--- SAVE THE LOG ---
-
-- Set Name gives New Content the file name lock-signal-probe-log.jsonl, which is what decides the name of the saved file
-- Save File writes the Renamed Item back to the same fixed path with Overwrite switched on and Ask Where To Save switched off, so nothing is ever shown on screen</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.setitemname</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>675CF647-9536-4EE9-B3E0-7E08D1B076D7</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>Type</key>
-						<string>Variable</string>
-						<key>VariableName</key>
-						<string>New Content</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFName</key>
-				<string>lock-signal-probe-log.jsonl</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.documentpicker.save</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFAskWhereToSave</key>
-				<false/>
-				<key>WFFileDestinationPath</key>
-				<string>PROSOCHE/lock-signal-probe-log.jsonl</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>OutputName</key>
-						<string>Renamed Item</string>
-						<key>OutputUUID</key>
-						<string>675CF647-9536-4EE9-B3E0-7E08D1B076D7</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFSaveFileOverwrite</key>
-				<true/>
 			</dict>
 		</dict>
 	</array>
@@ -566,9 +108,9 @@ New Content is built inside the branches rather than by combining a separate Exi
 	<key>WFWorkflowIcon</key>
 	<dict>
 		<key>WFWorkflowIconGlyphNumber</key>
-		<integer>59770</integer>
+		<integer>59736</integer>
 		<key>WFWorkflowIconStartColor</key>
-		<integer>3031607807</integer>
+		<integer>431817727</integer>
 	</dict>
 	<key>WFWorkflowImportQuestions</key>
 	<array/>

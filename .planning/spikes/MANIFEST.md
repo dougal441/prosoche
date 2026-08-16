@@ -35,4 +35,13 @@ check whether the screen is currently locked at any point in its OPEN/CLOSE pipe
 | # | Name | Type | Validates | Verdict | Tags |
 |---|------|------|-----------|---------|------|
 | 001 | device-is-locked-literal | standard | Given Donor 10's decrypted plist, when inspected for `WFDeviceDetail`, then the literal `"Device Is Locked"` is present as donor-confirmed ground truth | VALIDATED | device-details, capability-audit, evidence-hierarchy |
-| 002 | close-automation-vs-screen-lock | standard | Given a tracked app in foreground, when the user locks the screen (vs. switches app), then determine whether the "App Is Closed" Personal Automation fires the same `CLOSE` signal in both cases | PENDING — probe built, validated, signed; awaiting on-device run | session-model, close-pipeline, personal-automations |
+| 002 | close-automation-vs-screen-lock | standard | Given a tracked app in foreground, when the user locks the screen (vs. switches app), then determine whether the "App Is Closed" Personal Automation fires the same `CLOSE` signal in both cases | VALIDATED — yes, screen lock fires CLOSE | session-model, close-pipeline, personal-automations |
+
+## Spun-Out Work
+
+- **Persisting state when CLOSE fires from a locked screen** —
+  `.planning/todos/pending/2026-08-16-persist-state-when-close-fires-from-a-locked-screen.md`.
+  Surfaced during spike 002: iCloud file access re-prompts for permission on every
+  automation run ("Always Allow" does not stick), and cannot be granted at all while the
+  screen is locked. Separate from this spike's verdict — the automation fires; whether
+  state can be *saved* when it does is the open question.
