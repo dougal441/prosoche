@@ -94,7 +94,8 @@ expected: no `WFBrightness`/`WFVolume` parameter chip renders red/invalid on any
 Dimming, Silence, or Restore action in Shortcuts.app's editor — checked before any
 behavioral trial begins. If red: stop, do not proceed to Test 2, follow the fresh-donor
 protocol in `09-RESEARCH.md` "Recommended verification path" instead.
-result: pending
+result: pass
+reason: "User spot-checked rather than all ~3,500 actions in the shortcut — reasonable given only the 28 Phase-9 coercion sites are actually in question. Not a red chip on any inspected instance."
 
 ### 2. Clean baseline via Emergency Restore
 expected: tapping Emergency Restore once, before any new trial, returns the device to a
@@ -164,7 +165,7 @@ result: pending
 ## Summary
 
 total: 12
-passed: 0
+passed: 1
 issues: 0
 skipped: 0
 
