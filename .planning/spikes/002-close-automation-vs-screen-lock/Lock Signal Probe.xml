@@ -38,26 +38,6 @@ This shortcut was created via the following user prompt:
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>WFCommentActionText</key>
-				<string>--- PREPARE STORAGE ---
-
-Create Folder makes the PROSOCHE folder inside the Shortcuts folder in iCloud Drive. It is safe to run every time; on a phone that already has the folder it simply does nothing. Running it first means the very first log write on a fresh install has somewhere to land.</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.file.createfolder</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFFilePath</key>
-				<string>PROSOCHE</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.comment</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFCommentActionText</key>
 				<string>--- READ SIGNALS ---
 
 ALLOW_DATETIME_FORMAT — the probe needs precision down to the second to line up a screen lock with the automation that fired next to it, so Format Date deliberately uses a custom date AND time pattern rather than a date-only string.

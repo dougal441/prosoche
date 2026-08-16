@@ -169,3 +169,48 @@ Trail and Verdict.
 None of these deviations affect this spike's actual question (lock-vs-close automation
 behavior) — they're standard Shortcuts wiring notes captured for completeness per this
 project's conventions.
+
+## v4 — Unplanned Finding: Repeated File-Access Permission Prompts
+
+**On-device testing surfaced a second, unplanned finding, arguably more consequential
+than the original spike question.** v3 correctly captured that locking the screen fires
+the same `CLOSE` signal as switching apps (log line observed:
+`{"ts":"","signal":"CLOSED","locked":No}`) — but every trigger, lock or no lock, produced
+a fresh "this shortcut requires privacy permissions" prompt, even after repeatedly
+clicking "Always Allow." The user independently ruled out a locked-screen explanation by
+reproducing it with plain app open/close and zero locking involved.
+
+**Root cause identified and fixed in v4:** v3's action list ran
+`is.workflow.actions.file.createfolder` (`WFFilePath: "PROSOCHE"`) unconditionally at the
+top of *every single run*, not just once. The project's own production shortcut
+(`src/PROSOCHE-Dumb.xml`, action 53) calls this same action exactly once, at bootstrap —
+never on every OPEN/CLOSE. Re-running Create Folder against an already-existing folder is
+the suspected cause of the grant reset. v4 removes that action (and its now-orphaned
+"prepare storage" comment) entirely; the probe now assumes the `PROSOCHE` iCloud folder
+already exists (true on this device, created by the production shortcut's own earlier
+testing) rather than defensively recreating it.
+
+**This is not yet confirmed — it's a hypothesis pending re-test.** If the prompt still
+recurs on v4, the grant-resetting behavior lives in the Get File or Save File action
+itself (both still touch the same fixed iCloud path every run), not in Create Folder, and
+that would be a materially more serious finding: it would mean production PROSOCHĒ's own
+`state.json` I/O — built on the identical Get File/Save File pattern — is at risk of
+re-prompting for permission on every single CLOSE, which would violate the "automations
+must be silent" requirement (`.claude/CLAUDE.md` "Safety") the moment a real device
+happens to have its permission grant reset for any reason. **Flagging this for explicit
+re-test before it can be marked resolved either way** — see the Investigation Trail.
+
+## Investigation Trail — v4 Re-test
+
+*(To be filled in once the user re-runs the four scenarios against v4.)*
+
+- Did the permission prompt recur on v4, or is it gone now that Create Folder no longer
+  runs on the hot path?
+- If gone: Create Folder was the cause — a genuine, previously-undocumented Shortcuts
+  pitfall (re-running Create Folder against an existing folder resets its access grant)
+  worth adding to this project's own pitfalls/conventions documentation, since the
+  production shortcut narrowly avoided this by only calling it once.
+- If still present: the cause is in Get File and/or Save File themselves, which is a
+  direct risk to production `state.json` I/O and should be escalated as its own capability
+  question, likely warranting a dedicated spike before Phase 4's CLOSE pipeline can be
+  trusted to run silently from an automation.
