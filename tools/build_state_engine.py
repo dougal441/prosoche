@@ -1569,11 +1569,19 @@ def manual_emergency_restore():
          menu(group, 0, prompt="PROSOCHĒ", items=choices)]
     # CYCLE 14 -- checkpoint decision: "Open Control Room" is decoupled from the
     # refresh-append mechanism entirely (read-only; the common tail below still finds
-    # or creates the note and shows it via shownote, but never appends a snapshot).
+    # or creates the note, but never appends a snapshot).
     # "Status" gets its own read path (Manual Status Requested), so it isn't left
     # without a mechanism -- see manual_note_refresh() for the display branch.
+    # PHASE 10 (10-02) amendment: "Open Control Room" is STILL read-only with respect
+    # to the Note -- it sets no Manual Refresh Requested and appends nothing -- but it
+    # is no longer a bare Nothing riding on an unconditional tail.  It now carries its
+    # own request flag, Manual Show Note Requested, and gate_control_room_shownote()
+    # makes the single is.workflow.actions.shownote depend on it, so the other nine
+    # menu items no longer end by launching the Notes app.  The note itself is still
+    # found or created unconditionally below, so BOOT-08's deleted-note self-heal and
+    # manual_note_refresh()'s "Control Room Note" binding are both unaffected.
     a += [menu(group, 1, title="Status"), *number(1, "Manual Status Requested")]
-    a += [menu(group, 1, title="Open Control Room"), action("is.workflow.actions.nothing")]
+    a += [menu(group, 1, title="Open Control Room"), *number(1, "Manual Show Note Requested")]
     a += [menu(group, 1, title="Sync My Profile"), *number(1, "Manual Refresh Requested"), *number(1, "Manual Sync Requested")]
     profile_menu = uid()
     a += [menu(group, 1, title="Change Profile"), menu(profile_menu, 0, prompt="Choose profile", items=["Paradise", "Limbo", "Inferno"])]
@@ -2871,6 +2879,67 @@ def fix_notes_filter_limit(actions):
         return
 
 
+def gate_control_room_shownote(actions):
+    """Show the Control Room Note only when "Open Control Room" was actually chosen.
+
+    PHASE 10 (10-02) -- reported symptom: every manual menu choice ends by launching the
+    Notes app.  Choosing Status, Toggle Voice, Reset Today, Change Profile, Change
+    Sequence, Sync My Profile, Test a Circle or Emergency Restore does its own work and
+    then, without being asked, opens the Control Room Note on top of it.
+    Mechanism: the artifact's single is.workflow.actions.shownote sits at depth 0 in the
+    MANUAL arm -- inside no conditional at all -- as the common tail of the hand-authored
+    find-or-create block, and the one menu item that SHOULD open the note, "Open Control
+    Room", was a bare is.workflow.actions.nothing relying on exactly that unconditional
+    tail for its entire effect.  So the note opened for everybody, and the item whose
+    name promises it had no mechanism of its own.  Same discovery class as
+    fix_shownote_key() and fix_notes_filter_limit(): a hand-authored block outside every
+    generated sweep.
+    Fix: give "Open Control Room" a real numeric flag (Manual Show Note Requested, set in
+    manual_emergency_restore()) and wrap the shownote -- and only the shownote -- in an
+    `if_block(flag, 2, number=0)` gate.  is.workflow.actions.filter.notes, the Create Note
+    action and the recovery-append block above it are deliberately left OUTSIDE the gate:
+    the note must keep being found or created on every manual run so a deleted note still
+    self-heals (BOOT-08), and manual_note_refresh() must keep finding a bound "Control
+    Room Note" variable to append to.
+    The gate is built through if_block() rather than a hand-built dict because
+    WFInput.Variable is a variable slot taking a bare WFTextTokenAttachment (axis 5), and
+    verify_conditional_inputs() fails the build on anything else.  This pass runs after
+    fix_shownote_key(), so the action it moves already carries WFInput rather than the
+    ignored `target` key.
+    Idempotent: this pass INSERTS actions rather than editing parameters, so the probe is
+    positional -- a second run finds the action immediately preceding the shownote is
+    already a mode-0 conditional with WFCondition 2 and returns without wrapping again.
+    """
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.shownote":
+            continue
+        if index:
+            prior = actions[index - 1]
+            prior_parameters = prior.get("WFWorkflowActionParameters", {})
+            if (prior.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+                    and prior_parameters.get("WFControlFlowMode") == 0
+                    and prior_parameters.get("WFCondition") == 2):
+                return
+        gate_group, gate_if = if_block("Manual Show Note Requested", 2, number=0)
+        # Authored here rather than left to main()'s auto-comment pass, so the emitted
+        # plist carries the reason instead of the generic "Control-flow check" filler.
+        gate_comment = comment(
+            "Show the Control Room note only when it was explicitly asked for:\n"
+            "- Reported symptom: every manual menu choice ended by launching the Notes app.\n"
+            "- Mechanism: this Show Note sat at depth 0 in the MANUAL arm, outside every conditional, and \"Open Control Room\" was a bare Nothing relying on that unconditional tail.\n"
+            "- Input is Manual Show Note Requested, set only by the \"Open Control Room\" menu case; the note is still found or created above on every manual run, so a deleted note still self-heals.\n"
+            "- Idempotent: a rebuild finds this conditional already immediately before the Show Note and does not wrap it a second time.")
+        actions[index:index + 1] = [
+            gate_comment,
+            gate_if,
+            item,
+            otherwise(gate_group),
+            action("is.workflow.actions.nothing"),
+            end_if(gate_group),
+        ]
+        return
+
+
 def fix_date_format_key(actions):
     """Correct the behavioural-day format.date action's pattern key.
 
@@ -2988,6 +3057,9 @@ def main():
     fix_date_format_key(actions)
     fix_shownote_key(actions)
     fix_notes_filter_limit(actions)
+    # After fix_shownote_key(), so the action being wrapped already carries WFInput, and
+    # after fix_notes_filter_limit(), so the note search it follows is already bounded.
+    gate_control_room_shownote(actions)
     # The skill requires a repair-oriented, bulleted Comment immediately before
     # every control-flow start.  Make this invariant structural, not index-based.
     index = 0
