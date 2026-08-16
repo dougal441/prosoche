@@ -6,3 +6,7 @@
 *.DS_Store
 __pycache__/
 *.pyc
+
+# graphify build outputs (regenerable)
+.planning/graphs/
+graphify-out/
