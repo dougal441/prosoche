@@ -1078,10 +1078,11 @@ def open_pipeline():
     # Ordered nine-item threshold scan.
     a += read_value("profile", variable("State"), "Profile")
     a += [comment("""Resolve Circle by an ordered nine-step threshold scan:
-- Start at Circle 1 and use the active profile's Config threshold list.
+- Start at Circle 0 and use the active profile's Config threshold list.
 - Each satisfied greater-than-or-equal comparison overwrites Circle with the current index.
-- Ascending thresholds make the final satisfied index the correct Circle; no numeric equality is used.""")]
-    a += number(1, "Circle Next")
+- Ascending thresholds make the final satisfied index the correct Circle; no numeric equality is used.
+- An unmet first threshold leaves Circle at 0, the silent band, in which nothing is shown.""")]
+    a += number(0, "Circle Next")
     scan = uid()
     a += [action("is.workflow.actions.repeat.count", GroupingIdentifier=scan, WFControlFlowMode=0, WFRepeatCount=9)]
     threshold_id = uid()
@@ -1095,14 +1096,17 @@ def open_pipeline():
           action("is.workflow.actions.repeat.count", UUID=uid(), GroupingIdentifier=scan, WFControlFlowMode=2)]
     a += [set_value("circle", variable("Circle Next")), set_value("behavioural_day", variable("Behavioural Day"))]
     a += complete_pending_exit()
-    # Permanent, unconditional OPEN confirmation, fired on every genuine open once
-    # Circle is written and any pending exit has completed (G-04-4b). Reuses knock()'s
-    # exact "Circle X · pressure Y · heat Z" phrasing.
-    a += [notification("PROSOCHĒ", text_token([("Circle ", "Circle Next"),
-                                                (" · pressure ", "Pressure Next"),
-                                                (" · heat ", "Heat Final")]))]
     # State is persisted before any menu/Ask action. The wrapper owns all later interaction.
-    a += save_state() + universal_leaving() + [end_if(genuine_group), end_if(cooldown_group)]
+    # save_state() stays OUTSIDE the silent-band gate: Circle 0 must still accumulate and
+    # persist behavioural day, Heat, Gravity, Pressure, open count and the active session.
+    a += save_state()
+    silent_group, silent_if = if_block("Circle Next", 2, number=0)
+    a += [comment("""Circle 0 is the silent band: state has already been saved directly above, and nothing at all is shown below it.
+- Everything user-facing on the OPEN path -- the Leaving/Continue menu and every primitive -- lives inside universal_leaving(), so gating that one call suppresses every surface at once.
+- This gate is also a correctness requirement, not only a UX one: primitive_dispatch() reads sequences.<Sequence>.<Dispatch Circle> as a DOTTED key, and at index 0 the final segment is absent, which iOS raises as a hard "could not evaluate the key path" error -- after active_session was already written, leaving a session no CLOSE would ever own.
+- Enforced structurally by verify_circle_zero_silence(); do not move universal_leaving() back outside this block.""")]
+    a += [silent_if] + universal_leaving() + [otherwise(silent_group), action("is.workflow.actions.nothing"), end_if(silent_group)]
+    a += [end_if(genuine_group), end_if(cooldown_group)]
     return a
 
 

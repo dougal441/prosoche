@@ -5,10 +5,14 @@ The arithmetic checks the specification; the plist checks only wiring shape and
 cannot substitute for an on-device Shortcuts run.
 """
 
+# PHASE 10-01: raised entry curves. Every entry rose by that profile's own first band
+# width, so band widths are preserved exactly and only entry into Circle 1 is delayed.
+# This table is a duplicate of the Config literal at src/PROSOCHE-Dumb.xml action 7 and
+# must be changed in the same commit as it.
 THRESHOLDS = {
-    "Paradise": [1, 4, 7, 10, 13, 16, 19, 22, 25],
-    "Limbo": [1, 3, 5, 7, 9, 11, 14, 17, 20],
-    "Inferno": [1, 2, 4, 6, 8, 10, 12, 14, 16],
+    "Paradise": [4, 7, 10, 13, 16, 19, 22, 25, 28],
+    "Limbo": [3, 5, 7, 9, 11, 13, 16, 19, 22],
+    "Inferno": [2, 3, 5, 7, 9, 11, 13, 15, 17],
 }
 
 
@@ -17,7 +21,10 @@ def gravity(opens_today):
 
 
 def circle(profile, pressure):
-    result = 1
+    # PHASE 10-01: the seed is 0, not 1 -- Pressure below the profile's first threshold
+    # resolves to Circle 0, the silent band, in which state accumulates and nothing is
+    # shown. Mirrors number(0, "Circle Next") in open_pipeline().
+    result = 0
     for index, threshold in enumerate(THRESHOLDS[profile], 1):
         if pressure >= threshold:
             result = index
@@ -32,7 +39,15 @@ def heat(value, away_seconds=0, opened=True):
 
 
 def main():
-    assert [circle("Limbo", n) for n in (0, 3, 20, 99)] == [1, 2, 9, 9]
+    assert [circle("Limbo", n) for n in (0, 3, 20, 99)] == [0, 1, 8, 9]
+    # Circle 0, the silent band: Pressure below the profile's first threshold shows nothing.
+    assert circle("Limbo", 2) == 0 and circle("Paradise", 3) == 0 and circle("Inferno", 1) == 0
+    # Config-literal invariants (src/CONFIG-BLOCK.md): nine entries, strictly ascending,
+    # and a last entry below heat.cap + gravity.cap = 35 so Circle 9 stays reachable.
+    for profile, table in THRESHOLDS.items():
+        assert len(table) == 9, profile
+        assert all(a < b for a, b in zip(table, table[1:])), profile
+        assert table[-1] < 35, profile
     assert len({circle(profile, 8) for profile in THRESHOLDS}) == 3
     assert [gravity(n) for n in (0, 6, 30, 60)] == [0, 1, 5, 5]
     assert heat(10, away_seconds=1500) == 9  # -2 decay, then +1 OPEN
