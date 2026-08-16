@@ -4,16 +4,16 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 09
 current_phase_name: Dimming/Silence Stateful Restore (Experimental Fork
-status: executing
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-08-16T10:02:58.935Z"
+status: verifying
+stopped_at: "09-02 Task 1 complete; Tasks 2-3 blocked on device access (checkpoint:human-verify)"
+last_updated: "2026-08-16T10:09:29.989Z"
 last_activity: 2026-08-16
 last_activity_desc: Phase 09 execution started
 progress:
   total_phases: 9
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 20
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 Phase: 09 (Dimming/Silence Stateful Restore (Experimental Fork)) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: 09-01 complete; 09-02 Task 1 complete (forks re-signed, 09-UAT.md authored), Tasks 2-3 BLOCKED on device access — zero iPhones connected (DIST-03). Resume via /gsd-verify-work 9 once a device is available.
 Last activity: 2026-08-16 — Phase 09 execution started
 
-Progress: [██████████] 95%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -77,6 +77,7 @@ Progress: [██████████] 95%
 | Phase 08-sentient-fork-dual-distribution P02 | 12m | 2 tasks | 3 files |
 | Phase 08-sentient-fork-dual-distribution P03 | 10m | 1 tasks | 10 files |
 | Phase 09 P01 | 25min | 3 tasks | 7 files |
+| Phase 09 P02 | 7min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -125,6 +126,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Completed-slow, empty, or malformed audit output falls through to Dumb; hung model cancellation is unavailable at target 26.
 - [Phase ?]: Kept the numeric-coercion fix purely additive at the NUMERIC_OPERAND_FIELDS table per plan instruction; no other function edited.
 - [Phase ?]: Fixed two pre-existing, unrelated stale self-check assertions (docs/state_engine_self_check.py gettimebetweendates count; docs/phase5_self_check.py router-gate ancestry) because the plan's own required verify chain needed both scripts to pass (Rule 1/3 deviation).
+- [Phase ?]: [Phase 9]: 09-02 Task 1 complete (both forks re-signed with coercion fix, 09-UAT.md authored with 12 tests + DEV-06 first-principles write-up); Tasks 2-3 (device trials) blocked — zero iPhones connected, matching the open DIST-03 blocker. Did not auto-approve despite auto_advance=true, per do-not-fabricate rule.
 
 ### Pending Todos
 
@@ -173,6 +175,7 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 
 - [Phase 1]: Four capability blockers are unresolved pending live on-device verification — grayscale/Color Filters availability, brightness/volume read-back, the `Use Model` On-Device pinning literal, and Notes actions on iOS. All downstream phases assume these get resolved (favorably or via documented fallback) in Phase 1.
 - DIST-03 real-iPhone import and first Manual UAT blocked: xcrun devicectl reports no connected devices.
+- Phase 9 Plan 02 Tasks 2-3 blocked: 09-UAT.md's 12 device-proving tests (coercion-chip gate, capture/restore, failure-mode trials, DEV-06 verdict) require a real Apple-Intelligence-capable iPhone on iOS 26.x. xcrun devicectl reports zero connected devices — same underlying blocker as DIST-03. Both re-signed .shortcut artifacts and the fully-authored 09-UAT.md are ready; resume via /gsd-verify-work 9 once a device is available.
 
 ### Quick Tasks Completed
 
@@ -191,6 +194,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-16T10:02:58.924Z
-Stopped at: Completed 09-01-PLAN.md
-Resume file: None
+Last session: 2026-08-16T10:09:29.978Z
+Stopped at: 09-02 Task 1 complete; Tasks 2-3 blocked on device access (checkpoint:human-verify)
+Resume file: .planning/phases/09-reintroduce-and-validate-dimming-silence-stateful-restore-on/09-UAT.md
