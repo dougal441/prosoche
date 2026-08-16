@@ -3,7 +3,7 @@ spike: 002
 name: capability-gate
 type: standard
 validates: "Given a single merged shortcut with a manual opt-in toggle, when the core deterministic escalation runs before the optional Sentient (Use Model) step, then a Use Model failure on ineligible hardware never prevents the core intervention from firing"
-verdict: PENDING
+verdict: VALIDATED
 related: ["001"]
 tags: [shortcuts, device-detection, state-machine]
 ---
@@ -189,20 +189,41 @@ offsets at indices 24 and 46 were correct on the first pass.
 
 ## Results
 
-_Pending build and verification._
+**Verdict: VALIDATED.**
 
-Build is complete and signed; **the on-device run has not happened yet** and no verdict is
-claimed here. A human needs to import the signed shortcut on a real iPhone and confirm:
+On-device runs (2026-08-16):
 
-1. The import prompt actually appears and its answer lands in the Text action (answer
-   "yes" once and "no" once).
-2. Answering "no" → core alert fires, no Use Model attempt, `state.json` contains
-   `"sentient_enabled": false`.
-3. Answering "yes" on eligible hardware → core alert fires *first*, then the mirror text
-   appears, `"sentient_enabled": true`.
-4. The ordering fail-safe under real failure — ideally on ineligible hardware, where the
-   core alert should still have completed before the Use Model halt. Not testable on the
-   developer's own device if it is Apple-Intelligence-capable; a proxy is to force a Use
-   Model failure some other way and confirm the alert and the state write both survived.
-5. Whether the explicit `WFInput` on Set Name / Save File (deviation 1 above) shows a
-   connected input in the editor or an empty field.
+**iPhone 15 Pro (Apple-Intelligence-capable):**
+- Answered "no" → core escalation alert fired, no Use Model attempt.
+- Reinstalled, answered "yes" → core escalation alert fired **first**, then a system
+  permission prompt appeared ("Allow to save 1 dictionary to a file" — a one-time Save
+  File authorization, not previously documented in the project's file-I/O findings),
+  then the Use Model result: *"Sentient mirror: Hello! How can I assist you today?"*
+  Toggle → state write → Sentient branch all behaved as designed.
+
+**iPhone SE (not Apple-Intelligence-capable):**
+- Answered "yes" → core escalation alert fired (action index 3, first executable step —
+  unconditional per the build), then Use Model failed with a native, non-crashing system
+  error: *"Could not run 'Use Model' to use this action. Support for selected model is
+  downloading."* This is exactly the ordering fail-safe under test: the core intervention
+  had already completed before the failure, and the failure itself was a graceful OS-level
+  message rather than a corrupt state write or a silent hang.
+
+**What this confirms:** the ordering-based fail-safe works as designed on real ineligible
+hardware, not just in theory. The toggle correctly gates the Sentient branch in both
+directions, and a Use Model failure — whatever its cause — cannot pre-empt the core
+deterministic escalation because nothing about the core step depends on the Sentient
+branch succeeding, or even being attempted.
+
+**New finding, not previously in the project's capability audit:** Save File triggers a
+one-time OS permission prompt ("Allow to save 1 dictionary to a file") on first write per
+installation. Worth noting in the real build's onboarding UX — it's a single tap
+("Always Allow"), not a blocker, but it is a user-visible interruption during first run
+that the design should anticipate.
+
+**Not fully verified:** whether the iPhone SE error is deterministic/permanent for
+ineligible hardware, or a transient "model support downloading" state that could
+eventually resolve on that device (the message's wording suggests Apple attempts to
+provision model support even on some borderline/ineligible hardware, which the project's
+capability audit did not anticipate) — not chased further, since the ordering fail-safe
+already answers what this spike set out to prove regardless of which case it is.

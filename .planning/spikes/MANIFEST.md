@@ -33,10 +33,17 @@ user override that default via the existing Control Room menu. Triggered by evid
 - `WFFileErrorIfNotFound = false` (Get File) is the real answer to "no file-exists check"
   — cleaner than the attempt-and-treat-as-absent fallback CLAUDE.md currently documents.
   Worth folding into CLAUDE.md §3 item 2.
+- Save File triggers a one-time OS permission prompt ("Allow to save 1 dictionary to a
+  file") on first write per installation — not previously documented. Single-tap, not a
+  blocker, but a real-build onboarding UX consideration.
+- Confirmed on real hardware (iPhone 15 Pro + iPhone SE): the ordering fail-safe holds.
+  On ineligible hardware, Use Model fails with a graceful native error ("support for
+  selected model is downloading") rather than corrupting state or crashing — and the core
+  escalation step, placed first, had already completed by the time of that failure.
 
 ## Spikes
 
 | # | Name | Type | Validates | Verdict | Tags |
 |---|------|------|-----------|---------|------|
 | 001 | device-model-literal | standard | Given a real iPhone, when Get Device Details queries "Device Model", then the exact literal string format (identifier vs marketing name) is known | INVALIDATED ✗ | shortcuts, device-detection |
-| 002 | capability-gate | standard | Given a single merged shortcut with a manual opt-in toggle, when the core deterministic escalation runs before the optional Sentient (Use Model) step, then a Use Model failure never prevents the core intervention from firing | PENDING (built + validated, awaiting on-device check) | shortcuts, device-detection, state-machine |
+| 002 | capability-gate | standard | Given a single merged shortcut with a manual opt-in toggle, when the core deterministic escalation runs before the optional Sentient (Use Model) step, then a Use Model failure never prevents the core intervention from firing | VALIDATED ✓ | shortcuts, device-detection, state-machine |
