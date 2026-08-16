@@ -1,6 +1,8 @@
 # Spike Manifest
 
-## Idea
+## Ideas
+
+### Session-model correctness under screen lock (spikes 001–002)
 
 PROSOCHĒ's session model (`active_session`) is opened and closed entirely by two iOS
 Personal Automations calling the shortcut with literal input `"OPEN"` / `"CLOSE"`
@@ -21,7 +23,17 @@ evidence hierarchy (`.claude/CLAUDE.md` "Evidence hierarchy"), donor shortcuts o
 the ToolKit catalog. This gives future debugging cycles a defensive read: PROSOCHĒ can
 check whether the screen is currently locked at any point in its OPEN/CLOSE pipeline.
 
+### Merge Dumb/Sentient forks into one shortcut (spikes 003–004)
+
+Collapse PROSOCHĒ's two shipped forks (Dumb / Sentient) into a single shortcut, using the
+same decrypted `Donor 10.shortcut` as the trigger — it shows
+`is.workflow.actions.getdevicedetails` accepting `WFDeviceDetail = "Device Model"` as a
+literal picker value on a real device, raising the question of whether hardware
+capability could be auto-detected to drive the fork choice.
+
 ## Requirements
+
+**From the screen-lock spikes:**
 
 - `Device Is Locked` is confirmed usable as a `WFDeviceDetail` literal on
   `is.workflow.actions.getdevicedetails` — donor-shortcut ground truth, promotable above
@@ -30,12 +42,49 @@ check whether the screen is currently locked at any point in its OPEN/CLOSE pipe
   requires on-device testing — no file-level or catalog analysis can answer it (this is
   Automation-trigger *behavior*, not action *availability*).
 
+**From the fork-merge spikes:**
+
+- `WFWorkflowImportQuestions` cannot carry a runtime-computed default — it resolves before
+  any action executes. Any capability check and its default would have to happen at
+  first-run (or every run) via `Get Device Details`, cached in `state.json`, not via an
+  import question. **Moot as of spike 003 — see below.**
+- **Device-model-based hardware capability detection is infeasible.** `Get Device Details`
+  → `Device Model` returns the bare literal `"iPhone"` on every device — no model
+  identifier, no marketing name, no way to distinguish Apple-Intelligence-capable hardware
+  (iPhone 15 Pro+) from ineligible hardware. No other `WFDeviceDetail` case (12 confirmed
+  total — see spike 003) offers a usable proxy either. This closes off "auto-detect →
+  smart default" as a mechanism entirely, not just as a spike 003 sub-question.
+- **No try/catch exists in Shortcuts at all** — an action failure halts the entire
+  shortcut, so "attempt on-device model, catch failure, save a boolean" cannot be built
+  either (confirmed both via docs/web research and, separately, on real ineligible
+  hardware — see spike 004).
+- The single-shortcut merge must therefore rely on an explicit user-set toggle
+  (`WFWorkflowImportQuestions`, "Do you have an iPhone 15 Pro or later and want to enable
+  Sentient mode?") rather than any runtime detection or recovery.
+- Use Model must never be invoked when the toggle is off — a safety/reliability gate, not
+  just a UX default.
+- The toggle cannot verify hardware eligibility. Safety is achieved by **ordering**, not
+  detection: the core deterministic escalation must run before any Sentient-branch logic,
+  so a Use Model halt on ineligible hardware costs only the bonus mirror text, never the
+  core intervention. **Confirmed on real hardware** (iPhone 15 Pro + iPhone SE): on
+  ineligible hardware, Use Model fails with a graceful native error ("support for selected
+  model is downloading") rather than corrupting state or crashing, and the core escalation
+  step, placed first, had already completed by the time of that failure.
+- `WFFileErrorIfNotFound = false` (Get File) is the real answer to "no file-exists check"
+  — cleaner than the attempt-and-treat-as-absent fallback CLAUDE.md currently documents.
+  Worth folding into CLAUDE.md §3 item 2.
+- Save File triggers a one-time OS permission prompt ("Allow to save 1 dictionary to a
+  file") on first write per installation — not previously documented. Single-tap, not a
+  blocker, but a real-build onboarding UX consideration.
+
 ## Spikes
 
 | # | Name | Type | Validates | Verdict | Tags |
 |---|------|------|-----------|---------|------|
 | 001 | device-is-locked-literal | standard | Given Donor 10's decrypted plist, when inspected for `WFDeviceDetail`, then the literal `"Device Is Locked"` is present as donor-confirmed ground truth | VALIDATED | device-details, capability-audit, evidence-hierarchy |
 | 002 | close-automation-vs-screen-lock | standard | Given a tracked app in foreground, when the user locks the screen (vs. switches app), then determine whether the "App Is Closed" Personal Automation fires the same `CLOSE` signal in both cases | VALIDATED — yes, screen lock fires CLOSE | session-model, close-pipeline, personal-automations |
+| 003 | device-model-literal | standard | Given a real iPhone, when Get Device Details queries "Device Model", then the exact literal string format (identifier vs marketing name) is known | INVALIDATED ✗ | shortcuts, device-detection |
+| 004 | capability-gate | standard | Given a single merged shortcut with a manual opt-in toggle, when the core deterministic escalation runs before the optional Sentient (Use Model) step, then a Use Model failure never prevents the core intervention from firing | VALIDATED ✓ | shortcuts, device-detection, state-machine |
 
 ## Spun-Out Work
 
