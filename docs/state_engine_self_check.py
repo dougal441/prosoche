@@ -56,7 +56,11 @@ def structural_check():
     assert any(text.startswith("Resolve Circle by an ordered nine-step threshold scan") for text in comments)
     assert any(action.get("WFWorkflowActionParameters", {}).get("WFRepeatCount") == 9 for action in actions)
     assert "is.workflow.actions.delay" in ids
-    assert ids.count("is.workflow.actions.gettimebetweendates") >= 3
+    # CYCLE 14 replaced every downstream elapsed-time computation with plain numeric
+    # subtraction (elapsed_since()); only the CLOCK block's own "Now Epoch" derivation
+    # still uses Get Time Between Dates (see elapsed_since()'s docstring). This count
+    # was stale from before that replacement.
+    assert ids.count("is.workflow.actions.gettimebetweendates") == 1
     assert "is.workflow.actions.round" in ids
     assert "is.workflow.actions.number.random" in ids
     assert "is.workflow.actions.documentpicker.open" in ids

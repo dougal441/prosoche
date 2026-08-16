@@ -719,6 +719,7 @@ def enabled_exits(source="State"):
                  WFInput=variable("Profile Enabled Exits")), set_var("Enabled Exit Candidate", variable("Repeat Item"))]
     matches_group, matches = if_block("Enabled Exit Candidate", 4, string="canonical-exit-placeholder")
     matches["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    matches["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Canonical Exit")
     a += [matches, action("is.workflow.actions.appendvariable", WFInput=variable("Canonical Exit"), WFVariableName="Enabled Exits"),
           otherwise(matches_group), action("is.workflow.actions.nothing"), end_if(matches_group),
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=inner, WFControlFlowMode=2),
@@ -730,8 +731,7 @@ def select_exit():
     """Deterministic, state-driven selector. The concrete menu always shares recorder/router."""
     a = [comment("--- PHASE 6 EXIT SELECTOR ---\n\n- Sparse data rotates enabled exits by the persisted counter.\n- Sufficient data uses integer averages, canonical ties, then configured epsilon exploration.")]
     a += enabled_exits() + read_value("exit_selection_counter", variable("State"), "Exit Selection Counter")
-    missing_counter, counter = if_block("Exit Selection Counter", 5, string=None)
-    counter["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    missing_counter, counter = if_block("Exit Selection Counter", 5, string="")
     a += [counter] + number(0, "Exit Selection Counter") + [otherwise(missing_counter), action("is.workflow.actions.nothing"), end_if(missing_counter)]
     a += config("exits.exploit_min_observations", "Exploit Minimum") + config("exits.exploration_rate", "Exploration Rate")
     a += number(0, "Sparse Selection")
@@ -773,11 +773,11 @@ def select_exit():
           set_var("Candidate Exit", variable("Repeat Item"))]
     is_best_group, is_best = if_block("Candidate Exit", 4, string="best-exit-placeholder")
     is_best["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    is_best["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Best Exit")
     a += [is_best, *number(1, "Past Best"), otherwise(is_best_group)]
     choose_after_group, choose_after = if_block("Past Best", 2, number=0)
     a += [choose_after]
     unchosen_group, unchosen = if_block("Exploration Selected", 4, string="0")
-    unchosen["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
     a += [unchosen, set_var("Selected Exit", variable("Candidate Exit")), *number(1, "Exploration Selected"), otherwise(unchosen_group), action("is.workflow.actions.nothing"), end_if(unchosen_group),
           otherwise(choose_after_group), action("is.workflow.actions.nothing"), end_if(choose_after_group), end_if(is_best_group),
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=next_loop, WFControlFlowMode=2)]
@@ -786,9 +786,13 @@ def select_exit():
           action("is.workflow.actions.repeat.each", GroupingIdentifier=wrap_loop, WFControlFlowMode=0, WFInput=variable("Enabled Exits")),
           set_var("Candidate Exit", variable("Repeat Item"))]
     needs_wrap_group, needs_wrap = if_block("Exploration Selected", 4, string="0")
-    needs_wrap["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    # FOLLOW-UP (not part of this defect-class fix): this condition uses code 99
+    # ("contains") to select "the first non-best exit", which is worth a second look
+    # against that stated intent -- flagged here for whoever next touches select_exit(),
+    # left unchanged per this plan's explicit scope boundary.
     wrap_non_best_group, wrap_non_best = if_block("Candidate Exit", 99, string="best-exit-placeholder")
     wrap_non_best["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    wrap_non_best["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Best Exit")
     a += [needs_wrap, wrap_non_best, set_var("Selected Exit", variable("Candidate Exit")), *number(1, "Exploration Selected"),
           otherwise(wrap_non_best_group), action("is.workflow.actions.nothing"), end_if(wrap_non_best_group),
           otherwise(needs_wrap_group), action("is.workflow.actions.nothing"), end_if(needs_wrap_group),
@@ -903,8 +907,7 @@ def record_exit_and_route(choice_name: str):
           set_value("pending_exit.type", variable(choice_name), "Reloaded State"),
           set_value("pending_exit.timestamp", variable("Now Epoch"), "Reloaded State"),
           *read_value("exit_selection_counter", variable("Reloaded State"), "Reloaded Exit Counter")]
-    missing_counter, counter = if_block("Reloaded Exit Counter", 5, string=None)
-    counter["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    missing_counter, counter = if_block("Reloaded Exit Counter", 5, string="")
     a += [counter] + number(0, "Reloaded Exit Counter") + [otherwise(missing_counter), action("is.workflow.actions.nothing"), end_if(missing_counter)]
     a += math("Reloaded Exit Counter", 1, "Exit Counter Next", "+") + [set_value("exit_selection_counter", variable("Exit Counter Next"), "Reloaded State")]
     a += save_state("Reloaded State") + route_exit(choice_name)
@@ -988,9 +991,8 @@ def open_pipeline():
     # BREADCRUMB B - every state read and every config read completed.
     a += breadcrumb("B")
     # Behavioural day rollover is the first state update (only opens_today resets).
-    g, start = if_block("Stored Day", 5, string=None)
     # Code 5 requires a string; textual empty guards avoid direct null compare.
-    start["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    g, start = if_block("Stored Day", 5, string="")
     a += [comment("""Check whether a saved behavioural day exists before comparing it to today:
 - A missing value is treated as rollover so the counter is safe on migrated state.
 - A present value continues to the same-day comparison below.
@@ -998,6 +1000,7 @@ def open_pipeline():
     a += number(0, "Zero") + [set_value("opens_today", variable("Zero")), set_value("behavioural_day", variable("Behavioural Day")), otherwise(g)]
     day_group, day_if = if_block("Stored Day", 4, string="same-day-placeholder")
     day_if["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    day_if["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Behavioural Day")
     # The explicit Text variable is compared as a string to the Behavioural Day token.
     a += [comment("""Compare the stored behavioural day with today's adjusted day:
 - Both values are text, so equality is the supported string comparison.
@@ -1766,6 +1769,42 @@ def verify_conditional_inputs(actions):
         raise SystemExit("conditional input slots hold a non-variable value "
                          "(iOS: 'Please choose a value for each parameter in this action'): "
                          + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
+                         + f" ({len(offenders)} total)")
+
+
+def verify_conditional_action_string(actions):
+    """Fail the build if a conditional's comparison target is the abandoned bare placeholder.
+
+    WFConditionalActionString is the RIGHT/comparison-target side of a conditional (WFInput,
+    checked by verify_conditional_inputs() above, is the LEFT/compared-variable side). The
+    generator's established idiom for a variable-backed comparison target is:
+    if_block(..., string=<placeholder text>) immediately followed by a reassignment to a real
+    token(<variable>) envelope. At least ten sites left that reassignment out and shipped the
+    bare, un-enveloped single placeholder character ("￼") instead -- structurally valid,
+    silently wrong at runtime (the comparison can never match a real value). This was the
+    confirmed root cause of G-04-1 (session duration always 0) and G-04-3 (CLOSE never
+    switches, permanent no-op); see .planning/debug/G-04-1-close-duration-zero.md and
+    .planning/debug/G-04-3-session-race-not-switching.md. Neither verify_conditional_inputs()
+    (WFInput side only) nor STRING_ENVELOPE_PARAMS (does not cover
+    is.workflow.actions.conditional) catches this axis, so this is a dedicated guard against
+    the exact same defect class shipping silently again.
+    """
+    offenders = []
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        # Otherwise (1) and End If (2) never carry a comparison target of their own.
+        if parameters.get("WFControlFlowMode") != 0:
+            continue
+        if "WFConditionalActionString" not in parameters:
+            continue
+        if parameters["WFConditionalActionString"] == "￼":
+            offenders.append(index)
+    if offenders:
+        raise SystemExit("conditional comparison targets hold the abandoned bare placeholder "
+                         "character instead of a wired token() reference: actions "
+                         + ", ".join(str(i) for i in offenders[:5])
                          + f" ({len(offenders)} total)")
 
 
@@ -2881,6 +2920,7 @@ def main():
     verify_output_names(actions)
     verify_required_pickers(actions)
     verify_conditional_inputs(actions)
+    verify_conditional_action_string(actions)
     verify_numeric_operands(actions)
     verify_state_seed(actions)
     verify_pending_exit_seed(actions)
