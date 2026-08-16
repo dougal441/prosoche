@@ -14,7 +14,7 @@ files:
 
 Apply `PROSOCHE_Build_Addendum_01.md` across the authoritative build source, both product variants, the PROSOCHĒ Note, documentation, requirements, generated XML, and signed deliverables.
 
-The addendum changes the Circle names and intervention mapping, renames Dumb/Core and Sentient/Aware, makes Panic Escape deliberately removable with confirmation and optional Shortcuts-app hardening guidance, and renames the Apple Note from `PROSOCHĒ — Control Room` to `PROSOCHĒ`.
+The addendum changes the Circle names and intervention mapping, renames Dumb/Core and Sentient/Aware, makes Panic Escape deliberately removable with confirmation and optional Shortcuts-app hardening guidance, and renames the Apple Note from `PROSOCHĒ — Control Room` to `PROSOCHĒ`, but still referred to internally as 'Control Room'. 
 
 ## Solution
 
