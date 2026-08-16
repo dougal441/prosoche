@@ -202,3 +202,120 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 6. Exits, Exit Learning & Contracts | 3/3 | Complete | 2026-08-13 |
 | 7. Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze | 1/1 light | Human needed | - |
 | 8. Sentient Fork & Dual Distribution | 3/3 | Human needed | - |
+
+## Backlog
+
+Unsequenced items — the bare-minimum-to-working-product device verification set. None of
+these has run on a real iPhone yet beyond the single confirmed Circle-1 OPEN
+(build `2026-08-15o`). Static "passed" verification on Phases 4–6 is graph analysis only,
+not device evidence. Promote with `/gsd-review-backlog` when ready to sequence.
+
+Suggested order (dependency-driven, not severity-driven): 999.1 confirms the `Test a
+Circle` harness and Emergency Restore that 999.4/999.5 rely on; 999.2 (CLOSE/session race)
+is a hard prerequisite for 999.6 and 999.7; 999.3 is independent and may change what Ash
+is before 999.4 runs.
+
+### Phase 999.1: Device UAT — manual Control Room menu and safety recovery (BACKLOG)
+
+**Goal:** Walk every Control Room manual-menu item on device (Status, Open Control Room,
+Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Test a Circle, Reset
+Today, Emergency Restore) and prove the §32 Safety recovery cases (corrupt/missing
+`state.json`, deleted Control Room Note) self-heal from all three invocation modes.
+**Severity:** blocker
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+Full context: `.planning/phases/999.1-device-uat-manual-control-room-menu-and-safety-recovery/2026-08-16-device-uat-manual-control-room-menu-and-safety-recovery.md`
+
+### Phase 999.2: Device UAT — CLOSE pipeline and session race (BACKLOG)
+
+**Goal:** Confirm CLOSE actually executes correctly on device — session duration
+recording, the active-session race when rapidly switching tracked apps, device-lock
+triggers, and the behavioural-day boundary — since every downstream Heat/contract/exit
+number depends on CLOSE being right.
+**Severity:** blocker
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+Full context: `.planning/phases/999.2-device-uat-close-pipeline-and-session-race/2026-08-16-device-uat-close-pipeline-and-session-race.md`
+
+### Phase 999.3: Grayscale / Ash capability donor test (BACKLOG)
+
+**Goal:** Decrypt the already-on-disk `Set Colour Filters.shortcut` donor to settle,
+with device evidence rather than catalog inference, whether Ash's grayscale toggle
+(§6.5's strongest-evidence primitive) is actually buildable on iOS 26 with safe
+read-back — and only then decide whether to rebuild Ash as designed.
+**Severity:** minor
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+Full context: `.planning/phases/999.3-grayscale-ash-capability-donor-test/2026-08-16-grayscale-ash-capability-donor-test.md`
+
+### Phase 999.4: Device UAT — nine Circles and sequence switching (BACKLOG)
+
+**Goal:** Fire all nine Circle primitives on device across all three sequences
+(Classic/Black Mirror/Ambient), confirming non-empty copy, safety floors (no zero
+brightness, no unsafe volume), sequence-dependent mapping, and Circle composition —
+only Circle 1 has ever fired on a real device.
+**Severity:** blocker
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+Full context: `.planning/phases/999.4-device-uat-nine-circles-and-sequence-switching/2026-08-16-device-uat-nine-circles-and-sequence-switching.md`
+
+### Phase 999.5: Device UAT — Circle IX cooldown and the route out of Ice (BACKLOG)
+
+**Goal:** Prove the `cooldown_until` sentinel behaves correctly across a full real
+cooldown cycle (unset → set → active → cleared), including interruption cases (restart,
+day rollover, clock change), and that Ice always has a guaranteed, model-free route out —
+this is the one Circle that can trap the user rather than just annoy them.
+**Severity:** blocker
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+Full context: `.planning/phases/999.5-device-uat-circle-ix-cooldown-and-route-out-of-ice/2026-08-16-device-uat-circle-ix-cooldown-and-route-out-of-ice.md`
+
+### Phase 999.6: Device UAT — intention contracts and fidelity feedback (BACKLOG)
+
+**Goal:** Resolve Phase 6's conflicting verification verdicts, then prove Confession/
+Intention Contracts work end-to-end on device — free-text intention persisted, all
+duration options including Custom, deliberate leisure accepted without judgment, kept vs.
+overrun contracts recorded correctly and feeding Heat.
+**Severity:** blocker
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+Full context: `.planning/phases/999.6-device-uat-intention-contracts-and-fidelity-feedback/2026-08-16-device-uat-intention-contracts-and-fidelity-feedback.md`
+
+### Phase 999.7: Device UAT — six exits and explore/exploit learning (BACKLOG)
+
+**Goal:** Prove all six exits (Capture, Coordinate, Create, Connect, Consult, Close) work
+on device and that explore/exploit learning genuinely routes toward exits with longer
+observed time-away — the highest known unfixed defect load in the product
+(`exit_events` entirely absent from the bootstrap state template).
+**Severity:** blocker
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+Full context: `.planning/phases/999.7-device-uat-six-exits-and-explore-exploit-learning/2026-08-16-device-uat-six-exits-and-explore-exploit-learning.md`
