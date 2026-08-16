@@ -134,15 +134,16 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 - [major] Optimise and streamline the UX — onboarding and in-run functionality — `.planning/todos/pending/2026-08-16-optimise-ux-onboarding-and-functionality.md`
 - [major] Reintroduce and validate Dimming/Silence stateful restore on an experimental fork — `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md` (⚠️ deliberately conflicts with ship-readiness item 5 — the cut proceeds on main in parallel)
 
-**Backlog (bare-minimum-to-working-product; see ROADMAP.md `## Backlog`):**
+**Backlog (genuinely new work; see ROADMAP.md `## Backlog`):**
 
-- [blocker] Phase 999.1 — Device UAT — manual Control Room menu and safety recovery — `.planning/phases/999.1-device-uat-manual-control-room-menu-and-safety-recovery/`
-- [blocker] Phase 999.2 — Device UAT — CLOSE pipeline and session race — `.planning/phases/999.2-device-uat-close-pipeline-and-session-race/`
 - [minor] Phase 999.3 — Grayscale / Ash capability donor test — `.planning/phases/999.3-grayscale-ash-capability-donor-test/`
-- [blocker] Phase 999.4 — Device UAT — nine Circles and sequence switching — `.planning/phases/999.4-device-uat-nine-circles-and-sequence-switching/`
-- [blocker] Phase 999.5 — Device UAT — Circle IX cooldown and the route out of Ice — `.planning/phases/999.5-device-uat-circle-ix-cooldown-and-route-out-of-ice/`
-- [blocker] Phase 999.6 — Device UAT — intention contracts and fidelity feedback — `.planning/phases/999.6-device-uat-intention-contracts-and-fidelity-feedback/`
-- [blocker] Phase 999.7 — Device UAT — six exits and explore/exploit learning — `.planning/phases/999.7-device-uat-six-exits-and-explore-exploit-learning/`
+
+**Device UAT (verification of already-built phases, not new phases — reclassified 2026-08-16; run via `/gsd-verify-work {phase}`, rolled up by `/gsd-audit-uat`):**
+
+- [blocker] Phase 4 UAT — CLOSE pipeline and session race — `.planning/phases/04-close-pipeline-session-race/04-UAT.md`
+- [blocker] Phase 5 UAT — nine Circles, sequence switching, and Circle IX cooldown/route-out — `.planning/phases/05-nine-primitives-environmental-safety/05-UAT.md`
+- [blocker] Phase 6 UAT — intention contracts, fidelity feedback, six exits, explore/exploit learning — `.planning/phases/06-exits-exit-learning-contracts/06-UAT.md`
+- [blocker] Phase 7 UAT — manual Control Room menu and safety recovery — `.planning/phases/07-control-room-dumb-freeze/07-UAT.md`
 
 **Seed (forward-looking, dormant until triggered; see `.planning/seeds/`):**
 
