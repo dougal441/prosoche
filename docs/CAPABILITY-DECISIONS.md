@@ -11,6 +11,7 @@ Decisions in this document are numbered `BD-NN` ("blocker decision"). They are *
 | BD-03 | Silence / volume read-back | 01-04 |
 | BD-04 | Use Model On-Device literal | 01-05 |
 | BD-05 | Notes actions on the iOS target | 01-04 |
+| BD-06 | Circle naming, primitive roster, and slot allocation | Addendum 01 design pass (2026-08-16) |
 
 ---
 
@@ -274,3 +275,154 @@ until a donor confirms it.
 identifier and integer parameters, with the opt-in guard and the BD-01 pause as fallback.
 
 **Requirement:** AUDIT-02
+
+---
+
+## BD-06 — Circle naming, primitive roster, and slot allocation
+
+**Owning work:** the design pass preceding `PROSOCHE_Build_Addendum_01.md`'s application
+(2026-08-16). Binding on the Ash rebuild, the Voice dispatch fix, the Dimming/Silence
+distinct-Circle work, and the Exile split — all four of which independently claim Circle
+positions and would otherwise each re-cut the same table.
+
+**Question:** Addendum 01 §1 renames the nine Circles to Dante's *Inferno* and §5 binds each
+Dante name to one intervention. Simultaneously, four in-flight todos change the intervention
+roster: Ash becomes a real Color Filters toggle, Voice becomes its own dispatched primitive,
+Dimming and Silence become distinct Circles in every sequence, and Exile splits in two. That
+takes the roster to **ten primitives for nine slots**
+(`.planning/todos/pending/2026-08-16-split-exile-into-two-circles.md` step 5, which names
+this as "the single decision that blocks all three in-flight Circle todos"). What are the
+Circles called, what is the roster, and which primitive fires where?
+
+### Decision 1 — Dante names are *positional*, not intervention names
+
+Circle 1 is **Limbo** and Circle 9 is **Treachery** regardless of which intervention fires
+there. The Dante name labels the *depth*; the sequence table decides the *intervention*.
+
+**Rationale — this is forced, not preferred.** PROSOCHĒ ships three sequences
+(`Classic` / `BlackMirror` / `Ambient`, `src/CONFIG-BLOCK.md`) which deliberately order the
+interventions differently at the same Circle numbers. A fixed name↔intervention binding
+therefore cannot survive a sequence switch: under `Ambient`, Circle 1 is Black and White,
+not Pause. Since Pressure resolves to a Circle *number* and the sequence array resolves that
+number to an intervention, the only stable thing a Dante name can attach to is the number.
+
+Addendum 01 §5's table is consequently read as **the `Classic` sequence expressed in renamed
+intervention terms** — which is exactly what it is; see the verification under Decision 4.
+
+### Decision 2 — the names keep Dante's canonical order
+
+| Circle | Name |
+|---|---|
+| 1 | Limbo |
+| 2 | Lust |
+| 3 | Gluttony |
+| 4 | Greed |
+| 5 | Wrath |
+| 6 | Heresy |
+| 7 | Violence |
+| 8 | Fraud |
+| 9 | Treachery |
+
+The user's instruction was "named as they are in the book… pick which ones you think fit
+best, the order doesn't matter" — i.e. the ordering across positions was explicitly free.
+Canonical order is chosen *because* it fits best, not by default: Dante's descent is itself
+an escalation, which is the same shape as PROSOCHĒ's, and it puts the strongest single fit
+at the position that matters most. **Circle 9 is Treachery — Cocytus, a frozen lake — and
+Circle 9's intervention is Ice/Frozen in all three sequences.** Circle 1 is Limbo, the
+circle with no torment, and Circle 1 is a bare factual knock. Circle 7 is Violence, which
+in Dante includes violence against the self, and Circle 7 is the Mirror.
+
+### Decision 3 — the roster is ten primitives; each sequence uses nine of them
+
+Nothing is dropped from the product. `sequences` is already per-sequence and there has never
+been a rule that every primitive appears in every ordering — with ten primitives, each
+nine-slot sequence simply selects nine.
+
+Intervention names follow Addendum 01 §5, extended for the Exile split:
+
+| Internal primitive | Shipped name | Status entering this decision |
+|---|---|---|
+| Knock | **Pause** | built |
+| Ash | **Black and White** | alert-only; real Color Filters to be built |
+| Silence | **Silence** | built; restore device-unproven |
+| Confession | **Intention** | built |
+| Dimming | **Dim** | built; restore device-unproven |
+| Exile (straight) | **Eject** | built (bare Home Screen) |
+| Exile (routed) | **Redirect** | new — lands the user in a deterministically selected exit |
+| Mirror | **Mirror** | built |
+| Voice | **Loud Mirror** | dispatches nothing; to be built |
+| Ice | **Frozen** | built |
+
+`Eject` is this decision's own coinage; Addendum 01 §5 supplies every other name, and its
+`Redirect` is taken as the *routed* Exile, which is what the word describes.
+
+### Decision 4 — slot allocation
+
+| Circle | Name | Classic | BlackMirror | Ambient |
+|---|---|---|---|---|
+| 1 | Limbo | Pause | Pause | Black and White |
+| 2 | Lust | Black and White | Intention | Silence |
+| 3 | Gluttony | Silence | Black and White | Dim |
+| 4 | Greed | Intention | Mirror | Pause |
+| 5 | Wrath | Dim | Silence | Intention |
+| 6 | Heresy | Redirect | Eject | Redirect |
+| 7 | Violence | Mirror | Dim | Mirror |
+| 8 | Fraud | Loud Mirror | Loud Mirror | Loud Mirror |
+| 9 | Treachery | Frozen | Frozen | Frozen |
+
+`Classic` and `Ambient` take **Redirect**; `BlackMirror` takes **Eject** — the colder,
+unnegotiable ejection suits that sequence, and it gives every primitive at least one home.
+Each column preserves its source ordering's identity: `Classic` is the reference escalation
+from `src/CONFIG-BLOCK.md`, `Ambient` still leads with the three environmental primitives,
+`BlackMirror` still surfaces the Mirror early (Circle 4).
+
+**Verification against Addendum 01 §5.** The addendum's table reads Limbo=Pause,
+Lust=Black and White, Gluttony=Silence, Greed=Intention, Wrath=Dim, Heresy=Redirect,
+Violence=Mirror, Fraud=Loud Mirror, Treachery=Frozen. That is the `Classic` column above,
+entry for entry. The addendum's own mapping is therefore *reproduced exactly* by this
+decision rather than reinterpreted — independent confirmation that reading its table as
+per-sequence is the intended reading.
+
+### Decision 5 — combined sequence entries are abolished, and dispatch becomes an exact match
+
+`BlackMirror` previously carried three combined entries — `Ash+Confession`,
+`Silence+Mirror`, `Dimming+Mirror`. All three are gone: every slot in the table above names
+exactly one primitive. This is what the user's "Dimming and Silence each as its own distinct
+Circle" decision requires, and it buys a defect-class elimination for free.
+
+`primitive_dispatch()` currently matches the sequence entry with **condition code 99
+("contains")** solely to make the combined entries work. That choice is precisely why
+Circle 8 shipped dead: the entry `"Voice"` contained no emitted branch name and silently
+matched nothing, with no error
+(`.planning/todos/pending/2026-08-16-build-circle-8-voice-primitive.md`). With no combined
+entries left, dispatch moves to **condition code 4 ("string is")** — an exact match, under
+which an unmatched entry is a build-time failure rather than a silent runtime no-op.
+
+**Binding build guard.** Every distinct primitive name appearing in any `sequences` array in
+`src/CONFIG-BLOCK.md` must have exactly one matching dispatch branch in the generated
+actions, and every dispatch branch must be named by at least one sequence entry. This is an
+eighth class alongside the seven parameter-defect axes in `.claude/CLAUDE.md`, and it is
+invisible to the validator, the ToolKit catalog, and the signed-artifact decrypt. It is
+written **during the rename**, not after it, because a mass rename across three sequence
+arrays and ten dispatch branches is exactly the operation it exists to catch.
+
+### Decision 6 — the routed Exile lands the user directly
+
+**User decision, 2026-08-16.** `Redirect` ejects *into* the deterministically selected exit
+without offering a "Take suggested exit / Choose another" menu first. That is what makes it
+a Circle rather than a second Leaving menu, and it keeps the involuntary path genuinely
+involuntary. The exit is still recorded through `record_exit_and_route()`, so the
+return-time sample is captured and the routed Circle feeds the same learning loop as the
+voluntary path.
+
+Selection remains deterministic — `select_exit()` unchanged, rotate-then-exploit with a
+counter-modulo epsilon step. No `is.workflow.actions.number.random`, no shuffle, nowhere in
+the exit path. This reaffirms the standing decision in `.planning/STATE.md` and extends it
+across both Exile Circles.
+
+**Consequence for later work:** the four in-flight Circle todos build against the table in
+Decision 4 and do not re-cut it. The Circle matrix in
+`.planning/todos/pending/2026-08-16-device-uat-nine-circles-and-sequence-switching.md` is
+re-cut once, here, rather than after each of them.
+
+**Requirement:** AUDIT-02 (extends), CIRC-02, CIRC-06, CIRC-08
