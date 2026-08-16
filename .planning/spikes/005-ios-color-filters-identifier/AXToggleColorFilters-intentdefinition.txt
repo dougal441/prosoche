@@ -1,0 +1,26 @@
+Source: /System/Library/PrivateFrameworks/AccessibilityUtilities.framework/Versions/A/Resources/Base.lproj/Intents.intentdefinition
+Model version: 1.2 | system: 23A344017
+
+INIntentName: ToggleColorFilters
+INIntentClassPrefix: AX
+INIntentTitle: Set Color Filters
+INIntentCategory: toggle
+
+-- INIntentParameters --
+  operation: type=Integer enumType=Operation
+  state: type=Integer enumType=State
+
+-- INIntentResponseParameters --
+  state: type=Integer enumType=State displayName=State
+
+-- INEnums (Operation, State) --
+
+enum Operation:
+   unknown = 0   (display: unknown)
+   turn = 1   (display: Turn)
+   toggle = 2   (display: Toggle)
+
+enum State:
+   unknown = 0   (display: unknown)
+   on = 1   (display: On)
+   off = 2   (display: Off)

@@ -77,6 +77,35 @@ capability could be auto-detected to drive the fork choice.
   file") on first write per installation — not previously documented. Single-tap, not a
   blocker, but a real-build onboarding UX consideration.
 
+### Ash / Color Filters capability on iOS (spike 005)
+
+Whether the Ash primitive (canonical strategy §11 Primitive B) — the single
+highest-research-support intervention in the product (§6.5: a preregistered 112-participant
+randomized field experiment) — can be built as designed on iOS 26, or must stay degraded to
+BD-01's non-environmental visual pause. The question had been answered twice from catalog
+data alone (BD-01 `NOT AVAILABLE`, then BD-01-R reversing it), never from a donor — despite
+an unanalysed `Set Colour Filters.shortcut` sitting in `.planning/debug/` the whole time.
+
+**From spike 005:**
+
+- **Color Filters is real on iOS 26**, confirmed at tier 1. But the identifier is
+  `com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent` — the
+  `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` that both prior
+  decisions argued over is the **macOS twin**. The iOS identifier is absent from all three
+  bundled ToolKit snapshots, so no catalog query could ever have found it.
+- **Parameters are integers, not enum-id strings or bools.** `state`: `on`=1, `off`=2.
+  `operation`: `turn`=1, `toggle`=2, elided by the device when unset. There is no
+  `ShowWhenRun` on the iOS intent. Note `off` is **2**, not 0 or `<false/>` — a bool
+  intuition gets the restore write wrong, which is the failure mode that strands a user
+  filtered.
+- **Still no read-back.** No `Get*`/`Query*` intent exists for any accessibility setting
+  across all 35 intents in the framework, so §21's opt-in remedy
+  (`safety.ash_managed_color_filters`) governs, unchanged. One untested lead: every
+  `Toggle*` intent declares a `state` *response* parameter.
+- **Apple's own `.intentdefinition` files are a first-class evidence source** on the build
+  Mac, sitting between donor ground truth and the ToolKit catalog. They gave exact parameter
+  types, enum cases, and integer indices for an action absent from every bundled snapshot.
+
 ## Spikes
 
 | # | Name | Type | Validates | Verdict | Tags |
@@ -85,6 +114,7 @@ capability could be auto-detected to drive the fork choice.
 | 002 | close-automation-vs-screen-lock | standard | Given a tracked app in foreground, when the user locks the screen (vs. switches app), then determine whether the "App Is Closed" Personal Automation fires the same `CLOSE` signal in both cases | VALIDATED — yes, screen lock fires CLOSE | session-model, close-pipeline, personal-automations |
 | 003 | device-model-literal | standard | Given a real iPhone, when Get Device Details queries "Device Model", then the exact literal string format (identifier vs marketing name) is known | INVALIDATED ✗ | shortcuts, device-detection |
 | 004 | capability-gate | standard | Given a single merged shortcut with a manual opt-in toggle, when the core deterministic escalation runs before the optional Sentient (Use Model) step, then a Use Model failure never prevents the core intervention from firing | VALIDATED ✓ | shortcuts, device-detection, state-machine |
+| 005 | ios-color-filters-identifier | standard | Given the unanalysed donor `Set Colour Filters.shortcut`, when decrypted, then the real iOS 26 Color Filters identifier and parameter serialization are established as device ground truth | VALIDATED ✓ — exists on iOS as `AX*`, not the `UA*` the audit trail recorded | capability-audit, evidence-hierarchy, accessibility, ash, donor |
 
 ## Spun-Out Work
 

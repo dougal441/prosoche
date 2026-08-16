@@ -73,6 +73,27 @@ execute Shortcuts itself.
   file") on first write per installation. Expected UX, not a bug — but note it can also
   re-prompt on every automation run and cannot be granted while the screen is locked (see
   spike 002's spun-out todo).
+- **A catalog miss is not an absence — check the identifier *family* before concluding.**
+  iOS ships private `AX*Intent` twins of the public macOS `UA*Intent` accessibility actions,
+  under container `com.apple.AccessibilityUtilities.AXSettingsShortcuts` mirroring
+  `com.apple.UniversalAccess.UASettingsShortcuts`. The `AX*` identifiers are in **none** of
+  the three bundled ToolKit snapshots, so no catalog query over those files can find them at
+  any target setting. Spike 005 found this after two prior decisions had argued the
+  availability question using the macOS identifier without noticing iOS emits a different
+  one. When a capability "doesn't exist" but users demonstrably do it on their phones, the
+  identifier is the thing to doubt.
+- **Apple's own `.intentdefinition` files are a first-class evidence source on the build
+  Mac** — between donor ground truth and the ToolKit catalog in the hierarchy. For any
+  `com.apple.*` AppIntent action, look for
+  `/System/Library/PrivateFrameworks/<Framework>.framework/Versions/A/Resources/Base.lproj/Intents.intentdefinition`,
+  `plutil -convert xml1` it, and read `INIntents` / `INEnums` directly. It gives exact
+  parameter names, types, enum cases **and their integer indices**, and response parameters —
+  for actions absent from every bundled snapshot. This is how spike 005 turned "the donor
+  wrote `state = 1`, which probably means On" into a fact, and recovered `off = 2`.
+- **Accessibility-intent enums serialize as integers, and `off` is 2, not 0.** The `State`
+  enum is `unknown`=0, `on`=1, `off`=2; `Operation` is `unknown`=0, `turn`=1, `toggle`=2.
+  A bool intuition (`<false/>`, or `0`) writes the wrong value on the *restore* leg, which is
+  the leg whose failure strands the user in the altered state.
 - **Silent automation probes:** any shortcut wired into a Personal Automation must have
   zero UI (no Show Result/Show Alert) — an automation that displays something interrupts
   the user on every trigger. Log to a Note instead.

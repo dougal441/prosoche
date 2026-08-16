@@ -65,6 +65,37 @@ analysed.
 6. **Do not guess the identifier or the enum cases** under any circumstance. This is the
    exact class the project's do-not-fabricate rule exists for.
 
+## Outcome — 2026-08-16 (steps 1–4 done, step 5 open)
+
+Resolved by `.planning/spikes/005-ios-color-filters-identifier/`. Note the premise of this
+todo was itself out of date: BD-01-R had already reversed CAP-20 to `VERIFIED` from catalog
+reasoning before the donor was ever opened. The donor confirmed that conclusion and
+**corrected its build recipe**, which mattered more.
+
+1. ✅ **Decrypted the donor.** Color Filters exists on iOS 26 as
+   `com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent`. Both
+   BD-01 and BD-01-R argued the question using `UAToggleColorFiltersIntent` — the macOS
+   twin. The iOS identifier is in none of the three bundled snapshots, so no amount of
+   catalog work could have found it. Parameters are **integers**: `state` `on`=1 / `off`=2,
+   `operation` `turn`=1 / `toggle`=2 (elided when unset), no `ShowWhenRun`.
+2. ✅ **Read-back: still none.** No `Get*`/`Query*` intent exists for any accessibility
+   setting across all 35 intents in `AccessibilityUtilities.framework`. §21's opt-in remedy
+   (`safety.ash_managed_color_filters`) therefore stands exactly as BD-01-R wrote it. One
+   untested lead recorded: every `Toggle*` intent declares a `state` *response* parameter,
+   which could support a toggle-probe read at the cost of one visible flicker.
+3. n/a — it does exist.
+4. ✅ **Audit trail updated.** `docs/CAPABILITY-DECISIONS.md` BD-01-R2 (supersedes BD-01-R's
+   Action/Parameters/Design); `docs/BUILD-NOTES.md` CAP-20 row, summary table, DEV-01 marked
+   withdrawn, §7 closure claims corrected, new §9 revisions table.
+5. ⬜ **Open — rebuild Ash.** Now unblocked and worth doing, but out of scope here: it is new
+   authoring against all seven parameter axes plus a re-run of the Circles UAT.
+6. ✅ Nothing was guessed. Every literal came from the donor or from Apple's own
+   `AccessibilityUtilities.framework` intentdefinition.
+
+**Two follow-on donor tests** (cheap, would close the remaining gaps) are listed under
+"Open Questions" in the spike README: confirm the OFF write serializes `state = 2`, and
+establish whether the `state` response is consumable as a magic variable.
+
 ## Related
 
 - Canonical strategy §6.5 (grayscale evidence — the strongest research support in the
