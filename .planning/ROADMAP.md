@@ -238,7 +238,7 @@ device-restart, CLOSE-never-fires, and overlapping-session failure modes. Delive
 verdict (works safely / does not) that the main-line cut in
 `.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md` can be judged against —
 this phase does not reverse that cut, which proceeds independently on main.
-**Requirements**: TBD
+**Requirements**: RESTORE-01, RESTORE-02, RESTORE-03, RESTORE-04, RESTORE-05, RESTORE-06, RESTORE-07 (proposed during `/gsd-plan-phase 9`, one per success criterion below; not part of the v1 REQUIREMENTS.md traceability set — this is an experimental fork phase)
 **Depends on:** Phase 7 (branches from the device-confirmed Dumb build/freeze lineage)
 **Success Criteria** (what must be TRUE):
 
@@ -270,10 +270,11 @@ this phase does not reverse that cut, which proceeds independently on main.
      with device evidence, or it is retired with the evidence that justifies the main-line
      cut.
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
 
-- [ ] TBD (run $gsd-plan-phase 9 to break down)
+- [ ] 09-01-PLAN.md — Generator fix: two `NUMERIC_OPERAND_FIELDS` table entries, negative-control self-check, stale "18" doc correction (device-free, Wave 1)
+- [ ] 09-02-PLAN.md — Device-proving safety verdict: sign both forks, author and complete `09-UAT.md`, DEV-06 design write-up, written verdict (Wave 2, depends on 09-01)
 
 Full context: `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md`
