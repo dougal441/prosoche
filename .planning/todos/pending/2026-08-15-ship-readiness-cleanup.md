@@ -48,6 +48,17 @@ now-archived debug file either.
    Regenerate, validate, sign, decrypt-verify, and confirm the artifact still runs the
    OPEN path correctly on device (a real regression test against this session's own
    closed defect, since the scaffolding removal touches the same control-flow region).
+
+   **Precondition now satisfied (2026-08-16, `.planning/phases/04-close-pipeline-session-race/04-03-PLAN.md`).**
+   This step's own implicit assumption — that removing breadcrumb J and the rest of the
+   `OPEN_BISECT` scaffolding leaves no on-device confirmation signal at all — no longer
+   holds. OPEN and CLOSE each now carry a permanent, unconditional Notification
+   confirmation, independent of `OPEN_BISECT`, any primitive, or a declared contract:
+   `tools/build_state_engine.py`'s new `notification()` helper, called once from
+   `open_pipeline()` (Circle/Pressure/Heat, right after the position breadcrumb J
+   occupied) and once from `close_pipeline()`'s `owns_if` TRUE branch (session
+   duration). Stripping the breadcrumb scaffolding is therefore safe to execute; it is
+   still not executed by this note, and this todo's other four items remain open.
 2. Add a `.gitignore` covering `.DS_Store`, `__pycache__/`, `*.pyc`, and any other
    build-local noise currently tracked by accident.
 3. Refresh `artifacts/shortcuts/MANIFEST.md` to include the 2026-08-14/15 archive
