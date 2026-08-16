@@ -1564,7 +1564,7 @@ def ice_expiry():
 
 def manual_emergency_restore():
     group = uid()
-    choices = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore"]
+    choices = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore", "Setup Check"]
     a = [comment(MANUAL_MARKER + "\n\n- Manual control is the only path that refreshes the Control Room or reads its proforma.\n- OPEN and CLOSE never enter this menu or parse the Note.\n- Test Circle copies recorded values into test variables and never writes Pressure.\n- CYCLE 14 (checkpoint decision): Status and Open Control Room are read-only. Neither sets Manual Refresh Requested; only explicit state-changing choices (Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Reset Today, Emergency Restore) append to the Note."),
          menu(group, 0, prompt="PROSOCHĒ", items=choices)]
     # CYCLE 14 -- checkpoint decision: "Open Control Room" is decoupled from the
@@ -1609,6 +1609,11 @@ def manual_emergency_restore():
     a += [set_value("cooldown_until", text_token([("null", None)])),
           set_value("active_session", cleared_value()), *number(1, "Manual Refresh Requested")]
     a += save_state()
+    # PHASE 10 (10-02): the tenth item.  Emitted last so the case order matches the
+    # choices order element for element -- a choosefrommenu whose case titles drift from
+    # its WFMenuItems order is CONTROL_FLOW.md's top documented real-world failure mode.
+    # Read-only, like Status: it sets no Manual Refresh Requested and appends nothing.
+    a += [menu(group, 1, title="Setup Check"), *number(1, "Manual Setup Check Requested")]
     a += [menu(group, 2), comment("--- PHASE 5 MANUAL EMERGENCY RESTORE END ---")]
     return a
 
@@ -1618,6 +1623,14 @@ def manual_note_refresh():
     a = [comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH ---\n\n- This runs after the Note is found or created in the MANUAL branch only.\n- It appends a factual current snapshot and meaningful manual events.\n- OPEN never reaches this Note parsing or append block.\n- Status is read-only (Manual Status Requested): it displays the snapshot directly and never appends to the Note.")]
     for key, name in (("fork", "Snapshot Fork"), ("profile", "Snapshot Profile"), ("sequence", "Snapshot Sequence"), ("voice_enabled", "Snapshot Voice"), ("pressure", "Snapshot Pressure"), ("circle", "Snapshot Circle"), ("cooldown_until", "Snapshot Cooldown"), ("profile_snapshot.enabled_exits", "Snapshot Exits")):
         a += read_value(key, variable("State"), name)
+    # PHASE 10 (10-02) -- Setup Check reads the two epoch keys the engine already writes:
+    # last_open_at (open_pipeline(), on a genuine open) and last_close_at (close_pipeline(),
+    # on an owning close).  Both are FLAT single-segment keys, so per CLAUDE.md's verified
+    # runtime semantics a read cannot hard-error even on a legacy state.json predating them
+    # -- a missing flat key simply returns nothing.  read_value(), never get_value():
+    # get_value() is reserved for COMPOUND_STATE_KEYS, and these are numeric leaves.
+    a += read_value("last_open_at", variable("State"), "Setup Last Open")
+    a += read_value("last_close_at", variable("State"), "Setup Last Close")
     refresh_g, refresh_if = if_block("Manual Refresh Requested", 2, number=0)
     snapshot_id = uid()
     snapshot = text_token([("\n\n## CURRENT SETTINGS\n- Fork: ", "Snapshot Fork"), ("\n- Profile: ", "Snapshot Profile"), ("\n- Sequence: ", "Snapshot Sequence"), ("\n- Voice: ", "Snapshot Voice"), ("\n- AI: not used by this fork\n- Enabled exits: ", "Snapshot Exits"), ("\n\n## CURRENT STATE\n- Circle: ", "Snapshot Circle"), ("\n- Pressure: ", "Snapshot Pressure"), ("\n- Cool-down until: ", "Snapshot Cooldown"), ("\n\n## ATTENTION LEDGER\n- Manual Control Room refresh at ", "Now Epoch")])
@@ -1631,6 +1644,35 @@ def manual_note_refresh():
     a += [status_if, comment("Status is read-only:\n- Displays the current snapshot directly, via an alert.\n- Never appends to or otherwise writes the Note."),
           alert("Status", text_token([("Fork: ", "Snapshot Fork"), ("\nProfile: ", "Snapshot Profile"), ("\nSequence: ", "Snapshot Sequence"), ("\nVoice: ", "Snapshot Voice"), ("\nCircle: ", "Snapshot Circle"), ("\nPressure: ", "Snapshot Pressure"), ("\nCool-down until: ", "Snapshot Cooldown")])),
           otherwise(status_g), action("is.workflow.actions.nothing"), end_if(status_g)]
+    # PHASE 10 (10-02) -- Setup Check: did the two Personal Automations the user built by
+    # hand actually fire?  Derived, not stored: no new state key, no bootstrap-template
+    # edit, no schema_version bump.  Each verdict is a numeric "> 0" test on the epoch,
+    # NEVER a condition-100 existence test -- that is the axis-7 gate-semantics trap
+    # verify_sentinel_gates() exists to prevent, and a numeric "> 0" reads false for a
+    # JSON null, for the string "null" and for an empty string under every device-measured
+    # coercion, while every value ever written to these keys is a strictly positive epoch.
+    for read_name, verdict_name, automation in (("Setup Last Open", "Setup Open Verdict", "A"),
+                                                ("Setup Last Close", "Setup Close Verdict", "B")):
+        seen_id, unseen_id = uid(), uid()
+        verdict_g, verdict_if = if_block(read_name, 2, number=0)
+        a += [comment(f"Decide whether Automation {automation} has ever been recorded firing:\n"
+                      f"- Input is the stored epoch read above, compared numerically against zero.\n"
+                      "- A positive epoch means PROSOCHĒ has written it at least once.\n"
+                      "- Anything else -- missing, null or empty -- reads as not yet seen, never as an error."),
+              verdict_if,
+              action("is.workflow.actions.gettext", UUID=seen_id, WFTextActionText="seen"),
+              set_var(verdict_name, output(seen_id, "Text")),
+              otherwise(verdict_g),
+              action("is.workflow.actions.gettext", UUID=unseen_id, WFTextActionText="not seen yet"),
+              set_var(verdict_name, output(unseen_id, "Text")),
+              end_if(verdict_g)]
+    setup_g, setup_if = if_block("Manual Setup Check Requested", 2, number=0)
+    a += [setup_if, comment("Setup Check is read-only:\n- Displays the two derived verdicts directly, via an alert.\n- Never appends to or otherwise writes the Note, and sets no refresh flag.\n- Reports what PROSOCHĒ has recorded, which is sufficient evidence but not necessary evidence."),
+          alert("Setup Check", text_token([
+              ("Automation A — App Is Opened, passing OPEN: ", "Setup Open Verdict"),
+              ("\nAutomation B — App Is Closed, passing CLOSE: ", "Setup Close Verdict"),
+              ("\n\nThis reports whether PROSOCHĒ has ever recorded a genuine open or an owning close. A close that a newer open superseded, or an open during a cool-down, records nothing — so a \"not seen yet\" verdict can be wrong, but a \"seen\" verdict never is.", None)])),
+          otherwise(setup_g), action("is.workflow.actions.nothing"), end_if(setup_g)]
     sync_g, sync_if = if_block("Manual Sync Requested", 2, number=0)
     text_id, match_id = uid(), uid()
     a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The extracted text is saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), set_value("profile_snapshot.proforma", output(match_id, "Matched Text")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g), comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH END ---")]
