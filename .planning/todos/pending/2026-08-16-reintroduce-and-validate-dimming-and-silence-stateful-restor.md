@@ -73,6 +73,18 @@ at all.** A dim that never restores is a worse product than no dim.
    environmental friction work safely on iOS 26 Shortcuts?" — a clear yes with evidence, or
    a clear no that retires the idea.
 
+## Addendum (2026-08-16, same day)
+
+Point 5's "never zero brightness (~10–15% prototype dim)" is corrected: user-reported
+on-device observation is that iOS's practical brightness minimum is dim, not a literal
+black/unusable screen. The floor itself was never the safety mechanism — capture-and-restore
+reliability was (see `docs/CAPABILITY-DECISIONS.md` BD-02's Rationale, which already grounds
+SAFE-03 in the has-any-value guard, not floor avoidance). This fork may target the device's
+true minimum brightness, contingent on this todo's own point 4 (device-proving capture/restore
+under force-quit, restart, missed CLOSE, overlapping sessions). Treat as provisional until that
+testing confirms it. Volume's floor language (never raise as punishment, no startling output)
+is unchanged — this correction is brightness-specific.
+
 ## Related
 
 - **Conflicts with (deliberately):** `2026-08-15-ship-readiness-cleanup.md` — the

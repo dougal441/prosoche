@@ -223,6 +223,52 @@ read-back — and only then decide whether to rebuild Ash as designed.
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (promote with /gsd-review-backlog when ready)
 
 Full context: `.planning/phases/999.3-grayscale-ash-capability-donor-test/2026-08-16-grayscale-ash-capability-donor-test.md`
+
+### Phase 9: Dimming/Silence Stateful Restore (Experimental Fork)
+
+**Goal:** On this experimental branch only, finish the stateful capture-and-restore design
+for Dimming (§11 Primitive E) and Silence (§11 Primitive C) — fix the 18 uncoerced
+`setbrightness`/`setvolume` sites left over from the cycle-14 type audit, then prove
+capture → apply → restore as a closed loop on a real device, including force-quit,
+device-restart, CLOSE-never-fires, and overlapping-session failure modes. Deliver a
+verdict (works safely / does not) that the main-line cut in
+`.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md` can be judged against —
+this phase does not reverse that cut, which proceeds independently on main.
+**Requirements**: TBD
+**Depends on:** Phase 7 (branches from the device-confirmed Dumb build/freeze lineage)
+**Success Criteria** (what must be TRUE):
+
+  1. All 18 deferred `setbrightness.WFBrightness` (14) / `setvolume.WFVolume` (4) sites
+     carry the correct coercion aggrandizement, with `CoercionItemClass` established from
+     donor or corpus evidence (Donor 10, `.planning/debug/Donor 10.shortcut`) — never
+     guessed — and the numeric-audit build guard no longer exempts them.
+  2. On device: reading current brightness/volume via `Get Device Details` returns a real,
+     non-empty, correctly-typed value; the has-any-value guard correctly skips the change
+     when the read returns nothing.
+  3. On device: the original value is restored exactly on CLOSE.
+  4. Force-quit mid-session, device restart mid-session, CLOSE never firing, and two
+     overlapping sessions each either restore correctly or leave the user at a device-safe
+     state — never silent-forever, never loud, and never *stuck* at a changed brightness/
+     volume with no path back to the original value (§21, §32). Brightness may target the
+     device's true minimum, not an artificial 10–15% floor — corrected 2026-08-16 per
+     user on-device report that the practical minimum is dim, not a literal black/unusable
+     screen (see `docs/CAPABILITY-DECISIONS.md` BD-02 addendum); the safety mechanism is
+     capture-and-restore reliability (criteria 2–3, 5), not floor avoidance.
+  5. Emergency Restore recovers from every failure mode found above.
+  6. DEV-06 (restore-ownership check) is re-evaluated live on this fork now that the cut
+     it was conditioned on does not apply here.
+  7. A written verdict exists: either stateful environmental friction is demonstrated safe
+     with device evidence, or it is retired with the evidence that justifies the main-line
+     cut.
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run $gsd-plan-phase 9 to break down)
+
+Full context: `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md`

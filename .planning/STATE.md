@@ -79,6 +79,11 @@ Progress: [██████████] 100%
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 9 added: Reintroduce and validate Dimming/Silence stateful restore on an experimental fork (this branch). Runs in parallel with, and does not reverse, the main-line brightness/volume cut in `.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md`. See `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md` for full context; `Donor 10.shortcut` (`.planning/debug/`) supplies the coercion-aggrandizement evidence needed to fix the 18 deferred sites.
+- [Phase 9]: BD-02's "never zero, 10–15% band" brightness floor corrected — user-reported on-device observation is that iOS's practical brightness minimum is dim, not a literal black/unusable screen, so avoiding it was never itself the safety requirement. The safety mechanism is capture-and-restore reliability (Get Device Details → has-any-value guard → snapshot → restore on CLOSE/Emergency Restore), which BD-02 already specified and Phase 9 exists to prove under real failure modes. Scoped to this experimental fork only (`.claude/CLAUDE.md`, `docs/CAPABILITY-DECISIONS.md` BD-02 addendum, `.planning/ROADMAP.md` Phase 9 criterion 4) — main line's floor is untouched. Provisional until Phase 9's own on-device testing confirms it.
+
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
