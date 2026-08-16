@@ -109,13 +109,13 @@ Plans:
   4. Rapid switching between two tracked apps in a test sequence never corrupts state or produces a phantom session.
   5. CLOSE clears the active session, appends the completed session to the rolling window, and restores any environmental setting PROSOCHĒ itself changed during the session.
 
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans executed
 
 Plans:
 
 - [x] 04-01-PLAN.md — CLOSE pipeline generator: semantic anchor replacement, race-safe ownership check, bounded session history
 - [x] 04-02-PLAN.md — Fix the WFConditionalActionString wiring defect class (close_pipeline ownership gate + 9 sibling sites) that made CLOSE a permanent no-op (G-04-1, G-04-3)
-- [ ] 04-03-PLAN.md — Add unconditional OPEN/CLOSE Notification confirmations and improve the Leaving menu's copy (G-04-4b)
+- [x] 04-03-PLAN.md — Add unconditional OPEN/CLOSE Notification confirmations and improve the Leaving menu's copy (G-04-4b)
 
 ### Phase 5: Nine Primitives & Environmental Safety
 
@@ -203,7 +203,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 1. Capability Audit & Config Foundation | 5/5 | Complete | 2026-08-13 |
 | 2. Routing, Bootstrap & Control Room Onboarding | 4/4 | Complete | 2026-08-13 |
 | 3. Deterministic State Engine | 1/1 | Complete | 2026-08-13 |
-| 4. CLOSE Pipeline & Session Race Protocol | 1/2 | In Progress|  |
+| 4. CLOSE Pipeline & Session Race Protocol | 2/2 | In Progress|  |
 | 5. Nine Primitives & Environmental Safety | 3/3 | Complete | 2026-08-13 |
 | 6. Exits, Exit Learning & Contracts | 3/3 | Complete | 2026-08-13 |
 | 7. Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze | 1/1 light | Human needed | - |
