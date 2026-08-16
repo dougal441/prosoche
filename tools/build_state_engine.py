@@ -731,7 +731,16 @@ def select_exit():
     """Deterministic, state-driven selector. The concrete menu always shares recorder/router."""
     a = [comment("--- PHASE 6 EXIT SELECTOR ---\n\n- Sparse data rotates enabled exits by the persisted counter.\n- Sufficient data uses integer averages, canonical ties, then configured epsilon exploration.")]
     a += enabled_exits() + read_value("exit_selection_counter", variable("State"), "Exit Selection Counter")
-    missing_counter, counter = if_block("Exit Selection Counter", 5, string="")
+    # Condition 101 ("does not have any value") tests absence directly on the read
+    # variable, matching the has-any-value idiom already used throughout this file
+    # (e.g. "Contract Active Session", "Spoken This Run") -- a literal empty-string
+    # comparator (condition 5 vs "") cannot express this: the validator's
+    # iter_empty_strings rejects any empty WFConditionalActionString outright (raw or
+    # WFTextTokenString-wrapped), and even if it didn't, "is not <sentinel>" is true for
+    # every real, present counter value too, so it could never distinguish missing from
+    # present. See 04-02-SUMMARY.md for the recorded deviation from the plan's literal
+    # "pass the empty string" instruction.
+    missing_counter, counter = if_block("Exit Selection Counter", 101)
     a += [counter] + number(0, "Exit Selection Counter") + [otherwise(missing_counter), action("is.workflow.actions.nothing"), end_if(missing_counter)]
     a += config("exits.exploit_min_observations", "Exploit Minimum") + config("exits.exploration_rate", "Exploration Rate")
     a += number(0, "Sparse Selection")
@@ -907,7 +916,10 @@ def record_exit_and_route(choice_name: str):
           set_value("pending_exit.type", variable(choice_name), "Reloaded State"),
           set_value("pending_exit.timestamp", variable("Now Epoch"), "Reloaded State"),
           *read_value("exit_selection_counter", variable("Reloaded State"), "Reloaded Exit Counter")]
-    missing_counter, counter = if_block("Reloaded Exit Counter", 5, string="")
+    # Condition 101 ("does not have any value") -- see the identical comment at
+    # select_exit()'s "Exit Selection Counter" guard for why condition 5 vs an empty
+    # string cannot work here.
+    missing_counter, counter = if_block("Reloaded Exit Counter", 101)
     a += [counter] + number(0, "Reloaded Exit Counter") + [otherwise(missing_counter), action("is.workflow.actions.nothing"), end_if(missing_counter)]
     a += math("Reloaded Exit Counter", 1, "Exit Counter Next", "+") + [set_value("exit_selection_counter", variable("Exit Counter Next"), "Reloaded State")]
     a += save_state("Reloaded State") + route_exit(choice_name)
@@ -991,8 +1003,10 @@ def open_pipeline():
     # BREADCRUMB B - every state read and every config read completed.
     a += breadcrumb("B")
     # Behavioural day rollover is the first state update (only opens_today resets).
-    # Code 5 requires a string; textual empty guards avoid direct null compare.
-    g, start = if_block("Stored Day", 5, string="")
+    # Condition 101 ("does not have any value") -- see the identical comment at
+    # select_exit()'s "Exit Selection Counter" guard for why condition 5 vs an empty
+    # string cannot work here.
+    g, start = if_block("Stored Day", 101)
     a += [comment("""Check whether a saved behavioural day exists before comparing it to today:
 - A missing value is treated as rollover so the counter is safe on migrated state.
 - A present value continues to the same-day comparison below.

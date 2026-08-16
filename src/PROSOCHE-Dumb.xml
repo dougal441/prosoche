@@ -3333,7 +3333,7 @@ Report the LAST letter you see.</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>5</integer>
+				<integer>101</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -3351,8 +3351,6 @@ Report the LAST letter you see.</string>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
-				<key>WFConditionalActionString</key>
-				<string></string>
 			</dict>
 		</dict>
 		<dict>
@@ -12526,7 +12524,7 @@ Report the LAST letter you see.</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>5</integer>
+				<integer>101</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -12544,8 +12542,6 @@ Report the LAST letter you see.</string>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
-				<key>WFConditionalActionString</key>
-				<string></string>
 			</dict>
 		</dict>
 		<dict>
@@ -15963,7 +15959,7 @@ Report the LAST letter you see.</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>5</integer>
+				<integer>101</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -15981,8 +15977,6 @@ Report the LAST letter you see.</string>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
-				<key>WFConditionalActionString</key>
-				<string></string>
 			</dict>
 		</dict>
 		<dict>
@@ -18955,7 +18949,7 @@ Report the LAST letter you see.</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>5</integer>
+				<integer>101</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -18973,8 +18967,6 @@ Report the LAST letter you see.</string>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
-				<key>WFConditionalActionString</key>
-				<string></string>
 			</dict>
 		</dict>
 		<dict>
