@@ -1851,22 +1851,26 @@ If absent:
 
 The Note explicitly tells the user to create:
 
+One automation covers every watched app. The Shortcut consumes no app identity, and Heat, Gravity, Pressure, Circle and `active_session` are global, so per-app automations are unnecessary. OPEN and CLOSE stay split only because they pass different literals.
+
 ### Automation A — OPEN
 
 - Trigger: App
 - select target apps
 - `Is Opened`
-- run automatically
-- Run Shortcut: `PROSOCHĒ — Nine Circles`
-- pass input: `OPEN`
+- `Run Immediately` (not `Run After Confirmation`)
+- on the shortcut-picker screen, **Create New Shortcut** — selecting PROSOCHĒ here yields a no-input automation
+- inside that new shortcut: a `Text` action holding exactly `OPEN`, then `Run Shortcut` targeting `PROSOCHĒ — Nine Circles`, with its Input bound to that `Text` magic variable
 
 ### Automation B — CLOSE
 
 - same target apps
 - `Is Closed`
-- run automatically
-- Run Shortcut: `PROSOCHĒ — Nine Circles`
-- pass input: `CLOSE`
+- `Run Immediately` (not `Run After Confirmation`)
+- on the shortcut-picker screen, **Create New Shortcut**
+- inside that new shortcut: a `Text` action holding exactly `CLOSE`, then `Run Shortcut` targeting `PROSOCHĒ — Nine Circles`, with its Input bound to that `Text` magic variable
+
+The literal must be exact. `Run Shortcut`'s Input parameter takes a variable, never typed literal text, and the router matches the passed string exactly — `CLOSED` for `CLOSE` fails silently into the MANUAL branch.
 
 The Shortcut cannot truthfully claim to install these automatically.
 

@@ -1318,3 +1318,70 @@ Three things stated plainly, because each is a way this entry could be misread:
 
 §17 carries a dated one-line addendum pointing here. Its body was **appended to, never revised** —
 it records a user decision, and editing the premise in place would rewrite that record.
+
+---
+
+## 20. iOS 26 automation onboarding repaired (quick task `260817-au7`, 2026-08-17)
+
+The Control Room Note's Automation A and Automation B build steps could not produce the
+automations they described. Three defects, all in copy, none structural:
+
+1. **Step 10 was impossible as written.** "Set the Run Shortcut action's input to the text
+   `OPEN`" — `Run Shortcut`'s Input parameter accepts a **variable**, not typed literal
+   text. There is no field in which those four letters can be typed.
+2. **The app-trigger screen is a shortcut picker.** Selecting PROSOCHĒ there produces a
+   **no-input** automation, so every trigger arrives with an absent `ExtensionInput`,
+   composes as an empty string, and falls through the router to the MANUAL branch.
+3. **Step 7 carried the stale `Ask Before Running` label.** iOS 26 presents a
+   `Run After Confirmation` / `Run Immediately` choice instead.
+
+### The replacement flow, and why it is trusted
+
+Both sections now instruct: on the shortcut-picker screen tap **Create New Shortcut**; add
+a **Text** action holding the literal; add **Run Shortcut** below it; confirm its Input is
+the preceding Text magic variable, using **Choose Variable** if it is not auto-filled; save.
+
+This is **device-proven at the mechanism level**. The `open-routing-sequence-error` debug
+session drove a purpose-built INPUT PROBE — a signed shortcut echoing its Shortcut Input
+verbatim — from a wrapper built exactly this way. It reported `RAW [OPEN]` and
+`NORMALISED [OPEN]`. A screenshot of the user's own automation confirmed the two-action
+wrapper renders with both the shortcut reference and the Input magic variable bound.
+
+**What is proven is the handoff, not this rendered text.** No one has yet followed these
+specific twelve steps on a device and arrived at a working automation. That confirmation
+belongs with the outstanding device UAT and is recorded as such in the closed todo.
+
+### Two additions beyond the literal fix
+
+- **The exact-literal warning**, placed at the point the literal is entered rather than in a
+  trailing caveat. During Phase 4 UAT this user's CLOSE automation was typed `CLOSED`; the
+  router's exact match never fired, it fell to MANUAL, and **nothing on screen indicated a
+  problem**. Silent failure is the reason the warning is inline.
+- **"One automation covers every watched app."** `CurrentApp` appears zero times in either
+  fork and Heat/Gravity/Pressure/Circle/`active_session` are global (§14's automation-wrapper
+  design record). Without saying so, a user reasonably builds one pair per app.
+
+### Where the text lives — measured, not assumed
+
+The Note body is **authored in the XML, not generated**. `tools/build_state_engine.py`
+contains no copy of this prose; it reads `src/PROSOCHE-Dumb.xml`, patches by comment-marker
+anchor, and writes it back, so a hand edit to the body survives every rebuild.
+
+The body is a `is.workflow.actions.gettext` whose `WFTextActionText` is a
+**`WFTextTokenString`** carrying two attachments — `Import Descent` and `Import Voice` —
+positioned **after** the edited region. Lengthening the automation sections shifts both.
+`attachmentsByRange` was therefore **recomputed from the new placeholder offsets**
+(`{4389, 1}`/`{4420, 1}` → `{5478, 1}`/`{5509, 1}`) rather than left in place; stale ranges
+here are out-of-bounds ranges, which `VARIABLES.md` records as able to crash Shortcuts on
+import. A plain text substitution in the XML would have shipped exactly that.
+
+Sentient inherits the corrected body from the built Dumb source via `tools/build_sentient.py`
+and was not edited by hand.
+
+### Carried forward, deliberately untouched
+
+Both sections still name `PROSOCHĒ — Nine Circles — Dumb` as the Run Shortcut target, in
+both forks — §9 pins that string to the Dumb signing name, and Sentient's inherited body
+therefore names the wrong fork. That is a **pre-existing** fork-naming defect, older than
+this task and independent of it, and it belongs with Build Addendum 01 rather than a copy
+repair. Recorded here so it is not mistaken for something this change introduced.
