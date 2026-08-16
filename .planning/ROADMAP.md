@@ -364,8 +364,7 @@ substring matching as an invariant: BD-06 moves dispatch to condition 4 exact ma
 and abolishes combined entries.
 
 **Severity:** major
-**Requirements**: TBD (no new IDs expected; touches AUDIT-03/04, SESS-07,
-CIRC-01/03/05/13/14, ROOM-01/02/03/10, SAFE-01/02/03/05, DIST-01/02/03/04/05/06)
+**Requirements**: AUDIT-03, AUDIT-04, SESS-07, CIRC-01, CIRC-03, CIRC-05, CIRC-13, CIRC-14, ROOM-01, ROOM-02, ROOM-03, ROOM-10, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-01, DIST-02, DIST-03, DIST-04, DIST-05, DIST-06 (no new IDs expected — this phase touches existing ones)
 **Depends on:** Phase 9
 **Plans:** 0 plans
 
