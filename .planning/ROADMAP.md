@@ -276,12 +276,12 @@ this phase does not reverse that cut, which proceeds independently on main.
      with device evidence, or it is retired with the evidence that justifies the main-line
      cut.
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 09-01-PLAN.md — Generator fix: two `NUMERIC_OPERAND_FIELDS` table entries, negative-control self-check, stale "18" doc correction (device-free, Wave 1)
+- [x] 09-01-PLAN.md — Generator fix: two `NUMERIC_OPERAND_FIELDS` table entries, negative-control self-check, stale "18" doc correction (device-free, Wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

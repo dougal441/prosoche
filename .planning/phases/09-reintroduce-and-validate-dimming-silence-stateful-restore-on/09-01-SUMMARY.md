@@ -168,3 +168,12 @@ None - no external service configuration required.
 ---
 *Phase: 09-reintroduce-and-validate-dimming-silence-stateful-restore-on*
 *Completed: 2026-08-16*
+
+## Self-Check: PASSED
+
+- FOUND: docs/phase9_self_check.py
+- FOUND: .planning/phases/09-reintroduce-and-validate-dimming-silence-stateful-restore-on/09-01-SUMMARY.md
+- FOUND: 5b95026 (Task 1 commit)
+- FOUND: 9964c9a (Task 2 commit)
+- FOUND: aadab83 (Task 3 commit)
+- FOUND: 6038b24 (SUMMARY.md commit)

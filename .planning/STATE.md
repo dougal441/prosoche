@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 8
-current_phase_name: Sentient Fork & Dual Distribution
-status: verifying
-stopped_at: Phase 08 Plan 03 awaiting real-iPhone DIST-03 UAT
-last_updated: "2026-08-13T08:58:14.171Z"
-last_activity: 2026-08-14
-last_activity_desc: "Completed quick task 260814-kut: disambiguated deviations and guarded rebuild provenance"
+current_phase: 09
+current_phase_name: Dimming/Silence Stateful Restore (Experimental Fork
+status: executing
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-08-16T10:02:58.935Z"
+last_activity: 2026-08-16
+last_activity_desc: Phase 09 execution started
 progress:
-  total_phases: 8
-  completed_phases: 6
-  total_plans: 18
-  completed_plans: 18
+  total_phases: 9
+  completed_phases: 5
+  total_plans: 20
+  completed_plans: 19
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 8 — real-iPhone dual-fork UAT
+**Current focus:** Phase 09 — Dimming/Silence Stateful Restore (Experimental Fork)
 
 ## Current Position
 
-Phase: 8 of 8 (Sentient Fork & Dual Distribution)
-Plan: 3 of 3 complete
-Status: Automated verification passed; awaiting real-iPhone import / Manual UAT
-Last activity: 2026-08-14 — Completed quick task 260814-kut: disambiguated deviations and guarded rebuild provenance
+Phase: 09 (Dimming/Silence Stateful Restore (Experimental Fork)) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-08-16 — Phase 09 execution started
 
-Progress: [██████████] 100%
+Progress: [██████████] 95%
 
 ## Performance Metrics
 
@@ -76,6 +76,7 @@ Progress: [██████████] 100%
 | Phase 08-sentient-fork-dual-distribution P01 | 20m | 2 tasks | 3 files |
 | Phase 08-sentient-fork-dual-distribution P02 | 12m | 2 tasks | 3 files |
 | Phase 08-sentient-fork-dual-distribution P03 | 10m | 1 tasks | 10 files |
+| Phase 09 P01 | 25min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Exit selection remains deterministic and Config-driven without model, random, or network actions.
 - [Phase ?]: Sentient uses the device-evidenced Apple Intelligence on Device model literal; no OS-27-only keys.
 - [Phase ?]: Completed-slow, empty, or malformed audit output falls through to Dumb; hung model cancellation is unavailable at target 26.
+- [Phase ?]: Kept the numeric-coercion fix purely additive at the NUMERIC_OPERAND_FIELDS table per plan instruction; no other function edited.
+- [Phase ?]: Fixed two pre-existing, unrelated stale self-check assertions (docs/state_engine_self_check.py gettimebetweendates count; docs/phase5_self_check.py router-gate ancestry) because the plan's own required verify chain needed both scripts to pass (Rule 1/3 deviation).
 
 ### Pending Todos
 
@@ -188,6 +191,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-13T08:58:14.160Z
-Stopped at: Phase 08 Plan 03 awaiting real-iPhone DIST-03 UAT
-Resume file: docs/device-evidence/Phase8-DIST-03-BLOCKED.md
+Last session: 2026-08-16T10:02:58.924Z
+Stopped at: Completed 09-01-PLAN.md
+Resume file: None
