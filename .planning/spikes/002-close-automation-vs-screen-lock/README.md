@@ -41,18 +41,33 @@ apply here (this project's Personal Automations are user-created outside the sho
 - `Lock Signal Probe.shortcut` — signed, ready to AirDrop/import to the test iPhone
 - `Lock Signal Probe.xml` — unsigned editable source
 
-**What the probe does:** on every run it appends one line to a Note named
-"Lock Signal Probe Log" — no UI, no dialogs, nothing to dismiss. Each line records:
-timestamp (`yyyy-MM-dd HH:mm:ss`), which signal triggered the run (`OPEN`, `CLOSE`, or
-`MANUAL` for a bare manual run), and the live `Device Is Locked` reading at that moment
-(confirmed literal per [Spike 001](../001-device-is-locked-literal/README.md)).
+**What the probe does:** on every run it appends one JSON line to a file at
+`Shortcuts/PROSOCHE/lock-signal-probe-log.jsonl` in iCloud Drive — no UI, no dialogs,
+nothing to dismiss. Each line records: timestamp (`yyyy-MM-dd HH:mm:ss`), which signal
+triggered the run (`OPEN`, `CLOSE`, or `MANUAL` for a bare manual run), and the live
+`Device Is Locked` reading at that moment (confirmed literal per
+[Spike 001](../001-device-is-locked-literal/README.md)). Readable directly from the Files
+app on-device, or from a synced Mac.
+
+**Revision history for this probe (two prior builds both failed on-device):**
+1. v1 used Notes (`Create Note` + `Filter Notes`/`Append to Note`). The `Create Note`
+   action's hand-synthesized `AppIntentDescriptor` came back "unknown action" on import.
+2. v2 removed `Create Note` but kept `Filter Notes`/`Append to Note`; on device this
+   popped the full interactive Notes picker instead of silently filtering, and nothing
+   was written — a genuine broken-wiring bug, not just the known Create Note gap.
+3. **v3 (current) drops Notes entirely** and logs to a fixed-path JSON-lines file instead,
+   reusing this project's own already-device-verified `state.json` file-I/O pattern
+   verbatim (`is.workflow.actions.documentpicker.open`/`.save`,
+   `is.workflow.actions.file.createfolder`, `is.workflow.actions.setitemname`) — see
+   Build Notes below for the full action list and a UUID-collision root-cause finding
+   from v2.
 
 **Setup (one-time, on the test iPhone):**
-1. If a shortcut named "Lock Signal Probe" already exists in the library, delete it first
-   — duplicate names silently skip on import.
+1. Delete any shortcut named "Lock Signal Probe" already in the library first — duplicate
+   names silently skip on import, and you'd end up testing a stale broken build.
 2. Import `Lock Signal Probe.shortcut`.
-3. Run it once manually to confirm it logs `signal=MANUAL` with no crash — this also
-   triggers the one-time iOS Notes permission prompt (a system prompt, not shortcut UI).
+3. Run it once manually to confirm it logs a line with no crash — no permission prompts
+   are expected this time (no Notes access needed).
 4. Pick one already-tracked app for this test (any app you don't mind automations firing
    against for a few minutes).
 5. Create two Personal Automations if you don't already have equivalents:
@@ -119,38 +134,37 @@ paste the new lines it accumulates, in order. That updates this spike's Investig
 Trail and Verdict.
 ──────────────────────────────────────────────────────────────
 
-## Build Notes — Deviations from Spec (shortcut-builder agent report)
+## Build Notes — v3 (current, file-based) Deviations and Findings
 
 1. **`--target-macos 26 --target-platform ios` is degenerate in the installed Playground
    version (v1.2.1)** — it rejects every action including `is.workflow.actions.comment`,
    because no iOS-26-specific ToolKit snapshot is bundled and `--target-platform ios`
    filters out the generic v63 allowlist entirely, leaving only OS-27-gated rows. This is
-   a tooling artifact, not a defect in the probe. Validation instead used
-   `--target-macos 26` (passed) and `--target-macos 26 --target-platform all` (passed) as
-   the closest honest rendering of the intended iOS-26 posture. Cross-checking at
-   `--target-macos 27 --target-platform ios` failed on exactly the three Notes actions
-   (`filter.notes`, `appendnote`, `mobilenotes.SharingExtension`) — the same
-   bundled-data completeness gap already recorded in this project's own capability audit
-   (`.claude/CLAUDE.md` §3 item 5), not a new finding. **Follow-up:** the project's
-   "Exact validator invocation" section should be corrected — the prescribed flag pair
-   cannot pass for any shortcut in this Playground version.
-2. **Create Note carries two content keys** (`contents` and the legacy `WFCreateNoteInput`)
-   because the validator's accepted key set didn't include `contents` alone. Both are
-   real, documented keys (not invented); whichever the device recognizes wins, and
-   Shortcuts silently ignores the other. Check the very first auto-created note's body —
-   if it's empty, flag it, but the cost of being wrong is one silently-empty note title
-   that self-heals on the next Append.
-3. **`AppIntentDescriptor` for Create Note was synthesized** from the documented template
-   pattern (`BundleIdentifier com.apple.mobilenotes`, `AppIntentIdentifier SharingExtension`)
-   — not independently attested for this specific action, per the project's own
-   do-not-fabricate discipline.
-4. **`WFWorkflowInputContentItemClasses` is non-empty** on this probe (unlike the
-   production PROSOCHĒ shortcut's "leave empty" guidance) because the validator hard-rejects
-   referencing Shortcut Input with an empty class list. `WFWorkflowTypes` stays empty so
-   this doesn't add the probe to the Share Sheet.
-5. **Append newline behavior is undocumented** in this bundle — if log lines run together
-   without paragraph breaks in the Note, add a leading newline to the log-line Text action
-   and re-sign.
+   a tooling artifact, not a defect in the probe. All three builds of this probe instead
+   validated at `--target-macos 26` alone (passed). **Follow-up:** the project's "Exact
+   validator invocation" section should be corrected — the prescribed flag pair cannot
+   pass for any shortcut in this Playground version.
+2. **Root cause found for v2's "missing variables" symptom.** v2's `Create Note` action's
+   own `UUID` was identical to the `GroupingIdentifier` of an unrelated If block — a single
+   UUID doing double duty as both an action identity and a control-flow group identity,
+   exactly the collision class this project's conventions name as the #1 documented
+   real-world Shortcuts mistake. Every UUID in v3 was freshly generated and verified to
+   not collide with any `GroupingIdentifier`.
+3. **`New Content` is built inline in each branch of the has-existing-file check**, not via
+   a separate `Existing Log` variable set to an empty string in the else branch, because
+   `BEST_PRACTICES.md` hard-rejects a Text action holding an empty string and the validator
+   confirmed this on the first pass. Semantically identical result (true branch:
+   `File + log line`; false branch: `log line` alone).
+4. **Unverified at runtime: how `Device Is Locked` renders as text.** The log line leaves
+   `locked:` unquoted (`"locked":￼` not `"locked":"￼"`) so the line parses as strict JSON
+   if Shortcuts emits `true`/`false`. No device-verified evidence exists in this bundle for
+   whether it instead emits `1`/`0` or `Yes`/`No` — check the first captured line; if it's
+   not literally `true`/`false`, the line is still human-readable but not strict JSON, and
+   the field would need quoting.
+5. **No manual setup needed beyond import** — the `PROSOCHE` iCloud folder is created
+   defensively on every run, and a missing log file returns nothing (not an error) via
+   `WFFileErrorIfNotFound: false`, so a completely fresh install works with zero
+   pre-existing state. This removes the Spike 002 v1/v2 requirement to pre-create a Note.
 
 None of these deviations affect this spike's actual question (lock-vs-close automation
 behavior) — they're standard Shortcuts wiring notes captured for completeness per this
