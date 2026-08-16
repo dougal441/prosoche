@@ -488,22 +488,25 @@ phase's own documentation deliverables.
 | A3 | The device's true minimum `WFBrightness` value is not documented anywhere and must be established by direct device test (trying `0.0`) | Common Pitfalls — Safety Floors | If the plan hardcodes a guessed floor instead of testing it, the "corrected floor" claim in BD-02's addendum remains unconfirmed as this phase's own success criterion 4 requires |
 | A4 | DEV-06's residual risk is broader/different than the two-overlapping-sessions case this research traced through (BUILD-NOTES §17 does not fully specify the failure it protects against) | DEV-06 section | If the actual risk DEV-06 was written to address is something this research's trace missed, a "do not naively implement" recommendation could leave a real gap unaddressed — the plan should re-derive from first principles, not skip DEV-06 entirely on the strength of this research alone |
 
-## Open Questions
+## Open Questions (RESOLVED — dispositioned into Plan B, see below)
 
 1. **What is `WFBrightness`'s actual minimum float and does `0.0` produce the "dim, not black" result the user reported?**
    - What we know: BD-02's addendum reports a user on-device observation that the practical floor is dim, not literal black.
    - What's unclear: The exact `WFBrightness` value tested, and whether `0.0` specifically (vs. some very small non-zero value) is what was observed.
    - Recommendation: Make this an explicit device-test task in Plan B before finalizing the new dim target; do not assume `0.0` is safe without observing it.
+   - RESOLVED: see `09-02-PLAN.md` Test 4 (device observation of `WFBrightness = 0.0` required before adopting any new dim target).
 
 2. **Does the analogy-based coercion (`WFNumberContentItem`) actually clear the red-chip check on `setbrightness`/`setvolume`?**
    - What we know: The identical coercion shape is confirmed correct for conditional operands, math operands, and list-index operands (all catalog-typed the same as `WFBrightness`/`WFVolume`: `float`/numeric).
    - What's unclear: Whether a **direct Set-action parameter** position behaves identically to a **comparison/computation operand** position — Donor 10 doesn't cover this.
    - Recommendation: On-device visual check first (fast); fresh donor request only if the visual check is inconclusive or shows red.
+   - RESOLVED: see `09-02-PLAN.md` Task 2 (`checkpoint:human-verify`, blocking gate — red chip routes to a fresh-donor request, never a shipped guess).
 
 3. **What is DEV-06's actual, fully-specified failure mode?**
    - What we know: `docs/BUILD-NOTES.md` §17 states the risk narrowly ("requires two overlapping runs where one restores what the other captured") without stating why that's unsafe, and this research's trace of the existing single-slot `active_session` + SESS-03 mechanism suggests the described case is already handled correctly.
    - What's unclear: Whether there's a scenario BUILD-NOTES didn't fully write out (e.g., three-way overlap, or a capture/restore/capture-again cycle within one still-open session) that DEV-06 is actually meant to guard against.
    - Recommendation: The plan should include a design task — write out the full state-machine of capture/restore under overlap before deciding whether/how to implement DEV-06, rather than treating BUILD-NOTES §17 as a complete specification.
+   - RESOLVED: see `09-02-PLAN.md` Task 1's DEV-06 first-principles write-up, verified via Tests 9-10 (the overlap and compound overlap+force-quit trials).
 
 ## Environment Availability
 

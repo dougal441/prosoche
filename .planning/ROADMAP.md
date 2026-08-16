@@ -251,9 +251,11 @@ this phase does not reverse that cut, which proceeds independently on main.
      shape at this exact parameter position — an on-device visual check or fresh donor is
      required, not assumed by analogy) — never guessed — and the numeric-audit build guard
      (`verify_numeric_operands()`) no longer exempts them.
+
   2. On device: reading current brightness/volume via `Get Device Details` returns a real,
      non-empty, correctly-typed value; the has-any-value guard correctly skips the change
      when the read returns nothing.
+
   3. On device: the original value is restored exactly on CLOSE.
   4. Force-quit mid-session, device restart mid-session, CLOSE never firing, and two
      overlapping sessions each either restore correctly or leave the user at a device-safe
@@ -263,9 +265,11 @@ this phase does not reverse that cut, which proceeds independently on main.
      user on-device report that the practical minimum is dim, not a literal black/unusable
      screen (see `docs/CAPABILITY-DECISIONS.md` BD-02 addendum); the safety mechanism is
      capture-and-restore reliability (criteria 2–3, 5), not floor avoidance.
+
   5. Emergency Restore recovers from every failure mode found above.
   6. DEV-06 (restore-ownership check) is re-evaluated live on this fork now that the cut
      it was conditioned on does not apply here.
+
   7. A written verdict exists: either stateful environmental friction is demonstrated safe
      with device evidence, or it is retired with the evidence that justifies the main-line
      cut.
@@ -273,8 +277,12 @@ this phase does not reverse that cut, which proceeds independently on main.
 **Plans:** 2 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 09-01-PLAN.md — Generator fix: two `NUMERIC_OPERAND_FIELDS` table entries, negative-control self-check, stale "18" doc correction (device-free, Wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 09-02-PLAN.md — Device-proving safety verdict: sign both forks, author and complete `09-UAT.md`, DEV-06 design write-up, written verdict (Wave 2, depends on 09-01)
 
 Full context: `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md`
