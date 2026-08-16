@@ -384,6 +384,15 @@ def alert(title: str, message):
                   WFAlertActionMessage=message)
 
 
+def notification(title: str, body):
+    """Non-blocking on-device confirmation. Same minimal-params shape as alert():
+    no WFNotificationActionSound, no WFInput -- both VERIFIED-usable params per
+    docs/BUILD-NOTES.md's CAP-S07 entry, matching this project's "no unsafe or
+    startling" default posture."""
+    return action("is.workflow.actions.notification", WFNotificationActionTitle=title,
+                  WFNotificationActionBody=body)
+
+
 def breadcrumb(letter: str):
     """One OPEN-path bisection breadcrumb (cycle 7 measurement, see OPEN_BISECT).
 
@@ -930,7 +939,12 @@ def record_exit_and_route(choice_name: str):
 def universal_leaving():
     group = uid()
     a = [comment(EXIT_MARKER + "\n\n- The session was saved before every interactive action.\n- Leaving is available before every primitive in every sequence and Circle.\n- Continue reaches exactly the selected primitive."),
-         menu(group, 0, prompt="PROSOCHĒ", items=["Leaving", "Continue"]), menu(group, 1, title="Leaving")]
+         # Names the active Circle and states this menu belongs to the OPEN path, so it
+         # can no longer be mistaken for a CLOSE-path signal (G-04-4b). "Circle Next" is
+         # already set (breadcrumb I, above) at every call site of this function.
+         menu(group, 0, prompt=text_token([("Circle ", "Circle Next"),
+                                            (" opened. Leave now, or continue?", None)]),
+              items=["Leaving", "Continue"]), menu(group, 1, title="Leaving")]
     a += select_exit() + [menu(group, 1, title="Continue")] + primitive_dispatch() + [menu(group, 2), comment("--- PHASE 6 UNIVERSAL LEAVING END ---")]
     return a
 
@@ -1150,6 +1164,12 @@ def open_pipeline():
     # BREADCRUMB J - Circle written and any pending exit completed.  The only actions
     # left before the first OPEN menu are Save File and the Phase 6 leaving block.
     a += breadcrumb("J")
+    # Permanent, unconditional OPEN confirmation -- fires on every genuine open
+    # regardless of OPEN_BISECT, replacing breadcrumb J's de facto confirmation role
+    # (G-04-4b). Reuses knock()'s exact "Circle X · pressure Y · heat Z" phrasing.
+    a += [notification("PROSOCHĒ", text_token([("Circle ", "Circle Next"),
+                                                (" · pressure ", "Pressure Next"),
+                                                (" · heat ", "Heat Final")]))]
     # State is persisted before any menu/Ask action. The wrapper owns all later interaction.
     a += save_state() + universal_leaving() + [end_if(genuine_group), end_if(cooldown_group)]
     return a
@@ -1232,6 +1252,10 @@ def close_pipeline():
           alert("Contract", text_token([("Overrun seconds: ", "Overrun Seconds")])), otherwise(display_contract_g), action("is.workflow.actions.nothing"), end_if(display_contract_g)]
     a += [comment(RESTORE_MARKER + "\n\n- Only the matching CLOSE owner restores captured settings.\n- A superseded CLOSE reaches no restore or Save File action.")]
     a += restore_managed_settings("Reloaded State") + [comment("--- PHASE 5 RESTORE MANAGED SETTINGS END ---")]
+    # Permanent, unconditional CLOSE confirmation -- fires whenever this CLOSE owns
+    # the session, independent of whether a contract was declared (unlike the
+    # "Contract" alert above, which only fires when Declared Duration > 0). G-04-4b.
+    a += [notification("PROSOCHĒ", text_token([("Session closed · ", "Session Duration"), (" sec", None)]))]
     a += save_state("Reloaded State") + [otherwise(owns_g), action("is.workflow.actions.nothing"), end_if(owns_g), otherwise(reload_g), action("is.workflow.actions.nothing"), end_if(reload_g), otherwise(has_g), action("is.workflow.actions.nothing"), end_if(has_g)]
     return a
 
@@ -1665,6 +1689,7 @@ STRING_ENVELOPE_PARAMS = {
     "is.workflow.actions.text.changecase": {"text"},
     "is.workflow.actions.text.match": {"text"},
     "is.workflow.actions.alert": {"WFAlertActionMessage", "WFAlertActionTitle"},
+    "is.workflow.actions.notification": {"WFNotificationActionTitle", "WFNotificationActionBody"},
     "is.workflow.actions.searchweb": {"WFInputText"},
     "com.apple.mobilenotes.SharingExtension": {"WFCreateNoteInput"},
     "is.workflow.actions.appendnote": {"text"},

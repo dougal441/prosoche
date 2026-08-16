@@ -11976,6 +11976,49 @@ Report the LAST letter you see.</string>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.notification</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFNotificationActionTitle</key>
+				<string>PROSOCHĒ</string>
+				<key>WFNotificationActionBody</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>Circle ￼ · pressure ￼ · heat ￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{7, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Circle Next</string>
+							</dict>
+							<key>{20, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Pressure Next</string>
+							</dict>
+							<key>{29, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Heat Final</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.setitemname</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
@@ -12047,7 +12090,25 @@ Report the LAST letter you see.</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFMenuPrompt</key>
-				<string>PROSOCHĒ</string>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>Circle ￼ opened. Leave now, or continue?</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{7, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Circle Next</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
 				<key>WFMenuItems</key>
 				<array>
 					<string>Leaving</string>
@@ -28475,6 +28536,35 @@ Report the LAST letter you see.</string>
 			<dict>
 				<key>WFCommentActionText</key>
 				<string>--- PHASE 5 RESTORE MANAGED SETTINGS END ---</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.notification</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFNotificationActionTitle</key>
+				<string>PROSOCHĒ</string>
+				<key>WFNotificationActionBody</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>Session closed · ￼ sec</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{17, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Session Duration</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
 			</dict>
 		</dict>
 		<dict>
