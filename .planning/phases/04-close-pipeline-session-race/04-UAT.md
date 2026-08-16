@@ -1,14 +1,22 @@
 ---
-status: partial
+status: testing
 phase: 04-close-pipeline-session-race
 source: [04-01-SUMMARY.md]
 started: 2026-08-16T00:10:00.000Z
-updated: 2026-08-16T21:30:00.000Z
+updated: 2026-08-16T21:45:00.000Z
 ---
 
 ## Current Test
+<!-- OVERWRITE each test - shows where we are -->
 
-[blocked — see Tests 1, 3-6 below; resume once the CLOSE Personal Automation is rebuilt]
+number: 3
+name: The session race — rapid switching between two tracked apps (§20 steps 2–6)
+expected: |
+  open A, open B, close A, close B (scripted deliberately, not left to chance) — if the
+  active session ID changed, the newer OPEN owns state and the older CLOSE aborts without
+  mutating state. This is the single most important case and the hardest to trigger by
+  hand.
+awaiting: user response
 
 ## Context
 
@@ -39,19 +47,15 @@ acceptance criteria).
 ### 1. Simple OPEN → wait → CLOSE records a plausible session
 expected: state.json's `recent_sessions` gets a new entry with a plausible duration after
 open → wait → close.
-result: blocked
-blocked_by: other
-reason: "Device's CLOSE Personal Automation is a no-input automation (iOS 26 shortcut-picker
-  limitation) so the router falls to the MANUAL branch (Control Room menu) instead of
-  close_pipeline() — confirmed via dropped state.json (active_session unchanged,
-  recent_sessions still [], last_close_at still null) and user report of seeing the manual
-  menu on close with no second 'Session closed' notification. This is the known, separately
-  tracked issue in
-  .planning/todos/pending/2026-08-14-repair-ios-26-automation-onboarding.md — NOT a Phase 4
-  code defect, and NOT related to G-04-1/G-04-3 (both already fixed in 04-02-SUMMARY.md and
-  cannot be exercised until CLOSE is rewired with the Text('CLOSE') -> Run Shortcut wrapper
-  pattern, mirroring the working OPEN automation). Retest once user rebuilds the CLOSE
-  automation."
+result: pass
+note: "Root cause of the CLOSE-not-running symptom: user's own automation had the Text
+  action set to 'CLOSED' instead of the literal 'CLOSE' the router matches on — a
+  configuration typo, not the onboarding no-input defect it first looked like (that defect
+  is still real and separately tracked, but wasn't the cause here). Fixed by user. Device
+  now confirms: real automatic OPEN -> wait -> CLOSE produced a 'Session closed · 13 sec'
+  notification and a correct non-zero duration_seconds entry in recent_sessions. Two prior
+  manual-Run tests (20 sec, 135 sec) also verified active_session clears to null and
+  last_close_at is set correctly — see debug session state.json snapshots."
 
 ### 2. CLOSE with no active session does not corrupt state or error
 expected: closing when nothing is open produces no error dialog and no state corruption.
@@ -62,46 +66,37 @@ expected: open A, open B, close A, close B (scripted deliberately, not left to c
 if the active session ID changed, the newer OPEN owns state and the older CLOSE aborts
 without mutating state. This is the single most important case and the hardest to trigger
 by hand.
-result: blocked
-blocked_by: other
-reason: "Same blocker as Test 1 — CLOSE Personal Automation is a no-input automation and
-  never reaches close_pipeline(). Cannot exercise the session-race fix (G-04-3, already
-  landed in 04-02-SUMMARY.md) until CLOSE is rewired. See Test 1's reason for the fix
-  steps."
+result: pending
+note: "Re-opened — the CLOSE automation typo blocking Test 1 is now fixed (real CLOSE
+  triggers confirmed working). This test still needs a real device run: open A, open B,
+  close A, close B, scripted deliberately."
 
 ### 4. CLOSE after device lock / app switch away
 expected: this different trigger path also records correctly and does not corrupt state.
-result: blocked
-blocked_by: other
-reason: "Same blocker as Test 1 — cannot exercise a CLOSE trigger path at all (device lock
-  or otherwise) until the CLOSE Personal Automation is rewired. See Test 1's reason for the
-  fix steps."
+result: pending
+note: "Re-opened — the CLOSE automation typo blocking Test 1 is now fixed."
 
 ### 5. Behavioural-day boundary (§10.1, 04:00 rollover) crossed mid-session
 expected: a session spanning the rollover is handled correctly, not double-counted or
 dropped.
-result: blocked
-blocked_by: other
-reason: "Same blocker as Test 1 — a session spanning the rollover requires a working CLOSE
-  trigger. See Test 1's reason for the fix steps."
+result: pending
+note: "Re-opened — the CLOSE automation typo blocking Test 1 is now fixed."
 
 ### 6. Verify the numbers in state.json, not just absence of errors
 expected: after each case above, `recent_sessions`, `last_close_at`, and the cleared
 `active_session` hold exactly what §20 says they should. "No error dialog" is not a pass —
 recompute by hand for at least two cases.
-result: blocked
-blocked_by: other
-reason: "Depends on Tests 1, 3, 4, 5 above, all blocked on the same CLOSE Personal Automation
-  issue. See Test 1's reason for the fix steps."
+result: pending
+note: "Re-opened — the CLOSE automation typo blocking Test 1 is now fixed."
 
 ## Summary
 
 total: 6
-passed: 1
+passed: 2
 issues: 0
-pending: 0
+pending: 4
 skipped: 0
-blocked: 5
+blocked: 0
 
 ## Gaps
 

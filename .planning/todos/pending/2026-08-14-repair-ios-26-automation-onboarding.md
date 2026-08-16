@@ -62,15 +62,16 @@ about that closure changes this todo's own scope or status. Still unfixed; still
 concrete unblocked task in this project's queue if no higher-priority item is picked
 first.
 
-## Corroboration — added 2026-08-16
+## Correction — added 2026-08-16
 
-Confirmed the same defect affects the **CLOSE** automation, not just OPEN. During Phase 4
-UAT (`.planning/phases/04-close-pipeline-session-race/04-UAT.md`, Tests 1/3/4/5/6), the
-user's OPEN automation fired correctly (Circle 1 notification observed), but closing the
-tracked app displayed the manual Control Room menu instead of running `close_pipeline()` —
-a dropped `state.json` confirmed `active_session` was never cleared and `recent_sessions`
-stayed empty. The user's CLOSE automation was a no-input automation, exactly the failure
-mode this todo describes. This blocks device re-verification of the already-landed
-G-04-1/G-04-3 CLOSE fixes (`04-02-SUMMARY.md`) until the CLOSE automation is rebuilt with
-the Text("CLOSE") → Run Shortcut wrapper. Raises this todo's practical priority — it is now
-blocking Phase 4 UAT completion, not just onboarding polish.
+The 2026-08-16 corroboration note below was **wrong about the specific cause** for this
+user's CLOSE failure during Phase 4 UAT — retracting it. The user's CLOSE automation did
+have a Text → Run Shortcut wrapper; the Text action's literal was typo'd as `CLOSED`
+instead of `CLOSE`, so the router's exact-match against the literal `CLOSE` never fired and
+it fell to the MANUAL branch — a user configuration mistake, not the no-input-automation
+defect this todo is about. Once the user corrected the Text literal, CLOSE routed and
+completed correctly (device-confirmed: `recent_sessions` populated with correct non-zero
+durations, `active_session` cleared, `last_close_at` set). This todo's underlying defect
+(the iOS 26 shortcut-picker producing a no-input automation when Note step 10 is followed
+literally) is still real and still unverified either way by this session — it was simply
+not what happened here. Scope/priority unchanged from the original entry.
