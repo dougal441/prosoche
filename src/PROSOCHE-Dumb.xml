@@ -4188,6 +4188,15 @@ Report the LAST letter you see.</string>
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Restore Brightness</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -4572,6 +4581,15 @@ Report the LAST letter you see.</string>
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Restore Volume</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -5180,6 +5198,15 @@ Report the LAST letter you see.</string>
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Restore Brightness</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -5564,6 +5591,15 @@ Report the LAST letter you see.</string>
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Restore Volume</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -23709,6 +23745,15 @@ Report the LAST letter you see.</string>
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Dim Target</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -27878,6 +27923,15 @@ Report the LAST letter you see.</string>
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Restore Brightness</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -28262,6 +28316,15 @@ Report the LAST letter you see.</string>
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Restore Volume</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -33609,6 +33672,15 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Dim Target</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -38800,6 +38872,15 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Dim Target</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -43991,6 +44072,15 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Dim Target</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -49182,6 +49272,15 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Dim Target</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -54373,6 +54472,15 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Dim Target</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -59564,6 +59672,15 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Dim Target</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -64755,6 +64872,15 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Dim Target</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -69946,6 +70072,15 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Dim Target</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -75137,6 +75272,15 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Dim Target</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -77754,6 +77898,15 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Restore Brightness</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -78138,6 +78291,15 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 						<string>Variable</string>
 						<key>VariableName</key>
 						<string>Restore Volume</string>
+						<key>Aggrandizements</key>
+						<array>
+							<dict>
+								<key>Type</key>
+								<string>WFCoercionVariableAggrandizement</string>
+								<key>CoercionItemClass</key>
+								<string>WFNumberContentItem</string>
+							</dict>
+						</array>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>

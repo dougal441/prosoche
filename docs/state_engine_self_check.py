@@ -56,7 +56,12 @@ def structural_check():
     assert any(text.startswith("Resolve Circle by an ordered nine-step threshold scan") for text in comments)
     assert any(action.get("WFWorkflowActionParameters", {}).get("WFRepeatCount") == 9 for action in actions)
     assert "is.workflow.actions.delay" in ids
-    assert ids.count("is.workflow.actions.gettimebetweendates") >= 3
+    # Cycle 14 replaced the three downstream elapsed()/gettimebetweendates call sites with
+    # elapsed_since() (plain numeric subtraction; see tools/build_state_engine.py's
+    # elapsed_since() docstring). Only the CLOCK block's own genuine Date->Date construct
+    # (Donor-7-confirmed, zero coercion needed) still calls gettimebetweendates, so the
+    # structural floor is 1, not the pre-cycle-14 figure of 3.
+    assert ids.count("is.workflow.actions.gettimebetweendates") >= 1
     assert "is.workflow.actions.round" in ids
     assert "is.workflow.actions.number.random" in ids
     assert "is.workflow.actions.documentpicker.open" in ids
