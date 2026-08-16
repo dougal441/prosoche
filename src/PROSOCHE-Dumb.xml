@@ -12011,10 +12011,13 @@ Guard against empty fields before reading anything nested inside them. Six field
 					<key>Value</key>
 					<dict>
 						<key>string</key>
-						<string>Circle ￼ opened. Leave now, or continue?</string>
+						<string>You just opened a tracked app. PROSOCHĒ is at Circle ￼.
+
+Leaving: PROSOCHĒ suggests somewhere better to go and takes you there.
+Continue: you go into the app, after this Circle's intervention.</string>
 						<key>attachmentsByRange</key>
 						<dict>
-							<key>{7, 1}</key>
+							<key>{53, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>

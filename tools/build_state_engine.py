@@ -895,11 +895,20 @@ def record_exit_and_route(choice_name: str):
 def universal_leaving():
     group = uid()
     a = [comment(EXIT_MARKER + "\n\n- The session was saved before every interactive action.\n- Leaving is available before every primitive in every sequence and Circle.\n- Continue reaches exactly the selected primitive."),
-         # Names the active Circle and states this menu belongs to the OPEN path, so it
-         # can no longer be mistaken for a CLOSE-path signal (G-04-4b). "Circle Next" is
-         # already set (breadcrumb I, above) at every call site of this function.
-         menu(group, 0, prompt=text_token([("Circle ", "Circle Next"),
-                                            (" opened. Leave now, or continue?", None)]),
+         # G-04-4b, revision 1: named the active Circle and stated that this menu belongs to
+         # the OPEN path, so it could no longer be mistaken for a CLOSE-path signal.
+         # G-04-4b, revision 2 (PHASE 10-01): revision 1 still named neither what is being
+         # left nor what continuing costs -- "Leave now, or continue?" is only answerable by
+         # someone who already knows the system. That terseness was affordable while this
+         # menu fired on every single open, including the first of a cold day, where a long
+         # prompt would have read as nagging. It no longer fires in the silent band
+         # (Circle 0), so it now appears only once Pressure has genuinely built, at which
+         # point the copy can afford to explain both options. Built with text_token(), which
+         # computes the attachmentsByRange offsets -- never hand-edit the string.
+         # "Circle Next" is already set (breadcrumb I, above) at every call site.
+         menu(group, 0, prompt=text_token([("You just opened a tracked app. PROSOCHĒ is at Circle ", "Circle Next"),
+                                            (".\n\nLeaving: PROSOCHĒ suggests somewhere better to go and takes you there.\n"
+                                             "Continue: you go into the app, after this Circle's intervention.", None)]),
               items=["Leaving", "Continue"]), menu(group, 1, title="Leaving")]
     a += select_exit() + [menu(group, 1, title="Continue")] + primitive_dispatch() + [menu(group, 2), comment("--- PHASE 6 UNIVERSAL LEAVING END ---")]
     return a
@@ -1359,6 +1368,143 @@ def verify_router_shape(actions):
     manual = comment_index(actions, MANUAL_MARKER)
     if not flow_index(actions, close_group, 1) < manual < flow_index(actions, close_group, 2):
         raise SystemExit("the MANUAL arm must sit inside the CLOSE conditional's Otherwise branch")
+
+
+# Every identifier that opens (mode 0) and closes (mode 2) a control-flow block.  Used to
+# compute enclosure structurally rather than by action index, which shifts on every rebuild.
+CONTROL_FLOW_IDENTIFIERS = {"is.workflow.actions.conditional", "is.workflow.actions.repeat.count",
+                            "is.workflow.actions.repeat.each", "is.workflow.actions.choosefrommenu"}
+
+
+def enclosing_groups(actions):
+    """For each action, the list of control-flow GroupingIdentifiers enclosing it.
+
+    One left-to-right pass maintaining a stack.  A mode-2 endpoint pops before it is
+    recorded, so an End If is reported outside its own block; a mode-0 start pushes after
+    it is recorded, so an If is likewise reported outside itself.  Everything between them
+    -- which is the only thing any caller here asks about -- reports the block as enclosing.
+    """
+    stack, out = [], []
+    for index, item in enumerate(actions):
+        parameters = item.get("WFWorkflowActionParameters", {})
+        identifier = item.get("WFWorkflowActionIdentifier")
+        mode = parameters.get("WFControlFlowMode")
+        if identifier in CONTROL_FLOW_IDENTIFIERS and mode == 2 and stack:
+            stack.pop()
+        out.append(tuple(stack))
+        if identifier in CONTROL_FLOW_IDENTIFIERS and mode == 0:
+            stack.append(parameters.get("GroupingIdentifier"))
+    return out
+
+
+def _is_silent_band_conditional(item):
+    """A mode-0 If testing `Circle Next > 0` -- the Circle-0 silent-band gate."""
+    parameters = item.get("WFWorkflowActionParameters", {})
+    return (item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+            and parameters.get("WFControlFlowMode") == 0
+            and parameters.get("WFCondition") == 2
+            and parameters.get("WFNumberValue") == 0
+            and parameters.get("WFInput", {}).get("Variable", {})
+                          .get("Value", {}).get("VariableName") == "Circle Next")
+
+
+def _dictionary_key_string(parameters):
+    """The literal text of a WFDictionaryKey, whether a plain string or a text token."""
+    key = parameters.get("WFDictionaryKey")
+    if isinstance(key, str):
+        return key
+    if isinstance(key, dict):
+        return key.get("Value", {}).get("string", "")
+    return ""
+
+
+def verify_circle_zero_silence(actions):
+    """Fail the build if a Circle-0 OPEN can reach any surface, or primitive_dispatch().
+
+    Symptom this prevents: a genuine OPEN whose Pressure is below the active profile's
+    first threshold resolves to Circle 0.  If universal_leaving() still ran there,
+    primitive_dispatch() would read `sequences.<Sequence>.<Dispatch Circle>` as a DOTTED
+    key with Dispatch Circle == 0.  Per CLAUDE.md's device-verified runtime semantics a
+    dotted read whose final segment is absent is a HARD ERROR ("could not evaluate the key
+    path") -- and it would fire after active_session was already written, leaving a session
+    that no CLOSE will ever own.  mirror_text()'s Get Item From List at WFItemIndex 0 is
+    out of range on the same path.  Neither failure is visible to validate_shortcut.py.
+
+    Four properties, each with its own message:
+      (a) the Circle scan seeds at 0, not 1;
+      (b) the Leaving/Continue menu -- the OPEN path's sole entry point to every primitive
+          -- is enclosed by the silent-band conditional;
+      (c) every sequences-addressing dotted read INSIDE THE OPEN ARM is enclosed by that
+          same conditional group;
+      (d) the OPEN arm emits no notification.
+
+    TEST-A-CIRCLE EXEMPTION, deliberate and load-bearing.  Property (c) is scoped to the
+    OPEN arm and must NOT be rewritten as an artifact-wide invariant.  There are ten
+    sequences reads in the artifact: one in the OPEN arm from universal_leaving(), and nine
+    in the MANUAL arm from primitive_dispatch("Test Circle"), rendered once per Circle by
+    the Test-a-Circle submenu.  Those nine are correctly outside any silent-band
+    conditional and must stay that way -- their Dispatch Circle is copied from Test Circle,
+    which is always 1 through 9, so index 0 is unreachable there by construction.  An
+    artifact-wide assertion would raise on the very first build.
+    """
+    # (a) the scan floor.
+    seeds = [index for index, item in enumerate(actions)
+             if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setvariable"
+             and item.get("WFWorkflowActionParameters", {}).get("WFVariableName") == "Circle Next"
+             and index > 0
+             and actions[index - 1].get("WFWorkflowActionIdentifier") == "is.workflow.actions.number"]
+    if len(seeds) != 1:
+        raise SystemExit("Circle floor: expected exactly one number-seeded 'Circle Next' set-variable, "
+                         f"found {len(seeds)}")
+    seed_value = actions[seeds[0] - 1]["WFWorkflowActionParameters"].get("WFNumberActionNumber")
+    if seed_value != 0:
+        raise SystemExit(f"Circle floor: the Circle scan seeds at {seed_value!r}, must be 0 -- a seed of 1 "
+                         "abolishes the silent band and shows a surface on the very first open of the day")
+
+    # The OPEN arm's boundaries, derived structurally the same way verify_router_shape does.
+    open_test = next(((index, string) for index, condition, string in input_key_tests(actions)
+                      if condition == 4 and string == "OPEN"), None)
+    if open_test is None:
+        raise SystemExit("silent band: no conditional tests Input Key against the OPEN literal; the router "
+                         "has been restructured and this guard can no longer locate the OPEN arm")
+    open_index = open_test[0]
+    open_group = actions[open_index]["WFWorkflowActionParameters"]["GroupingIdentifier"]
+    open_end = flow_index(actions, open_group, 1)
+    enclosure = enclosing_groups(actions)
+
+    silent_group_ids = {item["WFWorkflowActionParameters"]["GroupingIdentifier"]
+                        for item in actions if _is_silent_band_conditional(item)}
+
+    # (b) the Leaving / Continue menu.
+    menus = [index for index, item in enumerate(actions)
+             if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.choosefrommenu"
+             and item.get("WFWorkflowActionParameters", {}).get("WFControlFlowMode") == 0
+             and item.get("WFWorkflowActionParameters", {}).get("WFMenuItems") == ["Leaving", "Continue"]]
+    if len(menus) != 1:
+        raise SystemExit(f"silent band: expected exactly one Leaving/Continue menu, found {len(menus)}")
+    menu_bands = {group for group in enclosure[menus[0]] if group in silent_group_ids}
+    if not menu_bands:
+        raise SystemExit("silent band: the Leaving/Continue menu is not enclosed by a 'Circle Next > 0' "
+                         "conditional, so a Circle-0 OPEN would show a menu and reach every primitive")
+
+    # (c) the dotted sequences read, OPEN arm only -- see the Test-a-Circle exemption above.
+    for index in range(open_index, open_end):
+        item = actions[index]
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.getvalueforkey":
+            continue
+        if not _dictionary_key_string(item.get("WFWorkflowActionParameters", {})).startswith("sequences."):
+            continue
+        if not ({group for group in enclosure[index] if group in silent_group_ids} & menu_bands):
+            raise SystemExit("silent band: an OPEN-arm dotted read of the sequences subtree escapes the "
+                             "'Circle Next > 0' conditional; at Circle 0 its final segment is absent and "
+                             "iOS raises 'could not evaluate the key path' after active_session was written")
+
+    # (d) no OPEN-path notification.
+    banners = [index for index in range(open_index, open_end)
+               if actions[index].get("WFWorkflowActionIdentifier") == "is.workflow.actions.notification"]
+    if banners:
+        raise SystemExit(f"silent band: the OPEN arm emits {len(banners)} notification(s); no OPEN of any "
+                         "kind may produce a Circle/pressure/heat banner")
 
 
 def install_cooldown_branches(actions):
@@ -2871,6 +3017,7 @@ def main():
     verify_sentinel_gates(actions)
     verify_compound_value_reads(actions)
     verify_router_shape(actions)
+    verify_circle_zero_silence(actions)
     # Declare that this shortcut consumes Shortcut Input.  The routing block reads the
     # ExtensionInput token, and PLIST_FORMAT.md defines this root key as "True if
     # shortcut uses input variables"; every modern golden shortcut that references
