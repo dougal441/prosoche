@@ -119,17 +119,41 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- [blocker] Fix OPEN routing and Test Circle sequence error — `.planning/todos/pending/2026-08-13-fix-open-routing-and-test-circle-sequence-error.md` (CLOSED 2026-08-15, device-verified; file retained as the debug session's origin record)
+**Device UAT (blocker — nothing past the first OPEN has ever run on an iPhone):**
+
+- [blocker] Device UAT — CLOSE pipeline and session race — `.planning/todos/pending/2026-08-16-device-uat-close-pipeline-and-session-race.md`
+- [blocker] Device UAT — nine Circles and sequence switching — `.planning/todos/pending/2026-08-16-device-uat-nine-circles-and-sequence-switching.md`
+- [blocker] Device UAT — intention contracts and fidelity feedback — `.planning/todos/pending/2026-08-16-device-uat-intention-contracts-and-fidelity-feedback.md`
+- [blocker] Device UAT — six exits and explore/exploit learning — `.planning/todos/pending/2026-08-16-device-uat-six-exits-and-explore-exploit-learning.md`
+- [blocker] Device UAT — Circle IX cooldown and the route out of Ice — `.planning/todos/pending/2026-08-16-device-uat-circle-ix-cooldown-and-route-out-of-ice.md`
+- [blocker] Device UAT — manual Control Room menu and safety recovery — `.planning/todos/pending/2026-08-16-device-uat-manual-control-room-menu-and-safety-recovery.md`
+
+**Build / defect work:**
+
 - [cosmetic] Apply Build Addendum 01 — `.planning/todos/pending/2026-08-14-apply-build-addendum-01.md`
 - [major] Repair iOS 26 automation onboarding — `.planning/todos/pending/2026-08-14-repair-ios-26-automation-onboarding.md`
 - [major] Close the remaining state-shape sentinel gaps (exit_events, active_session) — `.planning/todos/pending/2026-08-15-close-state-shape-sentinel-gaps.md`
 - [major] Fix the WFConditionalActionString red-operator sites and the WFItems List wrapper — `.planning/todos/pending/2026-08-15-fix-red-operator-and-list-wrapper-defects.md`
 - [major] Re-fork Sentient now that Dumb's OPEN path is device-confirmed — `.planning/todos/pending/2026-08-15-fork-sentient-post-openpath-fix.md`
 - [major] Ship-readiness cleanup for PROSOCHĒ Dumb — `.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md`
+- [major] Reintroduce and validate Dimming/Silence stateful restore on an experimental fork — `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md` (⚠️ deliberately conflicts with ship-readiness item 5 — the cut proceeds on main in parallel)
+- [major] Recover the Use Model On-Device literal (UA-02) — `.planning/todos/pending/2026-08-16-recover-the-use-model-on-device-literal.md`
+- [minor] Grayscale / Ash capability donor test — `.planning/todos/pending/2026-08-16-grayscale-ash-capability-donor-test.md`
+
+**Product / scope:**
+
 - [major] Optimise and streamline the UX — onboarding and in-run functionality — `.planning/todos/pending/2026-08-16-optimise-ux-onboarding-and-functionality.md`
-- [major] Build the VALUE / LIFE RETURNED functionality — `.planning/todos/pending/2026-08-16-build-value-life-returned.md`
+- [major] Build the VALUE / LIFE RETURNED functionality, incl. the Attention Receipt — `.planning/todos/pending/2026-08-16-build-value-life-returned.md`
 - [minor] Build the low-salience "Support PROSOCHĒ" contribution path — `.planning/todos/pending/2026-08-16-build-support-prosoche-low-salience.md`
 - [major] Physical unlock (QR scan or NFC tap) to exit Circle IX / Frozen — `.planning/todos/pending/2026-08-16-physical-unlock-for-circle-ix-ice.md`
+- [major] Merge Dumb and Sentient into one fork, selected at onboarding — `.planning/todos/pending/2026-08-16-merge-dumb-and-sentient-into-one-fork-selected-at-onboarding.md`
+- [minor] Open-source release readiness — `.planning/todos/pending/2026-08-16-open-source-release-readiness.md`
+
+### Completed Todos
+
+| Todo | Closed | Evidence |
+|---|---|---|
+| Fix OPEN routing and Test Circle sequence error | 2026-08-15 | Device-verified on build `2026-08-15o`; 16-cycle debug session archived at `.planning/debug/resolved/open-routing-sequence-error.md` |
 
 ### Blockers/Concerns
 

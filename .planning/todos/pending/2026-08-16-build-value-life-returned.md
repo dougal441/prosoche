@@ -79,6 +79,51 @@ aggregates, bounded daily records), so any baseline design must work from bounde
    constraint both forbid the model from doing arithmetic. Sentient may *phrase* a value
    summary; it may never compute one.
 
+## The Attention Receipt (added 2026-08-16)
+
+A second deliverable within this feature: a **separate local Note** — the *Attention
+Receipt* — designed to be screenshotted and shared. Two jobs at once:
+
+**1. Mythology.** It names the Circle the user reached, in the Dante vocabulary
+(`Limbo` … `Treachery` / `Frozen`, per Build Addendum 01 §1/§5). "I hit the ninth circle
+last night" is a shareable sentence in a way that "my screen time was 4h12m" is not. The
+naming is already the most distinctive thing about the product; the receipt is what makes
+it legible to someone who has never installed it.
+
+**2. Value, framed positively.** The counts should lead with what the user *did*, not what
+they were stopped from doing:
+
+- intentional exits taken, and the thing they went and did instead;
+- contracts kept — sessions that stopped when the user said they would;
+- rapid-return loops broken;
+- automatic opens interrupted;
+- estimated attention reclaimed, **labelled as an estimate**.
+
+Design constraints, all inherited and non-negotiable:
+
+- **It is a receipt, not a scoreboard.** No streaks, no scores, no shame, no comparison to
+  other people. §29 requires occasional acknowledgement of success and explicitly warns
+  against a learned association that opening an app always produces criticism — a receipt
+  that only ever tallies failures would build exactly that.
+- **Honest arithmetic, same rules as the rest of this todo** (§24). Never
+  `100 blocked opens = X hours saved`. Suppress the estimate entirely until the sample
+  supports it. A shared artifact makes an inflated number worse, not better — it gets
+  screenshotted and repeated.
+- **Local and user-initiated.** It is a Note the user chooses to open and share. PROSOCHĒ
+  does not post, does not upload, does not phone home (§27). Sharing is an act the user
+  performs entirely outside the product.
+- **Never shown while the user is being blocked.** Same rule as the support ask (§25) — an
+  intervention is not a marketing surface.
+- **The user's own data is on it.** Before suggesting sharing anywhere in the copy,
+  consider that the receipt may carry app names and behavioural detail. Default to
+  including only what is safe to show a stranger, and let anything more specific be opt-in.
+
+Open design questions to settle when this is picked up: whether the receipt is generated on
+a cadence (daily/weekly), on a milestone, or on demand from the manual menu; and whether it
+is a Note at all versus something more visual — a Note is the honest default given the
+architecture (§5.4), and the strategy's no-second-machine-store rule means it must be
+human-readable output, not a new data store.
+
 ## Related
 
 - Canonical strategy §23 (measurement list), §24 (Life Returned — record now, design

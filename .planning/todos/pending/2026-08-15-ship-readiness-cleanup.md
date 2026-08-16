@@ -57,13 +57,19 @@ now-archived debug file either.
    `.planning/debug/resolved/open-routing-sequence-error.md`'s cycle-16 Finding 2 account
    and check whether the device actually installed build `2026-08-15o` (menu prompt
    should read that stamp) before assuming the fix itself is wrong.
-5. Execute the brightness/volume decision: either (a) remove
+5. Execute the brightness/volume cut on the main line: remove
    `restore_managed_settings`/`dim()`/`silence()`/`settings_snapshot` and the 18 deferred
    sites entirely (making `DEV-06`'s restore-ownership read-side moot, per
-   `HANDOFF.md` §6 item 7), or (b) if the decision changes, finish the coercion-
-   aggrandizement fix for the 18 sites using the same `WFCoercionVariableAggrandizement`
-   pattern already applied to the math/getitemfromlist sites this session. Confirm which
-   with the user before proceeding — this is a scope decision, not a technical one.
+   `HANDOFF.md` §6 item 7).
+
+   **⚠️ CONFLICT — deliberate, user decision 2026-08-16.** A sibling todo,
+   `2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md`, does the
+   *opposite*: it finishes the coercion-aggrandizement fix for the same 18 sites and tests
+   stateful capture-and-restore properly. This is intentional and the two run in parallel —
+   **the cut proceeds here on main regardless**, while the reintroduction is validated on a
+   separate experimental fork and may be brought back into main later only if it proves
+   safe. Do not resolve this conflict by skipping either side, and do not treat the sibling
+   todo's existence as a reason to leave the code in place here.
 
 ## Related
 
