@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 10
 current_phase_name: Ship-readiness remainder and UX-lite pass
 status: executing
-stopped_at: Completed 10-04-PLAN.md
-last_updated: "2026-08-16T15:44:27.740Z"
+stopped_at: 10-05 checkpoint (human-verify) — resolved 'blocked' on DIST-03; 10-UAT.md authored and unrun
+last_updated: "2026-08-16T15:53:05.428Z"
 last_activity: 2026-08-17
 last_activity_desc: Phase 10 Plan 01 complete (Circle 0 silent band, raised thresholds, OPEN notification deleted, canonical strategy §10.6)
 progress:
   total_phases: 10
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 27
-  completed_plans: 26
+  completed_plans: 27
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 ## Current Position
 
 Phase: 10 (Ship-readiness remainder and UX-lite pass) — IN PROGRESS
-Plan: 4 of 5 (10-01 complete; 10-02 through 10-05 outstanding)
+Plan: 5 of 5 (10-01 complete; 10-02 through 10-05 outstanding)
 Status: 10-01 landed Circle 0, the silent band — a low-Pressure OPEN now shows nothing at all while still accumulating and persisting state, enforced by `verify_circle_zero_silence()` with both negative controls demonstrated. Brightness/volume cut remains CANCELLED; all 28 sites and the 20 device-detail reads are untouched. Outstanding from earlier phases: Phase 9 device-proving (`09-UAT.md`, 12 tests, only test 1 passed — see `docs/BUILD-NOTES.md` §18); Phase 8 awaiting real-iPhone import / Manual UAT; Phase 4 UAT tests 1, 3-6 reopened. Phase 10 adds one on-device observation: a first open of a cold day must produce no visible reaction while `state.json` still shows heat 1, pressure 1, circle 0.
 Last activity: 2026-08-17 — Phase 10 Plan 01 complete (Circle 0 silent band, raised thresholds, OPEN notification deleted, canonical strategy §10.6)
 
-Progress: [██████████] 96%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -82,6 +82,7 @@ Progress: [██████████] 96%
 | Phase 10 P02 | ~12 minutes | 3 tasks | 4 files |
 | Phase 10 P03 | ~20 min | 3 tasks | 4 files |
 | Phase 10 P04 | ~35 minutes | 3 tasks | 8 files |
+| Phase 10 P05 | ~20 minutes | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -144,6 +145,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Sentient rebuilt rather than left stale, keeping docs/sentient_core_check.py green — the brief's 'leave it red' directive had inverted, since the check passed at the phase's starting HEAD and honouring it would have meant deliberately introducing the fork skew the check detects (DEV-P10-02). A rebuild, not a re-fork; SEED-005 untouched.
 - [Phase ?]: A signed .shortcut carries no display name internally — measured by decryption: auth-data holds only SigningCertificateChain and the signer strips WFWorkflowName. The filename is the sole carrier, so signed-name discipline is load-bearing, not cosmetic.
 - [Phase ?]: The plan's 'eleven consumers' figure for the widened circle domain was not reproducible, so the consumer surface was measured from the artifact instead (75 actions, five distinct sites) rather than transcribed — BUILD-NOTES section 2's do-not-fabricate protocol applies to its own record.
+- [Phase ?]: Phase 10 device UAT resolved to the plan's blocked branch: xcrun devicectl list devices returned 'No devices found.', so all ten tests in 10-UAT.md stay blank and DIST-03 stays unchecked. No Mac import, simulator run, or decrypted-artifact inference was substituted for a device observation.
 
 ### Pending Todos
 
@@ -201,6 +203,7 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 - [Phase 1]: Four capability blockers are unresolved pending live on-device verification — grayscale/Color Filters availability, brightness/volume read-back, the `Use Model` On-Device pinning literal, and Notes actions on iOS. All downstream phases assume these get resolved (favorably or via documented fallback) in Phase 1.
 - DIST-03 real-iPhone import and first Manual UAT blocked: xcrun devicectl reports no connected devices.
 - Phase 9 Plan 02 Tasks 2-3 blocked: 09-UAT.md's 12 device-proving tests (coercion-chip gate, capture/restore, failure-mode trials, DEV-06 verdict) require a real Apple-Intelligence-capable iPhone on iOS 26.x. xcrun devicectl reports zero connected devices — same underlying blocker as DIST-03. Both re-signed .shortcut artifacts and the fully-authored 09-UAT.md are ready; resume via /gsd-verify-work 9 once a device is available.
+- DIST-03 — no iPhone connected. All ten Phase 10 device tests (.planning/phases/10-ship-readiness-remainder-and-ux-lite-pass/10-UAT.md) are outstanding with blank outcomes, as are Phase 9's UAT tests 2-12 and Phase 4's UAT tests 1 and 3-6. Everything Phase 10 shipped is structurally proven and behaviourally unproven.
 
 ### Quick Tasks Completed
 
@@ -220,6 +223,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-16T15:44:27.730Z
-Stopped at: Completed 10-04-PLAN.md
-Resume file: None
+Last session: 2026-08-16T15:53:05.418Z
+Stopped at: 10-05 checkpoint (human-verify) — resolved 'blocked' on DIST-03; 10-UAT.md authored and unrun
+Resume file: .planning/phases/10-ship-readiness-remainder-and-ux-lite-pass/10-UAT.md
