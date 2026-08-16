@@ -204,6 +204,7 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 - DIST-03 real-iPhone import and first Manual UAT blocked: xcrun devicectl reports no connected devices.
 - Phase 9 Plan 02 Tasks 2-3 blocked: 09-UAT.md's 12 device-proving tests (coercion-chip gate, capture/restore, failure-mode trials, DEV-06 verdict) require a real Apple-Intelligence-capable iPhone on iOS 26.x. xcrun devicectl reports zero connected devices — same underlying blocker as DIST-03. Both re-signed .shortcut artifacts and the fully-authored 09-UAT.md are ready; resume via /gsd-verify-work 9 once a device is available.
 - DIST-03 — no iPhone connected. All ten Phase 10 device tests (.planning/phases/10-ship-readiness-remainder-and-ux-lite-pass/10-UAT.md) are outstanding with blank outcomes, as are Phase 9's UAT tests 2-12 and Phase 4's UAT tests 1 and 3-6. Everything Phase 10 shipped is structurally proven and behaviourally unproven.
+- The repaired iOS 26 automation onboarding (quick task 260817-au7, docs/BUILD-NOTES.md §20) is correct as written but device-unproven end to end in this form. The INPUT PROBE proved the Text → Run Shortcut handoff mechanism, not these rendered steps; confirming them belongs with the outstanding device UAT.
 
 ### Quick Tasks Completed
 
@@ -213,6 +214,7 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 | 260814-kut | Disambiguate deviation IDs and guard rebuild provenance | 2026-08-14 | 05f69fc | [260814-kut-disambiguate-the-cycle-3-speaktext-devia](./quick/260814-kut-disambiguate-the-cycle-3-speaktext-devia/) |
 | 260816-ukb | Strip OPEN_BISECT/ROUTER_TRACE/BUILD_STAMP debug scaffolding | 2026-08-16 | 154b998 | [260816-ukb-strip-the-open-bisect-debug-breadcrumb-s](./quick/260816-ukb-strip-the-open-bisect-debug-breadcrumb-s/) |
 | 260817-2ng | Reconcile stale Use Model On-Device literal audit trail (CAP-26/DEV-03/UA-02/BD-04) | 2026-08-17 | 1732448 | [260817-2ng-use-model-literal-reconciliation](./quick/260817-2ng-use-model-literal-reconciliation/) |
+| 260817-au7 | Repair the iOS 26 Personal Automation onboarding in both forks; rebuild, re-sign, decrypt-verify | 2026-08-17 | c961af9 | [260817-au7-ios26-automation-onboarding](./quick/260817-au7-ios26-automation-onboarding/) |
 
 ## Deferred Items
 
