@@ -13,8 +13,8 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 
 - [x] **AUDIT-01**: Every iOS action the build depends on is resolved to VERIFIED / UNVERIFIED / NOT AVAILABLE with its exact identifier and parameter shape, recorded in a build-notes document
 - [x] **AUDIT-02**: Grayscale / Color Filters capability is resolved to a go/no-go decision, and the Ash primitive has a documented fallback design if no safe action exists
-- [x] **AUDIT-03**: Brightness read-back capability is resolved; if no safe read path exists, Dimming is specified to degrade to a non-stateful variant rather than making an unrestorable change
-- [x] **AUDIT-04**: Volume read-back capability is resolved; if no safe read path exists, Silence is specified to degrade to a non-stateful variant
+- [x] **AUDIT-03**: Brightness read-back capability is resolved; if no safe read path exists, Dimming is specified to degrade to a non-stateful variant rather than making an unrestorable change (Phase 10: the non-stateful branch is the **per-run fallback**, not the shipped behaviour — the stateful capture-and-restore path is retained, and a Phase 10 proposal to cut it was cancelled by user decision; guarded by `docs/environmental_restore_check.py`)
+- [x] **AUDIT-04**: Volume read-back capability is resolved; if no safe read path exists, Silence is specified to degrade to a non-stateful variant (Phase 10: the non-stateful branch is the **per-run fallback**, not the shipped behaviour — the stateful capture-and-restore path is retained, and a Phase 10 proposal to cut it was cancelled by user decision; guarded by `docs/environmental_restore_check.py`)
 - [x] **AUDIT-05**: Notes actions (Create Note, Append to Note, find/show a Note) are confirmed usable on the iOS target, since the Control Room is the only onboarding path
 - [x] **AUDIT-06**: The `Use Model` On-Device selection literal is recovered by round-trip (select On-Device in Shortcuts, export unsigned XML, read the literal back) and recorded verbatim, OR the Sentient fork's On-Device guarantee is explicitly re-planned
 - [x] **AUDIT-07**: Every deviation from the canonical strategy forced by an unverifiable action is recorded with the fallback taken, and the Shortcut remains runnable
@@ -55,15 +55,15 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 - [x] **SESS-04**: Rapid switching between two tracked apps does not corrupt state or produce a phantom session
 - [x] **SESS-05**: CLOSE compares actual duration against the declared contract and records the overrun
 - [x] **SESS-06**: CLOSE clears the active session and appends the completed session to the rolling window
-- [x] **SESS-07**: CLOSE restores any environmental setting PROSOCHĒ itself changed during the session
+- [x] **SESS-07**: CLOSE restores any environmental setting PROSOCHĒ itself changed during the session (Phase 10: `restore_managed_settings()` is retained in `close_pipeline()` — a proposal to cut the brightness/volume machinery was cancelled by user decision, so the stateful path is what ships; `docs/environmental_restore_check.py` asserts the call site)
 
 ### Circles & Primitives (CIRC)
 
 - [x] **CIRC-01**: The Knock shows a brief, non-lecturing interruption carrying real telemetry
 - [x] **CIRC-02**: Ash applies the audited visual-salience reduction, or its documented fallback if no safe action exists
-- [x] **CIRC-03**: Silence reduces media audio only when the original value can be captured and restored, otherwise degrades safely
+- [x] **CIRC-03**: Silence reduces media audio only when the original value can be captured and restored, otherwise degrades safely (Phase 10: "degrades safely" is the **per-run fallback**, not the permanent shipped behaviour — `silence()` and its capture-and-restore loop are retained after a proposed cut was cancelled by user decision; guarded by `docs/environmental_restore_check.py`, which also pins `WFVolumeSetting = "Media"` at all 14 sites)
 - [x] **CIRC-04**: Confession asks for a free-text intention and then a time boundary (2/5/10/15/custom)
-- [x] **CIRC-05**: Dimming reduces brightness only when reversible, never to zero, otherwise degrades safely
+- [x] **CIRC-05**: Dimming reduces brightness only when reversible, never to zero, otherwise degrades safely (Phase 10: "degrades safely" is the **per-run fallback**, not the permanent shipped behaviour — `dimming()` and its capture-and-restore loop are retained after a proposed cut was cancelled by user decision; guarded by `docs/environmental_restore_check.py`, which asserts a strictly positive `dim_target` at or above `brightness_floor`)
 - [x] **CIRC-06**: Exile immediately routes to an exit without a permission prompt, and returning remains possible as an affirmative act
 - [x] **CIRC-07**: The Mirror shows a precise behavioural reflection built only from recorded facts
 - [x] **CIRC-08**: The Voice speaks the Mirror at most once per run, only when voice is enabled, never at unsafe levels
@@ -124,7 +124,7 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 - [x] **SAFE-02**: Volume is never increased and no startling output is produced
 - [x] **SAFE-03**: Any environmental setting whose original value cannot be captured is left unchanged rather than changed unrestorably
 - [x] **SAFE-04**: Pre-existing accessibility configuration is never blindly overridden
-- [x] **SAFE-05**: Emergency Restore clears cooldown, clears the active session, and restores recoverable brightness, volume, and colour settings
+- [x] **SAFE-05**: Emergency Restore clears cooldown, clears the active session, and restores recoverable brightness, volume, and colour settings — **satisfied as written, needing no amendment**: a Phase 10 proposal to cut the brightness and volume restore path was **proposed and cancelled by user decision** (2026-08-16, reaffirmed 2026-08-17), so `restore_managed_settings()` remains in `manual_emergency_restore()` and Emergency Restore still restores all three. Standing guard: `docs/environmental_restore_check.py`
 - [x] **SAFE-06**: Emergency Restore is reachable even while in Ice
 
 ### Dumb Fork (DUMB)

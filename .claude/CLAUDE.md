@@ -82,7 +82,7 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → inte
 
 - The plugin's default (`auto`/`macos`) targets whatever macOS the *build machine* runs and the macOS action surface — wrong for an iPhone-only shortcut.
 - `--target-macos 26` (not `27`/`latest`) matters because the v78-first-party-parameter-keys catalog — which gates several Notes/Screen-Time/system-control actions to specific platforms — is **only loaded when targeting macOS/iOS 27+**. At target 26, those actions validate purely by identifier presence in the generic `toolkit-v63` allowlist, which is the more permissive and more accurate posture for an iOS 26 shortcut using long-standing actions. Do not use `--target-macos 27` for this project unless deliberately opting into an OS27-only action (there should be none — PROSOCHĒ must run on "iOS 26.x").
-- `--target-platform ios` is required to allow the handful of iOS-only rows (e.g. `com.apple.HearingApp.MuteVolumeIntent`-style Settings intents) and to avoid false negatives from macOS-only rows leaking in as "available."
+- `--target-platform all` is the project rule, **corrected from an earlier `ios` per `docs/BUILD-NOTES.md` §13 DEV-01**: measured, the `ios` target rejects *every* action in the file — 3675 of 3675 — including `is.workflow.actions.comment` and `is.workflow.actions.nothing`, which are present in the very iOS snapshot the flag claims to consult, while `is.workflow.actions.conditional` is absent from both bundled snapshots. A check that fails 100% of its inputs carries zero signal, so nothing is waived by not running it. The original intent behind `ios` — allowing the handful of iOS-only rows (e.g. `com.apple.HearingApp.MuteVolumeIntent`-style Settings intents) and avoiding false negatives from macOS-only rows leaking in as "available" — is unachievable with the snapshots as bundled. Re-evaluate if a future plugin release ships a corrected iOS snapshot.
 
 ### Exact signing invocation
 
@@ -109,7 +109,7 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → inte
 
 - The Shortcuts **Playground validator's** `--target-platform` flag is a build-time simulation of what the real device will accept — it is Playground tooling, not a plist feature.
 - The actual portability risk is per-action: an action identifier or parameter key gated to "macOS 27" in the bundled catalog (see the Color Filters and Notes findings below) may simply not exist as an option when authoring/running on iPhone.
-- **Practical rule for this project:** validate with `--target-platform ios` and manually import-test on a real iPhone (Shortcuts Playground cannot execute or verify runtime behavior — its validator only checks structural/plist correctness, per `TOOLKIT_SNAPSHOT.md`).
+- **Practical rule for this project:** validate with `--target-platform all` (**corrected from `ios` per `docs/BUILD-NOTES.md` §13 DEV-01** — the `ios` target rejects the file wholesale because the bundled iOS snapshot is incomplete, so it can conceal nothing) and manually import-test on a real iPhone (Shortcuts Playground cannot execute or verify runtime behavior — its validator only checks structural/plist correctness, per `TOOLKIT_SNAPSHOT.md`).
 
 ## 3. Capability audit — verified action identifiers
 
@@ -213,7 +213,7 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → inte
 | Shortcuts Playground plugin | v1.2.1 (installed) | Skill docs, agents, validator, signer, hooks | The only tool on this machine capable of authoring, validating, and signing `.shortcut` files; ground-truthed against Apple's own ToolKit databases |
 | `shortcuts` CLI (macOS built-in) | whatever ships with the build Mac's OS | `shortcuts sign` — the real signer | No substitute exists; signing is macOS-only |
 | Python | ≥3.10 | Runs `validate_shortcut.py` (uses PEP 604 `X | None` syntax) | Hard requirement of the bundled validator; check via `shortcuts-playground-selftest` |
-| Validator target | `--target-macos 26 --target-platform ios` | Correct availability gating for an iOS-26-only shortcut | See §1 rationale |
+| Validator target | `--target-macos 26 --target-platform all` | Correct availability gating for an iOS-26-only shortcut; the platform flag is `all`, **corrected from `ios` per `docs/BUILD-NOTES.md` §13 DEV-01** | See §1 rationale |
 
 ### Build sequencing recommendation (per project's own stated order)
 
@@ -228,7 +228,7 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → inte
 | `ActionOutput` references to Repeat's end-action UUID for `Repeat Index`/`Repeat Item` | Shows up as "Repeat Results" in the UI and fails at runtime | Named `Type: Variable`, `VariableName: "Repeat Index"`/`"Repeat Item"` |
 | Reusing a `GroupingIdentifier` across nested or sibling control-flow blocks | Silently corrupts block boundaries — the #1 documented real-world mistake in the corpus analysis | A freshly `uuidgen`'d, uppercase UUID per control-flow block, no exceptions |
 | Treating `plutil`/`xxd`/`file` failure on the outer signed `.shortcut` as proof that its plist is unrecoverable | Those tools see the AEA1 container, not the plist payload | Use §8's `aea decrypt` → `aa extract` workflow, convert `Shortcut.wflow` to XML, then inspect or pass that XML to `shortcut-remixer` |
-| Targeting the validator at `--target-macos 27`/`latest` for this project | Loads OS27-only parameter-gating (`WFAllowWebSearch`, `FollowUp`, `interpretAsMarkdown`, etc.) that don't apply to an "iOS 26.x" shortcut and could produce false confidence or false rejections | `--target-macos 26 --target-platform ios` |
+| Targeting the validator at `--target-macos 27`/`latest` for this project | Loads OS27-only parameter-gating (`WFAllowWebSearch`, `FollowUp`, `interpretAsMarkdown`, etc.) that don't apply to an "iOS 26.x" shortcut and could produce false confidence or false rejections | `--target-macos 26 --target-platform all` (the platform flag is `all`, **corrected from `ios` per `docs/BUILD-NOTES.md` §13 DEV-01**; `--target-macos 26` is unchanged and load-bearing for the reason in this row) |
 | Treating a validator pass as "done" | The plugin's own explicit rule: "A valid XML draft without a signed `.shortcut` is not a useful stopping point" | Always complete the archive+sign+verify-non-zero-bytes step |
 | A CSV or second machine-readable store alongside `state.json` | Explicitly out of scope per PROJECT.md; also has no bearing on the Shortcuts toolchain — not a capability question, a design one, reaffirmed here because Get/Save File audit (§3 item 2) shows Shortcuts' file actions are perfectly adequate for one JSON | One `state.json`, rolling-window arrays, one Apple Note |
 

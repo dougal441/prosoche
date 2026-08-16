@@ -946,6 +946,11 @@ Items 1–3 are mechanical. **Items 4 and 5 are a judgement call the user has ex
 to themselves, and item 5 is conditional on item 4.** Neither may be resolved by an agent acting
 alone.
 
+**Addendum (2026-08-17):** the premise this entry rests on — that a proposed cut of the
+brightness/volume machinery might remove the mechanism and make the question moot — is void; the
+cut was cancelled, so DEV-06 and the `Session ID` scope defect are both live again. See §19.8. The
+decision itself is unchanged and still reserved to the user; this line points forward only.
+
 ---
 
 ## 9. Revisions — 2026-08-16 (donor ground truth)
@@ -1048,3 +1053,262 @@ the decision is reserved to the user. `09-UAT.md`'s DEV-06 write-up argues from 
 the current no-ownership-check design is already correct for the two-session overlap case and
 that a naive equality check would regress it — that argument is a trace, not device evidence,
 and tests 9/10/12 exist to check it.
+
+---
+
+## 19. Phase 10 — ship readiness and the UX lite pass (2026-08-17)
+
+Phase 10 shipped four behavioural changes, three new guards, one checker repair and one refreshed
+manifest, and it corrected two written positions it had inherited. Everything below was measured
+at the phase's final `HEAD`; nothing here is device evidence, and §18's warning still governs.
+
+Section numbering note: this file contains **two** sections numbered 15 (the debug-cycle-5
+deviations and the CAP-06 addendum) and a stray duplicate `## 9` at the 2026-08-16 revisions
+block. Number by the highest *value* present, not by position in the file. The highest was 18,
+so this is 19.
+
+### 19.1 Circle 0 — the silent band
+
+A genuine OPEN whose Pressure falls below the active profile's first threshold now resolves to
+Circle **0** and shows nothing at all: no notification, no menu, no primitive. Behavioural day,
+Heat, Gravity, Pressure, open count and the active session are still computed and still
+persisted. The band suppresses **surfaces**, never accumulation — `save_state()` deliberately
+sits *outside* the gate and `universal_leaving()` inside it.
+
+Every threshold entry was raised by that profile's own **first band width**, quoted verbatim
+from the Config literal at `src/PROSOCHE-Dumb.xml` action 7:
+
+| Profile | Was | Now | Shift |
+|---|---|---|---|
+| Paradise | `1, 4, 7, 10, 13, 16, 19, 22, 25` | `4, 7, 10, 13, 16, 19, 22, 25, 28` | +3 |
+| Limbo | `1, 3, 5, 7, 9, 11, 14, 17, 20` | `3, 5, 7, 9, 11, 13, 16, 19, 22` | +2 |
+| Inferno | `1, 2, 4, 6, 8, 10, 12, 14, 16` | `2, 3, 5, 7, 9, 11, 13, 15, 17` | +1 |
+
+The derivation matters because it bounds what changed. Adding an array's own first band width to
+every entry preserves **every band width exactly** and delays only *entry* into Circle 1 — a
+strictly weaker change than re-tuning the curve, and one that cannot reorder or compress the
+Circles relative to each other. All three arrays remain strictly ascending, remain nine entries,
+and keep their last entry below `heat.cap + gravity.cap` = 35, so Circle 9 stays reachable.
+Because `heat.open_base` is 1, a first open of a cold day now scores Pressure 1 and lands in the
+silent band under all three profiles.
+
+**These are prototype values for on-device tuning.** They are deliberately not commented inside
+the JSON, because the literal is parsed by `detect.dictionary` and must stay valid JSON.
+
+**The one load-bearing safety fact.** The silent band is enforced by a structural enclosure and a
+build guard, *not* by copy, and the reason is a device-verified runtime semantic recorded in
+`.claude/CLAUDE.md`: a **dotted** read whose final segment is absent is a **hard error** ("could
+not evaluate the key path"), not a null. `primitive_dispatch()` reads
+`sequences.<Sequence>.<Dispatch Circle>` as a dotted key. At `Dispatch Circle == 0` that final
+segment does not exist, so the read throws — and it would throw *after* `active_session` was
+already written, leaving a session no CLOSE will ever own. There is no sentinel value and no
+"check then read" gate that avoids this, because the check itself is the read. The only fix is
+never to reach the read at Circle 0, which is what the enclosure does and what
+`verify_circle_zero_silence()` fails the build over.
+
+The guard asserts four properties, each with its own message: (a) the Circle scan seeds at 0, not
+1; (b) the `Leaving`/`Continue` menu — the OPEN path's sole entry point to every primitive — is
+enclosed by the silent-band conditional; (c) every `sequences`-addressing dotted read **inside the
+OPEN arm** is enclosed by that same group; (d) the OPEN arm emits no notification. Property (c) is
+OPEN-arm-scoped on purpose: the nine MANUAL-arm reads from the Test-a-Circle submenu copy
+`Dispatch Circle` from `Test Circle`, which is always 1–9, so index 0 is unreachable there by
+construction. Rewriting (c) as an artifact-wide invariant would raise on the very first build.
+
+### 19.2 The Circle identity change — a widened domain, not a new field
+
+Circle 0 was promoted as a first-class value of the **existing** `circle` field rather than added
+as a parallel `silent` boolean. The persisted domain widened from one-through-nine to
+zero-through-nine. **No `schema_version` bump and no migration**, because a widened value range
+needs neither: every legacy `state.json` holds a value that is still in range, and nothing
+persisted changed shape. One source of truth for "did anything happen" was worth more than a
+second field that could disagree with the first.
+
+The consumer surface was measured directly against the built artifact rather than counted from
+memory. Seventy-five actions reference `Circle Next`, resolving to **five distinct consumer
+sites** when grouped by their nearest preceding comment:
+
+| Consumer site | Actions |
+|---|---|
+| State persistence and the Circle-derived text (`setvalueforkey`, `gettext`, the 20 exit-stat list/index pairs) | 43 |
+| The silent-band conditional itself | 1 |
+| The Phase 6 universal Leaving menu | 1 |
+| Knock's ten factual-interruption alerts | 10 |
+| Mirror's template selection (10 list/index pairs) | 20 |
+
+**Two of those would have hard-errored at Circle 0 had the gate been omitted**, and both are
+invisible to `validate_shortcut.py`:
+
+1. `primitive_dispatch()`'s dotted `sequences.<Sequence>.<Dispatch Circle>` read — the hard error
+   described in §19.1. Verified: `Dispatch Circle` is set at artifact index 996 on the OPEN path
+   with no `Test Circle` source, and at nine MANUAL-arm sites from `Test Circle`.
+2. `mirror_text()`'s **Get Item From List** at `WFItemSpecifier = "Item At Index"`, indexing a
+   ten-element list by `Circle Next` (artifact index 1155). At 0 the index is out of range.
+
+Both sit downstream of the `Leaving`/`Continue` menu, which is why enclosing that single menu
+closes both paths at once.
+
+### 19.3 The OPEN notification removed, and the Leaving prompt reframed
+
+The **unconditional OPEN `notification()`** and its three-line comment were deleted together as
+one block. The artifact-wide notification count went from 2 to 1; the survivor is the CLOSE
+confirmation, which is correct and stays. Measured on the shipped build: the OPEN arm contains
+**zero** notifications.
+
+The `Leaving`/`Continue` prompt was rebuilt to name what is being left and what continuing costs:
+
+> You just opened a tracked app. PROSOCHĒ is at Circle ￼.
+>
+> Leaving: PROSOCHĒ suggests somewhere better to go and takes you there.
+> Continue: you go into the app, after this Circle's intervention.
+
+192 characters, exactly one attachment naming `Circle Next` at the correct offset, both item
+titles byte-identical so `select_exit()` and `primitive_dispatch()` still hang off them.
+
+**This is the second revision of that prompt; G-04-4b was the first.** Recording the sequence
+matters because the two revisions had opposite constraints. G-04-4b had to keep the copy short
+because the menu fired on *every* open, including the trivial ones. Revision 2 can afford to be
+longer precisely because §19.1 stopped it firing in the silent band — the copy budget changed
+because the trigger changed, not because the earlier judgement was wrong.
+
+### 19.4 The gated Control Room note-show, and the tenth menu item
+
+`Open Control Room` was previously an `is.workflow.actions.nothing` no-op whose entire effect came
+from an **unconditional tail it did not own** — so the Note opened after *every* manual menu
+choice, and the one item nominally responsible for opening it did nothing. It now sets
+`Manual Show Note Requested`, and `gate_control_room_shownote()` wraps the single `shownote` in a
+numeric `> 0` conditional on that flag.
+
+`filter.notes` and Create Note were deliberately left **outside** the gate. The Note keeps being
+found or created on every manual run, so BOOT-08's deleted-note self-heal survives and
+`manual_note_refresh()` keeps a bound Note variable to append to. Measured: `filter.notes` 1,
+Create Note 1, both unchanged and neither enclosed by the gate group, while the `shownote` is.
+
+The gate is an *inserting* pass, so it cannot probe a parameter for prior application; its
+idempotency probe is **positional** — "is `actions[index - 1]` already the mode-0 conditional I
+would insert?". Two consecutive builds are byte-identical and exactly one conditional in the whole
+artifact tests the flag.
+
+A tenth manual menu item, **`Setup Check`**, reports whether either Personal Automation has ever
+been recorded firing. It derives both verdicts from `last_open_at` and `last_close_at` — epochs
+the engine already writes — rather than adding `automation_a_seen` / `automation_b_seen` keys: no
+schema bump, no bootstrap edit, no migration. Both reads are **flat**, so per the same runtime
+semantics as §19.1 they cannot hard-error on a legacy `state.json` that predates them, and both
+gates are numeric `> 0` rather than condition-100 existence tests.
+
+**The honest limitation ships in the alert copy, not in a source comment the user will never
+see.** The derivation is sufficient but not necessary evidence: a close that a newer open
+superseded, or an open during a cool-down, records nothing. So the alert says outright that a
+**"not seen yet" verdict can be wrong, while a "seen" verdict never is**. That asymmetry is the
+whole truth value of the feature and hiding it would have made the check worse than nothing.
+
+### 19.5 Two corrections to positions this phase inherited
+
+Both are recorded as deviations because both reverse something previously written down, and in
+each case the reversal came from a measurement rather than from a judgement call.
+
+#### DEV-P10-01 — the self-check baseline was not three-of-six red
+
+- **The written position:** `10-RESEARCH.md` §5c recorded "three of six already FAIL at `HEAD`" —
+  `phase5_self_check.py`, `phase6_self_check.py` and `sentient_core_check.py` — and the phase
+  brief was shaped around it.
+- **The measurement that reversed it:** that baseline was taken at commit `2e85aa3`. At the
+  phase's actual starting `HEAD` (`0c9aace`), with both forks already regenerated from the
+  post-merge generator by commit `c6d8737`, **six of seven `docs/*.py` scripts pass**. Only
+  `docs/phase6_self_check.py` genuinely failed, on a stale `WFAppName` assertion that
+  `normalize_open_apps()` contradicts by construction. `phase5_self_check.py` and
+  `sentient_core_check.py` both passed.
+- **What was done:** plan 10-03 repaired the one genuine failure — the assertion was dropped with
+  a comment citing `normalize_open_apps()` by name and line, so the diff (8 insertions, 1
+  deletion) reads as a correction rather than a weakening.
+- **Why it is recorded:** a stale baseline is more dangerous than a red check, because it licenses
+  ignoring failures that are real. The lesson is that a self-check baseline must be re-measured at
+  the commit a phase actually starts from, not carried across from research.
+
+#### DEV-P10-02 — `sentient_core_check.py` was kept green by rebuilding Sentient, not left red
+
+- **The written position:** the research, the pattern map and the phase brief all directed that
+  `docs/sentient_core_check.py` stay red this phase, on the stated basis that the Sentient fork
+  was stale at `2026-08-14k` and re-forking is SEED-005, out of scope.
+- **The measurement that reversed it:** commit `c6d8737` had already regenerated **and re-signed
+  both forks** from the post-merge generator, and the check **passed** at the phase's starting
+  `HEAD`. It was red only *transiently* — from 10-01's first Dumb rebuild until Sentient was
+  rebuilt to match.
+- **Why the brief's instruction had inverted:** honouring it literally would have meant *making*
+  the check red, by changing Dumb and then refusing to rebuild Sentient. That converts a green
+  invariant into a red one, which is the opposite of what the instruction was for. The check
+  exists to detect fork skew; deliberately introducing skew to satisfy a stale expectation is the
+  failure it was written to catch.
+- **What was done:** plan 10-04 rebuilt Sentient from the same generator run as Dumb. All ten
+  checkers, including `sentient_core_check.py`, exit 0 in a single run.
+  `tools/build_sentient.py` needed **no edit**, because the cancelled brightness/volume cut leaves
+  all ten of its imported `verify_*` names intact.
+- **Scope, stated so it is not misread:** this is a **rebuild**, not a re-fork. SEED-005's re-fork
+  question is untouched and remains out of scope.
+
+### 19.6 Two ROADMAP Strand A items that needed no work
+
+Recorded so a later reader does not go looking for changes that were correctly never made.
+
+- **`.gitignore` already covers the build-noise patterns.** Verified by reading it: it excludes
+  `.planning/debug/*.{jpg,jpeg,png,heic}` (personal device photos), `*.DS_Store`, `__pycache__/`,
+  `*.pyc`, `.planning/graphs/` and `graphify-out/`. No addition was needed and none was made.
+- **The MANIFEST rows were correct at the start of the phase.** The research's §5d drift table —
+  three wrong Sentient rows — was measured at the older commit `2e85aa3`, before `c6d8737`
+  refreshed them. Re-verified this phase by hashing every declared path out of the phase's
+  starting tree (`0c9aace`): all six rows matched on both size and SHA-256. The manifest was
+  refreshed in 10-04 **only because this phase rebuilt**, not because it was stale, and
+  `docs/manifest_check.py` now makes that class of drift a failing check rather than a reading
+  exercise.
+
+### 19.7 The Circle 8 Voice orphan — a known open defect, reported not blocked
+
+Config's `sequences` arrays name `Voice` at position 8 in all three profiles
+(`Classic`, `BlackMirror`, `Ambient`), and **no dispatch branch matches it**, so Circle 8
+currently dispatches nothing. This is a pre-existing defect owned by
+`.planning/todos/pending/2026-08-16-build-circle-8-voice-primitive.md`, and the ROADMAP explicitly
+instructs any sequence/dispatch checker to record it rather than fail on it.
+
+`docs/sequence_dispatch_check.py` now reports it by name with its Circle positions and its owning
+todo on every run, and exits 0 by design. An orphan **not** on the `KNOWN_ORPHANS` roster is still
+reported and marked `UNEXPECTED` — the roster suppresses nothing, it only distinguishes accepted
+from novel.
+
+The reporter is deliberately built to survive **BD-06 Decision 5**'s planned move from condition
+code 99 ("contains") to code 4 ("string is"). It collects *every* mode-0 conditional testing
+`Selected Primitive` with no filtering by condition code, and resolves each branch's matching rule
+from that branch's own code via `match_strategy()`. Neither code exists as a module-level
+constant, so the file needs no edit when BD-06 lands. Verified structurally: 80 branches collected,
+equal to the 80 such conditionals in the artifact; `match_strategy()` returns three distinct
+results including an explicit `unknown` outcome.
+
+### 19.8 DEV-06 is live again — a consequence of the cancellation, not a new finding
+
+**§17** records the restore-ownership check — the `settings_snapshot.brightness.changed_at`,
+`.changed_by_session_id`, `volume.changed_at` and `.changed_by_session_id` leaves, written at 20
+sites and read nowhere — as **DEFERRED by explicit user decision** ("leave as-is for now, decide
+before ship"). §17 rests that deferral on a stated premise: that a proposed cut of the
+brightness/volume machinery might remove the mechanism entirely and make the question moot.
+
+**That premise is void.** The cut was **proposed and cancelled by user decision** (2026-08-16,
+reaffirmed 2026-08-17). `dimming()`, `silence()`, `restore_managed_settings()` and the
+`settings_snapshot` subtree all stay, and `docs/environmental_restore_check.py` now pins them so a
+re-attempt fails loudly. The mechanism therefore ships, and **DEV-06 is live again** — along with
+the `Session ID` **scope defect** tied to it: `Session ID` is assigned only under
+[OPEN → not-in-cooldown → genuine-open], so only 2 of the 20 `changed_by_session_id` writes share
+that ancestry and the other 18 record an empty owner. §17 dropped that defect in priority
+*because* nothing would read the owner; if the ownership check is ever implemented, the scope fix
+becomes a prerequisite rather than a surprise.
+
+Three things stated plainly, because each is a way this entry could be misread:
+
+1. **This reactivation is a consequence of the cancellation, not a new finding.** Nothing was
+   discovered about the ownership check in Phase 10. The only thing that changed is that the
+   escape route §17 hypothesised — the mechanism disappearing — is closed.
+2. **The decision itself remains reserved to the user, exactly as §17 records.** Implementing or
+   even *designing* the ownership check was therefore correctly out of scope for Phase 10. §17's
+   ship checklist items 4 and 5 stand unchanged, and item 5 stays conditional on item 4.
+3. **No Phase 10 work was done on it.** Nothing in this phase should be read as having settled,
+   narrowed, or pre-empted the question. No design is proposed here and none should be inferred.
+
+§17 carries a dated one-line addendum pointing here. Its body was **appended to, never revised** —
+it records a user decision, and editing the premise in place would rewrite that record.
