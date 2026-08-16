@@ -72,18 +72,18 @@ todo was itself out of date: BD-01-R had already reversed CAP-20 to `VERIFIED` f
 reasoning before the donor was ever opened. The donor confirmed that conclusion and
 **corrected its build recipe**, which mattered more.
 
-1. ✅ **Decrypted the donors** — the one on disk, plus `Donor 9.shortcut`, which arrived
-   mid-spike and corrected the first pass. Color Filters exists on iOS 26 as
+1. ✅ **Decrypted three donors** — the one on disk, plus `Donor 9` and `Donor 9.1`, built to
+   order mid-spike, each correcting a conclusion the previous pass had drawn from schema
+   rather than from a device. Color Filters exists on iOS 26 as
    `com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent`. Both
    BD-01 and BD-01-R argued the question using `UAToggleColorFiltersIntent` — the macOS
    twin. The iOS identifier is in none of the three bundled snapshots, so no amount of
-   catalog work could have found it. The two parameters take **different shapes**:
-   `operation` is a string case id (`turn` | `toggle`), `state` is an integer index
-   (`on`=1, `off`=2); no `ShowWhenRun`.
+   catalog work could have found it. Serialization: **`state` is a bool-as-integer, `1` = On
+   and `0` = Off**; `operation` is a string case id that is **elided when Turn**, so
+   authoring omits it; no `ShowWhenRun`.
 
-   ⚠️ **The restore leg is still schema-only.** Both donors exercise `state = 1` (on) and
-   neither writes `turn` or `off`. BD-01-R2 therefore gates Phase 5's CIRC-02 restore path
-   on one more donor built as "Turn Color Filters Off".
+   ✅ **Both legs are donor-confirmed** — apply (`state = 1`) and restore (`state = 0`). No
+   gate remains on CIRC-02's write path.
 2. ✅ **Read-back: still none.** No `Get*`/`Query*` intent exists for any accessibility
    setting across all 35 intents in `AccessibilityUtilities.framework`. §21's opt-in remedy
    (`safety.ash_managed_color_filters`) therefore stands exactly as BD-01-R wrote it. One
@@ -93,14 +93,18 @@ reasoning before the donor was ever opened. The donor confirmed that conclusion 
 4. ✅ **Audit trail updated.** `docs/CAPABILITY-DECISIONS.md` BD-01-R2 (supersedes BD-01-R's
    Action/Parameters/Design); `docs/BUILD-NOTES.md` CAP-20 row, summary table, DEV-01 marked
    withdrawn, §7 closure claims corrected, new §9 revisions table.
-5. ⬜ **Open — rebuild Ash.** Now unblocked and worth doing, but out of scope here: it is new
-   authoring against all seven parameter axes plus a re-run of the Circles UAT.
-6. ✅ Nothing was guessed. Every literal came from the donor or from Apple's own
-   `AccessibilityUtilities.framework` intentdefinition.
+5. ⬜ **Open — rebuild Ash.** Now fully unblocked, but out of scope here: it is new authoring
+   against all seven parameter axes plus a re-run of the Circles UAT.
+6. ✅ Nothing shipped as a guess — but the spike did assert two wrong values from Apple's
+   `.intentdefinition` before donors refuted them (`operation` as an integer, then
+   `state = 2` for Off). The second would have shipped a restore leg that leaves users stuck
+   in grayscale. Lesson recorded in `CONVENTIONS.md`: an `.intentdefinition` describes the
+   intent's type system, not the plist encoding, and does not outrank a donor.
 
-**Two follow-on donor tests** (cheap, would close the remaining gaps) are listed under
-"Open Questions" in the spike README: confirm the OFF write serializes `state = 2`, and
-establish whether the `state` response is consumable as a magic variable.
+**One optional follow-on** remains in the spike README's Open Questions: whether the `state`
+*response* parameter is consumable as a magic variable. If it is, Ash could detect and
+preserve a user's pre-existing filter instead of requiring them to opt out — an enhancement
+to §21 compliance, not a gate.
 
 ## Related
 

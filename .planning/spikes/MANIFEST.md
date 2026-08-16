@@ -93,16 +93,17 @@ an unanalysed `Set Colour Filters.shortcut` sitting in `.planning/debug/` the wh
   `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` that both prior
   decisions argued over is the **macOS twin**. The iOS identifier is absent from all three
   bundled ToolKit snapshots, so no catalog query could ever have found it.
-- **The two parameters take different shapes.** `operation` is a **string** enum case id
-  (`turn` | `toggle`); `state` is an **integer** enum index (`on`=1, `off`=2). No
-  `ShowWhenRun` on the iOS intent. `INEnumType` (`Regular` → string, `State` → integer), not
-  the declared storage type, is what predicts the encoding — reading the intentdefinition's
-  `Integer` as the encoding is what got `operation` wrong on the first pass, corrected when
-  Donor 9 arrived. Note `off` is **2**, not 0 or `<false/>`.
-- **The restore leg is not donor-confirmed.** Both donors only exercise `state = 1` (on);
-  `operation = "turn"` and `state = 2` still rest on Apple's schema. Those are precisely the
-  two literals whose failure leaves a user stuck in grayscale, so BD-01-R2 gates Phase 5's
-  CIRC-02 restore path on one further donor built as "Turn Color Filters Off".
+- **`state` is a bool-as-integer: `1` = On, `0` = Off.** `operation` is a string enum case id
+  (`toggle`) that is **elided when Turn** — so authoring omits it and never needs the `"turn"`
+  literal. No `ShowWhenRun` on the iOS intent. Both legs Ash writes are donor-confirmed
+  (On: `Set Colour Filters`; Off: `Donor 9.1`), so Phase 5's CIRC-02 has no remaining gate on
+  its write path.
+- **Apple's `.intentdefinition` does not describe the plist encoding.** This spike asserted
+  integer enum indices from it twice — `operation` as an integer, then `state = 2` for Off —
+  and both were wrong. `state = 2` would have shipped a restore leg that leaves users stuck in
+  grayscale; Donor 9.1 caught it. The intentdefinition is valuable for *what parameters exist*
+  and *what cases are called*, and for proving no read-back intent exists — but a precise-
+  looking new source does not outrank a donor.
 - **Still no read-back.** No `Get*`/`Query*` intent exists for any accessibility setting
   across all 35 intents in the framework, so §21's opt-in remedy
   (`safety.ash_managed_color_filters`) governs, unchanged. One untested lead: every

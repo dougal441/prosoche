@@ -90,19 +90,24 @@ execute Shortcuts itself.
   parameter names, types, enum cases **and their integer indices**, and response parameters —
   for actions absent from every bundled snapshot. This is how spike 005 turned "the donor
   wrote `state = 1`, which probably means On" into a fact, and recovered `off = 2`.
-- **`INEnumType` predicts a parameter's plist encoding — the declared type does not.** In an
-  `.intentdefinition`, an enum tagged `INEnumType: "Regular"` renders as a picker and
-  serializes its **case id string**; one tagged `INEnumType: "State"` renders as an On/Off
-  switch and serializes its **integer index**. Both are declared `Integer` as storage. Spike
-  005 read the storage type as the encoding and got `operation` wrong until a second donor
-  showed it as `<string>toggle</string>` next to `<integer>1</integer>` for `state`.
-- **For accessibility toggles, `off` is 2, not 0 and not `<false/>`.** The `State` enum is
-  `unknown`=0, `on`=1, `off`=2. A bool intuition writes the wrong value on the *restore* leg,
-  which is the leg whose failure strands the user in the altered state.
-- **Parameter absence is not reliably "the default."** Donor 9 contains a fully
-  parameter-less instance of the same action that another donor writes with `state` set —
-  Shortcuts appears to serialize a parameter once touched. Do not infer a default value, or a
-  parameter's existence, from its absence in one donor.
+- **An `.intentdefinition` does not describe the plist encoding — only a donor does.** It
+  declares the intent's *type system*: parameter names, enum case ids, response parameters.
+  Shortcuts then serializes through its own UI rendering, and the two do not match. Spike 005
+  got this wrong twice in a row: it read the declared `Integer` storage type as the encoding
+  (wrong — `operation` writes a case-id **string**), then read the `State` enum's case indices
+  as the values (wrong — `on`=1/`off`=2 in the schema, but Shortcuts renders a `State` enum as
+  an On/Off switch and writes a plain **bool as `0`/`1`**). The second error would have
+  shipped a broken restore leg. **Use `.intentdefinition` to learn what parameters exist and
+  what a picker's cases are called; use a donor to learn what gets written.**
+- **A picker enum serializes its case-id string; an On/Off switch serializes `0`/`1`.** That
+  is the working rule for `AXToggle*`-family actions, established across three donors.
+- **Parameter absence often means "left at default" — and the default may be the value you
+  want.** Both the On and Off Color Filters donors omit `operation` entirely, because `turn`
+  is its default. Omitting a parameter is therefore sometimes *better* than authoring it: it
+  matches the device byte-for-byte and avoids committing to an unconfirmed literal. But
+  absence is not proof of a default value either — Donor 9 contains a fully parameter-less
+  instance of an action another donor writes with `state` set. Read absence across several
+  donors before concluding anything from it.
 - **Silent automation probes:** any shortcut wired into a Personal Automation must have
   zero UI (no Show Result/Show Alert) — an automation that displays something interrupts
   the user on every trigger. Log to a Note instead.

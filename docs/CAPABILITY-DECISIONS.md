@@ -199,11 +199,11 @@ and strengthened; only the identifier and parameter serialization it prescribed 
 
 **Evidence tier upgrade.** BD-01 reached `NOT AVAILABLE` from catalog data. BD-01-R
 reversed that from catalog *reasoning* (simulator-artefact argument) plus owner assertion.
-BD-01-R2 rests on tier-1 evidence: **two** donors exported from the owner's iPhone and
-decrypted via the AEA1 round-trip — `.planning/debug/Set Colour Filters.shortcut` and
-`.planning/debug/Donor 9.shortcut` — plus Apple's own `AccessibilityUtilities.framework`
-intentdefinition. Full workings:
-`.planning/spikes/005-ios-color-filters-identifier/README.md`.
+BD-01-R2 rests on tier-1 evidence: **three** donors exported from the owner's iPhone and
+decrypted via the AEA1 round-trip — `.planning/debug/Set Colour Filters.shortcut` (On),
+`.planning/debug/Donor 9.shortcut` (Toggle, plus an untouched instance), and
+`.planning/debug/Donor 9.1.shortcut` (Off) — which between them pin every value CIRC-02
+writes. Full workings: `.planning/spikes/005-ios-color-filters-identifier/README.md`.
 
 **Action (corrected):**
 `com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent`
@@ -215,49 +215,43 @@ bundled ToolKit snapshots (v63, v78, v78-ios27); this is a catalog gap, and the 
 only local evidence of it. The Playground's own `APPINTENTS.md` line 116 already documents
 this `AX*` / `UA*` split for two sibling accessibility toggles.
 
-**Parameters (corrected) — the two parameters take *different* shapes:**
+**Parameters (corrected) — `state` is a bool-as-integer; `operation` is a string that should be omitted:**
 
-| Key | Serialized as | Cases | Donor-confirmed? |
+| Key | Serialized as | Values | Donor evidence |
 |---|---|---|---|
-| `operation` | **string** (enum case id) | `turn`, `toggle` | `"toggle"` ✓ (Donor 9). `"turn"` — no |
-| `state` | **integer** (enum index) | `unknown`=0, **`on`=1**, **`off`=2** | `1` ✓ (both donors). `2` — no |
+| `state` | integer, **boolean-valued** | **`1` = On, `0` = Off** | `1` — Set Colour Filters, Donor 9. `0` — Donor 9.1 |
+| `operation` | **string** (enum case id) | `toggle` when chosen; **elided when Turn** | `"toggle"` — Donor 9. Elided on both the On and Off donors |
 
-Evidence: `.planning/debug/Set Colour Filters.shortcut` emits `state` `<integer>1</integer>`
-with no `operation`; `.planning/debug/Donor 9.shortcut` emits `operation`
-`<string>toggle</string>` alongside `state` `<integer>1</integer>`, and a second, fully
-parameter-less instance of the same action. Case names and indices from Apple's own
-`Intents.intentdefinition`
-(`/System/Library/PrivateFrameworks/AccessibilityUtilities.framework/Versions/A/Resources/Base.lproj/`),
-archived at `.planning/spikes/005-ios-color-filters-identifier/`.
+`.planning/debug/Set Colour Filters.shortcut` emits `state` `<integer>1</integer>` with no
+`operation`. `.planning/debug/Donor 9.shortcut` emits `operation` `<string>toggle</string>`
+alongside `state` `<integer>1</integer>`, plus a second fully parameter-less instance.
+`.planning/debug/Donor 9.1.shortcut` is that same instance (same UUID) configured **Off**, and
+emits `state` `<integer>0</integer>` with no `operation`. Archived at
+`.planning/spikes/005-ios-color-filters-identifier/`.
 
-**Why the shapes differ** — and the generalizable rule for the whole `AXToggle*` family:
-the intentdefinition types *both* parameters as `Integer`, but tags `Operation` with
-`INEnumType: "Regular"` and `State` with `INEnumType: "State"`. A `Regular` enum renders as
-a picker and serializes its **case id string**; a `State` enum renders as an On/Off switch
-and serializes its **integer index**. Do not read the intentdefinition's `Integer` type as
-the plist encoding — that is the underlying storage. (Two data points; strong, not proven.)
+**`off` is `0`, not `2`, and Apple's own schema is misleading here.** The
+`AccessibilityUtilities.framework` intentdefinition declares `state` as `Integer` with a
+`State` enum of `on`=1 / `off`=2. Shortcuts does not use those indices — it renders a
+`State`-typed enum as an On/Off switch and writes a plain boolean as an integer. The macOS
+ToolKit catalog, which typed `state` as `bool` with trueString `On` / falseString `Off`, was
+right all along. **Never take an `.intentdefinition`'s declared type or case indices as the
+plist encoding**; it describes the intent's type system, not what Shortcuts writes.
 
 **There is no `ShowWhenRun` parameter on the iOS intent.** BD-01-R's instruction to set it
 `Off` applies only to the macOS catalog row. Do not author it.
 
-**OFF is `state = 2`** — not `0`, not `<false/>`. BD-01-R's `state = On` bool would write the
-wrong value on the *restore* leg, which is the leg whose failure strands a user filtered.
+**Design (Phase 5, CIRC-02) — final, every value donor-confirmed:**
+- Apply: `state = 1`. Omit `operation`.
+- Restore on CLOSE, Emergency Restore, and cooldown expiry: `state = 0`. Omit `operation`.
+- **Omit `operation` in both legs.** `turn` is its elided default — both the On and the Off
+  donors write no `operation` key at all — so PROSOCHĒ never needs the `"turn"` literal,
+  which is the one literal in this investigation no donor has ever emitted.
+- Never `operation = "toggle"`: it depends on unknown prior state and can strand the user
+  filtered. Unchanged from BD-01-R. (Donor 9 uses `toggle`; it is a probe, not a model.)
 
-**Design (Phase 5, CIRC-02) — corrected:**
-- Apply: `operation = "turn"` (string), `state = 1`.
-- Restore on CLOSE, Emergency Restore, and cooldown expiry: `operation = "turn"`,
-  `state = 2`.
-- Never `operation = "toggle"` as the apply/restore mechanism — it depends on unknown prior
-  state and can strand the user filtered. Unchanged from BD-01-R. (Note Donor 9 *does* use
-  `toggle`; it is a hand-built probe, not a model for CIRC-02.)
-
-**Gate on Phase 5 — the restore leg is not yet donor-confirmed.** `operation = "turn"` and
-`state = 2` both rest on Apple's schema and the macOS enum-case catalog, not on a device.
-Every literal the *apply* leg needs is donor-confirmed; neither literal the *restore* leg
-needs is. One donor built as "Turn Color Filters Off" closes both. Per this project's
-do-not-fabricate rule and §21's own logic — the harm case is a user left in grayscale —
-**Phase 5 should not ship CIRC-02's restore path on schema evidence alone.** Build it, and
-require that donor before the Circles UAT signs it off.
+**No gate remains on the write path.** Both legs are donor-confirmed, so Phase 5 can build
+and ship CIRC-02's apply and restore without further device evidence. The only outstanding
+Color Filters question is the optional read-back enhancement below.
 
 **Canonical §21 compliance — unchanged, with one new lead.** No `Get*`/`Query*` intent for
 any accessibility setting exists anywhere in the framework's 35 intents, so there is still

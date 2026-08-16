@@ -2,34 +2,37 @@
 spike: 005
 name: ios-color-filters-identifier
 type: standard
-validates: "Given the unanalysed donor `.planning/debug/Set Colour Filters.shortcut`, when decrypted via the AEA1 round-trip, then the real iOS 26 Color Filters action identifier and its parameter serialization are established as device ground truth"
+validates: "Given the Color Filters donors in `.planning/debug/` (Set Colour Filters, Donor 9, Donor 9.1), when decrypted via the AEA1 round-trip, then the real iOS 26 Color Filters action identifier and the exact serialization of both its apply and restore legs are established as device ground truth"
 verdict: VALIDATED
 related: [001, 003]
 tags: [capability-audit, evidence-hierarchy, accessibility, ash, donor, intentdefinition]
 ---
 
-# Spike 005: iOS Color Filters Identifier (Donor "Set Colour Filters")
+# Spike 005: iOS Color Filters Identifier and Serialization
 
 ## What This Validates
 
-**Given** the donor `.planning/debug/Set Colour Filters.shortcut` — exported from the
-owner's iPhone and never opened — **when** decrypted and inspected, **then** establish
-whether a Color Filters action exists on iOS 26 at all, under what identifier, and with
-what parameter shape.
+**Given** the Color Filters donors in `.planning/debug/` — exported from the owner's iPhone —
+**when** decrypted and inspected, **then** establish whether a Color Filters action exists on
+iOS 26 at all, under what identifier, and the exact serialization of both the **apply** and
+**restore** legs Ash needs.
+
+Started from `Set Colour Filters.shortcut`, which had sat unopened in `.planning/debug/`.
+`Donor 9` and `Donor 9.1` were built to order during the spike, each one correcting a
+conclusion the previous pass had drawn from schema rather than from a device.
 
 Driven by `.planning/phases/999.3-grayscale-ash-capability-donor-test/2026-08-16-grayscale-ash-capability-donor-test.md`
 (step 1: "Decrypt the donor already on disk").
 
 ## Research
 
-No external research was needed — this spike is answered entirely from two local evidence
-sources, both above the ToolKit catalog in this project's evidence hierarchy:
+No external research was needed — this spike is answered entirely from local evidence:
 
-| Source | Tier | What it settles |
-|---|---|---|
-| `.planning/debug/Set Colour Filters.shortcut`, decrypted | 1 — device ground truth | The identifier the device actually emits, and its serialization |
-| `/System/Library/PrivateFrameworks/AccessibilityUtilities.framework/…/Intents.intentdefinition` | Apple's own schema | Parameter types, enum cases and their integer indices, response parameters |
-| Bundled ToolKit snapshots (v63 / v78 / v78-ios27) | 3 — catalog | Confirms the AX identifier is absent from **all three** — a genuine catalog gap |
+| Source | Tier | What it settles | Where it misled |
+|---|---|---|---|
+| Three decrypted donors (`Set Colour Filters`, `Donor 9`, `Donor 9.1`) | 1 — device ground truth | The identifier, and the exact serialization of On, Off, and Toggle | — |
+| `/System/Library/PrivateFrameworks/AccessibilityUtilities.framework/…/Intents.intentdefinition` | Apple's own schema | Parameter *names*, the `turn`/`toggle` case ids, the response parameter, and that no read-back intent exists | Its declared `Integer` types and `on`=1/`off`=2 case indices are **not** the plist encoding — see Finding 2 |
+| Bundled ToolKit snapshots (v63 / v78 / v78-ios27) | 3 — catalog | The AX identifier is absent from **all three** — a genuine catalog gap | Its `state: bool` typing was **right**, and closer to the truth than the schema |
 
 The Playground's own `APPINTENTS.md` (line 116) already documents the general pattern:
 `AccessibilityUtilities.framework` defines private `AX*Intent` variants carrying
@@ -56,18 +59,22 @@ Then, for the schema:
 plutil -convert xml1 -o /tmp/ax.xml /System/Library/PrivateFrameworks/AccessibilityUtilities.framework/Versions/A/Resources/Base.lproj/Intents.intentdefinition
 ```
 
-Archived outputs: `SetColourFilters-Shortcut.xml`, `AXToggleColorFilters-intentdefinition.txt`.
+Repeat for `Donor 9.shortcut` and `Donor 9.1.shortcut`.
+
+Archived outputs: `SetColourFilters-Shortcut.xml`, `Donor9-Shortcut.xml`,
+`Donor9.1-Shortcut.xml`, `AXToggleColorFilters-intentdefinition.txt`.
 
 ## What to Expect
 
-A single-action plist. Either it contains a Color Filters identifier (settling CAP-20 as
-available on iOS), or it does not (closing CAP-20 as confirmed-by-donor).
+Small plists, one to two actions each. Either they contain a Color Filters identifier
+(settling CAP-20 as available on iOS), or they do not (closing CAP-20 as confirmed-by-donor).
+If present, the parameter values across the On / Off / Toggle donors pin the serialization.
 
 ## Results
 
-### VALIDATED — Color Filters exists on iOS 26, under a different identifier than the audit trail records
+### VALIDATED — Color Filters exists on iOS 26, under a different identifier than the audit trail records, and both legs of Ash are now donor-confirmed
 
-The donor's entire action list is one action:
+The first donor's entire action list is one action:
 
 ```xml
 <key>WFWorkflowActionIdentifier</key>
@@ -94,47 +101,50 @@ The container prefix mirrors the macOS one exactly (`AXSettingsShortcuts` ↔
 `UASettingsShortcuts`), so the whole 29-strong `UAToggle*` accessibility family very likely
 has an `AXToggle*` iOS twin — but only Color Filters is donor-confirmed here.
 
-### Finding 2 — the two parameters serialize in **different shapes**: `operation` is a string, `state` is an integer
+### Finding 2 — `state` is a **bool-as-integer** (`0` = Off, `1` = On); `operation` is a string and should be omitted
 
-A second donor (`Donor 9.shortcut`, arriving mid-spike) forced a correction to this finding.
-Its two actions are:
+This finding was rewritten twice as donors arrived. Both revisions mattered, and the second
+one caught a value that would have shipped a broken restore.
 
-```xml
-<!-- action 1 -->
-<key>operation</key><string>toggle</string>
-<key>state</key><integer>1</integer>
+**Donor evidence, all three artifacts:**
 
-<!-- action 2 -->
-(no parameters at all beyond UUID)
-```
+| Donor | Serialized parameters | Built in the UI as |
+|---|---|---|
+| `Set Colour Filters.shortcut` | `state` `<integer>1</integer>` | Turn Color Filters **On** |
+| `Donor 9.shortcut` action 1 | `operation` `<string>toggle</string>`, `state` `<integer>1</integer>` | **Toggle** Color Filters |
+| `Donor 9.shortcut` action 2 | *(none)* | untouched default |
+| `Donor 9.1.shortcut` | `state` `<integer>0</integer>` | Turn Color Filters **Off** |
 
-So the shapes are **mixed**, and my first reading of Apple's schema — that both are integers,
-because the intentdefinition types both as `Integer` — was wrong:
+Donor 9.1 carries the same `UUID` as Donor 9's action 2 — it is that untouched action, set to
+Off. So the pairing is exact and the reading is unambiguous.
 
-| Parameter | Serialized as | Cases | Donor-confirmed |
+**Final shapes:**
+
+| Parameter | Serialized as | Values | Donor-confirmed |
 |---|---|---|---|
-| `operation` | **string** (enum case id) | `turn`, `toggle` | `"toggle"` ✓ — `"turn"` not yet |
-| `state` | **integer** (enum index) | `unknown`=0, `on`=**1**, `off`=**2** | `1` ✓ — `2` not yet |
+| `state` | integer, **boolean-valued** | **`0` = Off, `1` = On** | both ✓ |
+| `operation` | **string** (enum case id) | `toggle` when explicitly chosen; **elided when Turn** | `"toggle"` ✓, elision ✓ |
 
-**The rule that explains it** is in the intentdefinition itself: `Operation` carries
-`INEnumType: "Regular"`, `State` carries `INEnumType: "State"`. A `Regular` enum renders as a
-picker and serializes its **case id string**; a `State` enum renders as an On/Off switch and
-serializes its **integer index**. This also explains why the macOS ToolKit catalog reports
-`state` as `typePythonName: bool` with trueString `On` — that is the same State enum surfaced
-as a boolean. The intentdefinition's `Integer` type is the underlying storage, not the plist
-encoding, and reading it as the encoding is the mistake to avoid.
+**`off` is `0`, not `2`.** The intentdefinition's `State` enum lists `unknown`, `on`=1,
+`off`=2 — and Shortcuts does **not** use those indices. It renders a `State`-typed enum as an
+On/Off switch and writes a plain boolean as an integer. This is exactly what the macOS ToolKit
+catalog was saying all along when it typed `state` as `typePythonName: bool` with trueString
+`On` / falseString `Off`; the catalog was right and the enum indices were a red herring.
 
-Two data points support the rule; treat it as strong but not proven.
+Writing `state = 2` for Off — which this spike asserted from Apple's schema before Donor 9.1
+existed — would have been a live bug on the **restore** leg, the leg whose failure leaves a
+user stuck in grayscale. It was caught only because the donor was requested rather than
+inferred.
 
-**What is genuinely donor-confirmed for Ash:** the apply leg. `state = 1` is On.
-**What is not:** `operation = "turn"` and `state = 2` (off) — both come from Apple's schema
-and the macOS enum-case catalog, not from a device. Those are exactly the two values the
-**restore** leg needs, and the restore leg is the one whose failure strands a user filtered.
-See Open Questions.
+**`operation` should simply be omitted.** Both a "Turn On" and a "Turn Off" configuration
+serialize with no `operation` key at all; the key appears only when the user picks `toggle`.
+So `turn` is the elided default, and PROSOCHĒ never needs to write the `"turn"` literal — the
+one literal in this whole investigation that no donor has ever emitted. Omitting it is both
+the donor-verified shape *and* the shape that avoids an unconfirmed string.
 
-Action 2 also shows a **fully parameter-less instance is valid** — so parameter absence is
-not reliably "the default"; Shortcuts appears to serialize a parameter once touched, and
-donor 1 carried `state` with no `operation` while donor 9 action 1 carries both.
+**Corrected rule for `INEnumType`:** `Regular` → picker, serializes its **case id string**;
+`State` → On/Off switch, serializes a **boolean as `0`/`1`** — *not* the enum's declared case
+index. The intentdefinition's `Integer` storage type predicts neither.
 
 There is **no `ShowWhenRun` parameter** on the iOS intent. It exists only on the macOS
 `UAToggleColorFiltersIntent` catalog row.
@@ -195,11 +205,21 @@ is the stale claim.
    pass had been written and committed. It carries `operation` as the **string** `"toggle"`,
    not an integer — so my step-5 reading of the intentdefinition (both parameters are
    `Integer`, therefore both serialize as integers) was wrong, and BD-01-R's original
-   `operation = turn` string was right on that point. Corrected in Finding 2 and in
-   BD-01-R2. The lesson is the same one the spike started with, turned on itself: Apple's
-   schema outranks the catalog but still sits *below* a donor, and I applied it as if it
-   were the top tier. `INEnumType` (`Regular` vs `State`) is the discriminator that
-   reconciles both donors.
+   `operation = turn` string was right on that point.
+9. **A third donor corrected me again, on the value that actually mattered.** `Donor 9.1`
+   is Donor 9's untouched action set to **Off** — same UUID — and it writes
+   `state` `<integer>0</integer>`. So `state` is a plain **bool-as-integer**, and the
+   intentdefinition's `on`=1 / `off`=2 case indices are not the serialization at all. My
+   asserted `state = 2` for the restore leg was wrong and would have shipped a bug that
+   leaves a user stuck in grayscale.
+
+   The pattern across steps 5, 8 and 9 is one mistake made three times: treating Apple's
+   `.intentdefinition` as top-tier evidence. It is genuinely valuable — it named the
+   parameters and the `turn`/`toggle` cases correctly — but it describes the *intent's*
+   type system, not what Shortcuts writes to the plist. The macOS ToolKit catalog, which
+   typed `state` as a plain `bool`, was closer to the truth than the schema was, and the
+   donor was closer still. The evidence hierarchy in `.claude/CLAUDE.md` already says this;
+   I ranked a new source above a donor because it was precise, and precision is not rank.
 
 ## Impact on the Audit Trail
 
@@ -210,31 +230,32 @@ reasoning plus owner assertion.
 BD-01-R's **build recipe is wrong in three ways** and would not have produced a working
 Ash if Phase 5 had built it verbatim:
 
-| BD-01-R says | Donors + Apple schema say |
+| BD-01-R says | Donors say |
 |---|---|
 | `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` | `com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent` |
-| `operation = turn` (string) | ✓ correct — string enum case id (`"toggle"` donor-confirmed) |
-| `state = On` (bool) | integer — `1` = on (donor-confirmed), `2` = off |
+| `operation = turn` (string) | right in shape, but **omit it** — `turn` is the elided default and no donor ever emits that literal |
+| `state = On` (bool) | right that it is a bool — serialized as an integer, `1` = On, `0` = Off |
 | set `ShowWhenRun = Off` | no such parameter on the iOS intent |
 
-So BD-01-R got the **identifier** wrong and the **`state` encoding** wrong; its `operation`
-shape was right.
+**BD-01-R got exactly one thing wrong: the identifier.** Its parameter model — `operation` a
+string, `state` a bool — was correct, and this spike's two intermediate "corrections" of it
+were both wrong. The only substantive change to its Design section is the identifier, plus
+dropping `ShowWhenRun` and preferring omission of `operation`.
 
 Superseded by **BD-01-R2** in `docs/CAPABILITY-DECISIONS.md`; CAP-20 updated in
 `docs/BUILD-NOTES.md`.
 
 ## Open Questions (next donor)
 
-Both remaining gaps are on the **restore** leg — the leg whose failure strands a user in
-grayscale — so neither should be closed by inference.
+**Closed by Donor 9.1:** the OFF write. Both legs Ash needs are now donor-confirmed —
+`state = 1` to apply, `state = 0` to restore, `operation` omitted in both. Nothing in
+CIRC-02's write path rests on inference any more.
 
-1. **Confirm the OFF write.** Build one action as **"Turn Color Filters Off"**. Expected:
-   `operation` = `<string>turn</string>`, `state` = `<integer>2</integer>`. This closes the
-   last two unconfirmed literals in one donor, and confirms the `Regular`→string /
-   `State`→integer rule on a third data point.
-2. **Is the `state` response consumable?** A donor with Set Color Filters → Show Result
-   (its output) would establish whether the response parameter surfaces as a magic
-   variable — and therefore whether the toggle-probe read-back of Finding 3 is buildable.
+**Still open — one question, and it is optional:**
 
-Donor 9 answered neither: both its actions leave `operation`/`state` at values that don't
-exercise the off path.
+1. **Is the `state` response consumable?** A donor wiring Set Color Filters → Show Result
+   (its output) would establish whether the response parameter surfaces as a magic variable,
+   and therefore whether the toggle-probe read-back of Finding 3 is buildable. This would
+   only *improve* §21 compliance — it would let Ash detect and preserve a user's
+   pre-existing filter rather than requiring them to opt out. Ash ships without it under
+   BD-01-R2's opt-in guard, so this is an enhancement, not a gate.
