@@ -130,7 +130,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Ash remains a validator-clean non-environmental pause; Dimming and Silence act only after capturing a restorable original.
 - [Phase ?]: Leaving wraps primitive dispatch only after the initial session save.
 - [Phase ?]: Exit selection remains deterministic and Config-driven without model, random, or network actions. **Reaffirmed and extended 2026-08-16 (user decision):** the Exile split offers deterministic exit *or* home, and nothing else — no random exits. Both Exile Circles are bound by this, not just the voluntary Leaving path. No `number.random`, shuffle, or other nondeterminism enters the exit path.
-- [Phase ?]: Sentient uses the device-evidenced Apple Intelligence on Device model literal; no OS-27-only keys.
+- [Phase ?]: Sentient uses the device-evidenced Apple Intelligence on Device model literal; no OS-27-only keys. **Reconciled 2026-08-17 (quick task 260817-2ng):** this line was the accurate one — the literal was recovered by device round-trip on 2026-08-13 (`docs/device-evidence/UseModel-OnDevice.xml`, commit `013a217`) and is hardcoded at `tools/build_sentient.py:29`. CAP-26's `UNRECOVERED-LOCALLY` token was the stale one and now reads `ROUND-TRIP-CONFIRMED`; DEV-03 and UA-02 are closed; BD-04-R2 records that Branch A was reached. **Still open:** the runtime no-network check (that `Use Model` cannot silently fall back to Private Cloud Compute) needs an Apple-Intelligence-capable iPhone; until it passes, no user-facing on-device guarantee copy changes.
 - [Phase ?]: Completed-slow, empty, or malformed audit output falls through to Dumb; hung model cancellation is unavailable at target 26.
 - [Phase ?]: Kept the numeric-coercion fix purely additive at the NUMERIC_OPERAND_FIELDS table per plan instruction; no other function edited.
 - [Phase ?]: Fixed two pre-existing, unrelated stale self-check assertions (docs/state_engine_self_check.py gettimebetweendates count; docs/phase5_self_check.py router-gate ancestry) because the plan's own required verify chain needed both scripts to pass (Rule 1/3 deviation).
@@ -212,6 +212,7 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 | 260814-kqm | Correct signed AEA1 `.shortcut` recovery instructions | 2026-08-14 | adc96a3 | [260814-kqm-correct-8-signed-aea1-shortcut-artifacts](./quick/260814-kqm-correct-8-signed-aea1-shortcut-artifacts/) |
 | 260814-kut | Disambiguate deviation IDs and guard rebuild provenance | 2026-08-14 | 05f69fc | [260814-kut-disambiguate-the-cycle-3-speaktext-devia](./quick/260814-kut-disambiguate-the-cycle-3-speaktext-devia/) |
 | 260816-ukb | Strip OPEN_BISECT/ROUTER_TRACE/BUILD_STAMP debug scaffolding | 2026-08-16 | 154b998 | [260816-ukb-strip-the-open-bisect-debug-breadcrumb-s](./quick/260816-ukb-strip-the-open-bisect-debug-breadcrumb-s/) |
+| 260817-2ng | Reconcile stale Use Model On-Device literal audit trail (CAP-26/DEV-03/UA-02/BD-04) | 2026-08-17 | pending | [260817-2ng-use-model-literal-reconciliation](./quick/260817-2ng-use-model-literal-reconciliation/) |
 
 ## Deferred Items
 

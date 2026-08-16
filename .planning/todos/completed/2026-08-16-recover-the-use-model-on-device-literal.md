@@ -81,3 +81,38 @@ A `Use Model.shortcut` donor already sits unanalysed in `.planning/debug/`.
 - `2026-08-15-fork-sentient-post-openpath-fix.md` — the Sentient rebuild this unblocks.
 - `2026-08-16-merge-dumb-and-sentient-into-one-fork-selected-at-onboarding.md` — a merged
   fork makes this blocking for *all* users, not just Sentient users.
+
+## Closed — 2026-08-17 (quick task `260817-2ng`)
+
+**Closed as bookkeeping.** Step 1 of the Solution above ("it is possible the literal was
+already recovered and the audit trail was not updated — in which case this todo is mostly
+bookkeeping, and that is a good outcome worth five minutes of checking") is exactly what
+happened. No device round trip was needed or performed.
+
+The recovery had already taken place on **2026-08-13**: `WFLLMModel` = `Apple Intelligence on
+Device`, recovered from a device export at `docs/device-evidence/UseModel-OnDevice.xml` line 17,
+written up in `docs/BUILD-NOTES.md` §11, committed in `013a217`, and already hardcoded at
+`tools/build_sentient.py:29` (`# direct device-export evidence`). Only §4/§5/§6/§7 of
+BUILD-NOTES and BD-04 had not caught up. The contradiction named in Problem point 2 resolved in
+favour of `.planning/STATE.md` — its "device-evidenced" line was right and CAP-26's
+`UNRECOVERED-LOCALLY` token was the stale one.
+
+Reconciled: CAP-26 now reads `ROUND-TRIP-CONFIRMED` with the literal and its evidence; DEV-03
+and UA-02 are closed (and their §7 index rows updated); `docs/CAPABILITY-DECISIONS.md` gains
+BD-04-R2 recording that BD-04's **Branch A** was reached. Steps 2 and 3 of the Solution are
+satisfied by the prior work; step 4 (deterministic fallback, SENT-05) is untouched and remains
+mandatory. `tools/build_sentient.py` was not modified — it was already correct.
+
+**Still open — needs a device.** Step 5 of the Solution is **not** done: nobody has confirmed on
+device that `Use Model` actually runs with **no network available**, i.e. that it cannot
+silently fall back to Private Cloud Compute despite the On-Device literal. That needs an
+Apple-Intelligence-capable iPhone (15 Pro or later) with Wi-Fi and cellular both off. The
+literal proves what the *file requests*, not what the *runtime does*.
+
+Consequently **step 6 is also not done and must not be done yet**: the user-facing on-device
+guarantee copy (README §26, the Control Room Note, any release text) is deliberately
+**unchanged** and still says what D-06/DIST-07 required. A literal that validates but silently
+falls back to PCC would be worse than no claim at all. This is not to be described as verified.
+
+Tracked going forward in `docs/BUILD-NOTES.md` §6 (UA-02 closure note) and
+`docs/CAPABILITY-DECISIONS.md` BD-04-R2 as the single remaining open item on this capability.

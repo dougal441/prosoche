@@ -87,6 +87,13 @@ Decisions in this document are numbered `BD-NN` ("blocker decision"). They are *
 
 ## BD-04 — Use Model On-Device selection literal
 
+> **Outcome superseded — see BD-04-R (constraint relaxed) and BD-04-R2 (Branch A reached: the
+> literal *was* recovered, `Apple Intelligence on Device`).** The record below is retained
+> unaltered: its reasoning — above all the refusal to guess the literal — is why the device
+> round-trip happened, and it remains binding. Read BD-04-R2 before acting on the gate or the
+> "what the product says instead" clause below. (The guarantee copy itself is unchanged; only
+> the reason it is unchanged has moved.)
+
 **Question:** The Sentient fork's central hard constraint (D-03: "Sentient uses the Apple On-Device model only. Never Private Cloud Compute, never ChatGPT, never a web API") requires hardcoding the `Use Model` action's `WFLLMModel` parameter to whatever plist enum string pins the On-Device source. Per D-11, this could not be concluded before the ToolKit's enum snapshots, the golden-shortcut corpus, and the prose reference docs were all actually checked for that literal. What is the built form of On-Device pinning?
 
 **Evidence:** CAP-26 in `docs/BUILD-NOTES.md` §4, and its supporting `DEV-03` entry in §5. Summary: `is.workflow.actions.askllm` ("Use Model") and all five of its parameters — including `WFLLMModel`'s key and its typed-enum name `com_apple_shortcuts_wfask_llmmodel_parameter` — are fully evidenced and `VERIFIED`, present in all three bundled id snapshots including the iOS-27-Simulator-specific one (a stronger provenance signal than most other rows in this audit). Three recovery attempts were made for the enum's case list specifically: (1) `com_apple_shortcuts_wfask_llmmodel_parameter`, looked up as a key in `toolkit-v78-first-party-enum-cases.json`'s `types` object — absent, no matching key at all; a superficially similar key (`com_apple_generativeassistanttools_generative_assistant_extension_llmpartner`, 2 cases `chatGPT`/`other`) exists in that same file but belongs to an unrelated tool and was explicitly checked and rejected, not silently missed; (2) all 19 golden-shortcut XMLs searched for `WFLLMModel` and `askllm` — zero matches in any file, no real-world shortcut in the corpus uses this action; (3) the two worked `Use Model` examples in `EXAMPLES.md` both set `WFLLMModel` to the literal string `"Apple Intelligence"` — recorded, and explicitly labelled as **not** the answer, since it predates the iOS 26 three-way model picker (On-Device / Private Cloud Compute / Extension Model) that external corroboration (`.planning/research/STACK.md` §3 row 15, MacStories/TechCrunch/AppleInsider reporting, MEDIUM confidence, external-only) describes. No enum case list for the On-Device value exists anywhere in the bundled ToolKit snapshot.
@@ -426,3 +433,66 @@ Decision 4 and do not re-cut it. The Circle matrix in
 re-cut once, here, rather than after each of them.
 
 **Requirement:** AUDIT-02 (extends), CIRC-02, CIRC-06, CIRC-08
+
+---
+
+## BD-04-R2 — Use Model model source: **Branch A was reached**
+
+**Supersedes:** BD-04's *outcome* (Branch B — "the literal was not recovered") and BD-04-R's
+contingency ("ship without the key if the literal is never recovered"). BD-04's **reasoning**
+is not superseded and is not rewritten: refusing to guess the literal was correct, and it is
+the reason a device export was needed at all. BD-04-R's still-binding rule — **never write a
+guessed `WFLLMModel` value** — also stands unchanged, and is now moot in the good direction:
+the value is not guessed, it is measured.
+
+**Recorded 2026-08-17. The recovery itself happened 2026-08-13; only the audit trail was stale.**
+
+**Branch A is reached.** BD-04's exit condition has been satisfied in full:
+
+```
+WFWorkflowActionIdentifier = is.workflow.actions.askllm
+WFLLMModel                 = Apple Intelligence on Device      <- exact string, verbatim
+```
+
+**Evidence:** `docs/device-evidence/UseModel-OnDevice.xml` line 17 — the plist of a shortcut
+built on the owner's own iPhone (iOS 26) with **On-Device** selected by hand in the Model
+picker, exported and recovered here via the `aea decrypt` + `aa extract` procedure recorded in
+`docs/BUILD-NOTES.md` §11. Committed in `013a217`. This is tier-1 device evidence — the highest
+tier in this project's evidence hierarchy — not a ToolKit-bundle inference. CAP-26's literal
+status token is `ROUND-TRIP-CONFIRMED`; DEV-03 is closed; UA-02 is closed.
+
+**One incidental correction, worth recording.** UA-02's stated rationale included the claim
+that a signed `.shortcut` "cannot be read back as plaintext." That is false — the AEA1 archive
+is *signed*, not encrypted, and unlocks with the leaf certificate's public key. It is left in
+place in `docs/BUILD-NOTES.md` §6 as the record of what was believed, with §11 as the
+correction. The part of the rationale that held is the part that mattered: the picker selection
+genuinely required an Apple-Intelligence-capable device.
+
+**What this changes:**
+
+- Phase 8 **writes** `WFLLMModel = Apple Intelligence on Device`. Already done —
+  `tools/build_sentient.py:29`, annotated `# direct device-export evidence`.
+- BD-04's prohibition on writing any `WFLLMModel` value is lifted **for this one measured
+  literal only**. Any other value would still be a guess and is still forbidden.
+- BD-04-R's relaxation to Private Cloud Compute is **no longer needed** to ship, though it
+  remains authorised as a fallback if this key is ever rejected on an older device.
+- BD-04's requirement of a deterministic fallback for every Sentient model call (SENT-05) is
+  **unchanged and still mandatory**. Recovering the literal does not remove it: the model can
+  still fail, stall, or return malformed output, and Sentient must degrade to Dumb-equivalent
+  behaviour rather than break the run.
+
+**What this does NOT change — the guarantee copy stays as it is.** The literal establishes what
+the shipped **file requests**. It does not establish what the **runtime does**. No one has yet
+confirmed on device that `Use Model` actually runs with **no network available** — that it
+cannot silently fall back to Private Cloud Compute despite the On-Device literal. That check
+needs an Apple-Intelligence-capable iPhone (15 Pro or later) with Wi-Fi and cellular both off,
+and it is **the single remaining open item on this capability**.
+
+Therefore BD-04's "what the product says instead" copy — and BD-04-R's "prefers on-device, user
+selects the source after import" framing — **remain in force verbatim** in the Control Room
+Note, the README, and any release text. Nothing user-facing may be upgraded to an enforced
+on-device claim on the strength of the literal alone. Per D-06, PROSOCHĒ does not claim a
+guarantee it has not demonstrated, and a literal that validates while silently routing to PCC
+would be worse than making no claim at all. This is **not** to be described as verified.
+
+**Requirement:** AUDIT-06 (now satisfied by its primary branch, not only the permitted alternative)
