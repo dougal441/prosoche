@@ -102,3 +102,21 @@ now-archived debug file either.
 - `.planning/debug/resolved/open-routing-sequence-error.md` — Process Note (MANIFEST.md
   staleness), cycle 14 (brightness/volume audit), cycle 16 (filter.notes fix, closure).
 - `.planning/debug/HANDOFF.md` §6 items 2, 3, 10, 11 — this todo's origin.
+
+---
+
+## CLOSED 2026-08-17 — fully absorbed by Phase 10
+
+Every item is now resolved or dead. Moved to `completed/`.
+
+| Item | Disposition |
+|---|---|
+| 1. Strip debug scaffolding | **DONE 2026-08-16** (quick task `260816-ukb`), recorded in-place above. |
+| 2. Add `.gitignore` | **No work needed.** Phase 10 measured it: `.DS_Store`, `__pycache__/` and `*.pyc` were already covered and `git status --ignored` confirmed them ignored. Recorded in `10-04-SUMMARY.md` so it is not re-litigated. |
+| 3. Refresh `MANIFEST.md` | **DONE** — Phase 10 plan 10-04 (`ad0a9ad`) refreshed it and added `docs/manifest_check.py`, which now fails the build if a row drifts from its artifact. |
+| 4. Device-confirm the Control Room note-picker fix | **Carried, not dropped.** It is Test 4 of `.planning/phases/10-ship-readiness-remainder-and-ux-lite-pass/10-UAT.md`, blocked only on DIST-03 (no connected iPhone). Phase 10 additionally *gated* the previously-ungated `shownote`, so Test 5 now also checks the other eight menu items no longer end in the Notes app. |
+| 5. Execute the brightness/volume cut | **DEAD.** Cancelled by user decision 2026-08-16, reaffirmed 2026-08-17. Phase 10 was re-planned specifically to exclude it, and `docs/environmental_restore_check.py` (`b18d415`) now pins `dimming()`, `silence()`, `restore_managed_settings()`, the `settings_snapshot` seed and both `NUMERIC_OPERAND_FIELDS` entries — the build fails if any is removed, so the cut cannot return by accident. |
+
+Phase 10 also delivered work this todo never asked for: the Circle 0 silent band, the
+`Setup Check` menu item, the `shownote` gate, and five new structural checks. See
+`.planning/phases/10-ship-readiness-remainder-and-ux-lite-pass/`.
