@@ -1,0 +1,6 @@
+# Personal device photos/screenshots (debug evidence) — never commit these
+.planning/debug/*.jpg
+.planning/debug/*.jpeg
+.planning/debug/*.png
+.planning/debug/*.heic
+*.DS_Store
