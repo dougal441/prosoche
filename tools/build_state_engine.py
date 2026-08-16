@@ -1162,6 +1162,7 @@ def close_pipeline():
     a += [reload_if] + read_value("active_session.id", variable("Reloaded State"), "Reloaded Session ID")
     owns_g, owns_if = if_block("Reloaded Session ID", 4, string="captured-session-placeholder")
     owns_if["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
+    owns_if["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Captured Session ID")
     a += [comment("""Compare the reloaded active session with the captured owner:
 - A matching ID means this CLOSE still owns the session.
 - A different ID means a newer OPEN owns state; this otherwise branch is intentionally Nothing only.

@@ -26467,7 +26467,25 @@ Report the LAST letter you see.</string>
 					</dict>
 				</dict>
 				<key>WFConditionalActionString</key>
-				<string>￼</string>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Captured Session ID</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
 			</dict>
 		</dict>
 		<dict>
