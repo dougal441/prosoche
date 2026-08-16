@@ -93,11 +93,16 @@ an unanalysed `Set Colour Filters.shortcut` sitting in `.planning/debug/` the wh
   `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` that both prior
   decisions argued over is the **macOS twin**. The iOS identifier is absent from all three
   bundled ToolKit snapshots, so no catalog query could ever have found it.
-- **Parameters are integers, not enum-id strings or bools.** `state`: `on`=1, `off`=2.
-  `operation`: `turn`=1, `toggle`=2, elided by the device when unset. There is no
-  `ShowWhenRun` on the iOS intent. Note `off` is **2**, not 0 or `<false/>` — a bool
-  intuition gets the restore write wrong, which is the failure mode that strands a user
-  filtered.
+- **The two parameters take different shapes.** `operation` is a **string** enum case id
+  (`turn` | `toggle`); `state` is an **integer** enum index (`on`=1, `off`=2). No
+  `ShowWhenRun` on the iOS intent. `INEnumType` (`Regular` → string, `State` → integer), not
+  the declared storage type, is what predicts the encoding — reading the intentdefinition's
+  `Integer` as the encoding is what got `operation` wrong on the first pass, corrected when
+  Donor 9 arrived. Note `off` is **2**, not 0 or `<false/>`.
+- **The restore leg is not donor-confirmed.** Both donors only exercise `state = 1` (on);
+  `operation = "turn"` and `state = 2` still rest on Apple's schema. Those are precisely the
+  two literals whose failure leaves a user stuck in grayscale, so BD-01-R2 gates Phase 5's
+  CIRC-02 restore path on one further donor built as "Turn Color Filters Off".
 - **Still no read-back.** No `Get*`/`Query*` intent exists for any accessibility setting
   across all 35 intents in the framework, so §21's opt-in remedy
   (`safety.ash_managed_color_filters`) governs, unchanged. One untested lead: every
@@ -114,7 +119,7 @@ an unanalysed `Set Colour Filters.shortcut` sitting in `.planning/debug/` the wh
 | 002 | close-automation-vs-screen-lock | standard | Given a tracked app in foreground, when the user locks the screen (vs. switches app), then determine whether the "App Is Closed" Personal Automation fires the same `CLOSE` signal in both cases | VALIDATED — yes, screen lock fires CLOSE | session-model, close-pipeline, personal-automations |
 | 003 | device-model-literal | standard | Given a real iPhone, when Get Device Details queries "Device Model", then the exact literal string format (identifier vs marketing name) is known | INVALIDATED ✗ | shortcuts, device-detection |
 | 004 | capability-gate | standard | Given a single merged shortcut with a manual opt-in toggle, when the core deterministic escalation runs before the optional Sentient (Use Model) step, then a Use Model failure never prevents the core intervention from firing | VALIDATED ✓ | shortcuts, device-detection, state-machine |
-| 005 | ios-color-filters-identifier | standard | Given the unanalysed donor `Set Colour Filters.shortcut`, when decrypted, then the real iOS 26 Color Filters identifier and parameter serialization are established as device ground truth | VALIDATED ✓ — exists on iOS as `AX*`, not the `UA*` the audit trail recorded | capability-audit, evidence-hierarchy, accessibility, ash, donor |
+| 005 | ios-color-filters-identifier | standard | Given the donors `Set Colour Filters.shortcut` and `Donor 9.shortcut`, when decrypted, then the real iOS 26 Color Filters identifier and parameter serialization are established as device ground truth | VALIDATED ✓ — exists on iOS as `AX*`, not the `UA*` the audit trail recorded; apply leg confirmed, restore leg still schema-only | capability-audit, evidence-hierarchy, accessibility, ash, donor |
 
 ## Spun-Out Work
 

@@ -94,20 +94,47 @@ The container prefix mirrors the macOS one exactly (`AXSettingsShortcuts` ↔
 `UASettingsShortcuts`), so the whole 29-strong `UAToggle*` accessibility family very likely
 has an `AXToggle*` iOS twin — but only Color Filters is donor-confirmed here.
 
-### Finding 2 — parameters are **integers**, not enum id strings and not bools
+### Finding 2 — the two parameters serialize in **different shapes**: `operation` is a string, `state` is an integer
 
-From Apple's `Intents.intentdefinition` for intent `ToggleColorFilters` (class prefix `AX`):
+A second donor (`Donor 9.shortcut`, arriving mid-spike) forced a correction to this finding.
+Its two actions are:
 
-| Parameter | Type | Enum | Cases |
+```xml
+<!-- action 1 -->
+<key>operation</key><string>toggle</string>
+<key>state</key><integer>1</integer>
+
+<!-- action 2 -->
+(no parameters at all beyond UUID)
+```
+
+So the shapes are **mixed**, and my first reading of Apple's schema — that both are integers,
+because the intentdefinition types both as `Integer` — was wrong:
+
+| Parameter | Serialized as | Cases | Donor-confirmed |
 |---|---|---|---|
-| `operation` | Integer | `Operation` | `unknown` = 0, `turn` = **1**, `toggle` = **2** |
-| `state` | Integer | `State` | `unknown` = 0, `on` = **1**, `off` = **2** |
+| `operation` | **string** (enum case id) | `turn`, `toggle` | `"toggle"` ✓ — `"turn"` not yet |
+| `state` | **integer** (enum index) | `unknown`=0, `on`=**1**, `off`=**2** | `1` ✓ — `2` not yet |
 
-So the donor's `state = 1` is **On** — established, not inferred. To turn Color Filters
-**off**, `state = 2` (not `0`, and not `<false/>`).
+**The rule that explains it** is in the intentdefinition itself: `Operation` carries
+`INEnumType: "Regular"`, `State` carries `INEnumType: "State"`. A `Regular` enum renders as a
+picker and serializes its **case id string**; a `State` enum renders as an On/Off switch and
+serializes its **integer index**. This also explains why the macOS ToolKit catalog reports
+`state` as `typePythonName: bool` with trueString `On` — that is the same State enum surfaced
+as a boolean. The intentdefinition's `Integer` type is the underlying storage, not the plist
+encoding, and reading it as the encoding is the mistake to avoid.
 
-The donor omits `operation` entirely — Shortcuts elides unset/default parameters — proving
-a `state`-only invocation is what the device writes and runs.
+Two data points support the rule; treat it as strong but not proven.
+
+**What is genuinely donor-confirmed for Ash:** the apply leg. `state = 1` is On.
+**What is not:** `operation = "turn"` and `state = 2` (off) — both come from Apple's schema
+and the macOS enum-case catalog, not from a device. Those are exactly the two values the
+**restore** leg needs, and the restore leg is the one whose failure strands a user filtered.
+See Open Questions.
+
+Action 2 also shows a **fully parameter-less instance is valid** — so parameter absence is
+not reliably "the default"; Shortcuts appears to serialize a parameter once touched, and
+donor 1 carried `state` with no `operation` while donor 9 action 1 carries both.
 
 There is **no `ShowWhenRun` parameter** on the iOS intent. It exists only on the macOS
 `UAToggleColorFiltersIntent` catalog row.
@@ -164,6 +191,15 @@ is the stale claim.
 7. **Re-checked the enum-cases file properly** before accusing BD-01-R of a guessed
    literal — descending into `types` showed its `turn`/`toggle` values are sound, and that
    CAP-20's "no case list found" note is the error instead.
+8. **A second donor arrived and corrected me.** `Donor 9.shortcut` landed after the first
+   pass had been written and committed. It carries `operation` as the **string** `"toggle"`,
+   not an integer — so my step-5 reading of the intentdefinition (both parameters are
+   `Integer`, therefore both serialize as integers) was wrong, and BD-01-R's original
+   `operation = turn` string was right on that point. Corrected in Finding 2 and in
+   BD-01-R2. The lesson is the same one the spike started with, turned on itself: Apple's
+   schema outranks the catalog but still sits *below* a donor, and I applied it as if it
+   were the top tier. `INEnumType` (`Regular` vs `State`) is the discriminator that
+   reconciles both donors.
 
 ## Impact on the Audit Trail
 
@@ -174,20 +210,31 @@ reasoning plus owner assertion.
 BD-01-R's **build recipe is wrong in three ways** and would not have produced a working
 Ash if Phase 5 had built it verbatim:
 
-| BD-01-R says | Donor + Apple schema say |
+| BD-01-R says | Donors + Apple schema say |
 |---|---|
 | `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` | `com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent` |
-| `operation = turn` (string), `state = On` (bool) | integers — `operation = 1`, `state = 1` (on) / `2` (off) |
+| `operation = turn` (string) | ✓ correct — string enum case id (`"toggle"` donor-confirmed) |
+| `state = On` (bool) | integer — `1` = on (donor-confirmed), `2` = off |
 | set `ShowWhenRun = Off` | no such parameter on the iOS intent |
+
+So BD-01-R got the **identifier** wrong and the **`state` encoding** wrong; its `operation`
+shape was right.
 
 Superseded by **BD-01-R2** in `docs/CAPABILITY-DECISIONS.md`; CAP-20 updated in
 `docs/BUILD-NOTES.md`.
 
 ## Open Questions (next donor)
 
-1. **Confirm the OFF write.** The donor only proves the ON serialization. A second donor
-   built as "Turn Color Filters Off" would confirm `state = 2` and whether `operation` is
-   still elided.
+Both remaining gaps are on the **restore** leg — the leg whose failure strands a user in
+grayscale — so neither should be closed by inference.
+
+1. **Confirm the OFF write.** Build one action as **"Turn Color Filters Off"**. Expected:
+   `operation` = `<string>turn</string>`, `state` = `<integer>2</integer>`. This closes the
+   last two unconfirmed literals in one donor, and confirms the `Regular`→string /
+   `State`→integer rule on a third data point.
 2. **Is the `state` response consumable?** A donor with Set Color Filters → Show Result
    (its output) would establish whether the response parameter surfaces as a magic
    variable — and therefore whether the toggle-probe read-back of Finding 3 is buildable.
+
+Donor 9 answered neither: both its actions leave `operation`/`state` at values that don't
+exercise the off path.

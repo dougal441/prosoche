@@ -72,12 +72,18 @@ todo was itself out of date: BD-01-R had already reversed CAP-20 to `VERIFIED` f
 reasoning before the donor was ever opened. The donor confirmed that conclusion and
 **corrected its build recipe**, which mattered more.
 
-1. ✅ **Decrypted the donor.** Color Filters exists on iOS 26 as
+1. ✅ **Decrypted the donors** — the one on disk, plus `Donor 9.shortcut`, which arrived
+   mid-spike and corrected the first pass. Color Filters exists on iOS 26 as
    `com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent`. Both
    BD-01 and BD-01-R argued the question using `UAToggleColorFiltersIntent` — the macOS
    twin. The iOS identifier is in none of the three bundled snapshots, so no amount of
-   catalog work could have found it. Parameters are **integers**: `state` `on`=1 / `off`=2,
-   `operation` `turn`=1 / `toggle`=2 (elided when unset), no `ShowWhenRun`.
+   catalog work could have found it. The two parameters take **different shapes**:
+   `operation` is a string case id (`turn` | `toggle`), `state` is an integer index
+   (`on`=1, `off`=2); no `ShowWhenRun`.
+
+   ⚠️ **The restore leg is still schema-only.** Both donors exercise `state = 1` (on) and
+   neither writes `turn` or `off`. BD-01-R2 therefore gates Phase 5's CIRC-02 restore path
+   on one more donor built as "Turn Color Filters Off".
 2. ✅ **Read-back: still none.** No `Get*`/`Query*` intent exists for any accessibility
    setting across all 35 intents in `AccessibilityUtilities.framework`. §21's opt-in remedy
    (`safety.ash_managed_color_filters`) therefore stands exactly as BD-01-R wrote it. One

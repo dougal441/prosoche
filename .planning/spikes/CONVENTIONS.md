@@ -90,10 +90,19 @@ execute Shortcuts itself.
   parameter names, types, enum cases **and their integer indices**, and response parameters —
   for actions absent from every bundled snapshot. This is how spike 005 turned "the donor
   wrote `state = 1`, which probably means On" into a fact, and recovered `off = 2`.
-- **Accessibility-intent enums serialize as integers, and `off` is 2, not 0.** The `State`
-  enum is `unknown`=0, `on`=1, `off`=2; `Operation` is `unknown`=0, `turn`=1, `toggle`=2.
-  A bool intuition (`<false/>`, or `0`) writes the wrong value on the *restore* leg, which is
-  the leg whose failure strands the user in the altered state.
+- **`INEnumType` predicts a parameter's plist encoding — the declared type does not.** In an
+  `.intentdefinition`, an enum tagged `INEnumType: "Regular"` renders as a picker and
+  serializes its **case id string**; one tagged `INEnumType: "State"` renders as an On/Off
+  switch and serializes its **integer index**. Both are declared `Integer` as storage. Spike
+  005 read the storage type as the encoding and got `operation` wrong until a second donor
+  showed it as `<string>toggle</string>` next to `<integer>1</integer>` for `state`.
+- **For accessibility toggles, `off` is 2, not 0 and not `<false/>`.** The `State` enum is
+  `unknown`=0, `on`=1, `off`=2. A bool intuition writes the wrong value on the *restore* leg,
+  which is the leg whose failure strands the user in the altered state.
+- **Parameter absence is not reliably "the default."** Donor 9 contains a fully
+  parameter-less instance of the same action that another donor writes with `state` set —
+  Shortcuts appears to serialize a parameter once touched. Do not infer a default value, or a
+  parameter's existence, from its absence in one donor.
 - **Silent automation probes:** any shortcut wired into a Personal Automation must have
   zero UI (no Show Result/Show Alert) — an automation that displays something interrupts
   the user on every trigger. Log to a Note instead.
