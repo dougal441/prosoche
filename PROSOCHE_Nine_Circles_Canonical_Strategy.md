@@ -1197,9 +1197,29 @@ The names are part of the experience, not clinical classifications.
 
 ---
 
+## 10.6 Circle 0 — the silent band
+
+Pressure below the active profile's first threshold resolves to **Circle 0**.
+
+In Circle 0 the behavioural state engine runs and persists in full — behavioural day, Heat, Gravity, Pressure, open count, and the active session are all computed and written to `state.json` exactly as they are at any other Circle.
+
+Nothing is shown. No notification, no menu, no primitive. Circle 0 is a band the person never sees.
+
+The Leaving/Continue offer and every intervention primitive begin at Circle 1.
+
+The band exists because a user buried in pop-ups from the very first open of the day deletes the Shortcut — which section 12's testing philosophy already names as the key failure. A system that interrupts an open the person has not yet repeated has spent its credibility before it has earned any.
+
+The entry thresholds are prototype values for on-device tuning. The currently shipped entry values — the Pressure at which Circle 1 is first reached — are **Paradise 4, Limbo 3, Inferno 2**.
+
+BD-06's Dante naming covers Circles 1 through 9 only. Circle 0 needs no name, because it is never surfaced; the later Build Addendum 01 rename phase therefore has nothing to assign here.
+
+---
+
 # 11. Nine intervention primitives
 
 The exact order is intentionally testable.
+
+The nine primitives occupy Circles 1 through 9; Circle 0 has no primitive by design (see section 10.6).
 
 The system needs nine behavioural primitives.
 
@@ -1213,6 +1233,8 @@ Example:
 > One breath. What did you come here for?
 
 No lecture.
+
+The Knock is Circle 1's intervention in the Classic and Black Mirror orderings, but it is not the first thing a user encounters — Circle 0 precedes it silently.
 
 ## Primitive B — Ash
 
@@ -1309,6 +1331,8 @@ The user must eventually cool out of Ice.
 Do not assume one order is correct.
 
 Include several arrangements for manual testing.
+
+All three candidate sequences are nine-slot orderings over Circles 1 through 9; none of them assigns anything to Circle 0.
 
 ## 12.1 Classic
 
