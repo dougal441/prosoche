@@ -565,7 +565,7 @@ What is lost: a mis-typed automation now reaches the manual menu instead of an e
 
 Guard: `verify_router_shape()` fails the build if the absence gate reappears, if the `Input Key` tests drift from exactly `OPEN` then `CLOSE`, or if the MANUAL arm leaves the CLOSE `Otherwise` branch. It runs in both fork builders.
 
-### DEV-03 — `speaktext` parameter key remains unverified
+### DEV-C3-03 — `speaktext` parameter key remains unverified
 
 `is.workflow.actions.speaktext` is emitted with `WFInput` (10 sites). The ToolKit v78 catalog lists **no parameters at all** for that identifier, so there is no verified replacement key. Left unchanged deliberately: inventing a key would violate the project's no-fabrication rule. Needs its own device probe.
 
@@ -656,22 +656,283 @@ The artifact contained its own control group: eight picker classes already carri
 
 **Recurrence guard:** `REQUIRED_PICKER_PARAMS` + `verify_required_pickers()` in `tools/build_state_engine.py`, run by both fork builders. It fails the build if any of nine picker classes is missing or non-literal. Verified sensitive: it rejects the pre-fix artifacts naming the exact sites (32 Dumb / 33 Sentient), and it caught a genuine second `count` defect in the Sentient-only insertion path (`build_sentient.py:140`) that the Dumb pass could not see.
 
-### DEV-03 — **CLOSED.** `speaktext` uses `WFText`, not `WFInput`
+### DEV-C3-03 — **CLOSED.** `speaktext` uses `WFText`, not `WFInput`
 
 §13 recorded that `speaktext` "lists no parameters at all" in the catalog and that no verified replacement key existed. **That premise was wrong.** The ToolKit v78 first-party catalog defines six parameters for `is.workflow.actions.speaktext`: `WFSpeakTextWait`, `WFSpeakTextRate`, `WFSpeakTextPitch`, `WFSpeakTextLanguage`, `WFSpeakTextVoice`, and **`WFText`** (type `str`, display name `Text`). `WFInput` is not among them, so the spoken text was never being read. All 10 sites now emit `WFText`, and because it is `str`-typed it is registered in `STRING_ENVELOPE_PARAMS` and takes the `WFTextTokenString` envelope per CAP-05/CAP-05a. No fabrication was required.
 
-### DEV-05 — `math.WFMathOperation` is deliberately left absent at 25 sites
+### DEV-05 — `math.WFMathOperation` is deliberately left absent at 25 sites — **CLOSED on device evidence (cycle 7)**
 
 This looked like the leading candidate for the same defect class: a required enum picker (`Operation`) missing wherever the generator's `math()` helper is called with `op=None` or `op="+"`. It is **refuted by the corpus**, which outranks catalog inference under the cycle-2 `openurl` precedent: golden shortcut `2e0fb675e459` (client `1146.11.1`, minimum client `900` — our exact vintage) omits `WFMathOperation` with our exact key shape (`WFInput` + `WFMathOperand`). Addition is genuinely the implicit default. `math` is therefore **excluded** from `REQUIRED_PICKER_PARAMS`, deliberately and with the reason recorded in source.
+
+**Settled affirmatively 2026-08-14 (cycle 7).** Cycle 6 had re-scored the corpus evidence as a weak 1-of-2 split and reopened this. Device donor 3 (`docs/device-evidence/Donor3-NumericConstructs.xml`, built in Shortcuts.app on the target iPhone and decrypted with §14's recipe) closes it: a Calculate action left at its **default** operation serialises as `WFInput` + `WFMathOperand`, both bare `WFTextTokenAttachment`, with `WFMathOperation` **absent entirely**. Omitting it is what iOS itself does. No generator change is owed.
+
+### DEV-07 — numeric literals are emitted as plist `<integer>`; iOS never does (open, under test)
+
+Neither the 19-shortcut golden corpus nor device donor 3 ever serialises a numeric literal parameter as plist `<integer>` — iOS uses `<real>` or `<string>` without a single exception. Donor 3 writes `number.random`'s `WFRandomNumberMinimum`/`Maximum` as `<string>` and `repeat.count`'s `WFRepeatCount` as `<real>`; the corpus writes `conditional.WFNumberValue` as `<real>` 4/4. This generator emits `<integer>` at 78 sites.
+
+The axis is **not broadly guilty**: `number.WFNumberActionNumber` as `<integer>` executed successfully on device inside the "Open Control Room" menu case, and `conditional.WFNumberValue` as `<integer>` executed in the Control Room refresh block on the same pass. It survives at exactly two sites that are uniquely on the OPEN path, have zero corpus precedent, zero device coverage, and a donor that contradicts them — `number.random` and the nine-step `repeat.count`. Both are **deliberately left unchanged** pending the cycle-7 bisection result, so the measurement is not confounded. See `.planning/debug/open-routing-sequence-error.md` cycle-7 checkpoint.
+
+Recurrence-guard gap this exposes, independent of the outcome: the generator asserts invariants on parameter **key**, value **envelope** and picker **literal**, but has none on the plist **type** of an emitted parameter. Six cycles of sweeps believed to be exhaustive never modelled it.
 
 ### DEV-06 — `openapp` legacy `WFAppIdentifier` retained; `WFWindowingFormat` deliberately omitted
 
 `is.workflow.actions.openapp` emits a legacy `WFAppIdentifier` alongside the donor-verified `WFSelectedApp`, and omits `WFWindowingFormat`. Both left unchanged: extra undefined keys are provably inert in this artifact (`WFShowFilePicker`, `ShowWhenRun` and `WFAppIdentifier` all coexist on device-proven working paths), and `WFWindowingFormat` is OS27-gated, so emitting it would violate the iOS-26 target. Likewise `count` retains an undefined `WFInput` beside the catalog-defined `Input` so the input binds whichever key iOS actually reads.
 
-### Correction owed to `.claude/CLAUDE.md` §8 (carried, not applied)
+### Correction to `.claude/CLAUDE.md` §8 — **APPLIED**
 
-§8 states a signed `.shortcut` "cannot be read back as a plaintext plist". §14's recipe disproves that. Flagged to the user; not edited unilaterally.
+§8 previously stated that a signed `.shortcut` "cannot be read back as a plaintext plist". It now permits and documents the verified `aea decrypt` → `aa extract` workflow, including conversion of `Shortcut.wflow` to XML for inspection or remixing.
+
+### Repository provenance guard — stale pre-cycle-1 branches archived
+
+Cycle 6 found the checkout on `codex/prosochedebug1` / `efb5a79`, before every cycle 1–5 generator fix. The equally stale `codex/round1` ref pointed at the same commit. Both risky names are now archived locally as `codex/archive-stale-prosochedebug1-pre-cycle1` and `codex/archive-stale-round1-pre-cycle1`; the active checkout is `codex/automation-parameter-diagnosis` on the verified `7ca8ebb` lineage.
+
+Before either generator runs, enforce `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678 HEAD`. A nonzero result means the checkout predates the verified cycle-5 baseline: abort without regenerating or signing anything.
 
 ### Scaffolding debt (carried forward, unchanged)
 
-`BUILD_STAMP` (now `build 2026-08-14f`) and `ROUTER_TRACE` both remain ON while the session iterates. See §13's debt table; neither ships.
+`BUILD_STAMP` (now `build 2026-08-14g`), `ROUTER_TRACE` and — added in cycle 7 — `OPEN_BISECT` all remain ON while the session iterates. See §13's debt table; none of them ships. `OPEN_BISECT = False` strips all ten OPEN-path breadcrumb alerts; nothing else depends on them, and with them removed the artifact is byte-identical to build `14f` across all 3,674 actions apart from the two display-only stamp strings.
+
+---
+
+## 15. CAP-06 — operator/operand TYPE validity is a UI-only signal (debug cycle 8 addendum, 2026-08-14)
+
+**The finding.** Six user screenshots (`.planning/debug/IMG_5624.jpg` … `IMG_5629.jpg`) show five
+`If` actions whose **operator chip renders in RED** — rejected by Shortcuts — while the plist
+that produced them is, by every static check this project can run, correct.
+
+| action | condition | code | operand variable |
+|---|---|---|---|
+| 170 | is greater than | 2 | `Cooldown Until` |
+| 377 | is greater than | 2 | `Previous Declared Duration` |
+| 384 | is greater than | 2 | `Previous Overrun` |
+| 409 | is greater than | 2 | `Heat Clamped` |
+| 579 | is less than | 0 | `Stats Count` |
+
+All five carry `WFSerializationType = WFTextTokenAttachment` with `WFNumberValue` present —
+**the shape Donor 3 proved correct on this exact device.** Nothing in the file is wrong by any
+catalog, corpus or donor comparison available here.
+
+**Mechanism.** The operand variables are **text-typed** (the cooldown deadline is, in the
+generator's own comment, "routed through text"). Shortcuts types the operand from its
+provenance, and a text-typed operand offers only eight operators:
+
+> `is` · `is not` · `has any value` · `does not have any value` · `contains` ·
+> `does not contain` · `begins with` · `ends with`
+
+No numeric comparator is offered, so condition codes 0/1/2/3/1003 have **no valid case to
+render** and the chip shows red. Donor 3 is the contrast case: its operands came from **Number**
+actions, and the identical envelope rendered numeric comparators correctly.
+
+`.claude/CLAUDE.md` anticipated this trap for **equality** — *"there is no numeric-equals code;
+use string code 4 on text-coerced numbers"* — but the generator walked into it for **ordering**
+comparisons, which that guidance does not cover.
+
+### Why this matters beyond the immediate bug
+
+**Operator/operand-type validity is visible in the Shortcuts UI and INVISIBLE in the plist
+file.** Every static sweep across eight debug cycles was blind to it *by construction* — not
+through oversight, but because the signal does not exist in the artifact being swept. The
+validator cannot see it, the ToolKit catalog cannot express it, and decrypting the signed
+artifact does not reveal it either.
+
+**Therefore: the on-device eyeball is a first-class evidence channel for this project**, ranking
+alongside device donors and above catalog inference. When an action's correctness depends on the
+*type* of a value flowing into it rather than on the serialisation of the value itself, only the
+UI can adjudicate. Ask the user to look, and treat what they see as ground truth.
+
+This is the fifth distinct parameter-defect axis found in one session, after key name, value
+envelope (`str`), value envelope (`AttributedString`), and required picker enum. Each was
+invisible to the sweep that caught the previous one.
+
+**Status:** ~~not fixed at time of writing~~ — **FIXED in build 2026-08-14i (debug cycle 9).**
+See §16.
+
+---
+
+## 16. CAP-07 — a numeric conditional operand must be TYPED, not re-materialised (debug cycle 9, 2026-08-14)
+
+§15 named the axis (a Text-typed operand offers only string operators, so a numeric comparator
+renders red) but left the **construct** open, because all 18 defective operands per fork are
+**dictionary values** and `.claude/CLAUDE.md` warns that *"comparing a Dictionary Value (text)
+directly in an If often renders blank — pass it through a Text action first."* Donor 3 did not
+cover it: its operands came from `Number` actions, not dictionary values.
+
+### Device ground truth — Donor 4.1
+
+`.planning/debug/"Donor 4.1.shortcut"`, built in Shortcuts.app on the target iPhone and decrypted
+with §14's recipe. It is exactly the construct in question — a Get Dictionary Value output
+compared numerically:
+
+| # | action | parameter |
+|---|---|---|
+| 0 | `is.workflow.actions.dictionary` | `{"heat": "42"}` |
+| 1 | `is.workflow.actions.getvalueforkey` | key `heat` → output `Dictionary Value` |
+| 2 | `is.workflow.actions.conditional` | `WFCondition 2`, `WFNumberValue "10"`, operand as below |
+
+```json
+"WFInput": {"Type": "Variable", "Variable": {
+    "Value": {"Type": "ActionOutput", "OutputName": "Dictionary Value", "OutputUUID": "…",
+              "Aggrandizements": [{"Type": "WFCoercionVariableAggrandizement",
+                                   "CoercionItemClass": "WFNumberContentItem"}]},
+    "WFSerializationType": "WFTextTokenAttachment"}}
+```
+
+**iOS inserts no `Number` action and changes no read chain. It types the variable reference in
+place**, with a coercion aggrandizement, in the conditional's own input slot.
+
+**The control case ships in the same donor pair.** `Donor 4` is the identical shortcut before the
+type was set: same descriptor, **no** `Aggrandizements`, and a `WFCondition 100` test instead. The
+only delta between the two is the coercion plus the numeric condition — which isolates the
+coercion as the thing that makes a numeric operator legal on a dictionary value.
+
+**The UI action is photographed.** `.planning/debug/IMG_5636.jpg` is the type list for a
+`Dictionary Value` chip — Contact / Date / Dictionary / … / **Number** / PDF. Choosing *Number*
+emits the aggrandizement. The fix is the plist form of a tap the user made and recorded.
+
+**It attaches to named variables too**, which is the form our operands take: golden shortcut
+`332c12a0060043b388b22b806be7ab58` carries `WFCoercionVariableAggrandizement` on both
+`{Type: Variable, VariableName: …}` and `{Type: ActionOutput, …}` descriptors — 24 instances
+corpus-wide. The aggrandizement is a property of the descriptor, not of the ActionOutput form.
+
+### The apparent conflict with the project rule was never real
+
+The `.claude/CLAUDE.md` rule — materialise a Dictionary Value before comparing it — is untouched
+by this fix, because **the read chain is not modified at all**. What was missing was never the
+materialisation; it was the **type declaration on the reference at the point of comparison**.
+
+### A corpus-composed fix was built and discarded — the discard is the lesson
+
+Before the donors arrived, a fix was composed from corpus evidence: golden
+`2e0fb675e45948aaacee7e534f910492` actions 12 → 13 → 15 feed a Get Dictionary Value **straight
+into `is.workflow.actions.number`** and consume the `Number` output in a numeric slot. A
+`read_number()` helper was written on that basis, with a `WFCondition 100` null guard because
+`cooldown_until` is JSON `null` on a fresh `state.json`. It validated, signed and measured clean.
+
+It was discarded when Donor 4.1 arrived. **Device evidence outranks corpus composition.** The
+corpus construct is real — it is the shape for *materialising a number into the data flow* — but
+it is not the shape for *typing a conditional operand*, and chaining two separately-evidenced
+links into an unobserved sequence is inference, not evidence.
+
+The coercion is also better on every axis that matters:
+
+| | coercion (shipped) | Number action (discarded) |
+|---|---|---|
+| actions added | **0** | ~250 |
+| breadcrumb positions | **unchanged** — next device report directly comparable | shifted; re-indexing required |
+| existing read chains | **byte-identical** | rewritten at 20 sites |
+| behaviour on a JSON `null` | absent stays absent, comparison false | **unevidenced** — needs a guard, and the guard's premise was itself unproven |
+
+That last row collapsed a two-condition AND-gate at action 170 into one condition.
+
+### A distinct sub-class: mixed-typed variable NAMES
+
+Shortcuts types a named variable from **all** of its `Set Variable` definitions. One Text-typed
+definition anywhere poisons **every** numeric comparison of that name — *including comparisons on
+an arm the Text definition can never reach*. This is why 20 sites are coerced where a hand trace
+following each conditional's immediate feeding action found 18: `Pressure Next`, `Overrun Seconds`
+and `Circle Next` are mixed-typed names.
+
+### Passes
+
+`normalise_numeric_operands()` attaches the coercion to any numeric-code conditional operand that
+is not already Number-typed; `verify_numeric_operands()` asserts the resulting invariant. Both run
+in **both** forks' builders and share one provenance resolver, so they cannot disagree. Operands
+already fed by a numeric source (`number`, `number.random`, `math`, `round`,
+`calculateexpression`, `gettimebetweendates`, `getdevicedetails`, `count`, `ask` with
+`WFInputType = Number`, or the built-in `Repeat Index`) are deliberately left untouched, so
+numeric conditionals that have executed on device stay byte-identical.
+
+The generator now asserts five axes: **key name · value envelope · picker literal · variable slot ·
+operand type.**
+
+### Settled as a side effect — the variable-bearing `WFItems` List shape
+
+Donor 4 / 4.1 action 5 is a `list` whose `WFItems` mixes bare strings with a variable-bearing
+entry, and iOS **wraps** that entry:
+
+```json
+"WFItems": ["Circle",
+            {"WFItemType": 0,
+             "WFValue": {"Value": {"string": "￼", "attachmentsByRange": {…}},
+                         "WFSerializationType": "WFTextTokenString"}},
+            "follows"]
+```
+
+This artifact puts the `{Value, WFSerializationType}` object into the array **directly**, with no
+`{WFItemType, WFValue}` wrapper. §15's addendum recorded that our shape matched neither golden
+List action; it does not match the device shape either. **Not fixed in this cycle** — it sits past
+breadcrumb J and cannot affect the measurement in flight — but there is now a device precedent to
+conform to, and no donor request is owed.
+
+### Carried forward, not fixed in this cycle
+
+- **`Session ID` scope — safety-relevant, 18 sites.** `Session ID` is assigned once (ancestry:
+  OPEN → not-in-cooldown → genuine-open). Only 2 of the 20
+  `settings_snapshot.*.changed_by_session_id` writes share that ancestry; the other **18** sit
+  under a different depth-1 branch where `Session ID` is never assigned, so brightness/volume
+  snapshots taken outside the genuine-OPEN dispatch record an **empty owner** and the ownership
+  check guarding restore cannot match. Deserves its own cycle so it can be measured alone.
+- **`Spoken This Run` — investigated and dismissed.** Its tests use `WFCondition 101` ("does not
+  have any value"), so `if not set → speak → set` is the correct once-per-run latch, not a defect.
+
+---
+
+## 17. DEV-06 — restore-ownership check DEFERRED by explicit user decision (2026-08-14)
+
+**Status: DEFERRED, decided. Not a bug to be fixed silently — a design decision with a recorded
+owner and a ship gate.**
+
+### The finding
+
+`settings_snapshot.brightness.changed_at`, `settings_snapshot.brightness.changed_by_session_id`,
+`settings_snapshot.volume.changed_at` and `settings_snapshot.volume.changed_by_session_id` are
+**written at 20 sites and read NOWHERE in either fork.**
+
+`changed_by_session_id` exists so the restore path can verify it **owns** a change before
+reverting it. Nothing reads it, so **that ownership check is not implemented at all.**
+
+### The decision
+
+Put to the user with four options — implement the check / drop the unused fields / leave as-is
+and decide before ship / explain the risk first. The user chose:
+
+> **"Leave as-is for now, decide before ship."**
+
+So: **keep** writing `changed_at` and `changed_by_session_id`; do **not** implement an ownership
+check; do **not** remove the fields.
+
+### Residual risk, stated plainly
+
+`.claude/CLAUDE.md` capability-audit items 8 and 9 require that a stateful brightness/volume
+change be reliably captured and restorable. That guarantee is currently **half-implemented**: an
+original value is captured and restored, but **nothing verifies that the restoring session owns
+the change it is reverting.**
+
+Exposure is narrow — it requires two overlapping runs where one restores what the other
+captured — and is acceptable while the OPEN path does not yet complete end-to-end. It stops
+being acceptable the moment the OPEN path ships.
+
+### Consequence for the `Session ID` scope defect — PRIORITY DROPPED
+
+`Session ID` is assigned only under [OPEN → not-in-cooldown → genuine-open]; only 2 of the 20
+`settings_snapshot.*.changed_by_session_id` writes share that ancestry, so the other 18 record an
+empty owner. **Correcting that scope only matters if something reads the owner** — and by the
+decision above, nothing will.
+
+The scope defect therefore **stays recorded as open but drops in priority**, tied to this same
+deferred decision. **If the ownership check is implemented before ship, the scope fix becomes a
+prerequisite, not a surprise.** Do not spend a cycle on the scope alone while DEV-06 is deferred.
+
+### SHIP CHECKLIST — must all be resolved before release
+
+| # | Item | Where |
+|---|---|---|
+| 1 | `BUILD_STAMP` — strip | `tools/build_state_engine.py` (single constant) |
+| 2 | `ROUTER_TRACE` — strip | `tools/build_state_engine.py` (single constant) |
+| 3 | `OPEN_BISECT` — strip the ten breadcrumb alerts | `OPEN_BISECT = False` |
+| 4 | **DEV-06 — decide the ownership check** | this entry |
+| 5 | **`Session ID` scope fix — REQUIRED IF AND ONLY IF item 4 resolves to "implement"** | tied to item 4 |
+
+Items 1–3 are mechanical. **Items 4 and 5 are a judgement call the user has explicitly reserved
+to themselves, and item 5 is conditional on item 4.** Neither may be resolved by an agent acting
+alone.

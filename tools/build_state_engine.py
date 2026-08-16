@@ -6,6 +6,7 @@ their branch comments, never by mutable action indexes.
 """
 from __future__ import annotations
 
+import json
 import plistlib
 import uuid
 from pathlib import Path
@@ -17,12 +18,29 @@ SOURCE = Path("src/PROSOCHE-Dumb.xml")
 # matches an installed one can create a second copy and leave an automation
 # wrapper pointed at the old shortcut; without a visible stamp that stale-install
 # case is indistinguishable from a failed fix.  Bump on every device-bound build.
-BUILD_STAMP = "build 2026-08-14f"
+BUILD_STAMP = "build 2026-08-15o"
+# CYCLE 7 MEASUREMENT INSTRUMENT, not a fix.  Cycle 6 proved on device that the Run
+# Shortcut handoff DOES deliver "OPEN" (Probe 5 echoed it) while PROSOCHE still fails,
+# so the failing action is inside the OPEN arm, before the first OPEN menu.  Static
+# reading has produced three device-refuted "confirmations" and cannot evaluate the 336
+# control-flow actions that exist in no ToolKit catalog, so the primary instrument is now
+# bisection: one plain alert per span, at OPEN-arm base depth, so the LAST letter the user
+# sees localises the failure to a span of tens in one round trip.
+# The alert carries a plain-string title and a plain-string message.  Both shapes are
+# already evidenced: the plain-string title ran on device as the cycle-3 ROUTER TRACE, and
+# a plain-string WFAlertActionMessage appears in 5 of the 13 golden-corpus alerts.  No
+# variable is referenced, so a breadcrumb cannot fail for a reason of its own.
+# Set False to strip every breadcrumb; nothing else depends on them.
+OPEN_BISECT = True
+BISECT_TITLE = "PROSOCHĒ OPEN TRACE"
 # One-run debug scaffolding on the MANUAL arm: report the cond-100 verdict and the
 # bracketed Input Key value.  It exists because what an ABSENT Shortcut Input resolves
 # to after normalisation is not determinable on the build Mac, and guessing it is what
 # cost cycle 2.  Set False to strip it; the router fix does not depend on it.
-ROUTER_TRACE = True
+# CYCLE 14, directive 5: the router restructure is device-verified (builds h through k all
+# reached breadcrumb A, which sits inside the OPEN arm the restructure produces); the
+# "Input Key: [] / Empty ref: []" alert is now noise on every manual run.  Flipped off.
+ROUTER_TRACE = False
 TRACE_MARKER = "--- ROUTER TRACE ---"
 TRACE_END_MARKER = "--- ROUTER TRACE END ---"
 # comment_index matches on startswith, so this prefix is a structural locator, not prose.
@@ -138,6 +156,67 @@ def text_token(parts: list[tuple[str, str | None]]):
             "WFSerializationType": "WFTextTokenString"}
 
 
+# CYCLE 12, axis 6b -- the CLEARED sentinel, KEPT, and the gates moved to meet it.
+#
+# DONOR 6.1 (correctly wired, run on the target iPhone) measured the four semantics this
+# whole area turns on:
+#   flat read, MISSING key            -> returns nothing, no error -> `has any value` FALSE
+#   flat read, PRESENT BUT EMPTY      ->                              `has any value` TRUE
+#   DOTTED read, missing segment      -> HARD ERROR, "could not evaluate the key path"
+#   "null" -> WFNumberContentItem, >0 -> FALSE, no error
+#
+# The third and second lines together make the READ-THEN-EXISTENCE-GATE pattern IMPOSSIBLE
+# for a dotted key: the read raises unless the final key exists, and if it exists the gate
+# is true.  There is NO state in which the gate reads false without the read having already
+# raised.  No sentinel swap can fix that -- the construct itself is the defect, and cycle
+# 11's "the sentinel is the open question" framing was one level too shallow.
+#
+# So the sentinel STAYS "null" and the CONSUMERS change:
+#   * "null" is PRESENT, so a dotted read of a seeded leaf succeeds instead of raising.
+#   * "null" is NON-EMPTY, so it satisfies validate_shortcut.py's iter_empty_strings rule
+#     and the cycle-11 Half-2 write-side blocker DISSOLVES ENTIRELY.  Clearing to empty is
+#     no longer needed, so the empty-write question does not have to be settled at all.
+#   * The gate that must distinguish "cleared" from "captured" is a NUMERIC "> 0", not an
+#     existence test.  See restore_managed_settings() for why it is numeric and not code 5.
+#
+# COOLDOWN_UNTIL IS NOW DEVICE-VERIFIED SAFE and stays inline at its three sites.  Donor
+# 6.1 test 2 read the literal "null" out of the Dictionary, coerced it to Number and
+# compared it > 0: FALSE, no error.  That is already the semantically correct reading of a
+# cleared cooldown ("not in cooldown"), at the most critical position on the OPEN path --
+# action 170, the conditional the build-i coercion fix repaired.  Do not touch it.
+CLEARED_SENTINEL = "null"
+# Keys whose EXISTENCE gate was knowingly still condition 100 even though the key is
+# written with the sentinel.
+#
+# pending_exit FIXED CYCLE 16, device-confirmed LIVE, not latent: a flat read of
+# "pending_exit" -- entirely absent from the bootstrap template -- hard-errored on the
+# very first OPEN this session's device pass exercised ("In '', no value was found for
+# dictionary key 'pending_exit'"), on the OPEN critical path itself, between breadcrumbs
+# I and J (complete_pending_exit()). Fixed with the SAME container/leaf split
+# settings_snapshot already uses (see clear_snapshot()'s docstring for the original
+# cycle-10 finding this mirrors): seed_pending_exit() establishes pending_exit as a
+# PERMANENT {"type", "timestamp"} container, never again replaced wholesale, so its own
+# existence is now an invariant; record_exit_and_route() and complete_pending_exit()
+# write and clear only the .type/.timestamp LEAVES, gated by a STRING "is not sentinel"
+# test (condition 5), not an existence test. Full trace in seed_pending_exit()'s docstring.
+#
+# active_session remains LATENT and UNCHANGED this cycle: the confirmed device run
+# reached breadcrumb I (past every active_session read on the OPEN critical path) with
+# no active_session-related error, so it is not live -- the cycle-16 directive against
+# fixing a non-reachable defect speculatively applies. Its bootstrap state is a bare JSON
+# null (present, unlike pending_exit's former total absence), and a flat read of an
+# absent key returns nothing -- which passes `is not "null"` and would then run the
+# nested DOTTED read of .id against a missing parent, i.e. it would trade a latent hard
+# error for an immediate one. Fixing it needs the same container/leaf treatment
+# pending_exit just received; recorded as a candidate follow-up, not done here.
+KNOWN_SENTINEL_EXISTENCE_GATES = ("active_session",)
+
+
+def cleared_value():
+    """The CLEARED sentinel for a gate-consumed state key.  See the note above."""
+    return text_token([(CLEARED_SENTINEL, None)])
+
+
 def comment(text: str):
     return action("is.workflow.actions.comment", WFCommentActionText=text)
 
@@ -147,11 +226,42 @@ def set_var(name: str, source):
 
 
 def get_value(key, source, name: str):
+    """Get a dictionary value and bind it directly, preserving its native type.
+
+    CYCLE 15.  Use this instead of read_value() whenever the underlying state field
+    is COMPOUND (a List/Array in this schema -- recent_sessions, exit_events,
+    exit_stats.<name>.samples, profile_snapshot.enabled_exits are the confirmed
+    instances) and a downstream action consumes it as a List: Get Item From List
+    WFInput, or Repeat With Each WFInput.
+
+    read_value()'s extra Get Text step is correct for a SCALAR meant for a text or
+    numeric comparison, but it stringifies a compound value: the array collapses
+    into one Text blob, so a Repeat With Each over it iterates wrong (or not at
+    all), and a Get Item From List "First Item" off it returns that same Text blob
+    rather than a genuine Dictionary item.  A subsequent Get Dictionary Value read
+    against that item then fails with "couldn't convert from Text to Dictionary" --
+    this is the exact breadcrumb E->F device error this cycle traces back to
+    exactly this pattern, at recent_sessions (open_pipeline's own Previous Session
+    lookup).  Donor 7 previously established the analogous lesson for DATE-typed
+    values (elapsed_since(), cycle 14): use the plain construct this artifact's own
+    write side already assumes, rather than inserting a coercion step that fits a
+    different field shape.
+
+    This is the SAME getvalueforkey call read_value() already makes -- no new
+    action identifier, no new parameter key -- with the gettext step removed,
+    binding the variable straight to "Dictionary Value", the output that already
+    carries the key's real underlying JSON type (string, number, boolean, array,
+    or object).  This artifact's own WRITE side already assumes exactly this: e.g.
+    recent_sessions is written back via set_value(key, variable("Recent Sessions
+    Next")), where "Recent Sessions Next" is built purely by appendvariable (a
+    genuine List, never re-serialized to text) -- so an un-stringified read is what
+    makes the round trip symmetric, not a new assumption about iOS.
+    Same action count minus the removed gettext step (2 actions instead of 3).
+    """
     get_id = uid()
     return [
         action("is.workflow.actions.getvalueforkey", UUID=get_id, WFDictionaryKey=key, WFInput=source),
-        action("is.workflow.actions.gettext", UUID=uid(), WFTextActionText=output(get_id, "Dictionary Value")),
-        set_var(name, output(uid_value := "", name)) if False else set_var(name, variable(name + " Text")),
+        set_var(name, output(get_id, "Dictionary Value")),
     ]
 
 
@@ -177,6 +287,17 @@ def set_value(key: str, value, dictionary_name="State"):
 
 
 def if_block(value_name: str, condition: int, *, number=None, string=None):
+    # WFInput.Variable is a VARIABLE SLOT, not a string slot.  It must hold a
+    # WFTextTokenAttachment wrapping a Type-bearing descriptor -- variable() or output().
+    # It must NOT hold token()/text_token(), which produce a WFTextTokenString TEXT
+    # TEMPLATE ({"string": "￼", "attachmentsByRange": {...}}).  Shortcuts cannot
+    # resolve a text template as a conditional input: it renders the If's input field as
+    # unset and refuses to run with "Please choose a value for each parameter in this
+    # action".  This is the cycle-2 string-envelope rule INVERTED, which is exactly how 13
+    # hand-written overwrites of this parameter went unnoticed for seven debug cycles.
+    # Evidence: Donor 3 action 4 (device export, variable-vs-variable If) uses the
+    # attachment form; 20/20 golden-corpus conditionals carrying WFInput use it; 0 use a
+    # text template.  Enforced by verify_conditional_inputs().
     group = uid()
     params = {"GroupingIdentifier": group, "WFControlFlowMode": 0,
               "WFCondition": condition,
@@ -216,12 +337,29 @@ def expression(parts: list[tuple[str, str | None]], name: str):
                    Input=text_token(parts)), set_var(name, output(expression_id, "Result"))]
 
 
-def elapsed(later_name: str, earlier_name: str, result_name: str):
-    elapsed_id = uid()
-    return [action("is.workflow.actions.gettimebetweendates", UUID=elapsed_id,
-                   WFInput=token(later_name), WFTimeUntilFromDate=token(earlier_name),
-                   WFTimeUntilUnit="Seconds"),
-            set_var(result_name, output(elapsed_id, "Time Between Dates"))]
+def elapsed_since(earlier_name: str, result_name: str, now_name: str = "Now Epoch"):
+    """Seconds between now and a STORED epoch reading -- numeric subtraction, not dates.
+
+    CYCLE 14 REPLACEMENT for the former elapsed()/gettimebetweendates helper, which was
+    the actual root cause of symptom 1's breadcrumb D->E device failure ("Get Time Between
+    Dates failed because Shortcuts couldn't convert from Text to Date").
+    last_open_at, last_close_at and pending_exit.timestamp are all written with
+    variable("Now Epoch") -- a NUMBER (elapsed seconds since the 1970-01-01 anchor; see the
+    hand-authored CLOCK block at the top of the artifact), never a Date object.  Reading
+    them back through read_value() (get + gettext) yields a TEXT variable holding that
+    same number as a string, e.g. "1755000000".  The former elapsed() helper fed that
+    string into gettimebetweendates.WFTimeUntilFromDate, a DATE-typed parameter -- asking
+    Shortcuts to parse a bare epoch-seconds string as a calendar date, which it cannot do.
+    Donor 7's device-confirmed chain (Date -> Format Date -> Adjust Date -> Get Time
+    Between Dates, all genuine Date-typed operands, zero coercion) is untouched by this
+    change and remains the CLOCK block's own construct for producing "Now Epoch" itself.
+    This helper is for the DOWNSTREAM case: two already-numeric epoch readings, so the
+    correct construct is the one this artifact already uses for the identical shape at
+    Session Duration (close_pipeline(): math("Now Epoch", variable("Captured Start"),
+    "Session Duration", "-")) -- plain subtraction, no Date object, no coercion class to
+    establish or guess.  Same action count as the helper it replaces (2: math + setvar).
+    """
+    return math(now_name, variable(earlier_name), result_name, "-")
 
 
 def round_down(source_name: str, result_name: str):
@@ -244,6 +382,20 @@ def save_state(source_name="State"):
 def alert(title: str, message):
     return action("is.workflow.actions.alert", WFAlertActionTitle=title,
                   WFAlertActionMessage=message)
+
+
+def breadcrumb(letter: str):
+    """One OPEN-path bisection breadcrumb (cycle 7 measurement, see OPEN_BISECT).
+
+    Returns a list so call sites can splice it unconditionally.  Deliberately
+    contains no variable reference, no control flow and no UUID: it must be
+    incapable of failing for a reason of its own, and it must not perturb the
+    deterministic uid() counter, so that every action downstream of the OPEN arm
+    keeps the UUIDs it had in build 2026-08-14f.
+    """
+    if not OPEN_BISECT:
+        return []
+    return [alert(BISECT_TITLE, f"{letter}\n\nReport the LAST letter you see.")]
 
 
 def list_items(items, name: str):
@@ -289,27 +441,68 @@ def set_media_volume(source):
 
 
 def clear_snapshot(key: str, dictionary_name="State"):
-    """Clear only a snapshot we have just restored from the full State."""
-    return set_value(f"settings_snapshot.{key}", text_token([("null", None)]), dictionary_name)
+    """Clear the captured ORIGINAL, never the container that holds it.
+
+    Cycle 10 finding 5: clearing `settings_snapshot.<key>` replaced the sub-DICTIONARY
+    with a string, so the very next run's dotted read of `.original_value` ran against a
+    string parent and hard-errored -- the identical failure the bootstrap seed exists to
+    prevent, reintroduced one run later and presenting as a regression.
+    Clearing the LEAF instead makes the seeded subtree a PERMANENT invariant: once
+    bootstrap has created the container it is never overwritten by anything, so the
+    container's own condition-100 gate can never be reached with a non-dictionary value
+    and the dotted read beneath it can never raise.  That is what licenses keeping the
+    container gates at 100 while the leaf gates change -- the split is enforced by
+    verify_sentinel_gates(), not asserted.
+    Same action count as clearing the container: one Set Dictionary Value, deeper key.
+    changed_at / changed_by_session_id are deliberately left: they are written at 20 sites
+    and READ AT NONE in either fork (the ownership check does not exist -- DEV-06, deferred
+    to the user as a design change), so stale values there have no consumer.
+    """
+    return set_value(f"settings_snapshot.{key}.original_value", cleared_value(), dictionary_name)
 
 
 def restore_managed_settings(dictionary_name="State"):
-    """Restore only captured values; never guess an original setting."""
+    """Restore only captured values; never guess an original setting.
+
+    THE LEAF GATES ARE NUMERIC "> 0", AND CODE 5 WAS VERIFIED AND THEN REJECTED.
+    Code 5 ("is not", string family, WFConditionalActionString) is a real construct --
+    CONTROL_FLOW.md's definitive table lists it, and four code-5 sites already ship in both
+    forks, one of them action 149 inside span B->C which the device has executed.  It is
+    also the obvious reading of "skip when the leaf holds the sentinel".
+    It is still WRONG HERE, because `is not "null"` is TRUE for an EMPTY value, and build
+    2026-08-14j seeded exactly "" into these leaves.  On any device that rebuilt state.json
+    under build j, a code-5 gate would pass empty straight into Set Brightness -- the black
+    screen this fix exists to remove.  Code 5 closes the sentinel case and leaves the empty
+    case open.
+    A numeric "> 0" closes BOTH, and both inputs are device-measured, not inferred:
+      "null" -> WFNumberContentItem -> > 0  ->  FALSE, no error   (Donor 6.1 test 2)
+      ""     -> WFNumberContentItem -> > 0  ->  FALSE, no error   (Donor 6 action 8)
+    It is also the safety property itself rather than a proxy for it -- only a strictly
+    positive reading is ever written back, so a zero or absent original can never darken the
+    screen -- and it is the EXACT test the CAPTURE side already uses on the same quantity
+    (dim(): if_block("Captured Brightness", 2, number=0)).  Capture and restore now agree on
+    what counts as a real reading.
+    The operand is gettext-fed, so normalise_numeric_operands() attaches Donor 4.1's
+    WFCoercionVariableAggrandizement automatically; this adds no new shape to the artifact.
+    The COST is stated rather than hidden: a genuine captured Media volume of exactly 0 is
+    not restored.  Skipping a restore leaves the current setting untouched, which is the
+    fail-safe direction and is what "never guess an original setting" already requires.
+    """
     a = [comment("""Restore managed settings only when a captured original exists:
 - Brightness uses the saved original value, never a new target.
 - Volume is always Media volume and never exceeds its saved original.
-- A restored snapshot key is cleared while all unrelated State remains intact.""")]
+- A restored original is cleared to the sentinel while its container and all unrelated State remain intact.""")]
     a += read_value("settings_snapshot.brightness", variable(dictionary_name), "Restore Brightness Snapshot")
     snapshot_g, snapshot_if = if_block("Restore Brightness Snapshot", 100)
     a += [snapshot_if] + read_value("settings_snapshot.brightness.original_value", variable(dictionary_name), "Restore Brightness")
-    bright_g, bright_if = if_block("Restore Brightness", 100)
+    bright_g, bright_if = if_block("Restore Brightness", 2, number=0)
     a += [bright_if, set_brightness(variable("Restore Brightness")), clear_snapshot("brightness", dictionary_name),
           otherwise(bright_g), action("is.workflow.actions.nothing"), end_if(bright_g), otherwise(snapshot_g),
           action("is.workflow.actions.nothing"), end_if(snapshot_g)]
     a += read_value("settings_snapshot.volume", variable(dictionary_name), "Restore Volume Snapshot")
     snapshot_g, snapshot_if = if_block("Restore Volume Snapshot", 100)
     a += [snapshot_if] + read_value("settings_snapshot.volume.original_value", variable(dictionary_name), "Restore Volume")
-    volume_g, volume_if = if_block("Restore Volume", 100)
+    volume_g, volume_if = if_block("Restore Volume", 2, number=0)
     a += [volume_if, set_media_volume(variable("Restore Volume")), clear_snapshot("volume", dictionary_name),
           otherwise(volume_g), action("is.workflow.actions.nothing"), end_if(volume_g), otherwise(snapshot_g),
           action("is.workflow.actions.nothing"), end_if(snapshot_g)]
@@ -366,7 +559,6 @@ def persist_contract():
     a += [active] + read_value("active_session.id", variable("Reloaded State"), "Contract Owner ID")
     owns_group, owns = if_block("Contract Owner ID", 4, string="captured-session-placeholder")
     owns["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    owns["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Contract Owner ID")}
     owns["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Session ID")
     a += [owns, set_value("active_session.intention", variable("Confession Intention"), "Reloaded State"),
           set_value("active_session.declared_duration_seconds", variable("Declared Duration Seconds"), "Reloaded State")]
@@ -514,7 +706,10 @@ def primitive_dispatch(circle_name: str | None = None):
 def enabled_exits(source="State"):
     """Filter in canonical order; no disabled name can enter a selection menu."""
     a = [comment("Build Enabled Exits in canonical order by intersecting the saved profile list.")]
-    a += read_value("profile_snapshot.enabled_exits", variable(source), "Profile Enabled Exits")
+    # CYCLE 15: get_value(), not read_value() -- enabled_exits is a compound Array
+    # (["Capture", ...]) consumed below by Repeat With Each; read_value()'s gettext
+    # step would stringify it into one Text blob. See get_value()'s docstring.
+    a += get_value("profile_snapshot.enabled_exits", variable(source), "Profile Enabled Exits")
     a += list_items(EXIT_NAMES, "Canonical Exits")
     outer = uid()
     a += [action("is.workflow.actions.repeat.each", GroupingIdentifier=outer, WFControlFlowMode=0,
@@ -524,7 +719,6 @@ def enabled_exits(source="State"):
                  WFInput=variable("Profile Enabled Exits")), set_var("Enabled Exit Candidate", variable("Repeat Item"))]
     matches_group, matches = if_block("Enabled Exit Candidate", 4, string="canonical-exit-placeholder")
     matches["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    matches["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Enabled Exit Candidate")}
     a += [matches, action("is.workflow.actions.appendvariable", WFInput=variable("Canonical Exit"), WFVariableName="Enabled Exits"),
           otherwise(matches_group), action("is.workflow.actions.nothing"), end_if(matches_group),
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=inner, WFControlFlowMode=2),
@@ -538,7 +732,6 @@ def select_exit():
     a += enabled_exits() + read_value("exit_selection_counter", variable("State"), "Exit Selection Counter")
     missing_counter, counter = if_block("Exit Selection Counter", 5, string=None)
     counter["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    counter["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exit Selection Counter")}
     a += [counter] + number(0, "Exit Selection Counter") + [otherwise(missing_counter), action("is.workflow.actions.nothing"), end_if(missing_counter)]
     a += config("exits.exploit_min_observations", "Exploit Minimum") + config("exits.exploration_rate", "Exploration Rate")
     a += number(0, "Sparse Selection")
@@ -580,13 +773,11 @@ def select_exit():
           set_var("Candidate Exit", variable("Repeat Item"))]
     is_best_group, is_best = if_block("Candidate Exit", 4, string="best-exit-placeholder")
     is_best["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    is_best["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Candidate Exit")}
     a += [is_best, *number(1, "Past Best"), otherwise(is_best_group)]
     choose_after_group, choose_after = if_block("Past Best", 2, number=0)
     a += [choose_after]
     unchosen_group, unchosen = if_block("Exploration Selected", 4, string="0")
     unchosen["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    unchosen["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exploration Selected")}
     a += [unchosen, set_var("Selected Exit", variable("Candidate Exit")), *number(1, "Exploration Selected"), otherwise(unchosen_group), action("is.workflow.actions.nothing"), end_if(unchosen_group),
           otherwise(choose_after_group), action("is.workflow.actions.nothing"), end_if(choose_after_group), end_if(is_best_group),
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=next_loop, WFControlFlowMode=2)]
@@ -596,10 +787,8 @@ def select_exit():
           set_var("Candidate Exit", variable("Repeat Item"))]
     needs_wrap_group, needs_wrap = if_block("Exploration Selected", 4, string="0")
     needs_wrap["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    needs_wrap["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exploration Selected")}
     wrap_non_best_group, wrap_non_best = if_block("Candidate Exit", 99, string="best-exit-placeholder")
     wrap_non_best["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    wrap_non_best["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Candidate Exit")}
     a += [needs_wrap, wrap_non_best, set_var("Selected Exit", variable("Candidate Exit")), *number(1, "Exploration Selected"),
           otherwise(wrap_non_best_group), action("is.workflow.actions.nothing"), end_if(wrap_non_best_group),
           otherwise(needs_wrap_group), action("is.workflow.actions.nothing"), end_if(needs_wrap_group),
@@ -652,7 +841,6 @@ def route_exit(choice_name: str):
           *read_value("active_session.id", variable("Reloaded State"), "Create Owner ID")]
     create_owner_group, create_owner = if_block("Create Owner ID", 4, string="captured-session-placeholder")
     create_owner["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Session ID")
-    create_owner["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Create Owner ID")}
     a += [create_owner, set_value("profile_snapshot.create_target_url", variable("Create Target URL"), "Reloaded State"),
           *save_state("Reloaded State"), action("is.workflow.actions.openurl", WFInput=variable("Create Target URL")),
           otherwise(create_owner_group), action("is.workflow.actions.nothing"), end_if(create_owner_group),
@@ -682,24 +870,41 @@ def record_exit_and_route(choice_name: str):
     a += [active] + read_value("active_session.id", variable("Reloaded State"), "Exit Owner ID")
     owner_group, owner = if_block("Exit Owner ID", 4, string="captured-session-placeholder")
     owner["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Session ID")
-    owner["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Exit Owner ID")}
     a += read_value("last_app", variable("Reloaded State"), "Triggering App")
     event_text = text_token([('{"type":"', choice_name), ('","timestamp":', "Now Epoch"), (',"app":"', "Triggering App"), ('","circle":', "Circle Next"), (',"heat":', "Heat Final"), ('}', None)])
     event_json, event_dict = uid(), uid()
+    # CYCLE 15: get_value(), not read_value(), for exit_events -- same compound-Array
+    # class as recent_sessions, consumed below by Repeat With Each. NOTE (recorded,
+    # not fixed this cycle): exit_events is also ABSENT from the bootstrap template
+    # entirely (grep of src/PROSOCHE-Dumb.xml's state.json seed confirms no
+    # "exit_events" key), a separate STATE-SHAPE gap in the same family as
+    # KNOWN_SENTINEL_EXISTENCE_GATES. A flat read of a missing key returns nothing
+    # (no error, per this session's verified iOS semantics), so this swap cannot
+    # regress the pre-fix behaviour; it is not device-confirmed to fully resolve
+    # this function, only to stop double-corrupting the type once a value exists.
     a += [owner, action("is.workflow.actions.gettext", UUID=event_json, WFTextActionText=event_text),
           action("is.workflow.actions.detect.dictionary", UUID=event_dict, WFInput=output(event_json, "Text")),
-          set_var("Exit Event", output(event_dict, "Dictionary")), *read_value("exit_events", variable("Reloaded State"), "Exit Events")]
+          set_var("Exit Event", output(event_dict, "Dictionary")), *get_value("exit_events", variable("Reloaded State"), "Exit Events")]
     a += [action("is.workflow.actions.appendvariable", WFInput=variable("Exit Event"), WFVariableName="Exit Events Next")]
     cap_loop = uid()
     a += [action("is.workflow.actions.repeat.each", GroupingIdentifier=cap_loop, WFControlFlowMode=0, WFInput=variable("Exit Events"))]
     cap_group, cap = if_block("Repeat Index", 0, number=20)
     a += [cap, action("is.workflow.actions.appendvariable", WFInput=variable("Repeat Item"), WFVariableName="Exit Events Next"), otherwise(cap_group), action("is.workflow.actions.nothing"), end_if(cap_group),
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=cap_loop, WFControlFlowMode=2)]
+    # CYCLE 16: write the pending_exit LEAVES (.type, .timestamp), never the container
+    # itself -- the container is a PERMANENT invariant established once by
+    # seed_pending_exit() and must never again be replaced wholesale (the exact
+    # cycle-10-finding-5 anti-pattern the old set_value("pending_exit", ...) reproduced
+    # at the top level: complete_pending_exit() clears the container to the sentinel, and
+    # a NEXT exit's dotted read of .type against a string parent would hard-error). Both
+    # values are the same source variables event_text already interpolates into "Exit
+    # Event" above, so this introduces no new value, only a different destination shape.
     a += [set_value("exit_events", variable("Exit Events Next"), "Reloaded State"),
-          set_value("pending_exit", variable("Exit Event"), "Reloaded State"), *read_value("exit_selection_counter", variable("Reloaded State"), "Reloaded Exit Counter")]
+          set_value("pending_exit.type", variable(choice_name), "Reloaded State"),
+          set_value("pending_exit.timestamp", variable("Now Epoch"), "Reloaded State"),
+          *read_value("exit_selection_counter", variable("Reloaded State"), "Reloaded Exit Counter")]
     missing_counter, counter = if_block("Reloaded Exit Counter", 5, string=None)
     counter["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    counter["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Reloaded Exit Counter")}
     a += [counter] + number(0, "Reloaded Exit Counter") + [otherwise(missing_counter), action("is.workflow.actions.nothing"), end_if(missing_counter)]
     a += math("Reloaded Exit Counter", 1, "Exit Counter Next", "+") + [set_value("exit_selection_counter", variable("Exit Counter Next"), "Reloaded State")]
     a += save_state("Reloaded State") + route_exit(choice_name)
@@ -718,11 +923,23 @@ def universal_leaving():
 def complete_pending_exit():
     """The one guarded genuine OPEN that follows an exit records its time away once."""
     a = [comment("--- PHASE 6 PENDING EXIT OUTCOME ---\n\n- This runs only after cooldown and duplicate OPEN guards.\n- A pending exit records one elapsed sample, then is cleared before the new session begins.")]
-    a += read_value("pending_exit", variable("State"), "Pending Exit")
-    pending_group, pending = if_block("Pending Exit", 100)
-    a += [pending] + read_value("pending_exit.type", variable("State"), "Pending Exit Type") + read_value("pending_exit.timestamp", variable("State"), "Pending Exit Timestamp")
-    a += elapsed("Now Date", "Pending Exit Timestamp", "Return Seconds")
-    a += read_value(text_token([("exit_stats.", "Pending Exit Type"), (".samples", None)]), variable("State"), "Exit Samples")
+    # CYCLE 16: read pending_exit.type FIRST and gate on IT directly (condition 5, "is
+    # not" the cleared sentinel) instead of a flat existence read of the "pending_exit"
+    # container. The container is now a PERMANENT invariant (seed_pending_exit()): it is
+    # never absent, so a condition-100 existence gate on it would never distinguish
+    # "genuinely captured" from "cleared" (the sentinel is present and non-empty) -- the
+    # exact GATE SEMANTICS failure verify_sentinel_gates() checks for. "Pending Exit
+    # Type" is read once here and reused unmodified as the exit_stats.<type> key below;
+    # no second read of it is needed.
+    a += read_value("pending_exit.type", variable("State"), "Pending Exit Type")
+    pending_group, pending = if_block("Pending Exit Type", 5, string=CLEARED_SENTINEL)
+    a += [pending] + read_value("pending_exit.timestamp", variable("State"), "Pending Exit Timestamp")
+    a += elapsed_since("Pending Exit Timestamp", "Return Seconds")
+    # CYCLE 15: get_value(), not read_value() -- .samples is a compound Array
+    # consumed below by Repeat With Each; read_value()'s gettext step would
+    # stringify it. This site sits on the OPEN critical path (breadcrumb I->J),
+    # reachable once a genuine pending_exit exists (second+ OPEN after an exit).
+    a += get_value(text_token([("exit_stats.", "Pending Exit Type"), (".samples", None)]), variable("State"), "Exit Samples")
     a += [action("is.workflow.actions.appendvariable", WFInput=variable("Return Seconds"), WFVariableName="Exit Samples Next")]
     cap_loop = uid()
     a += [comment("Bound outcome samples:\n- Retain the just-recorded return duration.\n- Keep at most nineteen prior samples so the list never grows without bound."),
@@ -736,7 +953,10 @@ def complete_pending_exit():
     a += [set_value(text_token([("exit_stats.", "Pending Exit Type"), (".samples", None)]), variable("Exit Samples Next")),
           set_value(text_token([("exit_stats.", "Pending Exit Type"), (".count", None)]), variable("Exit Count Next")),
           set_value(text_token([("exit_stats.", "Pending Exit Type"), (".sum_return_seconds", None)]), variable("Exit Sum Next")),
-          set_value("pending_exit", text_token([("null", None)])),
+          # Clear the LEAF, never the container -- clear_snapshot()'s own established
+          # rule. .timestamp is deliberately left stale: it is read nowhere outside this
+          # same branch, which this very clear makes unreachable on the next OPEN.
+          set_value("pending_exit.type", cleared_value()),
           otherwise(pending_group), action("is.workflow.actions.nothing"), end_if(pending_group),
           comment("--- PHASE 6 PENDING EXIT OUTCOME END ---")]
     return a
@@ -752,6 +972,8 @@ def open_pipeline():
 - Start from the loaded full State dictionary and the shared run clock.
 - A duplicate or active cooldown changes no Heat; a genuine open writes one final State.
 - The persisted Circle is arithmetic only; Phase 5 attaches behaviour at the marker below.""")]
+    # BREADCRUMB A - the OPEN arm was entered at all.
+    a += breadcrumb("A")
     # Read all mutable fields before any state mutation; null values are guarded.
     a += read_value("behavioural_day", variable("State"), "Stored Day")
     a += read_value("last_open_at", variable("State"), "Last Open")
@@ -763,11 +985,12 @@ def open_pipeline():
     a += config("heat.reopen_bonus_mode", "Reopen Bonus Mode") + config("heat.overrun_penalty", "Overrun Penalty")
     a += config("heat.overrun_ratio", "Overrun Ratio") + config("heat.overrun_min_seconds", "Overrun Minimum")
     a += config("heat.contract_respected_relief", "Respect Relief") + config("gravity.opens_per_point", "Opens Per Gravity") + config("gravity.cap", "Gravity Cap")
+    # BREADCRUMB B - every state read and every config read completed.
+    a += breadcrumb("B")
     # Behavioural day rollover is the first state update (only opens_today resets).
     g, start = if_block("Stored Day", 5, string=None)
     # Code 5 requires a string; textual empty guards avoid direct null compare.
     start["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    start["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Stored Day")}
     a += [comment("""Check whether a saved behavioural day exists before comparing it to today:
 - A missing value is treated as rollover so the counter is safe on migrated state.
 - A present value continues to the same-day comparison below.
@@ -775,13 +998,14 @@ def open_pipeline():
     a += number(0, "Zero") + [set_value("opens_today", variable("Zero")), set_value("behavioural_day", variable("Behavioural Day")), otherwise(g)]
     day_group, day_if = if_block("Stored Day", 4, string="same-day-placeholder")
     day_if["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    day_if["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Stored Day")}
     # The explicit Text variable is compared as a string to the Behavioural Day token.
     a += [comment("""Compare the stored behavioural day with today's adjusted day:
 - Both values are text, so equality is the supported string comparison.
 - A different day resets only opens_today and records today's key.
 - A matching day leaves the counter intact."""), day_if, otherwise(day_group)]
     a += number(0, "Zero") + [set_value("opens_today", variable("Zero")), set_value("behavioural_day", variable("Behavioural Day")), end_if(day_group), end_if(g)]
+    # BREADCRUMB C - the behavioural-day rollover block resolved (either arm).
+    a += breadcrumb("C")
     # Cooldown and debounce each choose their own genuine no-inflation branch.
     a += [comment("""Short-circuit a live cooldown before any Heat arithmetic:
 - Input is the saved cooldown deadline routed through text.
@@ -789,6 +1013,9 @@ def open_pipeline():
 - Otherwise the regular duplicate guard and OPEN pipeline continue.""")]
     cooldown_group, cooldown_if = if_block("Cooldown Until", 2, number=variable("Now Epoch"))
     a += [cooldown_if] + save_state() + [otherwise(cooldown_group)]
+    # BREADCRUMB D - no live cooldown, and the Ice-expiry restoration block (which
+    # install_cooldown_branches splices in immediately above this point) completed.
+    a += breadcrumb("D")
     a += [comment("""Debounce duplicate OPEN triggers with the saved last-open timestamp:
 - A short repeat OPEN is not a new interaction and takes the no-mutation path.
 - A genuine later OPEN continues to ordered Heat arithmetic.
@@ -796,12 +1023,14 @@ def open_pipeline():
     # Prototype 2-second debounce: config intentionally has no debounce field.
     a += number(1, "Genuine Open")
     debounce_exists, debounce_exists_if = if_block("Last Open", 100)
-    a += [debounce_exists_if] + elapsed("Now Date", "Last Open", "Seconds Since Open")
+    a += [debounce_exists_if] + elapsed_since("Last Open", "Seconds Since Open")
     debounce_group, debounce_if = if_block("Seconds Since Open", 0, number=2)
     a += [comment("Duplicate OPEN guard (prototype 2 seconds):\n- Compare the elapsed seconds from the captured last-open timestamp.\n- A value below two exits through Nothing with no dictionary mutation.\n- A later event continues to the complete Heat pipeline."), debounce_if,
           *number(0, "Genuine Open"), otherwise(debounce_group), action("is.workflow.actions.nothing"), end_if(debounce_group), otherwise(debounce_exists), action("is.workflow.actions.nothing"), end_if(debounce_exists)]
     genuine_group, genuine = if_block("Genuine Open", 2, number=0)
     a += [genuine]
+    # BREADCRUMB E - the duplicate-OPEN debounce resolved and this is a genuine open.
+    a += breadcrumb("E")
     # Current state values are loaded only after the short circuit branches.
     a += read_value("heat", variable("State"), "Heat Current") + read_value("opens_today", variable("State"), "Opens Today")
     a += [comment("""Compute Heat in its required order, then clamp it last:
@@ -811,18 +1040,27 @@ def open_pipeline():
     # Decay uses the previous genuine close; absent first-run values leave Heat intact.
     a += [set_var("Heat After Decay", variable("Heat Current"))]
     decay_exists, decay_exists_if = if_block("Last Close", 100)
-    a += [decay_exists_if] + elapsed("Now Date", "Last Close", "Seconds Away") + math("Seconds Away", variable("Decay Interval"), "Decay Intervals Raw", "÷") + round_down("Decay Intervals Raw", "Decay Intervals") + math("Decay Intervals", variable("Decay Amount"), "Decay Delta", "×") + math("Heat After Decay", variable("Decay Delta"), "Heat After Decay") + [otherwise(decay_exists), action("is.workflow.actions.nothing"), end_if(decay_exists)]
+    a += [decay_exists_if] + elapsed_since("Last Close", "Seconds Away") + math("Seconds Away", variable("Decay Interval"), "Decay Intervals Raw", "÷") + round_down("Decay Intervals Raw", "Decay Intervals") + math("Decay Intervals", variable("Decay Amount"), "Decay Delta", "×") + math("Heat After Decay", variable("Decay Delta"), "Heat After Decay") + [otherwise(decay_exists), action("is.workflow.actions.nothing"), end_if(decay_exists)]
     a += math("Heat After Decay", variable("Open Base"), "Heat After Base")
     # Reopen bands read their seconds from the same real last-close timestamp.
     reopen120, if120 = if_block("Last Close", 100)
-    a += [if120] + elapsed("Now Date", "Last Close", "Seconds Since Close")
+    a += [if120] + elapsed_since("Last Close", "Seconds Since Close")
     under120_g, under120_if = if_block("Seconds Since Close", 0, number=120)
     exclusive_g, exclusive_if = if_block("Reopen Bonus Mode", 4, string="exclusive")
     a += [under120_if, exclusive_if] + math("Heat After Base", variable("Reopen 120 Bonus"), "Heat After Reopen") + [otherwise(exclusive_g)] + math("Heat After Base", variable("Reopen 120 Bonus"), "Heat After Reopen") + math("Heat After Reopen", variable("Reopen 600 Bonus"), "Heat After Reopen") + [end_if(exclusive_g), otherwise(under120_g)]
     under600_g, under600_if = if_block("Seconds Since Close", 0, number=600)
     a += [under600_if] + math("Heat After Base", variable("Reopen 600 Bonus"), "Heat After Reopen") + [otherwise(under600_g), set_var("Heat After Reopen", variable("Heat After Base")), end_if(under600_g), end_if(under120_g), otherwise(reopen120), set_var("Heat After Reopen", variable("Heat After Base")), end_if(reopen120)]
     # Previous session's recorded overrun is the cross-run contract signal.
-    a += read_value("recent_sessions", variable("State"), "Recent Sessions")
+    # CYCLE 15 -- CONFIRMED ROOT CAUSE of the breadcrumb E->F device failure
+    # ("Get Dictionary Value failed because Shortcuts couldn't convert Text to
+    # Dictionary"): get_value(), not read_value(). recent_sessions is a compound
+    # Array of session dictionaries; read_value()'s gettext step stringified it
+    # into one Text blob, so the getitemfromlist "First Item" below returned that
+    # same Text blob (not a genuine Dictionary item), and the very next
+    # getvalueforkey read against it (Previous Session's declared_duration_seconds)
+    # then failed exactly as reported. See get_value()'s docstring for the full
+    # trace and the write-side symmetry evidence.
+    a += get_value("recent_sessions", variable("State"), "Recent Sessions")
     session_exists, session_exists_if = if_block("Recent Sessions", 100)
     first_session = uid()
     a += [session_exists_if, action("is.workflow.actions.getitemfromlist", UUID=first_session, WFItemSpecifier="First Item", WFInput=variable("Recent Sessions")), set_var("Previous Session", output(first_session, "Item from List"))]
@@ -837,9 +1075,15 @@ def open_pipeline():
     a += read_value("heat", variable("State"), "Heat Clamped")
     cap_g, cap_if = if_block("Heat Clamped", 2, number=variable("Heat Cap"))
     a += [cap_if, set_value("heat", variable("Heat Cap")), otherwise(cap_g), action("is.workflow.actions.nothing"), end_if(cap_g)]
+    # BREADCRUMB F - the whole ordered Heat pipeline is done: decay, base, reopen bands,
+    # previous-contract adjustment, floor clamp and cap clamp.
+    a += breadcrumb("F")
     # Genuine OPEN writes active session and all derived fields to the same rooted State dictionary.
     a += math("Opens Today", variable("Open Base"), "Opens Today Next")
     a += [set_value("opens_today", variable("Opens Today Next")), set_value("last_open_at", variable("Now Epoch")), set_value("last_app", text_token([("tracked", None)]))]
+    # BREADCRUMB G - placed immediately BEFORE Random Number.  Span G->H isolates the
+    # first of the two scalar-type suspects Donor 3 surfaced this cycle.
+    a += breadcrumb("G")
     random_id, session_id = uid(), uid()
     # Random Number takes WFRandomNumberMinimum/WFRandomNumberMaximum (ToolKit v78
     # catalog); WFNumberMin/WFNumberMax are not parameters of this action.
@@ -867,6 +1111,9 @@ def open_pipeline():
 - Start at Circle 1 and use the active profile's Config threshold list.
 - Each satisfied greater-than-or-equal comparison overwrites Circle with the current index.
 - Ascending thresholds make the final satisfied index the correct Circle; no numeric equality is used.""")]
+    # BREADCRUMB H - Random Number, Session ID, Detect Dictionary, Gravity and Pressure
+    # all completed.  Span H->I isolates the second scalar-type suspect (Repeat count).
+    a += breadcrumb("H")
     a += number(1, "Circle Next")
     scan = uid()
     a += [action("is.workflow.actions.repeat.count", GroupingIdentifier=scan, WFControlFlowMode=0, WFRepeatCount=9)]
@@ -879,8 +1126,13 @@ def open_pipeline():
     hit_g, hit_if = if_block("Pressure Next", 3, number=variable("Threshold"))
     a += [hit_if, set_var("Circle Next", variable("Repeat Index")), otherwise(hit_g), action("is.workflow.actions.nothing"), end_if(hit_g),
           action("is.workflow.actions.repeat.count", UUID=uid(), GroupingIdentifier=scan, WFControlFlowMode=2)]
+    # BREADCRUMB I - the nine-step Circle threshold scan completed all nine iterations.
+    a += breadcrumb("I")
     a += [set_value("circle", variable("Circle Next")), set_value("behavioural_day", variable("Behavioural Day"))]
     a += complete_pending_exit()
+    # BREADCRUMB J - Circle written and any pending exit completed.  The only actions
+    # left before the first OPEN menu are Save File and the Phase 6 leaving block.
+    a += breadcrumb("J")
     # State is persisted before any menu/Ask action. The wrapper owns all later interaction.
     a += save_state() + universal_leaving() + [end_if(genuine_group), end_if(cooldown_group)]
     return a
@@ -910,7 +1162,6 @@ def close_pipeline():
     a += [reload_if] + read_value("active_session.id", variable("Reloaded State"), "Reloaded Session ID")
     owns_g, owns_if = if_block("Reloaded Session ID", 4, string="captured-session-placeholder")
     owns_if["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
-    owns_if["WFWorkflowActionParameters"]["WFInput"] = {"Type": "Variable", "Variable": token("Reloaded Session ID")}
     a += [comment("""Compare the reloaded active session with the captured owner:
 - A matching ID means this CLOSE still owns the session.
 - A different ID means a newer OPEN owns state; this otherwise branch is intentionally Nothing only.
@@ -941,7 +1192,9 @@ def close_pipeline():
     a += [action("is.workflow.actions.gettext", UUID=record_json, WFTextActionText=record_text),
           action("is.workflow.actions.detect.dictionary", UUID=record_dict, WFInput=output(record_json, "Text")),
           set_var("Session Record", output(record_dict, "Dictionary"))]
-    a += read_value("recent_sessions", variable("Reloaded State"), "Recent Sessions")
+    # CYCLE 15: get_value(), not read_value() -- same class as the OPEN-pipeline
+    # recent_sessions site above; consumed below by Repeat With Each.
+    a += get_value("recent_sessions", variable("Reloaded State"), "Recent Sessions")
     # Newest-first rolling window: this record plus only the first 19 prior ones.
     a += [action("is.workflow.actions.appendvariable", WFInput=variable("Session Record"), WFVariableName="Recent Sessions Next")]
     window = uid()
@@ -955,7 +1208,7 @@ def close_pipeline():
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=window, WFControlFlowMode=2)]
     a += [set_value("recent_sessions", variable("Recent Sessions Next"), "Reloaded State"),
           set_value("last_close_at", variable("Now Epoch"), "Reloaded State"),
-          set_value("active_session", text_token([( "null", None)]), "Reloaded State")]
+          set_value("active_session", cleared_value(), "Reloaded State")]
     display_contract_g, display_contract = if_block("Declared Duration", 2, number=0)
     a += [comment("Contract result display:\n- Only sessions with a declared boundary show contract feedback.\n- Sessions without one make no overrun claim."), display_contract,
           alert("Contract", text_token([("Overrun seconds: ", "Overrun Seconds")])), otherwise(display_contract_g), action("is.workflow.actions.nothing"), end_if(display_contract_g)]
@@ -1196,7 +1449,7 @@ def live_ice_redirect():
          menu(group, 1, title="Emergency Restore")]
     a += restore_managed_settings("State")
     a += [set_value("cooldown_until", text_token([("null", None)])),
-          set_value("active_session", text_token([("null", None)])),
+          set_value("active_session", cleared_value()),
           menu(group, 2), comment("--- PHASE 5 LIVE ICE REDIRECT END ---")]
     return a
 
@@ -1218,10 +1471,15 @@ def ice_expiry():
 def manual_emergency_restore():
     group = uid()
     choices = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore"]
-    a = [comment(MANUAL_MARKER + "\n\n- Manual control is the only path that refreshes the Control Room or reads its proforma.\n- OPEN and CLOSE never enter this menu or parse the Note.\n- Test Circle copies recorded values into test variables and never writes Pressure."),
+    a = [comment(MANUAL_MARKER + "\n\n- Manual control is the only path that refreshes the Control Room or reads its proforma.\n- OPEN and CLOSE never enter this menu or parse the Note.\n- Test Circle copies recorded values into test variables and never writes Pressure.\n- CYCLE 14 (checkpoint decision): Status and Open Control Room are read-only. Neither sets Manual Refresh Requested; only explicit state-changing choices (Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Reset Today, Emergency Restore) append to the Note."),
          menu(group, 0, prompt=f"PROSOCHĒ · {BUILD_STAMP}", items=choices)]
-    for title in ("Status", "Open Control Room"):
-        a += [menu(group, 1, title=title), *number(1, "Manual Refresh Requested")]
+    # CYCLE 14 -- checkpoint decision: "Open Control Room" is decoupled from the
+    # refresh-append mechanism entirely (read-only; the common tail below still finds
+    # or creates the note and shows it via shownote, but never appends a snapshot).
+    # "Status" gets its own read path (Manual Status Requested), so it isn't left
+    # without a mechanism -- see manual_note_refresh() for the display branch.
+    a += [menu(group, 1, title="Status"), *number(1, "Manual Status Requested")]
+    a += [menu(group, 1, title="Open Control Room"), action("is.workflow.actions.nothing")]
     a += [menu(group, 1, title="Sync My Profile"), *number(1, "Manual Refresh Requested"), *number(1, "Manual Sync Requested")]
     profile_menu = uid()
     a += [menu(group, 1, title="Change Profile"), menu(profile_menu, 0, prompt="Choose profile", items=["Paradise", "Limbo", "Inferno"])]
@@ -1247,7 +1505,7 @@ def manual_emergency_restore():
     a += [menu(test_menu, 2), menu(group, 1, title="Reset Today"), *number(0, "Manual Zero"), set_value("opens_today", variable("Manual Zero")), set_value("gravity", variable("Manual Zero")), *number(1, "Manual Refresh Requested"), *save_state(), menu(group, 1, title="Emergency Restore")]
     a += restore_managed_settings("State")
     a += [set_value("cooldown_until", text_token([("null", None)])),
-          set_value("active_session", text_token([("null", None)])), *number(1, "Manual Refresh Requested")]
+          set_value("active_session", cleared_value()), *number(1, "Manual Refresh Requested")]
     a += save_state()
     a += [menu(group, 2), comment("--- PHASE 5 MANUAL EMERGENCY RESTORE END ---")]
     return a
@@ -1255,13 +1513,22 @@ def manual_emergency_restore():
 
 def manual_note_refresh():
     """Append current settings/state only after an explicit manual menu choice."""
-    a = [comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH ---\n\n- This runs after the Note is found or created in the MANUAL branch only.\n- It appends a factual current snapshot and meaningful manual events.\n- OPEN never reaches this Note parsing or append block.")]
+    a = [comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH ---\n\n- This runs after the Note is found or created in the MANUAL branch only.\n- It appends a factual current snapshot and meaningful manual events.\n- OPEN never reaches this Note parsing or append block.\n- Status is read-only (Manual Status Requested): it displays the snapshot directly and never appends to the Note.")]
     for key, name in (("fork", "Snapshot Fork"), ("profile", "Snapshot Profile"), ("sequence", "Snapshot Sequence"), ("voice_enabled", "Snapshot Voice"), ("pressure", "Snapshot Pressure"), ("circle", "Snapshot Circle"), ("cooldown_until", "Snapshot Cooldown"), ("profile_snapshot.enabled_exits", "Snapshot Exits")):
         a += read_value(key, variable("State"), name)
     refresh_g, refresh_if = if_block("Manual Refresh Requested", 2, number=0)
     snapshot_id = uid()
     snapshot = text_token([("\n\n## CURRENT SETTINGS\n- Fork: ", "Snapshot Fork"), ("\n- Profile: ", "Snapshot Profile"), ("\n- Sequence: ", "Snapshot Sequence"), ("\n- Voice: ", "Snapshot Voice"), ("\n- AI: not used by this fork\n- Enabled exits: ", "Snapshot Exits"), ("\n\n## CURRENT STATE\n- Circle: ", "Snapshot Circle"), ("\n- Pressure: ", "Snapshot Pressure"), ("\n- Cool-down until: ", "Snapshot Cooldown"), ("\n\n## ATTENTION LEDGER\n- Manual Control Room refresh at ", "Now Epoch")])
     a += [refresh_if, action("is.workflow.actions.gettext", UUID=snapshot_id, WFTextActionText=snapshot), action("is.workflow.actions.appendnote", operation="append", entity=variable("Control Room Note"), text=output(snapshot_id, "Text")), otherwise(refresh_g), action("is.workflow.actions.nothing"), end_if(refresh_g)]
+    # CYCLE 14 -- checkpoint decision: Status gets its own read-only display branch.
+    # It reuses the SAME Snapshot* variables read unconditionally above (no new
+    # dictionary reads) and shows them via the already-verified alert() helper
+    # (is.workflow.actions.alert, VERIFIED_PARAMETER_KEYS since cycle 1) instead of
+    # appendnote -- Status never writes to the Note.
+    status_g, status_if = if_block("Manual Status Requested", 2, number=0)
+    a += [status_if, comment("Status is read-only:\n- Displays the current snapshot directly, via an alert.\n- Never appends to or otherwise writes the Note."),
+          alert("Status", text_token([("Fork: ", "Snapshot Fork"), ("\nProfile: ", "Snapshot Profile"), ("\nSequence: ", "Snapshot Sequence"), ("\nVoice: ", "Snapshot Voice"), ("\nCircle: ", "Snapshot Circle"), ("\nPressure: ", "Snapshot Pressure"), ("\nCool-down until: ", "Snapshot Cooldown")])),
+          otherwise(status_g), action("is.workflow.actions.nothing"), end_if(status_g)]
     sync_g, sync_if = if_block("Manual Sync Requested", 2, number=0)
     text_id, match_id = uid(), uid()
     a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The extracted text is saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), set_value("profile_snapshot.proforma", output(match_id, "Matched Text")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g), comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH END ---")]
@@ -1312,6 +1579,20 @@ VERIFIED_PARAMETER_KEYS = {
     "is.workflow.actions.speaktext": {"WFText", "WFSpeakTextWait", "WFSpeakTextRate",
                                       "WFSpeakTextPitch", "WFSpeakTextLanguage",
                                       "WFSpeakTextVoice"},
+    # CYCLE 14 -- Donor 8 (device ground truth): shownote reads WFInput.  This artifact's
+    # one shownote site carried `target`, a key the action does not define at all -- the
+    # exact same axis-1 defect class as the 147 sites fixed in cycle 1, on a hand-authored
+    # site outside every prior sweep.  fix_shownote_key() corrects it; this entry is the
+    # recurrence guard so the wrong key can never ship silently again.
+    "is.workflow.actions.shownote": {"WFInput"},
+    # CYCLE 16 -- Donor 8 (device ground truth): filter.notes ("Find Notes") as genuinely
+    # authored on the target iPhone carries AppIntentDescriptor and an explicit
+    # WFContentItemLimitEnabled/WFContentItemLimitNumber result bound. This artifact's one
+    # filter.notes site (same hand-authored block as shownote above) carried neither --
+    # fix_notes_filter_limit() adds them; this entry is the recurrence guard so they can
+    # never be silently dropped again.
+    "is.workflow.actions.filter.notes": {"AppIntentDescriptor", "WFContentItemFilter",
+                                         "WFContentItemLimitEnabled", "WFContentItemLimitNumber"},
 }
 STRUCTURAL_KEYS = {"UUID", "GroupingIdentifier", "WFControlFlowMode", "CustomOutputName"}
 
@@ -1436,6 +1717,815 @@ def verify_required_pickers(actions):
                          + "; ".join(f"action {i} {ident}.{key} {why}"
                                      for i, ident, key, why in offenders[:5])
                          + f" ({len(offenders)} total)")
+
+def verify_conditional_inputs(actions):
+    """Fail the build if a conditional's input slot holds a text template.
+
+    WFInput on is.workflow.actions.conditional is {"Type": "Variable", "Variable": <token>}.
+    The <token> must be a WFTextTokenAttachment wrapping a descriptor that carries a Type key
+    ({Type: Variable, VariableName: ...} or {Type: ActionOutput, OutputUUID/OutputName: ...}).
+
+    A WFTextTokenString text template in that slot -- Value = {"string": "￼",
+    "attachmentsByRange": {...}} -- is NOT a variable reference.  iOS renders the If's input
+    field as unset and refuses to run the action with "Please choose a value for each
+    parameter in this action".  This is the fourth defect axis found in this debug session
+    and the first one that inverts an earlier rule: string-typed PARAMETERS need
+    WFTextTokenString (see normalise_string_envelopes), but variable SLOTS need the bare
+    attachment.  No catalog entry exists for is.workflow.actions.conditional, so no
+    catalog-driven sweep can see this -- hence an explicit invariant.
+
+    Ground truth: Donor 3 action 4 (device export from the target iPhone) and 20/20
+    WFInput-carrying conditionals across the 19 golden shortcuts.
+    """
+    offenders = []
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        # Otherwise (1) and End If (2) carry no input of their own.
+        if parameters.get("WFControlFlowMode") != 0:
+            continue
+        wrapper = parameters.get("WFInput")
+        if not isinstance(wrapper, dict):
+            offenders.append((index, "WFInput missing or not a dict"))
+            continue
+        holder = wrapper.get("Variable")
+        if not isinstance(holder, dict):
+            offenders.append((index, "WFInput.Variable missing or not a dict"))
+            continue
+        if holder.get("WFSerializationType") != "WFTextTokenAttachment":
+            offenders.append((index, f"WFInput.Variable is {holder.get('WFSerializationType')!r}, "
+                                     "expected WFTextTokenAttachment"))
+            continue
+        inner = holder.get("Value")
+        if not isinstance(inner, dict) or "Type" not in inner or "string" in inner:
+            offenders.append((index, "WFInput.Variable.Value is a text template, "
+                                     "not a variable descriptor"))
+    if offenders:
+        raise SystemExit("conditional input slots hold a non-variable value "
+                         "(iOS: 'Please choose a value for each parameter in this action'): "
+                         + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
+                         + f" ({len(offenders)} total)")
+
+
+# ---------------------------------------------------------------------------
+# CYCLE 11 -- STATE SHAPE, the sixth defect axis.  Not a wrong shape in the emitted
+# plist at all: a wrong BELIEF about iOS semantics, held by the generator's authors.
+#
+# restore_managed_settings() reads settings_snapshot.brightness (action 177) and gates it
+# on condition 100, HAS ANY VALUE.  That design assumes a MISSING dictionary key reads as
+# empty, so the gate would be false and the guarded branch skipped.  It does not.  Get
+# Dictionary Value on a missing key raises a HARD RUNTIME ERROR: the read at 177 dies
+# before the gate at 181 can evaluate, and the guard cannot protect anything because the
+# condition it guards against kills the read first.
+#
+# The bootstrap state.json template seeded settings_snapshot as {} -- the top-level key
+# exists, but neither sub-key does.  Reads sit at depth 2 and 3; the writes that would
+# create them sit at depth 4 and 7 on Circle paths (1132-1136, 1038-1042) that a first
+# run never reaches.  So the reads are reachable on paths where the writes never ran, and
+# both observed device errors follow exactly and in order:
+#   clean state    -> "In '', no value was found for dictionary key 'settings_snapshot'"
+#   after the user exercised the manual menu (which wrote settings_snapshot.volume.*)
+#                  -> "In 'settings_snapshot', no value was found for key 'brightness'"
+#
+# The fix is to establish the COMPLETE subtree at bootstrap, so the shape exists before
+# any read regardless of execution history.  Every leaf is seeded EMPTY -- the cleared
+# sentinel -- and never a fabricated number: a fabricated original_value could restore
+# brightness or volume to a value the user never had.  Empty plus the existing condition
+# 100 gates means "no capture recorded -> skip restore", which fails safe and is what
+# .claude/CLAUDE.md requires of a stateful brightness/volume change.
+#
+# This is a TEXT edit to the existing template action, not new actions, so it adds nothing
+# to the artifact and every breadcrumb keeps its build-i position.
+SNAPSHOT_SEED = {
+    "brightness": ("original_value", "changed_at", "changed_by_session_id"),
+    "volume": ("original_value", "changed_at", "changed_by_session_id"),
+}
+SNAPSHOT_EMPTY = '"settings_snapshot": {},'
+
+
+def _snapshot_seed_text(indent: str) -> str:
+    inner = ",\n".join(
+        f'{indent}  "{group}": {{'
+        + ", ".join(f'"{leaf}": "{CLEARED_SENTINEL}"' for leaf in leaves)
+        + "}"
+        for group, leaves in SNAPSHOT_SEED.items())
+    return '"settings_snapshot": {\n' + inner + "\n" + indent + "},"
+
+
+# Build j seeded these leaves EMPTY.  That was the safety defect: Donor 6.1 then measured
+# that a present-but-empty value passes `has any value`, so the leaf gate read TRUE and the
+# restore wrote an empty value into Set Brightness.  Recognise that shape and correct it in
+# place, so a re-run over a build-j tree converges instead of silently keeping "".
+SNAPSHOT_SEEDED_EMPTY = '"original_value": "", "changed_at": "", "changed_by_session_id": ""'
+
+
+def _state_template(actions):
+    """The bootstrap state.json template action, located by content, never by index."""
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.gettext":
+            continue
+        value = item.get("WFWorkflowActionParameters", {}).get("WFTextActionText")
+        if not isinstance(value, dict):
+            continue
+        inner = value.get("Value")
+        if isinstance(inner, dict) and isinstance(inner.get("string"), str) \
+                and '"schema_version"' in inner["string"]:
+            return index, inner
+    raise SystemExit("bootstrap state.json template not found")
+
+
+def _replace_in_token(inner: dict, old: str, new: str):
+    """Replace text inside a WFTextTokenString and SHIFT every attachment offset.
+
+    attachmentsByRange keys are "{offset, 1}" byte-for-character offsets into the final
+    string.  BEST_PRACTICES/VARIABLES both warn that an out-of-bounds or stale range can
+    crash Shortcuts on import, so a text edit that ignores them is not a smaller change
+    than one that recomputes them -- it is a corrupt one.  The template carries four
+    attachments and one of them sits AFTER the settings_snapshot line.
+    """
+    string = inner["string"]
+    at = string.find(old)
+    if at < 0:
+        raise SystemExit(f"state template does not contain {old!r}")
+    delta = len(new) - len(old)
+    inner["string"] = string[:at] + new + string[at + len(old):]
+    shifted = {}
+    for key, attachment in inner.get("attachmentsByRange", {}).items():
+        offset, length = (int(part) for part in key.strip("{}").split(","))
+        if offset > at:
+            offset += delta
+        shifted[f"{{{offset}, {length}}}"] = attachment
+    inner["attachmentsByRange"] = shifted
+    for key in inner["attachmentsByRange"]:
+        offset, _ = (int(part) for part in key.strip("{}").split(","))
+        if inner["string"][offset] != "￼":
+            raise SystemExit(f"attachment offset {offset} no longer points at a placeholder")
+
+
+def seed_settings_snapshot(actions):
+    """Establish the complete settings_snapshot subtree in the bootstrap template."""
+    _, inner = _state_template(actions)
+    while SNAPSHOT_SEEDED_EMPTY in inner["string"]:
+        # A build-j tree: right shape, wrong sentinel.  Correct the leaves in place.
+        _replace_in_token(inner, SNAPSHOT_SEEDED_EMPTY,
+                          ", ".join(f'"{leaf}": "{CLEARED_SENTINEL}"'
+                                    for leaf in SNAPSHOT_SEED["brightness"]))
+    if SNAPSHOT_EMPTY not in inner["string"]:
+        return  # already seeded; verify_state_seed() proves it is the right shape
+    line = next(text for text in inner["string"].splitlines() if SNAPSHOT_EMPTY in text)
+    indent = line[:len(line) - len(line.lstrip())]
+    _replace_in_token(inner, SNAPSHOT_EMPTY, _snapshot_seed_text(indent))
+
+
+def verify_state_seed(actions):
+    """Fail the build if any settings_snapshot READ has no bootstrap counterpart.
+
+    Reads are the authority: a key that restore_managed_settings() reads must resolve in
+    the seeded template, at the full depth it is read at, or the read is a hard runtime
+    error on any path that reaches it before a write created the key.  This is the
+    invariant that seed_settings_snapshot() establishes, asserted separately so the two
+    cannot drift -- the same discipline as the five axes before it (KEY NAME, VALUE
+    ENVELOPE, PICKER LITERAL, VARIABLE SLOT, OPERAND TYPE; this is STATE SHAPE).
+    """
+    _, inner = _state_template(actions)
+    # The template is a text template, so it is not valid JSON as written: quoted
+    # placeholders stand in for strings, and one bare placeholder for a boolean.
+    document = inner["string"].replace('"￼"', '"x"').replace("￼", "0")
+    try:
+        seed = json.loads(document)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"bootstrap state.json template is not valid JSON: {error}")
+    wanted = sorted({f"settings_snapshot.{group}.{leaf}"
+                     for group, leaves in SNAPSHOT_SEED.items() for leaf in leaves})
+    read_keys = set()
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.getvalueforkey":
+            continue
+        key = item.get("WFWorkflowActionParameters", {}).get("WFDictionaryKey")
+        # Composite keys are built from a token and cannot be resolved statically; none
+        # of them is rooted at settings_snapshot, and that is asserted rather than assumed.
+        if isinstance(key, str) and key.split(".")[0] == "settings_snapshot":
+            read_keys.add(key)
+        elif not isinstance(key, str) and "settings_snapshot" in str(key):
+            raise SystemExit("a settings_snapshot read uses a composite key and cannot be verified")
+    missing = []
+    for key in sorted(read_keys) + wanted:
+        node = seed
+        for part in key.split("."):
+            if not isinstance(node, dict) or part not in node:
+                missing.append(key)
+                break
+            node = node[part]
+    if missing:
+        raise SystemExit(
+            "bootstrap state.json does not establish every settings_snapshot key that is "
+            "read (Get Dictionary Value on a missing key is a HARD RUNTIME ERROR, so a "
+            "condition-100 guard cannot protect the read): "
+            + ", ".join(sorted(set(missing))))
+    for key in wanted:
+        node = seed
+        for part in key.split("."):
+            node = node[part]
+        if node != CLEARED_SENTINEL:
+            # CYCLE 12 CORRECTION.  This assertion previously demanded EMPTY, and that was
+            # the build-j safety defect written down as an invariant: Donor 6.1 measured a
+            # present-but-empty value passing `has any value`, so an empty seed let the
+            # restore write an empty value into Set Brightness.  The leaf must carry the
+            # SENTINEL -- present, so the dotted read cannot raise; non-empty, so the write
+            # side needs no empty value; and numerically zero-or-absent, so the "> 0" leaf
+            # gate reads false.  Never a fabricated number: that could restore a setting the
+            # user never had.
+            raise SystemExit(f"{key} is seeded as {node!r}; it must be the cleared sentinel "
+                             f"{CLEARED_SENTINEL!r} -- an EMPTY seed passes `has any value` "
+                             "(Donor 6.1) and a fabricated number could restore a setting the "
+                             "user never had")
+
+
+# CYCLE 16 -- pending_exit gets the SAME container/leaf treatment as settings_snapshot
+# (axis 6, STATE SHAPE), confirmed live by device error rather than inferred: "In '', no
+# value was found for dictionary key 'pending_exit'" -- the identical error SHAPE cycle 11
+# found for settings_snapshot ("In '', no value was found for dictionary key
+# 'settings_snapshot'"), on a key the bootstrap template never declared at all. See the
+# note beside KNOWN_SENTINEL_EXISTENCE_GATES for the full before/after.
+PENDING_EXIT_SEED = {"type": CLEARED_SENTINEL, "timestamp": CLEARED_SENTINEL}
+PENDING_EXIT_ANCHOR = '"active_session": null,'
+
+
+def seed_pending_exit(actions):
+    """Establish pending_exit as a permanent {type, timestamp} container in bootstrap.
+
+    A naive "just seed the flat key with the cleared sentinel" fix would reintroduce the
+    OTHER half of this defect family the moment any exit is later recorded and cleared:
+    the FORMER complete_pending_exit() cleared the whole "pending_exit" key wholesale
+    (cycle-10 finding 5's exact anti-pattern -- see clear_snapshot()'s docstring --
+    replayed at the top level instead of a nested leaf), so the SECOND OPEN following any
+    exit would gate a sentinel-written key with a condition-100 existence test and then
+    dotted-read beneath a string parent -- axis 7, GATE SEMANTICS, "could not evaluate
+    the key path". The container/leaf split closes both halves at once: the CONTAINER is
+    established once, here, and is never again replaced wholesale by any write (matching
+    settings_snapshot's own already-verified invariant); record_exit_and_route() and
+    complete_pending_exit() now write and clear only the LEAVES.
+    Idempotent: a second run finds "pending_exit" already in the template and returns;
+    verify_pending_exit_seed() re-proves the shape either way.
+    """
+    _, inner = _state_template(actions)
+    if '"pending_exit"' in inner["string"]:
+        return  # already seeded; verify_pending_exit_seed() proves it is the right shape
+    line = next(text for text in inner["string"].splitlines() if PENDING_EXIT_ANCHOR in text)
+    indent = line[:len(line) - len(line.lstrip())]
+    leaves = ", ".join(f'"{leaf}": "{value}"' for leaf, value in PENDING_EXIT_SEED.items())
+    _replace_in_token(inner, PENDING_EXIT_ANCHOR,
+                      PENDING_EXIT_ANCHOR + f'\n{indent}"pending_exit": {{{leaves}}},')
+
+
+def verify_pending_exit_seed(actions):
+    """Fail the build unless pending_exit is seeded exactly as a {type, timestamp} container.
+
+    Same discipline as verify_state_seed(): the invariant seed_pending_exit() establishes
+    is asserted separately so the two cannot silently drift.
+    """
+    _, inner = _state_template(actions)
+    document = inner["string"].replace('"￼"', '"x"').replace("￼", "0")
+    try:
+        seed = json.loads(document)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"bootstrap state.json template is not valid JSON: {error}")
+    pending = seed.get("pending_exit")
+    if not isinstance(pending, dict) or any(pending.get(leaf) != value
+                                            for leaf, value in PENDING_EXIT_SEED.items()):
+        raise SystemExit(
+            f"pending_exit is seeded as {pending!r}; it must be exactly {PENDING_EXIT_SEED!r} "
+            "-- an absent or malformed seed reproduces the confirmed cycle-16 hard error "
+            "(\"no value was found for dictionary key 'pending_exit'\"), and any other "
+            "leaf value risks the same sentinel-vs-real-value confusion axis 7 already "
+            "closed for settings_snapshot")
+
+
+# ---------------------------------------------------------------------------
+# CYCLE 12 -- GATE SEMANTICS, the seventh axis.  Axis 6 (STATE SHAPE) asserted that every
+# key a read reaches EXISTS.  This asserts that the GATE standing over it can actually
+# distinguish the states that key can be in.  The two are different failures: build j
+# satisfied axis 6 completely and still wrote an empty value into Set Brightness.
+#
+# The measured rule, from Donor 6.1 on the target iPhone:
+#   an EXISTENCE gate (condition 100 / 101) cannot distinguish "cleared" from "captured"
+#   for any key that is ever written with the sentinel, because the sentinel is PRESENT and
+#   NON-EMPTY -- so the gate reads TRUE in exactly the case it exists to exclude.
+# Everything the restore path got wrong follows from that one sentence, so it is the thing
+# asserted, rather than the individual condition codes at the individual sites.
+#
+# Two invariants, both of which FAIL on the build-j generator and pass on this one:
+#   (1) SAFETY.  A brightness/volume write whose value is a variable read out of
+#       settings_snapshot must be dominated by a NUMERIC conditional on that same variable.
+#       This is the invariant build j violated; it is stated over the WRITE, so no future
+#       re-gating can reintroduce an empty or zero write without tripping it.
+#   (2) GATES.  No sentinel-written key may be gated by condition 100/101, and no dotted
+#       read may hang beneath a sentinel-written parent.  This enforces the CONTAINER vs
+#       LEAF split automatically rather than by convention: once clear_snapshot() writes the
+#       leaf instead of the container, `settings_snapshot.brightness` stops being
+#       sentinel-written and its condition-100 container gate becomes legal again, while the
+#       leaf beneath it must be numeric.  Change the clear back to the container and the
+#       build fails.
+EXISTENCE_CONDITION_CODES = {100, 101}
+SNAPSHOT_ROOT = "settings_snapshot"
+
+
+def _sentinel_written_keys(actions):
+    """Literal dictionary keys ever written with the cleared sentinel."""
+    keys = set()
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.setvalueforkey":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        key, value = parameters.get("WFDictionaryKey"), parameters.get("WFDictionaryValue")
+        if not isinstance(key, str) or not isinstance(value, dict):
+            continue
+        inner = value.get("Value")
+        if isinstance(inner, dict) and inner.get("string") == CLEARED_SENTINEL \
+                and not inner.get("attachmentsByRange"):
+            keys.add(key)
+    return keys
+
+
+def _read_variable_keys(actions):
+    """Map each named variable to the literal dictionary key it is read from.
+
+    read_value() emits getvalueforkey -> gettext -> setvariable, so the variable's key is
+    recovered by walking that chain backwards through the two output UUIDs.
+    """
+    key_by_uuid, text_by_uuid = {}, {}
+    for item in actions:
+        identifier = item.get("WFWorkflowActionIdentifier")
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if identifier == "is.workflow.actions.getvalueforkey":
+            if isinstance(parameters.get("WFDictionaryKey"), str) and "UUID" in parameters:
+                key_by_uuid[parameters["UUID"]] = parameters["WFDictionaryKey"]
+        elif identifier == "is.workflow.actions.gettext" and "UUID" in parameters:
+            # normalise_string_envelopes() rewrites this parameter into a WFTextTokenString
+            # TEXT TEMPLATE, so the producing action is reached through attachmentsByRange
+            # rather than through a bare descriptor.  Accept both forms: reading only the
+            # bare form silently returns no provenance and the guard becomes decoration.
+            holder = parameters.get("WFTextActionText")
+            source = holder.get("Value") if isinstance(holder, dict) else None
+            if not isinstance(source, dict):
+                continue
+            sources = [source] + list((source.get("attachmentsByRange") or {}).values())
+            for candidate in sources:
+                if isinstance(candidate, dict) and candidate.get("Type") == "ActionOutput" \
+                        and candidate.get("OutputUUID") in key_by_uuid:
+                    text_by_uuid[parameters["UUID"]] = key_by_uuid[candidate["OutputUUID"]]
+                    break
+    keys = {}
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.setvariable":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        source = (parameters.get("WFInput") or {}).get("Value")
+        if not isinstance(source, dict) or source.get("Type") != "ActionOutput":
+            continue
+        key = text_by_uuid.get(source.get("OutputUUID"))
+        if key:
+            keys.setdefault(parameters.get("WFVariableName"), set()).add(key)
+    return keys
+
+
+def _enclosing_if_arms(actions):
+    """For each action index, the conditionals whose IF arm currently encloses it."""
+    stack, enclosing = [], []
+    for item in actions:
+        parameters = item.get("WFWorkflowActionParameters", {})
+        is_conditional = item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+        mode = parameters.get("WFControlFlowMode") if is_conditional else None
+        if mode == 2 and stack:
+            stack.pop()
+            enclosing.append([entry for entry, arm in stack if arm])
+            continue
+        enclosing.append([entry for entry, arm in stack if arm])
+        if mode == 0:
+            stack.append((parameters, True))
+        elif mode == 1 and stack:
+            stack[-1] = (stack[-1][0], False)
+    return enclosing
+
+
+def _tested_variable(parameters):
+    descriptor = (parameters.get("WFInput") or {}).get("Variable", {}).get("Value")
+    if isinstance(descriptor, dict) and descriptor.get("Type") == "Variable":
+        return descriptor.get("VariableName")
+    return None
+
+
+def verify_restore_gates(actions):
+    """Fail the build if a brightness/volume write is not numerically gated.
+
+    THE INVARIANT BUILD 2026-08-14j VIOLATED, stated over the write rather than the gate.
+    Its leaf gate was condition 100 and the leaf was seeded EMPTY, and a present-but-empty
+    value passes `has any value` (Donor 6.1), so Set Brightness was reached with an empty
+    value -- a runtime error or brightness 0, which .claude/CLAUDE.md forbids outright, on
+    the C->D span that runs on EVERY OPEN.
+    A value read out of settings_snapshot must be gated by a NUMERIC comparison on that
+    same variable, because only a numeric test excludes BOTH the sentinel and empty; the
+    string family (code 4/5) excludes one and passes the other.
+    """
+    reads, offenders = _read_variable_keys(actions), []
+    for index, enclosing in enumerate(_enclosing_if_arms(actions)):
+        item = actions[index]
+        identifier = item.get("WFWorkflowActionIdentifier")
+        if identifier not in {"is.workflow.actions.setbrightness", "is.workflow.actions.setvolume"}:
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        value = parameters.get("WFBrightness") or parameters.get("WFVolume")
+        descriptor = value.get("Value") if isinstance(value, dict) else None
+        if not isinstance(descriptor, dict) or descriptor.get("Type") != "Variable":
+            continue  # a literal target is not a state-derived write
+        name = descriptor.get("VariableName")
+        numeric = [parameters for parameters in enclosing
+                   if parameters.get("WFCondition") in NUMERIC_CONDITION_CODES]
+        from_snapshot = any(key.split(".")[0] == SNAPSHOT_ROOT for key in reads.get(name, ()))
+        if from_snapshot:
+            if not any(_tested_variable(gate) == name for gate in numeric):
+                offenders.append((index, f"writes {name!r}, read from {SNAPSHOT_ROOT}, with no "
+                                         f"numeric gate on {name!r} above it"))
+        elif not numeric:
+            offenders.append((index, f"writes {name!r} with no numeric gate above it"))
+    if offenders:
+        raise SystemExit(
+            "a brightness/volume write is not numerically gated -- an existence or string "
+            "gate passes the cleared sentinel or an empty value straight into the write, "
+            "which is a runtime error or a black screen: "
+            + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
+            + f" ({len(offenders)} total)")
+
+
+def verify_sentinel_gates(actions):
+    """Fail the build if an existence gate stands over a key written with the sentinel.
+
+    The sentinel is PRESENT and NON-EMPTY, so condition 100 reads TRUE in exactly the case
+    it exists to exclude, and any dotted read inside that branch then runs against a string
+    parent and raises "could not evaluate the key path" (Donor 6.1, line 3).
+    KNOWN_SENTINEL_EXISTENCE_GATES records the key(s) still carrying this defect (pending_exit
+    was CLOSED cycle 16 via the container/leaf split and removed from this set; only
+    active_session remains, deliberately, per the note beside that constant), with the
+    reason they cannot be flipped in isolation; see the note beside CLEARED_SENTINEL.
+    """
+    sentinel, reads, offenders = _sentinel_written_keys(actions), _read_variable_keys(actions), []
+    deferred = set(KNOWN_SENTINEL_EXISTENCE_GATES)
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("WFCondition") not in EXISTENCE_CONDITION_CODES:
+            continue
+        for key in sorted(reads.get(_tested_variable(parameters), set()) & sentinel):
+            if key.split(".")[0] not in deferred:
+                offenders.append((index, f"condition {parameters['WFCondition']} gates {key!r}, "
+                                         "which is written with the cleared sentinel"))
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.getvalueforkey":
+            continue
+        key = item.get("WFWorkflowActionParameters", {}).get("WFDictionaryKey")
+        if not isinstance(key, str) or "." not in key:
+            continue
+        parent = key.rsplit(".", 1)[0]
+        if parent in sentinel and parent.split(".")[0] not in deferred:
+            offenders.append((index, f"dotted read {key!r} hangs beneath {parent!r}, which is "
+                                     "written with the cleared sentinel and is therefore not "
+                                     "always a dictionary"))
+    if offenders:
+        raise SystemExit(
+            "an existence gate or a dotted read stands over a sentinel-written key -- the "
+            "sentinel is present and non-empty, so condition 100 reads TRUE for a cleared "
+            "key and the nested read then hard-errors on a string parent: "
+            + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
+            + f" ({len(offenders)} total)")
+
+
+# ---------------------------------------------------------------------------
+# CYCLE 15 -- the eighth axis, STRUCTURED VALUE (compound state fields).  Confirmed by
+# device error: "Get Dictionary Value failed because Shortcuts couldn't convert Text to
+# Dictionary", traced to recent_sessions being read through read_value(), which
+# gettext-coerces every value it touches into a Text scalar.  That coercion is exactly
+# right for a leaf meant for a text/numeric comparison and exactly wrong for a compound
+# Array meant to be consumed structurally by Get Item From List or Repeat With Each --
+# get_value() is the un-coercing counterpart (see its own docstring for the full
+# device-error trace).  This guard makes the split mechanical rather than a convention:
+# any state key seeded in the bootstrap template as a JSON array must never be read
+# through read_value()'s gettext chain.
+COMPOUND_STATE_KEYS = frozenset({
+    "recent_sessions", "recent_contracts", "exit_events",
+    "profile_snapshot.enabled_exits",
+})
+# exit_stats.<name>.samples is a dynamic, per-exit-type key (text_token-built, not a
+# literal string), so it cannot be matched by this guard's literal-key scan.  It is the
+# fifth confirmed instance of this axis (complete_pending_exit(), fixed cycle 15) and is
+# recorded here so it is not lost from the class even though the guard below cannot see
+# it mechanically.
+
+
+LIST_CONSUMING_ACTIONS = {
+    "is.workflow.actions.repeat.each", "is.workflow.actions.getitemfromlist",
+    "is.workflow.actions.count", "is.workflow.actions.filter.contentitems",
+}
+
+
+def _list_consumed_variables(actions):
+    """Named variables fed as WFInput to an action that expects a List/Array."""
+    consumed = set()
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") not in LIST_CONSUMING_ACTIONS:
+            continue
+        descriptor = (item.get("WFWorkflowActionParameters", {}).get("WFInput") or {}).get("Value")
+        if isinstance(descriptor, dict) and descriptor.get("Type") == "Variable":
+            consumed.add(descriptor.get("VariableName"))
+    return consumed
+
+
+def verify_compound_value_reads(actions):
+    """Fail the build if a compound (Array) state key, read via read_value(), then
+    feeds a List-consuming action.
+
+    read_value()'s gettext step stringifies whatever it touches.  For a scalar this is
+    the intended coercion for text/numeric comparison -- including a compound value read
+    ONLY for text DISPLAY (e.g. manual_note_refresh()'s Snapshot Exits), which this guard
+    deliberately does not flag.  It is exactly wrong when the same value is consumed
+    STRUCTURALLY downstream by Get Item From List / Repeat With Each / Count: the array
+    collapses into one Text blob before that consumer ever sees it -- device-confirmed
+    cycle 15 (recent_sessions, breadcrumb E->F: "Get Dictionary Value failed because
+    Shortcuts couldn't convert Text to Dictionary"). get_value() is the correct helper
+    for every key in COMPOUND_STATE_KEYS when the read feeds a List consumer.
+    """
+    reads, consumed, offenders = _read_variable_keys(actions), _list_consumed_variables(actions), []
+    for name, keys in reads.items():
+        if name not in consumed:
+            continue  # text-display-only reads of a compound key are legitimate
+        hit = keys & COMPOUND_STATE_KEYS
+        if hit:
+            offenders.append(f"{name!r} is read via read_value() from {sorted(hit)} and fed to a List-consuming action")
+    if offenders:
+        raise SystemExit(
+            "a compound (Array) state key is read via read_value(), which stringifies it "
+            "via Get Text, and the resulting Text is then fed to a Get Item From List / "
+            "Repeat With Each / Count action expecting a List -- use get_value() instead: "
+            + "; ".join(offenders))
+
+
+# ---------------------------------------------------------------------------
+# CYCLE 9 -- OPERAND TYPE, the fifth defect axis and the first invisible in the plist.
+#
+# A conditional's OPERATOR PICKER is populated from the STATIC TYPE of the variable in
+# WFInput.  read_value() defines its variable from an is.workflow.actions.gettext output,
+# so Shortcuts types it Text and offers only the EIGHT STRING operators -- is / is not /
+# has any value / does not have any value / contains / does not contain / begins with /
+# ends with.  A numeric WFCondition (0, 1, 2, 3, 1003) then has NO CASE TO RENDER: the
+# operator chip shows RED and iOS refuses to run the action.
+#
+# Every key, envelope, picker literal and condition code is well-formed at a defective
+# site, so verify_parameter_keys, verify_string_envelopes, verify_required_pickers and
+# verify_conditional_inputs all pass over it.  Decrypting the signed artifact does not
+# reveal it either.  It was found only because the user photographed red operators.
+#
+# DEVICE GROUND TRUTH -- Donor 4.1, built in Shortcuts.app on the target iPhone and
+# decrypted 2026-08-14 (.planning/debug/"Donor 4.1.shortcut").  A Get Dictionary Value
+# output compared with WFCondition 2 against WFNumberValue "10" serialises as:
+#
+#   "WFInput": {"Type": "Variable", "Variable": {
+#       "Value": {"Type": "ActionOutput", "OutputName": "Dictionary Value",
+#                 "OutputUUID": "...",
+#                 "Aggrandizements": [{"Type": "WFCoercionVariableAggrandizement",
+#                                      "CoercionItemClass": "WFNumberContentItem"}]},
+#       "WFSerializationType": "WFTextTokenAttachment"}}
+#
+# iOS does NOT insert a Number action and does NOT change the read chain.  It attaches a
+# COERCION AGGRANDIZEMENT to the variable reference in the conditional's own input slot --
+# which is precisely what the user did in the UI by tapping the chip and choosing "Number"
+# from its type list (screenshot .planning/debug/IMG_5636.jpg).  Donor 4, the same shortcut
+# before that tap, carries the identical descriptor with NO Aggrandizements and a code-100
+# test, which is the control case.
+#
+# Corroboration that the aggrandizement attaches to a NAMED variable as well as to an
+# ActionOutput: golden shortcut 332c12a0060043b388b22b806be7ab58 carries
+# WFCoercionVariableAggrandizement on both {Type: Variable, VariableName: ...} and
+# {Type: ActionOutput, ...} descriptors (24 instances across the corpus).
+#
+# WHY A COERCION AND NOT A Number ACTION.  Golden corpus 2e0fb675 does feed a Dictionary
+# Value straight into is.workflow.actions.number, so that construct is also real -- but it
+# is the shape for MATERIALISING a number into the data flow, not for typing a conditional
+# operand.  For this exact construct the device is unambiguous, and device evidence
+# outranks corpus composition.  The coercion is also strictly smaller: it adds no actions,
+# leaves every device-proven read chain byte-identical, and needs no null handling, because
+# coercing an absent value yields an absent value and the comparison simply evaluates false.
+# ---------------------------------------------------------------------------
+NUMERIC_CONDITION_CODES = {0, 1, 2, 3, 1003}
+NUMBER_COERCION = {"Type": "WFCoercionVariableAggrandizement",
+                   "CoercionItemClass": "WFNumberContentItem"}
+# Action identifiers whose output is already Number-typed, so their operands need no
+# coercion.  Derived from the cycle-9 provenance trace of all 87 (Dumb) / 94 (Sentient)
+# numeric conditionals; leaving these untouched keeps every device-proven site -- notably
+# the Control Room refresh conditionals that executed on the cycle-5 pass -- byte-identical.
+NUMERIC_SOURCE_ACTIONS = {
+    "is.workflow.actions.number",
+    "is.workflow.actions.number.random",
+    "is.workflow.actions.math",
+    "is.workflow.actions.round",
+    "is.workflow.actions.calculateexpression",
+    "is.workflow.actions.gettimebetweendates",
+    "is.workflow.actions.getdevicedetails",
+    "is.workflow.actions.count",
+    # Ask For Input is numeric ONLY when its picker is Number; the token is synthesised
+    # per action below so a Text-typed Ask can never satisfy this.
+    "is.workflow.actions.ask#Number",
+}
+# Built-in variables that are numeric without a Set Variable of their own.
+NUMERIC_BUILTIN_VARIABLES = {"Repeat Index"}
+
+# CYCLE 14 -- axis 6 GENERALISED beyond conditionals.  HANDOFF.md's own type-audit first
+# pass named math.WFInput/WFMathOperand and getitemfromlist.WFItemIndex as unaudited
+# numeric-typed fields; the cycle-14 nested-descent second pass (which also unwraps the
+# {"Value": desc} shape a direct variable()/output() reference carries, not just
+# conditional's {"Type":"Variable","Variable":{"Value": desc}} wrapper the first pass was
+# scoped to) found 85 real uncoerced offenders: 30 getitemfromlist.WFItemIndex, 26
+# math.WFMathOperand, 11 math.WFInput, plus 18 setbrightness/setvolume (left untouched --
+# see the brightness/volume MVP-cut deferral in the debug session; those two fields are
+# deliberately NOT in this table).
+# The getitemfromlist offenders are load-bearing for symptom 1: mirror_text()'s
+# WFItemIndex=variable("Circle Next") is on the Circle 1 intervention itself, and "Circle
+# Next" is mixed-typed -- manual_emergency_restore()'s Test Circle loop assigns it from
+# read_value() (Text) as well as from number() (Number) -- so every Item At Index call
+# using it is exactly the axis-5/6 "one Text definition anywhere poisons every numeric use
+# of that name" class this session already fixed once for conditionals.  The math
+# offenders are the direct consequence of the elapsed_since() fix: "Last Open", "Last
+# Close" and "Pending Exit Timestamp" are Text (gettext-read), fed as the right-hand
+# WFMathOperand of a numeric subtraction, on the OPEN critical path.
+# Each site takes the SAME Donor-4.1 WFCoercionVariableAggrandizement:WFNumberContentItem
+# shape already established for conditionals -- not a new, unverified construct.
+NUMERIC_OPERAND_FIELDS = {
+    "is.workflow.actions.math": ("WFInput", "WFMathOperand"),
+    "is.workflow.actions.getitemfromlist": ("WFItemIndex",),
+}
+
+
+def _numeric_operand_sites(item):
+    """Yield (field_name, raw_value) for every numeric-typed field this action carries.
+
+    Covers the numeric-code conditional (as before) plus math and Item-At-Index
+    getitemfromlist, table-driven so a future numeric field is one line to add.
+    """
+    identifier = item.get("WFWorkflowActionIdentifier")
+    parameters = item.get("WFWorkflowActionParameters", {})
+    if identifier == "is.workflow.actions.conditional":
+        if parameters.get("WFControlFlowMode") == 0 and parameters.get("WFCondition") in NUMERIC_CONDITION_CODES:
+            yield "WFInput", parameters.get("WFInput")
+        return
+    if identifier == "is.workflow.actions.getitemfromlist" and parameters.get("WFItemSpecifier") != "Item At Index":
+        return
+    for field in NUMERIC_OPERAND_FIELDS.get(identifier, ()):
+        if field in parameters:
+            yield field, parameters[field]
+
+
+def _operand_descriptor(value):
+    """Unwrap a numeric field's raw value to its coercable descriptor, or None.
+
+    Two shapes occur for a variable/output reference in this artifact:
+      conditional-style : {"Type": "Variable", "Variable": {"Value": desc, ...}}
+      direct (variable()/output()) : {"Value": desc, "WFSerializationType": ...}
+    A bare literal number (e.g. math's WFMathOperand=60) is neither -- it is already
+    Number-typed by construction and returns None so the caller skips it untouched.
+    """
+    if not isinstance(value, dict):
+        return None
+    if isinstance(value.get("Variable"), dict):
+        descriptor = value["Variable"].get("Value")
+    elif "Value" in value:
+        descriptor = value.get("Value")
+    else:
+        return None
+    return descriptor if isinstance(descriptor, dict) else None
+
+
+def _numeric_operand_report(actions):
+    """Every numeric-typed operand site, with its operand descriptor and provenance.
+
+    Shared by the normalise and verify passes so the two can never disagree about which
+    operands count as already-numeric.
+    """
+    produced = {}
+    for item in actions:
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if "UUID" not in parameters:
+            continue
+        identifier = item.get("WFWorkflowActionIdentifier")
+        if identifier == "is.workflow.actions.ask":
+            identifier += "#" + str(parameters.get("WFInputType"))
+        produced[parameters["UUID"]] = identifier
+    # Shortcuts types a NAMED variable from ALL of its Set Variable definitions, so one
+    # Text definition anywhere poisons every numeric comparison of that name -- including
+    # comparisons on an arm the Text definition can never reach.  Collect them all.
+    definitions = {}
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.setvariable":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        value = (parameters.get("WFInput") or {}).get("Value")
+        sources = definitions.setdefault(parameters.get("WFVariableName"), set())
+        if not isinstance(value, dict):
+            sources.add("<literal>")
+        elif value.get("Type") == "ActionOutput":
+            sources.add(produced.get(value.get("OutputUUID"), "<unknown>"))
+        elif value.get("Type") == "Variable":
+            sources.add("variable:" + str(value.get("VariableName")))
+        else:
+            sources.add(str(value.get("Type")))
+
+    def resolve(name, seen=()):
+        if name in seen:
+            return {"<cycle>"}
+        found = set()
+        for source in definitions.get(name, set()):
+            if source.startswith("variable:"):
+                found |= resolve(source[len("variable:"):], (*seen, name))
+            else:
+                found.add(source)
+        return found
+
+    report = []
+    for index, item in enumerate(actions):
+        for field, raw in _numeric_operand_sites(item):
+            descriptor = _operand_descriptor(raw)
+            if descriptor is None:
+                if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+                    continue  # literal number -- already Number-typed, nothing to coerce
+                report.append((index, field, None, {"<not-a-descriptor>"}))
+                continue
+            if descriptor.get("Type") == "ActionOutput":
+                sources = {produced.get(descriptor.get("OutputUUID"), "<unknown>")}
+            elif descriptor.get("VariableName") in NUMERIC_BUILTIN_VARIABLES:
+                sources = {"<builtin>"}
+            else:
+                sources = resolve(descriptor.get("VariableName")) or {"<undefined>"}
+            report.append((index, field, descriptor, sources))
+    return report
+
+
+def _already_numeric(sources):
+    return bool(sources) and sources <= (NUMERIC_SOURCE_ACTIONS | {"<builtin>"})
+
+
+def normalise_numeric_operands(actions):
+    """Type every numeric operand as a Number, the way iOS does.
+
+    Attaches Donor 4.1's WFCoercionVariableAggrandizement to the operand descriptor of any
+    numeric-typed site (numeric-code conditional, math, or Item-At-Index getitemfromlist)
+    whose operand is not already Number-typed.  Structural rather than site-by-site: a
+    future numeric comparison or calculation on a text-coerced value is corrected
+    automatically, and the matching invariant is asserted by verify_numeric_operands().
+    Operands that are already numeric are left untouched, so sites that have executed on
+    device stay byte-identical.
+    """
+    for _index, _field, descriptor, sources in _numeric_operand_report(actions):
+        if descriptor is None or _already_numeric(sources):
+            continue
+        existing = descriptor.setdefault("Aggrandizements", [])
+        if not any(a.get("Type") == "WFCoercionVariableAggrandizement" for a in existing):
+            # Coercion goes FIRST: golden 332c12a0 orders coercion before any property
+            # aggrandizement, because the property is read from the coerced item.
+            existing.insert(0, dict(NUMBER_COERCION))
+
+
+def verify_numeric_operands(actions):
+    """Fail the build if a numeric-typed operand is untyped and non-numeric.
+
+    See the block comment above for the mechanism and the Donor 4.1 evidence.  This is the
+    fifth axis the generator asserts, after key name, value envelope, picker literal and
+    variable slot -- and the only one with no representation in the ToolKit catalog, the
+    bundled validator, or the signed artifact.  CYCLE 14 widened its scope from
+    conditionals alone to every numeric-typed field in NUMERIC_OPERAND_FIELDS.
+    """
+    offenders = []
+    for index, field, descriptor, sources in _numeric_operand_report(actions):
+        if descriptor is None:
+            offenders.append((index, f"{field}: operand is not a variable descriptor"))
+            continue
+        if _already_numeric(sources):
+            continue
+        coerced = any(a.get("Type") == "WFCoercionVariableAggrandizement"
+                      and a.get("CoercionItemClass") == "WFNumberContentItem"
+                      for a in descriptor.get("Aggrandizements", []))
+        if not coerced:
+            offenders.append((index, f"{field}: operand is fed by {', '.join(sorted(sources))} "
+                                     "and carries no Number coercion"))
+    if offenders:
+        raise SystemExit(
+            "numeric-typed operands are not Number-typed -- a conditional's operator "
+            "picker is populated from its operand's static type (no case to render, chip "
+            "shows RED, action refuses to run); math and Item-At-Index getitemfromlist "
+            "operands risk a runtime type-conversion failure instead ('Get Time Between "
+            "Dates failed because Shortcuts couldn't convert from Text to Date' was this "
+            "session's own instance of a sibling defect): "
+            + "; ".join(f"action {i}: {why}" for i, why in offenders[:6])
+            + f" ({len(offenders)} total)")
+
 
 # Real output names, keyed by producing action identifier.  A magic-variable reference
 # carries OutputUUID (the binding) plus OutputName (the label iOS shows and re-resolves
@@ -1576,6 +2666,169 @@ def normalize_open_apps(actions):
             parameters.update(open_app(name)["WFWorkflowActionParameters"])
 
 
+def fix_shownote_key(actions):
+    """Rename the Control Room shownote action's input key from `target` to `WFInput`.
+
+    CYCLE 14 -- Donor 8 (device ground truth, decrypted 2026-08-15) shows
+    is.workflow.actions.shownote reads its note reference from WFInput; `target` is not a
+    parameter this action defines at all, so it was silently ignored (axis 1, the same
+    "wrong parameter key name" class this session already fixed 147 times elsewhere -- this
+    one site was outside every prior sweep because the action itself was hand-authored, not
+    emitted through set_value()/read_value()). With WFInput unfilled, the action had no
+    bound note to show; the reported symptom (choosing "Open Control Room" surfaces a
+    picker listing every note, then an editable box, rather than opening the resolved
+    Control Room Note directly) is the interactive fallback iOS takes for an unfilled
+    required note reference. "Control Room Note" itself IS correctly bound earlier in this
+    same hand-authored block, in both the found and the created branch (filter.notes ->
+    Get Item from List "First Item", and Create Note's own output) -- that part was never
+    broken; only the final shownote's key name was wrong.
+    Idempotent: a second run over an already-patched artifact finds no `target` key left.
+    """
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.shownote":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if "target" in parameters and "WFInput" not in parameters:
+            parameters["WFInput"] = parameters.pop("target")
+
+
+# Donor 8's OWN filter.notes action (device ground truth, decrypted 2026-08-15, the SAME
+# donor that settled fix_shownote_key()) carries an AppIntentDescriptor identifying it as
+# the NoteEntity query, plus WFContentItemLimitEnabled=true / WFContentItemLimitNumber=1.
+NOTES_FILTER_APP_INTENT = {
+    "ActionRequiresAppInstallation": True,
+    "AppIntentIdentifier": "NoteEntity",
+    "BundleIdentifier": "com.apple.mobilenotes",
+    "Name": "Notes",
+    "TeamIdentifier": "0000000000",
+}
+
+
+def fix_notes_filter_limit(actions):
+    """Bound the Control Room note search to exactly one result, Donor-8-matched.
+
+    CYCLE 16 -- reported symptom: choosing "Open Control Room" correctly opens the
+    resolved Control Room Note (fix_shownote_key()'s own fix, confirmed working: "it
+    takes me to the control room note (good)") but a list of every note ALSO appears.
+    "Control Room Note" itself is bound correctly in both the found and created branches
+    (fix_shownote_key()'s own finding; unaffected by this fix) -- the extra list is not a
+    binding defect, it is the ONE is.workflow.actions.filter.notes ("Find Notes") site in
+    this artifact having no declared result bound at all: only UUID and WFContentItemFilter
+    were ever emitted (hand-authored, outside every prior sweep -- same discovery class as
+    the adjacent shownote site fix_shownote_key() corrects in this exact hand-authored
+    block). Donor 8's OWN Find Notes action (device-authored in Shortcuts.app on the target
+    iPhone) carries AppIntentDescriptor + WFContentItemLimitEnabled=true +
+    WFContentItemLimitNumber=1 -- an explicit "exactly one result, never a chooser" bound;
+    this artifact's site had none of the three. This artifact's own search predicate
+    (Name contains "PROSOCHĒ — Control Room") and its Get Item From List "First Item"
+    consumer are unchanged and already correctly find the intended note (per the reported
+    symptom itself) -- only the missing result bound is added, matching Donor 8's shape
+    exactly rather than guessing which subset of the three fields matters.
+    Idempotent: a second run finds WFContentItemLimitEnabled already present and returns.
+    """
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.filter.notes":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if "WFContentItemLimitEnabled" in parameters:
+            return
+        parameters["AppIntentDescriptor"] = dict(NOTES_FILTER_APP_INTENT)
+        parameters["WFContentItemLimitEnabled"] = True
+        parameters["WFContentItemLimitNumber"] = 1.0
+        return
+
+
+def fix_date_format_key(actions):
+    """Correct the behavioural-day format.date action's pattern key.
+
+    CYCLE 14 -- Donor 7.1 (device ground truth, decrypted 2026-08-15) shows
+    is.workflow.actions.format.date reads its Custom pattern from WFDateFormat, not from
+    WFDateFormatString (the key this artifact -- and DATE_TIME.md's own prose -- assumed).
+    The artifact carried WFDateFormat = the literal word "Custom" (the key iOS actually
+    reads, holding a value that is not a pattern at all -- this is what rendered as the
+    format string "Custom" in the UI) while the real Config-driven pattern
+    (behavioural_day.key_format, "yyyy-MM-dd") sat in WFDateFormatString, a key iOS never
+    reads for this action. This did not hard-fail (Behavioural Day resolved to SOME text,
+    which is why breadcrumbs C and D already executed on device before this cycle), but it
+    is a real, silent defect in the value the day-rollover comparison depends on, and it is
+    axis 1 (wrong parameter key name) at the one format.date site this artifact has.
+    Per directive 7b: the "yyyy-MM-dd" sort-key format has no built-in preset equivalent
+    (ISO 8601 in DATE_TIME.md's own table includes time and a T/Z separator, which would
+    make every run of the same day look like a different day) -- Custom + a real pattern
+    in the key iOS reads is genuinely required here, not over-engineering.
+    Idempotent: a second run finds WFDateFormat already holding the pattern, not "Custom".
+    """
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.format.date":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("WFDateFormat") == "Custom" and "WFDateFormatString" in parameters:
+            parameters["WFDateFormat"] = parameters.pop("WFDateFormatString")
+
+
+def fix_state_rebind(actions):
+    """Force a stale device state.json to rebuild once, and make the rebuild reach State.
+
+    CYCLE 14 -- two independent gaps found while verifying build k, neither device-tested
+    until now (debug session cycle 12/13 blind_spots):
+    (1) The three-check validity gate (schema_version present, == "1", profile non-empty)
+        accepts ANY file whose schema_version is exactly "1" as valid and skips the rebuild
+        branch entirely -- so a device's pre-existing state.json, written before this
+        session's settings_snapshot/sentinel/gate fixes, is used as-is forever, and the
+        corrected bootstrap template this generator produces never reaches that device.
+    (2) When the rebuild branch DOES run (clean install, or corrupted file), it writes a
+        fresh Default State JSON to disk but never rebinds the `State` variable, which
+        stays bound to whatever the earlier read produced -- a hard-error-prone value on a
+        clean install, or the STALE shape on a device whose old file was just superseded on
+        disk but not in memory for the rest of THIS run.
+    Bumping schema_version from 1 to 2 (bootstrap template text + the version-check
+    literal) closes (1): it forces every existing device to take the rebuild branch on its
+    very next run, exactly once. The rebind closes (2): after the fresh JSON is produced,
+    parse it the same way the initial load does (Detect Dictionary) and rebind State to
+    that Dictionary output, not to the raw JSON text -- everything downstream
+    (getvalueforkey/setvalueforkey) expects a Dictionary-content-item, matching
+    normalize_setters()'s own rule that Set Dictionary Value's output must be rebound as a
+    Dictionary, never as text. Two new actions (Detect Dictionary + Set Variable State),
+    inserted immediately after Default State JSON is assigned, before the file save --
+    HANDOFF.md's own "schema bump + rebind, ~2 actions" estimate.
+    Idempotent: a second run finds schema_version already 2 and the rebind already present.
+    """
+    _, inner = _state_template(actions)
+    if '"schema_version": 1,' in inner["string"]:
+        _replace_in_token(inner, '"schema_version": 1,', '"schema_version": 2,')
+    version_check = None
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        descriptor = parameters.get("WFInput", {}).get("Variable", {}).get("Value", {})
+        if descriptor.get("VariableName") == "State Schema Text" and parameters.get("WFConditionalActionString") in ("1", "2"):
+            version_check = parameters
+            break
+    if version_check is None:
+        raise SystemExit("schema version check conditional not found")
+    version_check["WFConditionalActionString"] = "2"
+    for index, item in enumerate(actions):
+        if not (item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setvariable"
+                and item.get("WFWorkflowActionParameters", {}).get("WFVariableName") == "Default State JSON"):
+            continue
+        already = (index + 2 < len(actions)
+                   and actions[index + 1].get("WFWorkflowActionIdentifier") == "is.workflow.actions.detect.dictionary"
+                   and actions[index + 2].get("WFWorkflowActionIdentifier") == "is.workflow.actions.setvariable"
+                   and actions[index + 2].get("WFWorkflowActionParameters", {}).get("WFVariableName") == "State"
+                   and actions[index + 2].get("WFWorkflowActionParameters", {}).get("WFInput", {}).get("Value", {}).get("OutputUUID")
+                       == actions[index + 1].get("WFWorkflowActionParameters", {}).get("UUID"))
+        if already:
+            return
+        rebind_id = uid()
+        actions[index + 1:index + 1] = [
+            action("is.workflow.actions.detect.dictionary", UUID=rebind_id, WFInput=variable("Default State JSON")),
+            set_var("State", output(rebind_id, "Dictionary")),
+        ]
+        return
+    raise SystemExit("Default State JSON assignment not found")
+
+
 def main():
     global UUID_COUNTER
     UUID_COUNTER = 0
@@ -1600,6 +2853,12 @@ def main():
         actions[fallback + 1:fallback + 1] = router_trace()
     normalize_setters(actions)
     normalize_open_apps(actions)
+    seed_settings_snapshot(actions)
+    seed_pending_exit(actions)
+    fix_state_rebind(actions)
+    fix_date_format_key(actions)
+    fix_shownote_key(actions)
+    fix_notes_filter_limit(actions)
     # The skill requires a repair-oriented, bulleted Comment immediately before
     # every control-flow start.  Make this invariant structural, not index-based.
     index = 0
@@ -1615,10 +2874,18 @@ def main():
         index += 1
     normalise_string_envelopes(actions)
     normalise_output_names(actions)
+    normalise_numeric_operands(actions)
     verify_parameter_keys(actions)
     verify_string_envelopes(actions)
     verify_output_names(actions)
     verify_required_pickers(actions)
+    verify_conditional_inputs(actions)
+    verify_numeric_operands(actions)
+    verify_state_seed(actions)
+    verify_pending_exit_seed(actions)
+    verify_restore_gates(actions)
+    verify_sentinel_gates(actions)
+    verify_compound_value_reads(actions)
     verify_router_shape(actions)
     # Declare that this shortcut consumes Shortcut Input.  The routing block reads the
     # ExtensionInput token, and PLIST_FORMAT.md defines this root key as "True if

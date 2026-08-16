@@ -1,0 +1,5001 @@
+---
+slug: open-routing-sequence-error
+status: resolved
+trigger: "Fix OPEN routing and Test Circle sequence error (from .planning/todos/pending/2026-08-13-fix-open-routing-and-test-circle-sequence-error.md)"
+created: 2026-08-14
+updated: 2026-08-15 (CLOSED — device confirms OPEN reaches Circle 1 end-to-end on build 2026-08-15o; symptom 1 CLOSED, joining symptoms 2 and 3)
+severity: blocker
+---
+
+> **RESOLVED — archived from [`HANDOFF.md`](HANDOFF.md)'s active-session slot.**
+> This is the full audit trail (~450 KB, 16 cycles + closure). All three original symptoms
+> from the 2026-08-13 todo are now CLOSED and device-verified. Symptom 1 (OPEN routing)
+> was confirmed fixed end-to-end on **build 2026-08-15o** on 2026-08-15: every breadcrumb
+> A through J fired, the one-time Shortcuts file-save permission prompt behaved as
+> expected, the Leaving/Continue intervention menu displayed, and Circle 1 fired with a
+> plausible Pressure=0.166666666666667 (1/6) / Heat=0 reading consistent with a
+> first-ever OPEN. See the final Evidence entry and the Resolution section's closing
+> summary + Prevention postmortem for the full account. Residual, still-open follow-up
+> work (Sentient re-fork, sentinel-gap siblings, the WFConditionalActionString/WFItems
+> classes, ship-readiness cleanup) has been spun into standalone todos in
+> `.planning/todos/pending/` — see HANDOFF.md for the index.
+
+# Debug Session: OPEN routing misrouted + Test Circle `sequence` write fails
+
+## Symptoms
+
+<DATA_START>
+
+### Expected behavior
+
+Opening a configured target app fires the manually created App Is Opened Personal
+Automation, which runs a wrapper containing a Text action holding exactly `OPEN`
+followed by Run Shortcut with its Input set to that Text magic variable. The master
+shortcut should take the OPEN path and immediately fire the Circle 1 intervention.
+
+Separately: from the manual menu, choosing **Test a Circle** and then selecting one of
+the nine Circle buttons should run that Circle's intervention.
+
+### Actual behavior
+
+1. **OPEN misrouting.** Opening a configured target app displays the manual menu
+   (`Status`, `Open Control Room`, `Sync My Profile`, and so on) instead of firing the
+   Circle 1 intervention. The received Shortcut Input is apparently not being matched
+   as `OPEN`, so routing falls through to MANUAL.
+
+2. **Test Circle `sequence` error.** From that unexpected menu, choosing **Test a
+   Circle** displays nine buttons labelled Circle 1 through Circle 9. Selecting any
+   Circle produces a runtime error.
+
+### Error messages
+
+> No value provided. No value was provided to the Set Dictionary Value action for the
+> key "sequence".
+
+### Timeline
+
+Both observed during the **first** on-device automation test, on 2026-08-13. The OPEN
+automation path has never been confirmed working on device. Prior verification for
+Phase 08 was automated/structural only (validator + signing), not runtime.
+
+### Reproduction
+
+- OPEN misrouting: install the signed Dumb artifact, create an App Is Opened Personal
+  Automation for a configured target app with the Text `OPEN` → Run Shortcut wrapper,
+  then open that target app.
+- Test Circle: from the menu that appears, choose **Test a Circle**, then tap any of
+  Circle 1 … Circle 9.
+
+### Additional context gathered at session start
+
+- **Fork under test:** Dumb (`src/PROSOCHE-Dumb.xml`). Sentient is untested but is
+  generated from the same source, so the same defect is presumed present in
+  `src/PROSOCHE-Sentient.xml` unless proven otherwise.
+- **Build vintage:** the installed `.shortcut` was built from today's artifacts, i.e.
+  it reflects the current working-tree source. The bug is therefore expected to
+  reproduce from `src/PROSOCHE-Dumb.xml` as it stands, not only from an older build.
+- **Device access:** iPhone is available now for iterative on-device re-testing, so
+  hypothesis → on-device test cycles are viable.
+
+### Suspected sites (from the originating todo, unverified)
+
+- `tools/build_state_engine.py:1045`
+- `tools/build_state_engine.py:1067`
+- `src/PROSOCHE-Dumb.xml:27277`
+- `src/PROSOCHE-Dumb.xml:27283`
+- `src/PROSOCHE-Dumb.xml:28185`
+- `src/PROSOCHE-Sentient.xml:28519`
+- `src/PROSOCHE-Sentient.xml:28525`
+- `src/PROSOCHE-Sentient.xml:29427`
+
+### Explicit non-assumption
+
+It is **not** known whether the OPEN misrouting and the missing `sequence` value share
+one cause. They are recorded together only because they were observed in the same
+first on-device automation test. Do not assume they are causally related — trace each
+independently, then check for a shared source before fixing.
+
+</DATA_START>
+<DATA_END>
+
+## Investigation constraints
+
+- The XML under `src/` is **generated** by `tools/build_state_engine.py`. Fixes must be
+  made at the generator, then regenerated and propagated to both forks — never by
+  hand-editing the generated XML alone.
+- Shortcuts cannot be executed on the build Mac. Runtime confirmation requires
+  validate → sign → import → on-device run, with the user driving the device.
+- Project rules apply: never fabricate an action identifier or parameter shape; verify
+  against the Shortcuts Playground bundled reference, and validate with
+  `--target-macos 26 --target-platform ios`.
+
+## Current Focus
+
+bug_class: Bohrbug (every symptom this session, including this cycle's, is deterministic
+  and reproducible on every run that reaches the defective site)
+
+CYCLE 16 — DEVICE EVIDENCE CONFIRMS E->I; TWO FINDINGS FIXED — BUILD 2026-08-15o SHIPPED
+(Dumb only), build-side and decrypt-verified, NOT device-tested. Supersedes the CYCLE 15
+block below for navigation; kept below for history.
+
+device_result_confirmed: >
+  Build 2026-08-15n ran on device. Reported: reached breadcrumb I (last letter seen,
+  progressed from breadcrumb E), then failed with "In '', no value was found for
+  dictionary key 'pending_exit'" on the OPEN critical path. Separately, on the MANUAL
+  path: choosing "Open Control Room" correctly opens the resolved Control Room Note
+  (fix_shownote_key()'s cycle-14 fix confirmed working) but a picker/list of every note
+  ALSO appears. This CONFIRMS the cycle-15 falsification_test's strongest branch exactly:
+  "letter E, then continuing PAST F with no error at all, through G/H/I/J" was the
+  best-case prediction; what was reported is the next-best documented branch --
+  "letter I or J with an error inside complete_pending_exit()" -- which the cycle-15
+  falsification_test explicitly flagged as "only reachable if this run followed a genuine
+  prior exit (pending_exit set)" and directed to "re-inspect that specific site, not the
+  recent_sessions fix." Every cycle-15 fix (get_value(), the five compound-value swaps,
+  verify_compound_value_reads()) is now device-confirmed correct as far as I, since
+  nothing between E and I depends on them failing differently. This is a
+  "no value was found for dictionary key" error -- axis 6, STATE SHAPE (the SAME shape
+  cycle 11 found for settings_snapshot: "In '', no value was found for dictionary key
+  'settings_snapshot'") -- not axis 8's "couldn't convert Text to Dictionary" compound-
+  coercion error cycle 15 closed. Per this session's own hard-won lesson: same span,
+  different error text, means a new defect, not a recurrence.
+
+reasoning_checkpoint:
+  hypothesis: >
+    FINDING 1 (OPEN path, confirmed live). complete_pending_exit()'s own unconditional
+    flat read of "pending_exit" (read_value("pending_exit", variable("State"), "Pending
+    Exit"), immediately followed by if_block("Pending Exit", 100)) runs on EVERY OPEN,
+    including the very first one this session's device pass exercised. "pending_exit" was
+    entirely absent from the bootstrap state.json template -- not seeded at all, unlike
+    active_session's bare JSON null -- exactly as this file's own KNOWN_SENTINEL_EXISTENCE_GATES
+    note (pre-cycle-16) predicted in advance ("Their bootstrap state is ABSENT
+    (pending_exit is not in the state.json template at all)... Fixing them requires
+    seeding both keys in the bootstrap template"). A flat Get Dictionary Value against a
+    key entirely absent from its dictionary is a hard runtime error, matching this
+    session's own cycle-11 precedent for settings_snapshot exactly (same error shape:
+    "In '', no value was found for dictionary key '<X>'"). A NAIVE fix (seed the flat key
+    with the CLEARED_SENTINEL text "null" and leave the existing condition-100 gate alone)
+    would not resolve the class: it would reproduce cycle-10 finding 5's exact anti-pattern
+    at the top level -- the sentinel is present and non-empty, so condition 100 reads TRUE
+    for a cleared key, and the branch's own dotted reads (pending_exit.type,
+    pending_exit.timestamp) would then run against a STRING parent and hard-error with
+    "could not evaluate the key path" on the SECOND OPEN following any exit. The correct
+    fix mirrors settings_snapshot's own already-verified container/leaf split: the
+    pending_exit CONTAINER ({"type", "timestamp"}) is seeded once and never again replaced
+    wholesale; only its LEAVES are written or cleared, gated by a STRING "is not sentinel"
+    test (condition 5), not an existence test.
+  confirming_evidence:
+    - "DIRECT ERROR-TEXT MATCH: the reported error, \"In '', no value was found for dictionary key 'pending_exit'\", is the IDENTICAL shape verify_sentinel_gates()'s own docstring and cycle 11's own comment block (lines 1734-1748, pre-cycle-16) record for settings_snapshot's clean-state failure: \"In '', no value was found for dictionary key 'settings_snapshot'\". Both are flat reads of a key the bootstrap template never declared. This is a state-shape (axis 6) failure, not the axis-8 compound-coercion failure cycle 15 closed (which produces a DIFFERENT error: \"couldn't convert Text to Dictionary\")."
+    - "DIRECT SOURCE TRACE: complete_pending_exit() (tools/build_state_engine.py, pre-fix) opens with `read_value(\"pending_exit\", variable(\"State\"), \"Pending Exit\")` then `if_block(\"Pending Exit\", 100)`, called unconditionally between breadcrumbs I and J on EVERY OPEN -- confirmed by breadcrumb() call sites: breadcrumb(\"I\") then complete_pending_exit() then breadcrumb(\"J\"). The device report (\"breadcrumb I, then failed\") places the failure exactly here."
+    - "BOOTSTRAP TEMPLATE, read directly: the decrypted pre-fix template's JSON has no \"pending_exit\" key at all (confirmed by direct grep of the recovered state.json seed, matching the pre-existing KNOWN_SENTINEL_EXISTENCE_GATES comment's own prior claim)."
+    - "THE CODE'S OWN PRE-EXISTING COMMENT PREDICTED THIS EXACTLY, in advance, before this cycle touched anything: 'Fixing them requires seeding both keys in the bootstrap template AND closing the state-rebind gap... that belongs in one cycle of its own' (KNOWN_SENTINEL_EXISTENCE_GATES, pre-cycle-16). This is not a surprise defect; it is the deferred item finally being closed."
+    - "THE ANTI-PATTERN A NAIVE FIX WOULD REPRODUCE IS ALREADY DOCUMENTED IN THIS FILE: clear_snapshot()'s own docstring records cycle-10 finding 5 -- 'clearing settings_snapshot.<key> replaced the sub-DICTIONARY with a string, so the very next run's dotted read of .original_value ran against a string parent and hard-errored.' complete_pending_exit()'s pre-fix clear (`set_value(\"pending_exit\", cleared_value())`) replaces the WHOLE key wholesale, the exact same shape."
+    - "ACTIVE_SESSION'S SIBLING GATE IS CONFIRMED SAFELY INERT ON THIS RUN, not fixed speculatively: the device report shows the run reached breadcrumb I -- past every active_session read on the OPEN critical path (record_exit_and_route()'s own active_session read is on the universal-leaving/exit-selection path, not open_pipeline()'s direct A-J sequence; open_pipeline()'s own active_session reads sit AFTER breadcrumb J, per direct grep of open_pipeline()) -- with no active_session-related error. Per the cycle-16 directive against fixing a non-reachable defect speculatively, active_session is left unchanged, still in KNOWN_SENTINEL_EXISTENCE_GATES."
+  falsification_test: >
+    NOT YET DEVICE-TESTED. Predicted breadcrumb positions for build 2026-08-15o (Dumb):
+    A=94 B=149 C=170 D=288 E=308 F=416 G=425 H=459 I=474 J=524 (A-I unchanged from build
+    15n; J shifts -3, because complete_pending_exit()'s read+gate restructure removes
+    3 net actions between I and J -- confirmed directly against the decrypted signed
+    2026-08-15o artifact, not assumed from arithmetic; see cycle_16_verification).
+      letter I, then continuing PAST J with no error at all, into the Circle 1
+        intervention (Knock/Mirror/etc.) actually displaying -> THE pending_exit FIX IS
+        CONFIRMED for the first-OPEN-following-an-exit case (the case this device run
+        exercised: pending_exit existed and had a real type/timestamp, or the container
+        read cleanly as the seeded sentinel on a fresh device). This is the first outcome
+        in the session's history that would mean symptom 1 is fully resolved end to end.
+      letter I with the SAME "no value was found for dictionary key" error again ->
+        a sibling STATE-SHAPE gap was missed; check whether it now names a DIFFERENT key
+        (e.g. exit_events, the still-unfixed sibling gap recorded in cycle 15's own
+        blind_spots) rather than assuming this exact fix failed.
+      letter I with a "could not evaluate the key path" error naming pending_exit.type or
+        .timestamp -> the container/leaf split has a remaining gap (e.g. a stale-state
+        device whose file predates this cycle's schema, if schema_version were bumped --
+        it was NOT bumped this cycle, deliberately, since the container addition is
+        purely additive and a pre-existing device's already-loaded State dictionary
+        simply lacks the new key the same way it lacked any newly-added field before this
+        session's schema-bump precedent; if this fires, the schema-version rebind
+        mechanism cycle 14 built needs extending to this key too) -- re-inspect the
+        seed/gate pairing, not the recent_sessions or exit_stats fixes.
+      Control Room: choosing "Open Control Room" opens the resolved note directly, with NO
+        note picker or list appearing -> the filter.notes fix (WFContentItemLimitEnabled/
+        Number + AppIntentDescriptor, Donor-8-matched) is confirmed. Any picker or list
+        still appearing -> re-check whether the device installed THIS build (menu prompt
+        should read "build 2026-08-15o") rather than assuming the hypothesis is wrong,
+        since Donor 8 is direct plist evidence from the target iPhone, not inference.
+      ANY report of the screen going dark, or brightness/volume named in an error -> hard
+        refutation of the untouched cycle-12 restore-gate invariants; extremely unlikely
+        since setbrightness/setvolume were not touched this cycle, stated because the
+        session's own discipline requires stating it.
+    Whether/when to run this on-device is the user's decision, not a next-step this cycle
+    directs.
+  fix_rationale: >
+    seed_pending_exit() + the record_exit_and_route()/complete_pending_exit() leaf-write
+    restructure is the container/leaf split settings_snapshot ALREADY uses, verified and
+    device-confirmed in this exact file since cycle 10/11/12 -- no new construct is
+    introduced, only the existing pattern is reused for a second field. The container is
+    established once and never again replaced wholesale (closing the STATE-SHAPE gap);
+    the leaf is gated by condition 5 against the CLEARED_SENTINEL, the same construct
+    already device-verified safe at four other sites in this artifact (closing the GATE-
+    SEMANTICS half cycle 12 already proved is required for ANY sentinel-written key). Both
+    halves are required together -- fixing only the seed (state shape) without also fixing
+    the gate (which was still condition 100 on the CONTAINER) would reintroduce the
+    cycle-10/cycle-12 defect the moment the container held the sentinel, which happens on
+    every OPEN following any exit's completion, i.e. almost immediately in real use.
+  blind_spots:
+    - "NOT DEVICE-VERIFIED YET, by explicit scope -- this cycle stops at local build/validate/sign/decrypt-verify, matching every prior cycle's own discipline. The predicted letter above is a prediction, not a confirmation."
+    - "SCHEMA_VERSION WAS NOT BUMPED this cycle. The pending_exit container is additive (a brand-new key), not a correction to an existing key's value, so a device whose state.json predates this fix will simply be missing the new subtree on its next load the same way any newly-introduced field would be -- UNLIKE cycle 14's settings_snapshot defect (which corrupted an EXISTING, already-read key's shape). If the falsification_test's 'could not evaluate the key path' branch fires, this assumption is what to re-examine first."
+    - "exit_events STILL HAS THE SAME UNFIXED STATE-SHAPE GAP recorded in cycle 15's own blind_spots (absent from bootstrap, only its coercion was fixed) -- not touched this cycle, out of scope per the standing directive's own instruction to fix only what's confirmed reachable. It sits on the exit-recording path (record_exit_and_route()), not the OPEN critical path A-J, so it cannot affect this cycle's falsification_test."
+    - "active_session REMAINS IN KNOWN_SENTINEL_EXISTENCE_GATES, deliberately, per the directive's own instruction not to fix speculatively -- confirmed safely inert on this run's own evidence (the run reached breadcrumb I without an active_session error), not proven safe in every possible state (e.g. after a genuine active session exists) since that path was not exercised by this device run."
+  candidate_causes:
+    - "data/state STATE SHAPE (PRIMARY, device-error-matched exactly, axis 6): pending_exit entirely absent from the bootstrap template -- a flat Get Dictionary Value against a key the dictionary never declared is a hard runtime error, matching cycle 11's settings_snapshot precedent exactly."
+    - "code/generator GATE SEMANTICS (SECONDARY, latent until the seed fix is applied, axis 7): the pre-existing condition-100 existence gate on the pending_exit container would misfire the moment the container held the cleared sentinel (every OPEN following any exit's completion) -- a DIFFERENT category from the state-shape gap, confirmed by cycle 12's own already-proven invariant (verify_sentinel_gates()) rather than inferred fresh this cycle."
+  and_gate: >
+    YES. Seeding the container alone (state shape) without ALSO changing the container's
+    own gate from condition 100 to a leaf-scoped condition 5 test would not have resolved
+    the class -- it would trade the confirmed hard error for the cycle-10/12-documented
+    "could not evaluate the key path" hard error on the very next OPEN after any exit
+    completes. Both the STATE-SHAPE fix (a data/state category) and the GATE-SEMANTICS fix
+    (a code/generator category) were required together, matching this session's own
+    established doctrine that these are two independently-necessary axes, not one cause
+    wearing two names -- exactly as cycle 12's own introduction of the axis states.
+
+reasoning_checkpoint_finding_2:
+  hypothesis: >
+    FINDING 2 (MANUAL path, Control Room note picker). The reported symptom -- Open
+    Control Room correctly opens the resolved note (shownote's WFInput fix, cycle 14,
+    confirmed working) but a picker/list of every note ALSO appears -- is not a binding
+    defect (Control Room Note is correctly bound in both the found and created branches;
+    confirmed unchanged, not re-broken). It is the ONE is.workflow.actions.filter.notes
+    ("Find Notes") site in this artifact having NO declared result bound: it carries only
+    UUID and WFContentItemFilter, an App-Intent-backed entity query with no explicit
+    "return exactly one" constraint, which iOS resolves via its own disambiguation UI
+    (a list) when it cannot statically determine there is exactly one intended result.
+  confirming_evidence:
+    - "DIRECT ACTION-COUNT CHECK REFUTES THE 'DUPLICATE ACTION' CANDIDATE: grep of src/PROSOCHE-Dumb.xml confirms exactly ONE is.workflow.actions.filter.notes, ONE is.workflow.actions.shownote, and TWO is.workflow.actions.appendnote (Sync My Profile's explicit write and the state-recovery conditional write, both legitimate and unrelated to Open Control Room) in the entire artifact -- ruling out the 'leftover duplicate Notes action' and 'two separate actions both touch Notes' candidates the directive listed; direct inspection, not inference."
+    - "DIRECT PLIST TRACE of the find-or-create block (src/PROSOCHE-Dumb.xml, hand-authored region, actions 3600-3682 pre-fix) confirms 'Control Room Note' is correctly bound in BOTH branches (Get Item From List 'First Item' off filter.notes' own output in the found branch; Create Note's own output in the created branch) and shownote's WFInput correctly references it -- refuting any binding-defect hypothesis for this cycle; the wiring itself matches cycle 14's own already-confirmed-correct account exactly."
+    - "DONOR 8, RE-DECRYPTED THIS CYCLE (device ground truth, the SAME donor that settled fix_shownote_key() in cycle 14): its own filter.notes action, genuinely authored in Shortcuts.app on the target iPhone, carries AppIntentDescriptor (AppIntentIdentifier: NoteEntity, BundleIdentifier: com.apple.mobilenotes) PLUS WFContentItemLimitEnabled=true AND WFContentItemLimitNumber=1.0 -- an explicit 'exactly one result, never a chooser' bound. This artifact's own filter.notes site had NONE of the three keys. This is the exact 'user-facing prompt parameter that needs explicit suppressing' the directive asked to check for."
+    - "CATALOG CROSS-CHECK: data/toolkit-v78-first-party-parameter-keys.json confirms WFContentItemLimitEnabled/WFContentItemLimitNumber are real, catalog-documented parameters for this action (bool / typed count respectively), corroborating Donor 8's shape as the action's genuine schema, not an authoring artifact specific to that one donor."
+    - "THE EXISTING SEARCH PREDICATE AND CONSUMER ARE UNCHANGED AND ALREADY WORK, per the report itself ('it takes me to the control room note (good)') -- this fix adds the missing result bound without touching the Name-contains-\"PROSOCHĒ — Control Room\" filter or the Get Item From List \"First Item\" consumer, so no working behaviour is put at risk."
+  falsification_test: >
+    See the shared CYCLE 16 falsification_test block above (Control Room bullet). Whether/
+    when to run this on-device is the user's decision, not a next-step this cycle directs.
+  fix_rationale: >
+    fix_notes_filter_limit() copies Donor 8's own device-authored shape onto this
+    artifact's one filter.notes site verbatim (AppIntentDescriptor + both limit keys),
+    rather than guessing which subset of the three fields is load-bearing -- consistent
+    with the project's evidence hierarchy (donor > catalog > inference) and the standing
+    directive against fabricating an unverified plist construct. No new action identifier
+    and no new value-envelope shape is introduced; the search predicate and its consumer
+    (Get Item From List "First Item" -> "Control Room Note") are untouched.
+  blind_spots:
+    - "NOT DEVICE-VERIFIED YET. Donor 8 does not itself demonstrate that omitting these keys CAUSES a list to appear (it only demonstrates what the correctly-authored shape looks like) -- the causal link is inferred from evidence hierarchy and the directive's own listed candidate, not independently donor-confirmed by a negative-case donor (a Donor 8 variant built WITHOUT the limit keys, run on device, to directly observe the list). If the falsification_test's picker-still-appears branch fires, this is the assumption to revisit."
+    - "com.apple.mobilenotes.SharingExtension's own OpenWhenRun parameter (named in this project's own capability audit, CLAUDE.md §3 item 5) was NOT added to the Create Note action this cycle -- Donor 8 does not itself include a Create Note action, so no direct donor evidence exists for its default value on device, and the confirmed-safely-inert reasoning (this device run's Control Room note almost certainly already existed from earlier cycles' own manual-menu device tests, so the FOUND/filter.notes branch, not the CREATE branch, is what executed) argues against fixing it speculatively. Recorded as a candidate follow-up if the filter.notes fix alone does not fully resolve the symptom."
+  candidate_causes:
+    - "code/generator UNDECLARED RESULT BOUND (PRIMARY, Donor-8-matched exactly): filter.notes has no WFContentItemLimitEnabled/Number, so an App-Intent-backed query with no declared cardinality resolves via iOS's own disambiguation UI rather than silently returning the single match."
+    - "data/config MISSING APP-INTENT IDENTITY (secondary, bundled with the same fix since Donor 8 carries it too): the action lacks AppIntentDescriptor entirely, which -- though not independently confirmed as causal -- is added alongside the limit keys to match device ground truth exactly rather than partially."
+  and_gate: >
+    NO for this finding in isolation -- the filter.notes fix is a single-category (code/
+    generator parameter completeness) change and is not contingent on Finding 1 or on any
+    second condition; it was investigated and fixed independently, using a different
+    action, a different donor cross-check, and a different code region from Finding 1.
+
+next_action: >
+  CLOSED, 2026-08-15. The device pass this block was awaiting arrived and matched the
+  falsification_test's strongest branch: letter I, then PAST J with no error, into
+  Circle 1 actually displaying (Pressure=0.166666666666667, Heat=0). See the closing
+  Evidence entry (2026-08-15, closure) and the Resolution section's FINAL summary +
+  Prevention postmortem for the full account. Finding 1 (pending_exit) is device-
+  confirmed. Finding 2 (filter.notes / Open Control Room picker) remains locally
+  verified only -- the device report did not exercise that specific check -- and is
+  carried forward as an open follow-up in the new ship-readiness todo rather than
+  claimed closed by inference. No further action required from this session; it is
+  archived to `.planning/debug/resolved/`.
+
+--- CYCLE 16 FIX APPLIED AND LOCALLY VERIFIED (build 2026-08-15o) ---
+
+cycle_16_fix_applied: >
+  tools/build_state_engine.py ONLY; Dumb regenerated, validated, signed, and decrypt-
+  verified. Sentient NOT touched, same standing reason as every prior cycle.
+  FINDING 1 (pending_exit, container/leaf split, mirrors settings_snapshot exactly):
+  (1) PENDING_EXIT_SEED + seed_pending_exit() -- a new bootstrap-seeding pass, inserted
+      into main() immediately after seed_settings_snapshot(). Establishes
+      `"pending_exit": {"type": "null", "timestamp": "null"}` in the state.json template,
+      anchored on the existing `"active_session": null,` line via the SAME
+      _state_template()/_replace_in_token() machinery seed_settings_snapshot() already
+      uses (correct attachment-offset shifting, not a hand-edit). Idempotent (checks for
+      an existing "pending_exit" substring first).
+  (2) verify_pending_exit_seed() -- a new build guard, wired in immediately after
+      verify_state_seed(). Parses the bootstrap template's own JSON and fails the build
+      unless pending_exit is present as exactly {"type": "null", "timestamp": "null"} --
+      the same discipline verify_state_seed() already applies to settings_snapshot,
+      asserted separately so seed and guard cannot silently drift apart.
+  (3) record_exit_and_route() -- the single wholesale write
+      `set_value("pending_exit", variable("Exit Event"), "Reloaded State")` replaced with
+      two LEAF writes: `set_value("pending_exit.type", variable(choice_name), "Reloaded
+      State")` and `set_value("pending_exit.timestamp", variable("Now Epoch"), "Reloaded
+      State")`. Both source variables are the SAME ones event_text already interpolates
+      into "Exit Event" a few lines above -- no new value is introduced, only a different
+      destination shape. This function is inlined at its two call sites (select_exit()'s
+      "Take suggested exit" and its chooser branch), so the change appears twice in the
+      final action array.
+  (4) complete_pending_exit() -- the flat read_value("pending_exit", ...) + condition-100
+      existence gate replaced with read_value("pending_exit.type", ...) done ONCE, reused
+      directly as BOTH the gate variable (if_block("Pending Exit Type", 5,
+      string=CLEARED_SENTINEL) -- condition 5, "is not", the SAME string-sentinel
+      construct already device-verified safe at four other sites in this artifact) AND
+      the value later used to build the exit_stats.<type> dynamic keys (unchanged). The
+      clear at the end of the function changed from `set_value("pending_exit",
+      cleared_value())` (the container, cycle-10-finding-5's exact anti-pattern replayed
+      at the top level) to `set_value("pending_exit.type", cleared_value())` (the leaf
+      only, matching clear_snapshot()'s own established rule) -- .timestamp is
+      deliberately left uncleared since it is read nowhere the type-gate does not already
+      exclude.
+  (5) KNOWN_SENTINEL_EXISTENCE_GATES narrowed from ("pending_exit", "active_session") to
+      ("active_session",) with the surrounding comment rewritten to record pending_exit as
+      CLOSED and explain, with this cycle's own device evidence, why active_session is
+      left unchanged (confirmed safely inert on the reachable OPEN-critical-path span,
+      not fixed speculatively). verify_sentinel_gates()'s own docstring updated to match.
+  FINDING 2 (filter.notes result bound, Donor-8-matched):
+  (6) NOTES_FILTER_APP_INTENT + fix_notes_filter_limit() -- a new fix pass, matching
+      fix_shownote_key()'s own style exactly (locate the one is.workflow.actions.filter.notes
+      site by identifier, not by index; idempotent via an early return if
+      WFContentItemLimitEnabled is already present). Adds AppIntentDescriptor
+      (AppIntentIdentifier: NoteEntity, BundleIdentifier: com.apple.mobilenotes),
+      WFContentItemLimitEnabled=True, and WFContentItemLimitNumber=1.0 -- copied verbatim
+      from Donor 8's own device-authored filter.notes action (re-decrypted this cycle from
+      .planning/debug/"Donor 8.shortcut", the SAME donor that settled fix_shownote_key()
+      in cycle 14). The existing Name-contains search predicate and its Get Item From List
+      "First Item" consumer are untouched.
+  (7) VERIFIED_PARAMETER_KEYS gained a filter.notes entry ({AppIntentDescriptor,
+      WFContentItemFilter, WFContentItemLimitEnabled, WFContentItemLimitNumber}) as the
+      recurrence guard, matching the shownote entry's own precedent exactly.
+  BUILD_STAMP bumped "build 2026-08-15n" -> "build 2026-08-15o". schema_version was
+  deliberately NOT bumped: the pending_exit container is a purely additive new key, not a
+  correction to an existing key's shape, so no existing device state needs to be forced
+  through the rebuild branch (see this cycle's own blind_spots for the caveat if this
+  assumption is refuted on device).
+  Both fixes are IDEMPOTENT (verified: a second full regeneration over the already-patched
+  artifact is byte-identical).
+  Net action count: 3683 -> 3684 (+1). Breadcrumbs A-I unchanged (94/149/170/288/308/416/
+  425/459/474); J shifts -3, to 524 (complete_pending_exit()'s read+gate restructure
+  removes 3 net actions between I and J: the old 10-action flat-read+dual-dotted-read
+  sequence becomes 7). record_exit_and_route()'s own +2-per-call-site change (the extra
+  leaf write plus normalize_setters()'s automatic Dictionary-rebind insertion) sits
+  strictly AFTER breadcrumb J (confirmed directly: J's shift is exactly -3, matching
+  ONLY the complete_pending_exit() delta, not offset by record_exit_and_route()'s +4
+  total), consistent with record_exit_and_route() living inside the exit-selection/
+  universal_leaving() flow rather than open_pipeline()'s direct A-J sequence. The
+  filter.notes fix adds parameters to an existing action, contributing 0 to the action
+  count.
+
+cycle_16_verification: >
+  NOT device-confirmed -- explicitly out of scope this cycle, matching every prior cycle's
+  own discipline; the phone build is the user's own call, not directed here. Build-side
+  and decrypt-verified only, stated as such:
+  - `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678 HEAD` passed
+    before regenerating (provenance guard).
+  - `python3 tools/build_state_engine.py` exits 0 (all generator-asserted axes hold,
+    including the two new guards: verify_pending_exit_seed() and the unchanged
+    verify_sentinel_gates() now passing cleanly for pending_exit.type without needing the
+    KNOWN_SENTINEL_EXISTENCE_GATES exemption); run a second time over its own output,
+    byte-identical (idempotent).
+  - DIRECT INSPECTION of the regenerated actions confirms: 0 remaining bare "pending_exit"
+    (undotted) getvalueforkey/setvalueforkey sites anywhere in the file; pending_exit.type
+    and pending_exit.timestamp read/written at exactly the expected sites (2 reads in
+    complete_pending_exit(), 1 clear-write of .type only, 2 write-pairs in
+    record_exit_and_route()'s two inlined call sites); the bootstrap template's own JSON
+    contains "pending_exit": {"type": "null", "timestamp": "null"} with the attachment
+    count for that gettext action unchanged (4 before, 4 after -- confirming
+    _replace_in_token()'s offset-shift logic preserved every existing attachment); the one
+    filter.notes site carries WFContentItemLimitEnabled=True (bool) and
+    WFContentItemLimitNumber=1.0 (float), matching Donor 8's own plist types exactly (not
+    just its logical values).
+  - UUID-STRIPPED SEMANTIC DIFF (difflib SequenceMatcher) against the pre-cycle-16
+    (build 2026-08-15n, commit 1cb857c) source: exactly 8 hunks. (1) the bootstrap
+    template's own gettext attachment-offset shift (pending_exit inserted, 4
+    attachments before and after, all still pointing at valid placeholders -- the
+    build's own guard would have raised SystemExit otherwise). (2)+(3) the old flat
+    pending_exit read + condition-100 gate removed, the new pending_exit.type read +
+    condition-5 gate inserted (complete_pending_exit()'s own read of "pending_exit.type"
+    for its downstream exit_stats key correctly matched as an unchanged "equal" region by
+    the diff, confirming only the read/gate STRUCTURE changed, not the value it produces).
+    (4) the clear site's key renamed pending_exit -> pending_exit.type. (5)+(6)
+    record_exit_and_route()'s two inlined call sites, each: one wholesale
+    setvalueforkey(pending_exit) replaced by setvalueforkey(pending_exit.type) +
+    setvariable(rebind) + setvalueforkey(pending_exit.timestamp) (normalize_setters()'s
+    automatic per-write Dictionary rebind, confirmed by direct inspection at both call
+    sites: 709-714 and 870-875 in the regenerated file). (7) the BUILD_STAMP text change
+    inside the manual-menu prompt string ("...15n" -> "...15o"), confirmed byte-identical
+    otherwise. (8) the filter.notes action gaining AppIntentDescriptor,
+    WFContentItemLimitEnabled, WFContentItemLimitNumber. Nothing else in the 3683->3684
+    action array changed -- every fix from every prior cycle (cycles 1-15) is
+    byte-identical to the artifact already locally verified before this turn.
+  - `bin/validate-shortcut --target-macos 26 --target-platform all` (shortcuts-playground
+    skill's own wrapper, per the standing directive to route validate/sign/archive
+    through the skill rather than ad hoc) -> "Validation passed." (Confirmed
+    `--target-platform ios` alone still floods "requires macOS 27+" starting at the
+    filter.notes site's own index, an UNCHANGED pre-existing bundled-data gap already
+    flagged in cycle_12/14_verification, not a regression from this cycle's fix.)
+  - `bin/sign-shortcut` (same skill wrapper) -> signed artifact confirmed AEA1, 189,899
+    bytes, non-zero.
+  - SHIPPED SIGNED ARTIFACT DECRYPTED (aea decrypt + aa extract, CLAUDE.md §8) and
+    inspected directly, not read back from the build tree: 3684 actions; stamp "build
+    2026-08-15o" with zero stale "15n"; breadcrumbs A-I UNCHANGED at
+    94/149/170/288/308/416/425/459/474; J at 524 (-3, matching the prediction exactly) --
+    CONFIRMED DIRECTLY AGAINST THE DECRYPTED PLIST, not assumed from arithmetic. pending_exit
+    present in the decrypted bootstrap template exactly as seeded; 0 bare "pending_exit"
+    sites remain; filter.notes carries WFContentItemLimitEnabled=True/
+    WFContentItemLimitNumber=1.0. 0 duplicate action UUIDs across all 3684 actions; 0
+    GroupingIdentifier imbalance; 23 Choose-from-Menu opens (unchanged from every prior
+    cycle).
+  Predicted next breadcrumb letter and refutation criteria are stated in the CYCLE 16
+  Current Focus falsification_test, in advance of any device run.
+
+oracle_type: specified (user-observable device behaviour -- the exact reported error
+  string for Finding 1, and the exact reported "note opens correctly, then a list also
+  appears" behaviour for Finding 2 -- each traced against a statically-read, statically-
+  verifiable source defect and, for Finding 1, a device-measured breadcrumb position; the
+  same oracle class used by every prior cycle in this session)
+
+cycle_16_files_changed:
+  - tools/build_state_engine.py (KNOWN_SENTINEL_EXISTENCE_GATES narrowed;
+    PENDING_EXIT_SEED + seed_pending_exit() + verify_pending_exit_seed() added and wired
+    into main(); record_exit_and_route() and complete_pending_exit() restructured to the
+    pending_exit container/leaf shape; NOTES_FILTER_APP_INTENT + fix_notes_filter_limit()
+    added and wired into main(); VERIFIED_PARAMETER_KEYS gained a filter.notes entry;
+    BUILD_STAMP bumped)
+  - src/PROSOCHE-Dumb.xml (regenerated)
+  - artifacts/shortcuts/2026-08-15/PROSOCHĒ — Nine Circles — Dumb.shortcut (re-signed)
+
+--- END CYCLE 16 ---
+
+device_result_confirmed: >
+  Build 2026-08-15m ran on device. Reported: reached breadcrumb E (last letter seen), then
+  failed with "Get Dictionary Value failed because Shortcuts couldn't convert Text to
+  Dictionary." This CONFIRMS the cycle-14 prediction exactly as stated in that cycle's own
+  falsification_test: "letter D, then continuing PAST E with no error at all... -> BOTH THE
+  DATE FIX AND THE GETITEMFROMLIST COERCION FIX ARE CONFIRMED" is not quite what happened
+  (E was reached, not merely D), but the weaker, still-decisive form holds -- every fix
+  cycle 14 shipped (elapsed_since(), the numeric-operand coercion generalisation, the
+  shownote key, the format.date key, the state rebind, the checkpoint's Control Room split)
+  is now device-confirmed correct as far as E, since none of them sit between D and this
+  new failure. Per this session's own hard-won lesson, inverted and applied here: SAME-ISH
+  letter region, DIFFERENT error text, means a NEW defect, not a recurrence of the
+  elapsed()/gettimebetweendates date-coercion defect cycle 14 closed. This is a
+  `getvalueforkey` (Get Dictionary Value) failure, not a `gettimebetweendates` failure --
+  a different action, a different error class, requiring fresh investigation, not assumed
+  to be the same bug under a different error string.
+
+reasoning_checkpoint:
+  hypothesis: >
+    recent_sessions (a compound Array of session-record dictionaries) is read via
+    read_value() -- the helper that unconditionally applies Get Text (gettext) to
+    coerce a Dictionary Value into a comparable Text scalar -- inside open_pipeline()'s
+    previous-contract lookup (immediately after breadcrumb E). This stringifies the
+    array into one Text blob. The next action, Get Item From List ("First Item",
+    WFInput=that Text blob), does not itself error (Get Item From List accepts a bare
+    Text input without raising), and returns that same Text blob as "Item from List",
+    bound to "Previous Session". The action immediately after THAT -- a
+    read_value()-driven Get Dictionary Value reading "declared_duration_seconds" off
+    "Previous Session" -- then fails, because its WFInput ("Previous Session") resolves
+    as Text, not Dictionary: exactly "couldn't convert from Text to Dictionary".
+  confirming_evidence:
+    - "DIRECT SOURCE TRACE, not inference: tools/build_state_engine.py's open_pipeline() reads `a += read_value(\"recent_sessions\", variable(\"State\"), \"Recent Sessions\")` (pre-fix, immediately after breadcrumb E's own alert()); the very next lines are `getitemfromlist(WFItemSpecifier=\"First Item\", WFInput=variable(\"Recent Sessions\"))` binding \"Previous Session\", then `read_value(\"declared_duration_seconds\", variable(\"Previous Session\"), \"Previous Declared Duration\")` -- the FIRST getvalueforkey call in the whole E->F span whose WFInput does not resolve to a genuine Dictionary. This is the exact and only candidate the device error's own wording (Get Dictionary Value, Text->Dictionary) can refer to in that span."
+    - "read_value()'s OWN DOCSTRING, unchanged since before this cycle, states its purpose precisely: 'Get a dictionary value, coerce via Text, then name it for comparison.' This is correct for a scalar meant for text/numeric comparison and is a categorical mismatch for a compound Array meant to be consumed structurally."
+    - "WRITE-SIDE SYMMETRY, read directly from the same file: recent_sessions is written back via `set_value(\"recent_sessions\", variable(\"Recent Sessions Next\"), ...)`, where \"Recent Sessions Next\" is built purely by `appendvariable` (a genuine List construct, never re-serialized to text). The write side already assumes recent_sessions is a native Array; a matching, un-stringified read is what makes the round trip symmetric, not a new or unverified assumption about iOS."
+    - "BOOTSTRAP TEMPLATE, read directly from src/PROSOCHE-Dumb.xml (the generator's own base, not the Python source): `\"recent_sessions\": []` -- a genuine JSON array, confirming the field's real type at the source of truth this project already treats as authoritative for state shape (axis 7)."
+    - "SYSTEMATIC SCAN (scratchpad script, cross-checked by manual code reading first): every read_value() call site was enumerated, and every WFInput=variable(name) feeding a Repeat With Each / Get Item From List / Count / Filter action was enumerated separately; the intersection identified FIVE total call+consume pairs sharing this exact defect (recent_sessions x2 -- open_pipeline AND close_pipeline; profile_snapshot.enabled_exits in enabled_exits(); exit_events in record_exit_and_route(); exit_stats.<type>.samples in complete_pending_exit(), the last of which sits on the OPEN critical path between breadcrumbs I and J). This is the SAME 'fix whole classes, not site-by-site' pattern as cycle 14's numeric-operand generalisation -- one design-level mismatch, five sites, one root cause."
+  falsification_test: >
+    NOT YET DEVICE-TESTED. Predicted breadcrumb positions for build 2026-08-15n (Dumb):
+    A=94 B=149 C=170 D=288 E=308 F=416 G=425 H=459 I=474 J=527 (A-E unchanged from build
+    15m; F-I each shift -1 because the recent_sessions fix removes one action between E
+    and F; J shifts a further -1, to -2 total, because the exit_stats.<type>.samples fix
+    ALSO removes one action between I and J, inside complete_pending_exit() -- confirmed
+    directly against the decrypted signed 2026-08-15n artifact, not assumed from
+    arithmetic, see cycle_15_verification).
+      letter E, then continuing PAST F with no error at all, through G/H/I/J and into the
+        Circle 1 intervention actually displaying -> THE recent_sessions FIX IS CONFIRMED
+        and, since nothing else changed on the E->J span besides the -1 action shift, this
+        would be the first outcome in the session's history meaning symptom 1 is fully
+        resolved on a FIRST OPEN with no prior recorded sessions.
+      letter E with the SAME "Get Dictionary Value ... Text to Dictionary" error again ->
+        a SIXTH site of this exact class was missed; re-run the systematic scan (read_value
+        call sites intersected with List-consumer WFInput references) for anything the
+        literal-key COMPOUND_STATE_KEYS scan cannot see (e.g. a text_token-built dynamic
+        key, matching how exit_stats.<type>.samples had to be found by hand rather than by
+        the guard, since the guard's key match is literal-string-only).
+      letter E with a DIFFERENT Get Dictionary Value / Get Item From List / Repeat With
+        Each error naming a field other than recent_sessions -> a different compound-value
+        site not yet identified; check whether it is one of the four OTHER sites this cycle
+        fixed (profile_snapshot.enabled_exits, exit_events, exit_stats.<type>.samples) by
+        matching the field name in the error, or a genuinely new one.
+      letter I or J with an error inside complete_pending_exit() (Exit Samples / Repeat
+        With Each) -> only reachable if this run followed a genuine prior exit (pending_exit
+        set); would mean the exit_stats.<type>.samples fix has its own remaining gap --
+        re-inspect that specific site, not the recent_sessions fix.
+      ANY report of the screen going dark, or brightness/volume named in an error -> hard
+        refutation of the untouched cycle-12 restore-gate invariants; extremely unlikely
+        since setbrightness/setvolume were not touched this cycle, stated because the
+        session's own discipline requires stating it.
+    Whether/when to run this on-device is the user's decision, not a next-step this cycle
+    directs.
+  fix_rationale: >
+    get_value() -- the SAME getvalueforkey call read_value() already makes, with the
+    unneeded/harmful gettext coercion step removed -- is the minimal, whole-class fix.
+    No new action identifier, no new parameter key, no new envelope shape: the fix
+    REMOVES a step rather than adding one, and the resulting variable is bound directly
+    to getvalueforkey's own "Dictionary Value" output, which already carries the key's
+    real underlying JSON type (this is how Config, State, and every other
+    Dictionary-typed value in this artifact already work; nothing new is being assumed
+    about iOS behaviour that this artifact does not already rely on elsewhere). Applied
+    to exactly the five confirmed sites; a sixth candidate (manual_note_refresh()'s
+    "Snapshot Exits", also profile_snapshot.enabled_exits) was deliberately LEFT on
+    read_value(), because it is used only for text display (embedded in a Note/alert
+    template), which is read_value()'s correct, intended use -- confirmed by the new
+    guard NOT firing on it (the guard only flags a compound key whose read_value()
+    result also feeds a List-consuming action).
+  blind_spots:
+    - "NOT DEVICE-VERIFIED YET, by explicit scope -- this cycle stops at local build/validate/sign/decrypt-verify, matching every prior cycle's own discipline. The predicted letter above is a prediction, not a confirmation."
+    - "exit_events (record_exit_and_route()) has a SEPARATE, NOT-fixed-this-cycle gap: the key is entirely ABSENT from the bootstrap template (confirmed by direct grep of src/PROSOCHE-Dumb.xml's state.json seed), unlike recent_sessions/enabled_exits/exit_stats which are all seeded. The get_value() swap stops double-corrupting the type once a value exists, but does not establish the key exists on a device that has never recorded an exit. This is the SAME category as KNOWN_SENTINEL_EXISTENCE_GATES (pending_exit, active_session) -- recorded, not fixed, since it sits past breadcrumb J on a path this device pass will not reach on a first OPEN."
+    - "The new verify_compound_value_reads() guard's COMPOUND_STATE_KEYS registry matches LITERAL string keys only. exit_stats.<type>.samples is a text_token-built dynamic key and cannot be matched mechanically by this guard -- it was found and fixed by the manual systematic scan, not by the guard, and is recorded in the guard's own comment so the class is not silently incomplete. A future compound field built the same dynamic way would need the same manual check; the guard is a partial, not total, recurrence protection for this axis."
+    - "recent_contracts ([] in the bootstrap) is registered in COMPOUND_STATE_KEYS defensively but has NO current read_value() site at all (grep confirms) -- included so the guard fires immediately if one is ever added carelessly, not because a defect was found there this cycle."
+  candidate_causes:
+    - "code/generator TYPE MISMATCH (PRIMARY, device-error-matched exactly): read_value()'s unconditional gettext step stringifies a compound Array value, which a downstream List-consuming action (Get Item From List, Repeat With Each) then cannot use structurally -- five confirmed instances, one of which (recent_sessions in open_pipeline) is the immediate breadcrumb E->F blocker; a second (exit_stats.<type>.samples in complete_pending_exit()) also sits on the OPEN critical path (I->J) but was not yet reached because it requires a genuine prior exit."
+    - "data/state STATE-SHAPE GAP, a DIFFERENT category, found while auditing the same function: exit_events is entirely absent from the bootstrap template -- independent of the type-coercion defect above (fixing the coercion does not establish the key exists), not fixed this cycle, recorded as a known follow-up in the same family as KNOWN_SENTINEL_EXISTENCE_GATES."
+  and_gate: >
+    NO for the confirmed E->F blocker itself -- the single coercion-class fix
+    (read_value() -> get_value() on recent_sessions) is sufficient on its own to resolve
+    that specific failure; no second, independent condition is required for THAT site.
+    YES in the broader sense that fixing only the ONE site the device error named would
+    have left FOUR sibling sites of the identical defect class unfixed, one of them
+    (exit_stats.<type>.samples) on the OPEN critical path itself -- matching this
+    session's own established doctrine ("fix whole classes, never site-by-site") rather
+    than a true AND-gate over a single failure's root cause.
+
+next_action: >
+  Awaiting the user's device pass on build 2026-08-15n. No further local action is
+  required or possible before that -- Shortcuts cannot be executed on the build Mac. If
+  the device confirms letter E followed by no further error through the Circle 1
+  intervention, symptom 1 is resolved on a first-OPEN path with no prior sessions and this
+  session should move to closing that symptom (device-verify, then archive per the
+  find_and_fix protocol's human-verify checkpoint). If it reports a new letter or a
+  different/same error text, follow this cycle's own falsification_test table above.
+  design_question: >
+    Should "Status"/"Open Control Room" append a current-state snapshot to the permanent
+    Control Room Note on every tap, or should opening the Note be read-only? Before this
+    turn, both choices set "Manual Refresh Requested"=1, and the shared post-menu tail
+    (find-or-create the note -> PHASE 7 refresh -> shownote) appended a snapshot section to
+    the Note and then opened it -- the note-refresh-then-show mechanic WAS how Status was
+    implemented, and Open Control Room inherited the same append as an unintended side
+    effect of sharing that mechanism.
+  checkpoint_response: >
+    Read-only. "Open Control Room" is decoupled from the refresh-append mechanism entirely;
+    only explicit actions (Sync My Profile, Change Profile, Change Sequence, Toggle Voice,
+    Reset Today, Emergency Restore) write to the Note. "Status" gets its own separate read
+    path so it is not left without a mechanism.
+  fix_applied: >
+    tools/build_state_engine.py ONLY (manual_emergency_restore(), manual_note_refresh()),
+    Dumb regenerated/validated/signed/decrypt-verified; Sentient untouched (still stale by
+    six generator-level changes now, per the same standing directive as before -- it forks
+    additively from src/PROSOCHE-Dumb.xml and will pick this up automatically once
+    re-forked). Two changes, both minimal and additive to the existing shape:
+    (1) "Open Control Room"'s case body changed from *number(1, "Manual Refresh Requested")
+        (2 actions) to a single action("is.workflow.actions.nothing") -- it now sets NO
+        flag at all. The shared post-menu tail (unchanged) still finds-or-creates the note
+        and calls shownote (WFInput-keyed, cycle 14's own fix) on every choice, so the note
+        still opens -- it simply never gets a snapshot appended first.
+    (2) "Status"'s case body changed from *number(1, "Manual Refresh Requested") to
+        *number(1, "Manual Status Requested") -- same shape (number + setvariable), new
+        flag name, so it no longer triggers the append either. A new branch was added to
+        manual_note_refresh() (PHASE 7), gated on if_block("Manual Status Requested", 2,
+        number=0) -- the SAME numeric ">" 0 gate shape already used for "Manual Refresh
+        Requested"/"Manual Sync Requested" two lines above it, no new construct. It reuses
+        the Snapshot Fork/Profile/Sequence/Voice/Circle/Pressure/Cooldown variables already
+        read UNCONDITIONALLY at the top of manual_note_refresh() (no new dictionary reads)
+        and displays them via alert() -- is.workflow.actions.alert, already in
+        VERIFIED_PARAMETER_KEYS since cycle 1 and already used identically elsewhere in this
+        file (knock(), ash(), the breadcrumb instrument itself) -- instead of appendnote.
+        Status therefore shows a fresh alert AND (via the unchanged shared tail) the
+        unmodified Note; it never writes.
+    No new action identifier, no new parameter key, no new envelope shape was introduced --
+    every piece reuses a construct already verified elsewhere in this exact artifact.
+  verification: >
+    - `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678 HEAD` passed
+      before regenerating (provenance guard).
+    - `python3 tools/build_state_engine.py` exits 0 (all generator-asserted axes hold,
+      nothing in this change touches a numeric-operand, string-envelope, or picker site);
+      run a second time over its own output, byte-identical (idempotent).
+    - Structural sanity swept directly against the regenerated plist: 0 duplicate action
+      UUIDs, 0 GroupingIdentifier imbalance across all conditional/menu/repeat groups, 23
+      Choose-from-Menu opens (unchanged), the Status and Open Control Room case bodies wired
+      exactly as intended (Status -> is.workflow.actions.number targeting "Manual Status
+      Requested"; Open Control Room -> a single is.workflow.actions.nothing).
+    - UUID-stripped semantic diff (difflib SequenceMatcher) against the pre-checkpoint
+      2026-08-15l source shows ONLY four hunks, all inside manual_emergency_restore() /
+      manual_note_refresh(): the MANUAL_MARKER comment text, the Status/Open Control Room
+      case bodies, the PHASE 7 comment text, and one clean insertion (the new
+      Manual-Status-Requested conditional block, its comment, its alert, and the
+      auto-inserted "Control-flow check" comment the main() structural pass adds because the
+      new conditional's predecessor is an end_if, not a comment). Nothing else in the
+      3683->3689 action array changed -- in particular every Set Dictionary Value, the
+      entire Notes family, the elapsed_since()/coercion/state-rebind/date-key fixes from
+      earlier this cycle, and all ten breadcrumbs are byte-identical to the artifact that
+      was already locally verified before this turn.
+    - `bin/validate-shortcut --target-macos 26 --target-platform all` (shortcuts-playground
+      skill's own wrapper) -> "Validation passed." on the regenerated, BUILD_STAMP-bumped
+      source.
+    - `bin/sign-shortcut` (shortcuts-playground skill's own wrapper) -> signed artifact
+      confirmed AEA1, 190,208 bytes, non-zero.
+    - SHIPPED SIGNED ARTIFACT DECRYPTED (aea decrypt + aa extract, CLAUDE.md §8) and
+      inspected directly, not read back from the build tree: 3689 actions; stamp
+      "build 2026-08-15m" with zero stale "15l"; breadcrumbs A-J UNCHANGED at
+      94/149/170/288/308/417/426/460/475/529 (confirms the change is entirely inside the
+      MANUAL arm, which sits after breadcrumb J in the action list, per HANDOFF.md's own
+      established position rule -- verified directly, not assumed from the rule); shownote
+      still carries WFInput only; the Status case sets "Manual Status Requested" and falls
+      into is.workflow.actions.number as its first action; the Open Control Room case falls
+      directly into is.workflow.actions.nothing with no flag set anywhere.
+    Net action count: 3683 -> 3689 (+6: -1 net on the two menu case bodies, +7 for the new
+    PHASE 7 status branch including the one auto-inserted structural comment). All +6 sit
+    strictly after breadcrumb J, so they cannot move or contaminate the OPEN-path
+    measurement this session has been tracking.
+  blind_spots:
+    - "NOT DEVICE-VERIFIED. This turn's scope, like every prior turn this cycle, stops at
+      local build/validate/sign/decrypt-verify. The next device pass should now ALSO
+      confirm: choosing Open Control Room opens the Note with no new snapshot section
+      appended (compare its length/last-modified before and after); choosing Status shows an
+      alert with the current Fork/Profile/Sequence/Voice/Circle/Pressure/Cooldown values and
+      the Note that opens afterward is likewise unmodified."
+    - "Status now shows a snapshot via TWO channels in one tap (an alert, then the
+      unmodified Note via the unchanged shared tail) rather than one. This was a deliberate
+      minimal choice -- the alternative (suppressing the trailing shownote for Status only)
+      would have required threading a condition through code this turn was explicitly told
+      not to restructure -- but it is a UX redundancy worth noting, not a defect."
+    - "SENTIENT IS NOW STALE BY SIX GENERATOR-LEVEL CHANGES (the five from earlier this
+      cycle plus this checkpoint fix), unchanged from the standing per-cycle note: re-run
+      tools/build_sentient.py once Dumb is device-confirmed, per explicit instruction not to
+      touch it this turn."
+  candidate_causes:
+    - "design/RESOLVED (not a bug): the append-on-every-manual-choice behaviour was
+      intentional-by-omission (no separate read-only/read-with-display primitives existed
+      for Status vs Open Control Room), not a defect with a single root cause. Resolved by
+      user decision, not by further investigation."
+  and_gate: "N/A -- this is a design-decision implementation, not a root-cause fix; no AND-gate applies."
+  hypothesis: >
+    THE BREADCRUMB D->E BLOCKER WAS A DESIGN-LEVEL TYPE CONFUSION, not a missing coercion on
+    the CLOCK block's own date construct. last_open_at, last_close_at and
+    pending_exit.timestamp are all written as variable("Now Epoch") -- a NUMBER (elapsed
+    seconds since the 1970-01-01 anchor established by the hand-authored CLOCK block: Date ->
+    Format Date -> Adjust Date -> Get Time Between Dates, all genuine Date-typed operands,
+    zero coercion, Donor-7-confirmed correct and untouched). Reading any of those three state
+    keys back through read_value() (get + gettext) yields a TEXT variable holding that same
+    NUMBER as a string. The former elapsed() helper then fed that Text string into
+    gettimebetweendates.WFTimeUntilFromDate, a DATE-typed parameter, at exactly the three
+    debounce/decay/pending-exit sites -- asking Shortcuts to parse a bare epoch-seconds string
+    as a calendar date, which is precisely "couldn't convert from Text to Date". The fix is
+    not a Date CoercionItemClass (never established, never needed): it is recognising that no
+    Date object is required at all -- both operands are already-numeric epoch readings, and
+    this artifact ALREADY uses plain subtraction for the identical shape (close_pipeline()'s
+    Session Duration: math("Now Epoch", variable("Captured Start"), "Session Duration", "-")).
+    A SECOND, INDEPENDENT axis surfaced doing the nested-descent type-audit second pass
+    (directive 2, HANDOFF §6 item 2): the cycle-9 numeric-operand classifier only unwrapped
+    the conditional-style {"Type":"Variable","Variable":{"Value":desc}} wrapper, so it was
+    blind to any numeric field on math/getitemfromlist actions regardless of which of the two
+    wrapper shapes they used. 85 real uncoerced sites existed (30 getitemfromlist.WFItemIndex,
+    26 math.WFMathOperand, 11 math.WFInput, 18 setbrightness/setvolume). The getitemfromlist
+    class is load-bearing for symptom 1: mirror_text()'s WFItemIndex=variable("Circle Next")
+    sits on the Circle 1 intervention itself (the thing symptom 1 says OPEN never reaches),
+    and "Circle Next" is mixed-typed exactly like cycle 9's Cooldown Until was -- poisoned by
+    manual_emergency_restore()'s Test Circle loop reading it via read_value() (Text) even
+    though number()-sourced definitions exist elsewhere. Left unfixed, completing the date fix
+    would very likely have traded the reported error for a RED getitemfromlist chip on the
+    actual intervention -- the exact "letter progresses, then dies at a different untested
+    defect" pattern this session's own §7 technique notes warn against.
+    THIRD: Donor 8 settled the Control Room open-flow fault (HANDOFF §6 item 6) as axis 1, not
+    an unbound-variable defect. "Control Room Note" IS correctly bound in the hand-authored
+    find-or-create block (filter.notes -> Get Item From List "First Item", or Create Note's
+    own output) that precedes the PHASE 7 marker -- the orchestrator's static grep of
+    tools/build_state_engine.py alone could not see this because that block lives in the
+    hand-authored XML region no python marker owns. The actual defect is narrower and
+    contained entirely inside the raw XML: the one shownote action at the end of the manual
+    flow carries `target`, a key is.workflow.actions.shownote does not define at all (Donor 8:
+    the real key is WFInput). With WFInput unfilled, iOS falls back to an interactive note
+    picker at runtime -- exactly the reported "shows a picker of all notes" symptom.
+    FOURTH: the stale-state rebind gap (HANDOFF §6 item 4) is real and independently
+    confirmed by reading the raw bootstrap block directly: the rebuild branch (State Present
+    == no) writes a fresh "Default State JSON" and saves it to disk, but never rebinds `State`
+    -- every read for the rest of that run keeps seeing whatever the earlier load produced.
+    And the three-check validity gate accepts schema_version == "1" as valid forever, so an
+    existing device's pre-session file never even enters the rebuild branch.
+  confirming_evidence:
+    - "READ THE RAW ARTIFACT, NOT JUST THE PYTHON: last_open_at/last_close_at/pending_exit.timestamp are all written with variable(\"Now Epoch\") (tools/build_state_engine.py lines 974, 1099, event_text in record_exit_and_route()) -- Now Epoch is a NUMBER (gettimebetweendates output of Now Date minus the 1970-01-01 Epoch Anchor, both genuine Date-typed, confirmed against Donor 7's decrypted CLOCK-block-equivalent chain). The former elapsed() call sites fed the TEXT re-read of those same numbers into a DATE parameter -- this is not inference, it is reading both the write side and the read side of the same three state keys and finding the type mismatch directly."
+    - "THE ARTIFACT ALREADY CONTAINED THE CONTROL CASE: close_pipeline()'s Session Duration math(\"Now Epoch\", variable(\"Captured Start\"), \"Session Duration\", \"-\") computes the IDENTICAL shape (elapsed seconds between two epoch-second readings) via plain subtraction, never via gettimebetweendates. The fix conforms the three broken sites to the one correct site already present in this codebase, not a new construct."
+    - "NESTED-DESCENT TYPE AUDIT RUN TWICE, before and after the fix, against the actual artifact (scratchpad type_audit.py, independent of and cross-checked against tools/build_state_engine.py's own _numeric_operand_report): BEFORE -- 227 numeric-field sites, 85 uncoerced offenders (30 getitemfromlist.WFItemIndex, 26 math.WFMathOperand, 11 math.WFInput, 14 setbrightness.WFBrightness, 4 setvolume.WFVolume). AFTER -- 235 sites (8 new from the elapsed_since()->math() swap), 18 offenders remaining, ALL of them setbrightness/setvolume (the deliberately deferred class). Zero conditional offenders in either run, confirming cycle 9's own fix was already complete and my first draft of this audit script had a wrapper-unwrap bug (fixed and re-verified) rather than a real regression."
+    - "DONOR 8, DECRYPTED PLIST, READ DIRECTLY: is.workflow.actions.shownote's only parameter in the donor is WFInput, a bare WFTextTokenAttachment. This artifact's one shownote site (only one exists in the whole file) carried `target` instead -- confirmed by direct search of src/PROSOCHE-Dumb.xml before any edit, at the exact end of the manual-menu / Control Room flow the report describes."
+    - "THE FIND-OR-CREATE BLOCK WAS READ IN FULL, PLIST TO PLIST, and 'Control Room Note' IS bound in both its branches -- this REFUTES the orchestrator-gathered static-check hypothesis that it is unbound. The narrower, donor-confirmed shownote key defect is what remains and is what the fix addresses."
+    - "THE STALE-STATE REBIND GAP WAS READ DIRECTLY in the raw bootstrap block (lines ~1023-1655 of the pre-fix XML): the rebuild branch's only writes are 'Default State JSON' (text) and the file save; no action anywhere in that branch rebinds 'State'. The three-check validity conditional's WFConditionalActionString literal is exactly \"1\", matching the schema this session's own state.json template has carried since before this defect was found."
+    - "BUILD REGENERATED, SIGNED, AND DECRYPTED BACK OUT OF THE SHIPPED SIGNED ARTIFACT (not read back from the build tree): all seven generator-asserted axes still pass (exit 0); breadcrumbs A-J read 94/149/170/288/308/417/426/460/475/529 in the DECRYPTED plist, a uniform +2 shift from build k's 92/147/168/286/306/415/424/458/473/527, matching exactly the +2 action net (2 rebind actions inserted, 3 ROUTER_TRACE actions removed = net -1... ACTUALLY net action count is 3684->3683, -1, but the +2 breadcrumb shift is explained because the -3 ROUTER_TRACE removal sits AFTER the OPEN arm's breadcrumbs in the action list (inside the MANUAL arm) while the +2 rebind sits BEFORE them (in the bootstrap) -- position, not net count, determines which breadcrumbs move. Verified directly against the decrypted plist, not asserted from arithmetic alone."
+    - "SEMANTIC (UUID-STRIPPED) DIFF AGAINST THE LAST COMMITTED BUILD (build k) shows ONLY the intended change classes: the format.date key swap (action 19), the schema-version bump (actions 39, 75), the two-action rebind insert (77-78), the four elapsed()->math() replacements, the Aggrandizements insertions on math/getitemfromlist sites, the ROUTER_TRACE removal, and the shownote key rename (last action, 3680/3681). No unexplained collateral change anywhere else in 3683 actions -- in particular every Set Dictionary Value and the entire Notes family (symptoms 2 and 3) are untouched, confirmed by their total absence from the diff."
+    - "IDEMPOTENCY: running tools/build_state_engine.py a second time over its own freshly-regenerated output produces a byte-identical file. Every new pass (fix_state_rebind, fix_date_format_key, fix_shownote_key) is a no-op on an already-patched artifact, so a future re-run (e.g. after further generator edits) cannot silently double-apply or drift."
+  falsification_test: >
+    NOT YET DEVICE-TESTED, deliberately -- this cycle's scope is generator fix + local
+    validate/sign/decrypt-verify only; the phone build is the user's own call, not directed
+    here. Breadcrumb positions for the NEXT device sitting (Dumb; Sentient untouched this
+    cycle, still on build k):
+      A=94 B=149 C=170 D=288 E=308 F=417 G=426 H=460 I=475 J=529
+    PREDICTED LETTER: D or later, on the FIRST run after this build is installed and the
+    device's existing state.json is exercised at least once (the schema bump means that
+    file's schema_version=1 no longer validates, so the very first run -- OPEN, CLOSE, or a
+    plain manual tap -- takes the rebuild branch and the rebind now makes the fresh template
+    actually reach State on that same run; a manual tap is enough, since bootstrap runs before
+    routing).
+      letter D, then continuing PAST E with no error at all, through F/G/H/I/J and into the
+        Circle 1 intervention (Knock/Mirror/etc. actually displaying) -> BOTH THE DATE FIX AND
+        THE GETITEMFROMLIST COERCION FIX ARE CONFIRMED. This is the first outcome in the
+        session's history that would mean symptom 1 is resolved, not merely progressed.
+      letter D with a DIFFERENT "Get Time Between Dates" or Text/Date error -> the elapsed_since()
+        fix missed a site; re-run the nested-descent audit (scratchpad or a promoted copy) for
+        any remaining gettimebetweendates call this pass didn't cover.
+      letter D with a RED-operator-style refusal inside the Circle 1 intervention, or a
+        getitemfromlist error naming "Circle Next" -> the coercion generalisation missed a
+        variant of the mixed-typed-variable class; the nested-descent audit's <not-a-descriptor>
+        tag (not just <text-source>) would be the next thing to inspect.
+      letter C, with a settings_snapshot/brightness/volume error -> the stale-state rebind did
+        NOT actually reach State on this run (check whether a manual tap happened before the
+        first OPEN, since bootstrap-before-routing is what the falsification test above relies
+        on) -- NOT a refutation of the fix logic, a sequencing question to re-test.
+      ANY report of the screen going dark, or brightness/volume named in an error -> hard
+        refutation of the untouched restore-gate invariants from cycle 12; extremely unlikely
+        since setbrightness/setvolume were not touched this cycle, but stated because the
+        session's own discipline requires stating it.
+      Control Room: choosing "Open Control Room" opens the resolved note directly, with NO
+        note picker -> shownote fix confirmed. Any picker still appearing -> the fix did not
+        reach the device (check the device installed this build, not a stale library copy)
+        rather than a wrong hypothesis, since Donor 8 is direct plist evidence, not inference.
+    Whether/when to run this on-device is the user's decision, not a next-step this cycle
+    directs.
+  fix_rationale: >
+    FIVE CHANGES, all in tools/build_state_engine.py only (Dumb regenerated; Sentient
+    deliberately NOT rebuilt, per instruction -- build_sentient.py forks additively from
+    src/PROSOCHE-Dumb.xml and was not invoked).
+    (1) elapsed() REMOVED, replaced by elapsed_since(earlier_name, result_name, now_name=
+        "Now Epoch") = math(now_name, variable(earlier_name), result_name, "-"). Same action
+        count per site (2: math + setvar, matching elapsed()'s 2: gettimebetweendates +
+        setvar). The CLOCK block's own genuine Date->Date gettimebetweendates (Donor-7-
+        confirmed) is untouched -- only the three downstream numeric-epoch call sites change.
+    (2) normalise_numeric_operands()/verify_numeric_operands() GENERALISED from conditionals
+        only to conditionals + math (WFInput, WFMathOperand) + Item-At-Index getitemfromlist
+        (WFItemIndex), via a shared table-driven _numeric_operand_sites()/_operand_descriptor()
+        pair that unwraps BOTH shapes a numeric field can carry in this artifact. Same
+        Donor-4.1 WFCoercionVariableAggrandizement:WFNumberContentItem shape already
+        established for conditionals -- not a new, unverified construct. setbrightness/
+        setvolume deliberately excluded from the field table (directive 1: brightness/volume
+        scope cut, not implemented this cycle, deferral recorded not deleted).
+    (3) fix_date_format_key() -- Donor 7.1 device evidence: format.date reads its Custom
+        pattern from WFDateFormat, not WFDateFormatString. Swaps the Config-driven pattern
+        (behavioural_day.key_format, "yyyy-MM-dd") into the key iOS actually reads and removes
+        the bogus literal "Custom" that was sitting there and rendering in the UI. Per
+        directive 7b, evaluated and rejected the ISO-8601-preset simplification: the built-in
+        preset includes time and a T/Z separator, which would make every run on the same
+        calendar day compare unequal -- Custom + a real pattern is genuinely required for a
+        yyyy-MM-dd day-rollover sort key, not over-engineering.
+    (4) fix_shownote_key() -- Donor 8 device evidence: shownote reads WFInput, not `target`.
+        One site in the whole artifact; axis 1, same class as cycle 1's 147 sites, missed
+        because this action is hand-authored outside every prior key-name sweep.
+        VERIFIED_PARAMETER_KEYS now includes shownote, so this key can never silently drift
+        again. NOTE: the append-on-every-manual-choice design (Status and Open Control Room
+        both set Manual Refresh Requested=1, appending a snapshot to the note) was NOT
+        changed -- that appears to be intentional design (no separate "show status" action
+        exists; the note-refresh-then-show mechanic IS how Status is implemented), so
+        "opening must be read-only" is left as an open design question for the user rather
+        than unilaterally redesigned; recorded in Open items below, not silently dropped.
+    (5) fix_state_rebind() -- two independent, device-confirmed-necessary changes: (a)
+        schema_version bumped 1->2 in the bootstrap template AND the version-check
+        conditional's literal, forcing every existing device's pre-session file to be treated
+        as stale on its very next run; (b) two new actions (Detect Dictionary + Set Variable
+        State) inserted immediately after "Default State JSON" is assigned, parsing it the
+        same way the initial load does and rebinding State to the Dictionary output -- not to
+        the raw JSON text, matching normalize_setters()'s own established rule that a fresh
+        dictionary must be rebound as a Dictionary-content-item, never as text.
+    ROUTER_TRACE flipped to False per directive 5 (one-line constant; the trace block is
+    mechanically removed by the existing remove_marker_block() pass, -3 actions).
+    RECURRENCE GUARDS: verify_numeric_operands()'s scope widened (now covers math and
+    getitemfromlist, not just conditionals); VERIFIED_PARAMETER_KEYS gained shownote. All
+    three new fix_*() passes are idempotent (verified: a second run over the regenerated
+    artifact is byte-identical) so they cannot double-apply or silently drift on a future
+    rebuild.
+  blind_spots:
+    - "NONE OF THIS IS DEVICE-VERIFIED YET, by explicit scope -- this cycle stops at local build/validate/sign/decrypt-verify. The predicted letter above is a prediction, not a confirmation, and is stated as such."
+    - "THE APPEND-ON-EVERY-MANUAL-CHOICE DESIGN QUESTION (HANDOFF §6 item 6's 'opening must be read-only') is UNRESOLVED. The shownote key fix removes the picker/interactive-fallback symptom, but does not change whether 'Status'/'Open Control Room' SHOULD append a snapshot to the permanent Note ledger on every tap. Left as a design question for the user, not silently dropped -- see Open items."
+    - "18 setbrightness/setvolume TEXT-SOURCED OPERANDS ARE KNOWN, DEFERRED, AND UNCOERCED, per directive 1 (brightness/volume scope cut). This is the SAME class as the fixed math/getitemfromlist sites, and would need the identical WFNumberContentItem coercion treatment if/when brightness/volume manipulation is un-deferred. Recorded, not forgotten."
+    - "THE 14 WFConditionalActionString SITES (Donor 5, unopened) AND THE List/WFItems WRAPPER AT ~1164/1166 ARE STILL UNCHANGED, carried forward unaltered from cycles 8-13. Both sit past breadcrumb J and cannot affect the OPEN-path measurement this cycle targets."
+    - "KNOWN_SENTINEL_EXISTENCE_GATES (pending_exit, active_session) ARE STILL DELIBERATELY UNCHANGED, same reasoning as cycle 12 -- both sit past breadcrumb J on paths the device has never reached, and fixing them needs the SAME bootstrap-seeding-plus-rebind class of work this cycle already did for settings_snapshot/State; candidate follow-up, not done here."
+    - "SENTIENT IS NOW STALE RELATIVE TO DUMB by five generator-level fixes (date class, numeric coercion generalisation, shownote key, format.date key, state rebind) plus the schema bump and ROUTER_TRACE flip. This is DELIBERATE per directive 3, not an oversight -- build_sentient.py forks additively from the CURRENT src/PROSOCHE-Dumb.xml, so re-running it once Dumb is device-confirmed will pick up all of this automatically; running it now was explicitly out of scope."
+    - "THE MATH() HELPER'S OWN PRE-EXISTING uid() DOUBLE-CALL (math_id, params = uid(), {\"UUID\": uid(), ...} -- the dict-literal UUID is immediately overwritten by math_id and discarded) was NOT fixed; it predates this cycle, is functionally harmless (the discarded UUID is never referenced), and is why nearly every downstream action's UUID value changed even though only ~90 actions changed SEMANTICALLY (verified by the UUID-stripped diff). Noted as a tidiness item, not a bug."
+  candidate_causes:
+    - "code/generator TYPE CONFUSION: elapsed() fed an already-numeric epoch reading, re-read as Text, into a DATE-typed gettimebetweendates parameter at three sites (PRIMARY for the reported breadcrumb-D->E failure; device error text predicted and matched exactly: 'Get Time Between Dates failed because Shortcuts couldn't convert from Text to Date')"
+    - "code/generator OPERAND-TYPE SCOPE GAP (same axis-6 family, different action classes): math and Item-At-Index getitemfromlist operands were never covered by the cycle-9 coercion pass because its classifier only unwrapped one of the two wrapper shapes this artifact uses, and only for conditionals (SECONDARY, confirmed by nested-descent audit finding 85 real offenders before the fix; load-bearing for symptom 1 via mirror_text()'s Circle-Next-indexed getitemfromlist, which sits on the intervention itself)"
+    - "code/generator WRONG PARAMETER KEY (axis 1, same class as cycles 1/9's other instances, on two previously-unswept hand-authored sites): shownote used `target` instead of WFInput (Donor 8); format.date's Custom pattern sat in WFDateFormatString instead of WFDateFormat (Donor 7.1) -- different action, different category (a hand-authored region no python marker owned), independent root cause from the date TYPE confusion above, found via the SAME donor evidence but not the SAME defect"
+    - "data/state STALE VALIDITY GATE + MISSING REBIND: a device's pre-session state.json passes the schema check forever (schema_version=1 accepted unconditionally) and, on the rare path where a rebuild does run, the fresh dictionary was never rebound to State (KNOWN since cycle 12's blind_spots, confirmed by direct read of the raw bootstrap block this cycle, fixed as a schema bump + 2-action rebind)"
+    - "design/UNRESOLVED (not a bug): whether Status/Open Control Room should append a snapshot to the Note on every tap -- deferred to the user, not silently dropped"
+  and_gate: >
+    YES for two separate pairs, both explicitly checked. (1) The date fix alone would not
+    have completed symptom 1: the getitemfromlist/math coercion gap sat immediately
+    downstream (Circle 1's own Mirror template selection), so BOTH the elapsed_since()
+    replacement AND the numeric-operand-scope generalisation were required together for the
+    OPEN path to have a chance of completing past breadcrumb J, not just past D. (2) The
+    stale-state rebind fix needs BOTH halves to matter on a real device: the schema bump alone
+    (without the rebind) would force a rebuild that still never reaches State; the rebind
+    alone (without the schema bump) would never fire on any device whose file already passes
+    the old schema_version==1 check. Neither condition alone produces the observed "current
+    device state never gets the new template" gap this cycle closes -- which is exactly why
+    the falsification test above is stated in terms of which specific fix a given failure mode
+    would implicate, not just "letter unchanged/changed."
+
+CYCLE 12 reasoning_checkpoint — BUILD 2026-08-14k SHIPPED, awaiting device
+(supersedes cycle 11, which is kept below for history):
+  hypothesis: >
+    AXIS 7, GATE SEMANTICS. Axis 6 (cycle 11, STATE SHAPE) asserted that every key a read
+    reaches EXISTS. It did not assert that the GATE standing over that key can DISTINGUISH
+    the states the key can be in. Build 2026-08-14j satisfied axis 6 completely and was
+    still UNSAFE: it seeded the snapshot leaves EMPTY, Donor 6.1 then measured that a
+    present-but-empty value passes `has any value`, so the leaf gate read TRUE and Set
+    Brightness was reached with an EMPTY value -- a runtime error or brightness 0, i.e. a
+    black screen, which .claude/CLAUDE.md forbids outright, on the C->D span that runs on
+    EVERY OPEN. The defect is not the sentinel and not the shape; it is that an EXISTENCE
+    test cannot separate "captured" from "cleared" for any key that carries a placeholder,
+    because every placeholder that makes the dotted read survive is by construction PRESENT.
+  confirming_evidence:
+    - "THE UNSAFE TRACE IS CONFIRMED AGAINST THE SHIPPED BUILD-j ARTIFACT AT THE EXACT ACTIONS NAMED: the new verify_restore_gates() fires on build j's decrypted plist at actions 187 and 206 (Dumb) / 189 and 208 (Sentient) -- the two Set Brightness / Set Volume writes -- and verify_sentinel_gates() fires at 181 and 200. Those are the same indices as the session-manager's independently-derived trace. The guard was run against the defect BEFORE the fix and it named it."
+    - "IT ALSO FIRES ON BUILD i, so this is not a build-j-only regression: the empty-write hazard was one seeding decision away in build i too, and the class has been latent since the restore block was written."
+    - "MEASURED SEMANTICS (Donor 6.1, correctly wired, target iPhone): flat+missing -> no value, no error; flat+present-but-empty -> HAS ANY VALUE TRUE; dotted+missing segment -> HARD ERROR; \"null\" -> WFNumberContentItem -> > 0 -> FALSE, no error. Lines 2 and 3 together make read-then-existence-gate IMPOSSIBLE for a dotted key: the read raises unless the leaf exists, and if it exists the gate is true. No sentinel swap can fix that."
+    - "THE SENTINEL DISSOLVES THE CYCLE-11 HALF-2 BLOCKER ENTIRELY. Keeping \"null\" means the leaf is PRESENT (so the dotted read cannot raise) AND NON-EMPTY (so validate_shortcut.py's iter_empty_strings rule never engages). The producer-vs-consumer choice cycle 11 deferred is settled in favour of the CONSUMER, and the empty-write question no longer has to be answered at all."
+    - "THE CAPTURE SIDE ALREADY USES THE GATE THE RESTORE SIDE NOW USES: dim() and silence() decide 'is this a real reading' with if_block(\"Captured Brightness\", 2, number=0). Capture and restore disagreed about what counts as a real value; they now agree. This is not a new construct in the artifact, it is an existing one applied symmetrically."
+    - "PER-ACTION BYTE DIFF AGAINST BUILD i (not j): 3684/3684 and 3752/3752 actions, exactly 23 differing per fork -- 1 bootstrap template, 4 restore-block instances x 5 actions (comment + 2 conditionals + 2 clear-keys), and 2 display-only BUILD_STAMP strings. The container gates at 181/200 are ABSENT from the diff, which is the container-vs-leaf split proven by byte-equality rather than asserted."
+  falsification_test: >
+    ONE device sitting on build 2026-08-14k. BREADCRUMB POSITIONS HOLD FOR THE FOURTH CYCLE
+    RUNNING and are verified in the DECRYPTED signed artifact, not asserted:
+      Dumb     A=92 B=147 C=168 D=286 E=306 F=415 G=424 H=458 I=473 J=527
+      Sentient A=94 B=149 C=170 D=288 E=308 F=417 G=426 H=460 I=475 J=529
+    PREDICTED LETTER: **C**, with a DIFFERENT error naming settings_snapshot.
+    That is a prediction of PARTIAL progress, and it is stated deliberately rather than
+    optimistically, because of a finding this cycle made while verifying the fix:
+    THE DEVICE'S state.json IS NOT REBUILT FROM THE SEEDED TEMPLATE. Actions 37-48 accept a
+    stored file as valid on three checks -- schema_version present, == "1", profile
+    non-empty -- and the device's stored file passes all three. The bootstrap branch at
+    52-81 writes a fresh state.json but NEVER REBINDS the `State` variable, which stays
+    bound to action 25's parse of the OLD file. So a seeded template reaches the device only
+    on a LATER run, and only if the stored file is first invalidated. Until that happens the
+    dotted read at 177 still traverses a missing segment and still hard-errors.
+      last letter C with a settings_snapshot error -> EXPECTED. The safety fix is in and the
+        stale-state gap is the remaining blocker. NOT a refutation.
+      last letter D or beyond -> the seed reached State (the user's stored file was rebuilt
+        or removed) and BOTH halves are confirmed.
+      last letter C with the error naming BRIGHTNESS OR VOLUME rather than a dictionary key,
+        or ANY report of the screen going black or dark -> THE FIX IS REFUTED, and refuted
+        hard. That is the specific outcome the numeric gate exists to make impossible.
+      any letter with an active_session or pending_exit error -> the PREDICTED next defect,
+        deliberately not fixed this cycle (see blind_spots). Progress plus localisation.
+    TO MAKE THE FIX OBSERVABLE IN ONE SITTING the user can delete PROSOCHE/state.json (Files
+    -> iCloud Drive -> Shortcuts -> PROSOCHE), run PROSOCHĒ once MANUALLY -- the bootstrap
+    save at action 79 happens before routing, so simply dismissing the menu is enough to
+    write the seeded file -- and only then open a watched app. Without that, C is expected.
+  fix_rationale: >
+    FOUR CHANGES AT THE GENERATOR, both forks regenerated, no action added or removed.
+    (1) THE SENTINEL STAYS "null" and the bootstrap leaves are seeded with it, not with "".
+        Present, so the dotted read cannot raise; non-empty, so no write-side empty.
+    (2) THE TWO LEAF GATES BECOME NUMERIC "> 0" (WFCondition 2, WFNumberValue 0).
+        CODE 5 WAS VERIFIED AND THEN REJECTED, and the verification is what killed it. Code
+        5 is real and documented -- CONTROL_FLOW.md's definitive table (5 = "is not", string
+        family, WFConditionalActionString), 4 code-5 sites already ship in both forks, and
+        one of them (action 149) sits INSIDE span B->C and has EXECUTED on device. Plain
+        string operands are equally evidenced: 122 in-artifact sites, 3 in the golden corpus.
+        It is still wrong HERE, because `is not "null"` is TRUE for an EMPTY value -- and
+        build j seeded exactly "" into these leaves, so on any device that rebuilt state.json
+        under build j a code-5 gate would pass empty straight into Set Brightness. Code 5
+        closes the sentinel case and leaves the black screen open.
+        The numeric gate closes both, and BOTH inputs are device-measured, not inferred:
+        "null" -> Number -> > 0 -> FALSE, no error (Donor 6.1 test 2); "" -> Number -> > 0 ->
+        FALSE, no error (Donor 6 action 8). It is also the safety property ITSELF rather than
+        a proxy for it: only a strictly positive reading is ever written back. The operand is
+        gettext-fed, so normalise_numeric_operands() attaches Donor 4.1's coercion
+        automatically -- no new shape enters the artifact.
+        STATED COST: a genuine captured Media volume of exactly 0 is not restored. Skipping
+        a restore leaves the current setting untouched, which is the fail-safe direction and
+        is what "never guess an original setting" already required.
+    (3) clear_snapshot() CLEARS THE LEAF, not the container. Cycle 10 finding 5: clearing the
+        container replaced the sub-dictionary with a string, so the next run's dotted read
+        hard-errored -- the axis-6 failure reintroduced one run later, presenting as a
+        regression. Clearing the leaf makes the seeded subtree a PERMANENT invariant, and
+        THAT is what licenses keeping the container gates at 100. Same action count.
+    (4) TWO NEW BUILD GUARDS, both run in BOTH forks' builders, both DEMONSTRATED FIRING on
+        builds i and j before the fix:
+        verify_restore_gates()  -- a brightness/volume write whose value is read out of
+          settings_snapshot must be dominated by a NUMERIC conditional on that same variable.
+          Stated over the WRITE, so no future re-gating can reintroduce an empty or zero
+          write. This is the invariant build j violated.
+        verify_sentinel_gates() -- no sentinel-written key may be gated by condition 100/101,
+          and no dotted read may hang beneath a sentinel-written parent. This enforces the
+          container-vs-leaf split MECHANICALLY: change clear_snapshot back to the container
+          and settings_snapshot.brightness becomes sentinel-written again and the build fails.
+    verify_state_seed()'s final assertion is inverted to match: leaves must equal the
+    sentinel. The old assertion demanded EMPTY -- the build-j safety defect written down as
+    an invariant -- and would have failed the corrected build.
+    The generator now asserts SEVEN axes: KEY NAME, VALUE ENVELOPE, PICKER LITERAL, VARIABLE
+    SLOT, OPERAND TYPE, STATE SHAPE, GATE SEMANTICS.
+  blind_spots:
+    - "THE STATE REBIND GAP IS THE NEWEST FINDING AND IS NOT FIXED. The bootstrap branch writes state.json and never rebinds `State`, so a rebuilt file is not consulted until a later run; and the validity check (schema_version present / == \"1\" / profile non-empty) accepts the device's stale file, so the rebuild is not even triggered. Together these mean a seeded template cannot reach the device by itself. The clean two-part repair is a schema_version bump (invalidate) plus a rebind (consult on the same run), it costs 2 actions and shifts every breadcrumb, and it was deliberately NOT taken in the cycle whose job was to remove a black-screen risk. It is the next cycle's first item. It also explains the long-open inconsistency about the clean-install error."
+    - "pending_exit AND active_session CARRY THE IDENTICAL CONSTRUCT AND ARE DELIBERATELY UNCHANGED, recorded in the generator as KNOWN_SENTINEL_EXISTENCE_GATES with the reason. They CANNOT be flipped in isolation: pending_exit is absent from the bootstrap template entirely and active_session is a BARE JSON null there, so a flat read returns nothing -- which PASSES `is not \"null\"` and would then run the nested dotted read of .type / .id against a missing parent. Flipping them alone trades a LATENT hard error for an IMMEDIATE one. Both sit past breadcrumb J on paths the device has never reached, and neither gates a safety-critical write. They belong with the rebind/seed work in one cycle."
+    - "cooldown_until IS NOW DEVICE-VERIFIED SAFE and all three sites are untouched, per instruction. Donor 6.1 test 2 read the literal \"null\" from the Dictionary, coerced to Number, compared > 0, and got FALSE with no error -- which is the semantically correct reading of a cleared cooldown at the most critical position on the OPEN path."
+    - "A DICTIONARY COERCED TO TEXT IS STILL UNMEASURED. The container gates at 181/200 read a sub-DICTIONARY through gettext and test it with condition 100. If iOS renders a dictionary as a non-empty description the gate is true and the leaf gate decides, as designed; if it renders empty the restore is skipped one level earlier -- the SAME safe outcome by a different route. Both paths are safe, which is why this is a blind spot and not a risk."
+    - "changed_at / changed_by_session_id ARE STILL WRITTEN AND NEVER READ, in either fork. clear_snapshot deliberately leaves them: they have no consumer, so a stale value cannot mislead anything. The ownership check remains a DESIGN change deferred to the user (DEV-06)."
+    - "DONOR 5 / THE 14 WFConditionalActionString SITES AND THE List/WFItems WRAPPER AT 1164 WERE NOT TOUCHED. Both sit past breadcrumb J and cannot affect this measurement. The optional work was skipped in favour of banking the safety fix, per instruction."
+  candidate_causes:
+    - "code/generator GATE SEMANTICS: an existence gate (cond 100) cannot distinguish a cleared placeholder from a captured value, because any placeholder that keeps the dotted read alive is by definition present (PRIMARY, this cycle's fix; guard demonstrated firing on builds i AND j at the exact actions of the verified trace)"
+    - "data/state STALE STORED FILE: the device's state.json passes the three validity checks and is used as-is, so a corrected bootstrap template never reaches State (SECONDARY, CONFIRMED BY READING THE VALIDITY CHECK AND THE BOOTSTRAP BRANCH, deliberately not fixed this cycle, and written into the predicted letter rather than discovered as a surprise)"
+    - "code/generator SENTINEL SCOPE: pending_exit and active_session carry the same construct one level over (KNOWN, EVIDENCED, ALLOW-LISTED IN THE GUARD rather than silently passing)"
+    - "config/environment: State bound to a document other than the one the bootstrap writes -- which is no longer a speculative alternative but a READ FACT, since the bootstrap branch never rebinds State"
+    - "design/absent OWNERSHIP: changed_by_session_id written 20 times, read never (NOT A CAUSE; a design gap for the user)"
+  and_gate: >
+    YES, AND IT FIRED TWICE. The observable "build k does not fix the OPEN path" needs TWO
+    conditions simultaneously: the gate defect (fixed here) AND the stale-state gap (not
+    fixed here). Neither alone produces it. That is exactly why the predicted letter is C
+    rather than D -- a single-cause reading of this cycle would predict D, be wrong, and the
+    correct fix would read as refuted for the FIFTH time this session. The AND-gate is also
+    why the refutation criterion is written in terms of the ERROR TEXT and the SCREEN, not
+    the letter: only "brightness/volume named, or the screen goes dark" falsifies the gate
+    fix, because only that outcome requires the gate fix to have failed.
+
+CYCLE 11 reasoning_checkpoint (superseded by cycle 12, kept below for history):
+  hypothesis: >
+    SYMPTOM 1'S THIRD DEFECT, and the SIXTH axis of this session -- the first that is NOT a
+    wrong shape in the emitted plist. Every prior axis (key name, str envelope,
+    AttributedString envelope, picker enum, variable slot, operand type) was a serialization
+    defect visible to a sufficiently clever static sweep. THIS ONE IS A WRONG BELIEF ABOUT
+    iOS SEMANTICS, held by the generator's own authors and written into a comment as if it
+    were a fact.
+    THE DEFECT: restore_managed_settings() reads settings_snapshot.brightness at action 177
+    and gates it on condition 100, HAS ANY VALUE. Its stated intent -- "never guess an
+    original setting" -- is careful and correct. But the design assumes A MISSING DICTIONARY
+    KEY READS AS EMPTY, so the gate would evaluate false and the guarded branch would be
+    skipped. It does not. Get Dictionary Value on a missing key raises a HARD RUNTIME ERROR.
+    The read at 177 dies BEFORE the gate at 181 can evaluate. The guard cannot protect
+    anything, because the condition it guards against kills the read first.
+    THE SHAPE: the bootstrap state.json template seeded settings_snapshot as {}. The
+    TOP-LEVEL key exists; neither sub-key does. Reads sit at depth 2 and 3 (first read 177);
+    the writes that would create them sit at depth 4 and 7 (1132-1136, 1038-1042) on Circle
+    paths a first run never reaches. So the reads are reachable on paths where the writes
+    never ran.
+    NOTE A CORRECTION TO THE CYCLE-10 ACCOUNT, made by verifying rather than trusting it, as
+    that document itself asked: it states "the bootstrap dictionary actions at 8 and 25 are
+    built with ZERO keys" and "no action anywhere creates the top-level settings_snapshot
+    key". Both are false in detail. Actions 8 and 25 are detect.dictionary parsing JSON, and
+    the template at action 75 DOES create settings_snapshot -- as {}. The DIAGNOSIS AND THE
+    FIX ARE UNAFFECTED and in fact better supported: {} is exactly what predicts the second
+    device error at the second path component. Recorded because the location was wrong by
+    ~67 actions and a future reader following the cycle-10 text would look in the wrong place.
+  confirming_evidence:
+    - "THE TEMPLATE ITSELF, read from the artifact: action 75 (Dumb) / 77 (Sentient) carries the bootstrap state.json as a WFTextTokenString whose settings_snapshot value is the two-character literal {}. Not inferred -- decoded and printed."
+    - "BOTH DEVICE ERRORS ARE PREDICTED EXACTLY AND IN ORDER by that one literal. Clean state -> settings_snapshot resolves to an EMPTY dict, so the depth-2 read of .brightness fails -> 'In 'settings_snapshot', no value was found for dictionary key 'brightness''. After a save round-trip drops the empty container, or on state written before this key existed, the depth-1 component itself is absent -> 'In '', no value was found for dictionary key 'settings_snapshot''. The user's Change Profile / Change Sequence / Test a Circle exploration wrote settings_snapshot.volume.* and produced precisely the intermediate state that distinguishes 'subtree missing' from 'subtree incomplete'. It should be treated as a deliberate experiment; it is what pins the diagnosis."
+    - "THE GUARD FIRES ON THE PRE-FIX ARTIFACT AND NAMES ALL EIGHT UNRESOLVED KEYS, run before the fix was applied: settings_snapshot.brightness, .brightness.changed_at, .brightness.changed_by_session_id, .brightness.original_value, and the four volume equivalents. It passes after seeding and is idempotent across re-runs. A guard that cannot be shown to fail on the defect it targets is decoration; this one was tested against it."
+    - "WRITES CREATE, READS DO NOT -- and this is what makes the empty-leaf seed safe rather than merely tidy. Cycle 10 established from device behaviour that the subtree came into existence as a SIDE EFFECT of the nested writes at 1038-1042, so Set Dictionary Value with a dot path creates its intermediate levels. Get Dictionary Value does not. The asymmetry is the whole bug, and it is also why clear_snapshot writing a string parent is not a latent hazard: the next capture recreates the dict."
+    - "SENTIENT ENUMERATED AND MATCHED (the cycle-10 open item, closed). Decrypted from the shipped signed artifact: 4 literal settings_snapshot read keys, identical set to Dumb, all resolving in the inherited template. verify_state_seed() runs in build_sentient.py too, so the fork cannot silently drift."
+  falsification_test: >
+    ONE device sitting on build 2026-08-14j. BREADCRUMB POSITIONS ARE UNCHANGED from build i
+    for the second cycle running -- A=92, B=147, C=168, D=286, E=306, F=415, G=424, H=458,
+    I=473, J=527 (Dumb; Sentient is uniformly +2) -- because the fix edits template TEXT and
+    adds no actions. The next report is therefore directly comparable with the last one.
+      last letter D or beyond -> THE FIX IS CONFIRMED. Action 177, inside span C->D, has
+        executed, and the restore block that killed builds h and i is cleared.
+      last letter C again, WITH THE SAME 'no value was found for dictionary key' TEXT ->
+        THE HYPOTHESIS IS WRONG. The seed is present in the shipped artifact (verified by
+        decryption), so a repeat of the identical error would mean the read is not reading
+        the bootstrapped dictionary at all -- i.e. State is bound to something other than
+        the seeded document, which reopens the load path rather than the snapshot shape.
+      last letter C again with DIFFERENT error text -> the fix took and a SECOND defect sits
+        in the same span. This is the cycle-9 outcome repeating, and it is the reason the
+        error text must be reported verbatim and not summarised as "same error".
+      a LATER letter with an active_session error -> the predicted next defect (see
+        blind_spots); progress plus localisation, NOT a refutation of this fix.
+      all ten letters + the Leaving/Continue menu -> the OPEN pipeline has completed
+        end-to-end for the first time in the project's history.
+    Because the artifact differs from build i by exactly THREE actions per fork -- the
+    template plus two display-only stamp strings -- "C again" cannot be blamed on collateral
+    change. This is a genuine falsification test.
+  fix_rationale: >
+    ONE generator-level change, at the generator, regenerating both forks. The bootstrap
+    establishes the COMPLETE subtree so the shape exists before any read regardless of
+    execution history. The required shape was taken from the READ SET, because reads are the
+    authority: six leaves under brightness and volume (original_value, changed_at,
+    changed_by_session_id).
+    EVERY LEAF IS SEEDED EMPTY, NEVER A FABRICATED NUMBER. A fabricated original_value could
+    restore brightness or volume to a value the user never had. Empty plus the existing
+    condition-100 gates means "no capture recorded -> skip restore", which fails safe and is
+    exactly what CLAUDE.md requires of a stateful brightness/volume change. The outer gate on
+    the seeded sub-dictionary reads true, the inner gate on the empty leaf reads false, the
+    restore is skipped, and no read on any path hard-errors.
+    IT ADDS NO ACTIONS. A text edit to an existing template preserves every breadcrumb
+    position and keeps the measurement comparable -- the same property that made cycle 9's
+    fix cleanly falsifiable. The four attachmentsByRange offsets are recomputed and then
+    ASSERTED to land on their placeholders (one sits after the edit and shifts 1109 -> 1285);
+    VARIABLES.md warns an out-of-bounds range can crash Shortcuts on import, so a text edit
+    that ignored them would not be a smaller change, it would be a corrupt one.
+    RECURRENCE GUARD: verify_state_seed() fails the build if any settings_snapshot READ key
+    does not resolve in the bootstrap template at the full depth it is read at, or if any
+    seeded leaf is non-empty. It also refuses a composite (token-built) settings_snapshot key
+    rather than silently skipping one it cannot resolve. Both forks' builders run it. The
+    generator now asserts SIX axes: KEY NAME, VALUE ENVELOPE, PICKER LITERAL, VARIABLE SLOT,
+    OPERAND TYPE, STATE SHAPE.
+    SYMPTOMS 2 AND 3 ARE PRESERVED BY CONSTRUCTION AND VERIFIED BY COMPARISON, not asserted:
+    a per-action byte diff against build i shows 3684/3684 actions unchanged in count and
+    exactly three differing -- action 75 (the template, the fix) and 1360/1364 (the two
+    display-only BUILD_STAMP strings). Sentient likewise: 3752 actions, 77/1428/1432.
+  blind_spots:
+    - "THE CLEARED SENTINEL IS UNFIXED AND IS THE PREDICTED NEXT DEFECT. active_session is written as the literal string 'null' at three sites; 'null' is NON-EMPTY, so the condition-100 gates at 689/1094/1232/1248 read TRUE and the NESTED reads of active_session.id and .declared_duration_seconds then run against a string parent -- the identical failure one level over. pending_exit (@483) and settings_snapshot (via clear_snapshot) are the same class. THE OBVIOUS REPAIR WAS BUILT AND THEN REVERTED: clearing to empty text fails validate-shortcut at 12 sites ('Empty parameter at index 188: is.workflow.actions.setvalueforkey -> WFDictionaryValue/Value/string'), and iter_empty_strings' near-universal rule encodes this session's DEVICE-CONFIRMED symptom 2 -- an unset Value raises 'No value was provided to the Set Dictionary Value action for the key <key>'. The EMPTY: NO VALUE device result is READ-side evidence and does not license an empty WRITE; applying it to a write would be the same category error as the root cause fixed this cycle, so it was refused. This is now a PRODUCER-vs-CONSUMER design choice (change the write, or change the six gates from cond 100 to cond 5 'is not null') that needs a donor, and it is single-sourced as CLEARED_SENTINEL so cycle 12 changes one line."
+    - "cooldown_until IS DELIBERATELY LEFT AS 'null' AND THAT IS NOT AN OVERSIGHT. Its only consumer is the NUMERIC comparison at action 170, device-measured as NULL COERCED FALSE with no error, which is already the semantically correct reading of a cleared cooldown ('not in cooldown'). Changing it would alter behaviour at the most critical position on the OPEN path -- the conditional the build-i coercion fix just repaired. That would be a regression, not a fix."
+    - "THE OWNERSHIP CHECK DOES NOT EXIST. changed_at and changed_by_session_id are written at 20 sites and READ AT NONE, in either fork. changed_by_session_id exists so a restore can verify it owns a change before reverting it; nothing consults it. This reframes the Session ID scope defect found earlier: correcting the scope would not help, because no code reads the owner. Per CLAUDE.md's rule that stateful brightness/volume changes must be reliably restorable, the OWNERSHIP HALF of that guarantee is ABSENT, not merely mis-scoped. They are seeded here because the guard derives its required shape from the write set as well as the read set, and seeding them costs nothing. IMPLEMENTING THE CHECK IS A DESIGN CHANGE, NOT A BUG FIX, and belongs to the user, not to a debug cycle."
+    - "THE SEEDED SUB-DICTIONARY'S TEXT COERCION IS UNMEASURED. read_value routes settings_snapshot.brightness through gettext; a DICTIONARY coerced to Text is expected to render as a non-empty description, so the outer gate reads true and the inner empty leaf then correctly blocks the restore. If iOS instead coerces a dictionary to empty text, the outer gate reads false and the restore is skipped one level earlier -- the SAME safe outcome by a different route. Both paths are safe, which is why this is a blind spot and not a risk, but it is unmeasured and is not claimed."
+    - "THE 14 WFConditionalActionString SITES AND THE List/WFItems WRAPPER AT 1164 ARE UNCHANGED, carried forward from cycles 8-10. Both sit past breadcrumb J and cannot affect this measurement. Donor 5 was not opened this cycle; the fix was prioritised over it per instruction."
+    - "iOS STILL DOES NOT NAME THE OFFENDING ACTION. Unchanged since cycle 5. The breadcrumbs remain the only instrument, which is why they stay in."
+  candidate_causes:
+    - "code/generator + data/state STATE SHAPE: the bootstrap seeds settings_snapshot as {}, so a depth-2/3 read hard-errors on any path reaching it before a depth-4/7 write created the key (PRIMARY, this cycle's fix; predicts both device error strings exactly and in order; guard demonstrated firing on the pre-fix artifact)"
+    - "code/generator SENTINEL: the literal 'null' is non-empty, so condition-100 gates on active_session / pending_exit / settings_snapshot read TRUE and their nested reads run against a string parent (SAME CLASS, KNOWN, UNFIXED, blocked on a validator conflict and a producer-vs-consumer design choice; named in blind_spots as the predicted next defect rather than left as an unknown)"
+    - "design/absent OWNERSHIP: changed_by_session_id is written 20 times and never read, so the restore path's ownership guarantee does not exist (NOT A CAUSE of symptom 1; a design gap for the user to rule on)"
+    - "config/environment: State bound to a dictionary other than the bootstrapped document, so the seed is present but not consulted (NOT SUPPORTED by current evidence, and named only because it is the ONE thing an identical 'C again' error would imply -- it is written into the falsification test rather than argued away)"
+    - "code/generator ENVELOPE: WFConditionalActionString at 14 sites; List/WFItems wrapper at 1164 (SAME FAMILY, UNRESOLVED, all past breadcrumb J, deliberately unchanged)"
+  and_gate: >
+    yes, and it fired -- which is why this cycle shipped ONE half of a two-half fix rather
+    than treating the halves as independent. The instruction was explicit that fixing
+    settings_snapshot alone would surface active_session as a fresh unexplained error, and it
+    is right. The second half turned out to be BLOCKED by a validator rule encoding a
+    device-confirmed failure, so it is now a NAMED, EVIDENCED, SINGLE-SOURCED deferral with a
+    stated next step, not an unknown. Under a multi-defect world the next run therefore
+    reports either a later letter (progress plus localisation) or an active_session error
+    that was PREDICTED IN ADVANCE -- in neither case does it read as this fix having failed.
+    That is the whole purpose of retaining the breadcrumbs and of stating the falsification
+    criterion before the run.
+
+## DONOR 6 — decrypted at the end of cycle 11, and it has a TYPO THAT MATTERS
+
+Donor 6 (`.planning/debug/Donor 6.shortcut`, 22,957 bytes, 13 actions) is the probe that
+produced this session's `EMPTY: NO VALUE` and `NULL COERCED FALSE` results. Decrypting it
+was worth doing, and it yields one confirmation and one problem.
+
+**Confirmation.** Action 0 is `is.workflow.actions.dictionary` built in Shortcuts.app on the
+target iPhone, and iOS writes the `empty` entry's value as an **empty `WFTextTokenString`** —
+`{"Value": {"string": ""}, "WFSerializationType": "WFTextTokenString"}`. So an empty string
+value is legal in a Shortcuts dictionary, written by iOS itself. That means
+`validate_shortcut.py`'s blanket empty-string rule — the rule that blocked the cleared-sentinel
+half of this cycle's fix — **would reject this donor too, and the donor is device-built and
+device-run.** The rule is a lint with a false positive here, not a statement of iOS truth. The
+decision not to ship the empty sentinel still stands (it is a mandatory gate, and
+`setvalueforkey`'s `WFDictionaryValue` is a *different* parameter on a *different* action from
+`dictionary`'s `WFValue`), but the path forward is now cheap and specific: **a donor that uses
+Set Dictionary Value to write an empty value settles it directly.**
+
+**The problem.** The dictionary's keys are `empty` and `nullish`. Action 1 reads
+`WFDictionaryKey = 'empty '` — **with a trailing space**. That key does not exist in the
+dictionary. So the reported `EMPTY: NO VALUE` result has two readings:
+
+- **(b) Shortcuts trims the lookup key**, `'empty '` resolves to `'empty'`, the value is `""`,
+  and condition 100 reads false. The probe measured what it intended, and "empty reads as
+  absent" holds.
+- **(a) Shortcuts does not trim**, in which case the probe measured a **MISSING key** — and a
+  missing key returned *no value instead of erroring*, which would invert this cycle's root-cause
+  premise and simultaneously leave "empty reads as absent" with no evidence at all.
+
+**(b) is much the likelier**, because reading (a) is contradicted by the session's own primary
+device evidence: the two reported error strings — `In '', no value was found for dictionary key
+'settings_snapshot'` and `In 'settings_snapshot', no value was found for dictionary key
+'brightness'` — *are* Get Dictionary Value hard-failing on a missing key, observed on device.
+Those strings are more direct evidence than an inference from a stray space. The cycle-11 fix
+rests on them, not on Donor 6, and is shape-correct and fail-safe regardless of which reading
+holds.
+
+But this is exactly the class of unexamined assumption that has burned this session six times,
+so it is recorded rather than waved through, and the falsification test above already covers the
+outcome it would produce ("C again with the identical error text"). **The follow-up is one line:
+rebuild the probe with the key spelled exactly `empty`, and add a third branch that reads a key
+which genuinely does not exist.** That single donor would settle the missing-key semantics, the
+empty-value semantics, and the sentinel choice together.
+
+## PATTERN: three times this session a CORRECT fix would have read as REFUTED
+
+Recorded as one pattern rather than three incidents, because it is the strongest argument
+this session produced for the class-fix discipline and for always stating a falsification
+criterion in advance.
+
+1. **Cycle 1's key-name fix** was correct, and read as refuted because the envelope defect
+   beneath it produced the same user-visible failure.
+2. **Cycle 9's coercion fix** was correct, and the breadcrumb letter stayed at **C**. Only
+   the ERROR TEXT changed. A summary of "same error, still C" would have discarded a working
+   fix; the verbatim text is what showed the run had moved on.
+3. **Cycle 11 (this one)** would have done it again had the fix been scoped to
+   `settings_snapshot` alone: `active_session` carries the identical defect one level over
+   and would have surfaced as a fresh, unexplained error attributed to the fix.
+
+The three share one mechanism: **a correct fix to defect N is invisible when defect N+1
+produces the same observable.** Two disciplines follow, and both are now standing practice
+here — fix the CLASS rather than the instance, so N and N+1 die together; and state IN
+ADVANCE what result would refute the fix, including which outcomes are *progress* rather
+than refutation. The breadcrumbs exist for exactly this reason: they convert "same error"
+into a position, and a position can distinguish progress from failure where an error string
+cannot.
+
+CYCLE 9 reasoning_checkpoint (superseded by cycle 11, kept below for history):
+  hypothesis: >
+    SYMPTOM 1'S SECOND DEFECT, and the fifth axis of this session. A conditional's OPERATOR
+    PICKER is populated from the STATIC TYPE of the variable sitting in WFInput. read_value()
+    defines its variable from an is.workflow.actions.gettext output, so Shortcuts types it as
+    Text and offers only the EIGHT STRING operators — is / is not / has any value / does not
+    have any value / contains / does not contain / begins with / ends with. A numeric
+    WFCondition (0, 1, 2, 3, 1003) then has NO CASE TO RENDER: the operator chip shows RED and
+    iOS refuses to run the action.
+    THIS AXIS IS INVISIBLE IN THE PLIST. Keys, envelope, picker literals and condition code are
+    all well-formed at a defective site, which is why verify_parameter_keys,
+    verify_string_envelopes, verify_required_pickers and verify_conditional_inputs all pass over
+    it, and why eight cycles of static sweeps could not see it. Decrypting the signed artifact
+    does not reveal it either. It surfaced only because the user photographed red operators.
+    DEVICE-LOCALISED, not argued: the cycle-8 pass reached breadcrumb C and died. Action 170 —
+    `Cooldown Until > Now Epoch` — is the first site of this class in the artifact and sits
+    immediately after C. Both cycle-8 predictions landed in one run.
+  confirming_evidence:
+    - "DEVICE: build 2026-08-14h advanced the last breadcrumb from B to C and then failed. 'B again' was stated in advance as meaning the cycle-8 fix had not taken; it advanced, so 149/158 are cleared and the failure is a NEW, LATER defect. Action 170 is the first action of substance after C."
+    - "UI EVIDENCE (the CAP-06 channel): six user screenshots show the operator rendered RED at six distinct Ifs, and the operator picker — opened on four of them — offers EXACTLY the eight STRING operators with no numeric comparator present. That is a type-driven menu, which is the mechanism itself rather than an inference about it."
+    - "CLASSIFIER VALIDATED 6-FOR-6 AGAINST THAT INDEPENDENT UI EVIDENCE: the operand-provenance trace flags 18 sites per fork as gettext-fed; all six photographed red sites fall inside the 18 and ZERO fall outside it. Voice Enabled — the site that broke the initial 'five' sample — is fed by gettext at action 1184 and was always in the bucket."
+    - "DEVICE GROUND TRUTH FOR THE EXACT CONSTRUCT — Donor 4.1, built in Shortcuts.app on the target iPhone and decrypted this cycle. A Get Dictionary Value output compared with WFCondition 2 against WFNumberValue '10' serialises its operand as {Type: ActionOutput, OutputName: 'Dictionary Value', OutputUUID: ..., Aggrandizements: [{Type: 'WFCoercionVariableAggrandizement', CoercionItemClass: 'WFNumberContentItem'}]}. iOS does NOT insert a Number action and does NOT change the read chain — it TYPES THE VARIABLE REFERENCE IN PLACE."
+    - "THE CONTROL CASE IS IN THE SAME DONOR PAIR. Donor 4 is the same shortcut before the type was set: identical descriptor, NO Aggrandizements, and a code-100 test instead. The only delta between Donor 4 and Donor 4.1 is the coercion plus the numeric condition — which isolates the coercion as the thing that makes a numeric operator legal on a dictionary value."
+    - "THE USER'S SCREENSHOT SHOWS THE MECHANISM DIRECTLY: IMG_5636.jpg is the type list for a 'Dictionary Value' chip — Contact / Date / Dictionary / ... / NUMBER / PDF. Choosing Number is what emitted the aggrandizement. The fix is the plist form of a UI action the user performed and photographed."
+    - "THE AGGRANDIZEMENT ATTACHES TO A NAMED VARIABLE TOO, not only to an ActionOutput: golden shortcut 332c12a0060043b388b22b806be7ab58 carries WFCoercionVariableAggrandizement on both {Type: Variable, VariableName: ...} and {Type: ActionOutput, ...} descriptors, 24 instances across the corpus. Our operands are named variables, so this is the link that had to be checked and it holds."
+    - "POST-FIX MEASUREMENT ON THE SHIPPED SIGNED FILE, decrypted with the BUILD-NOTES §14 recipe rather than read from the build tree: 3684 actions (Dumb) / 3752 (Sentient), 87 / 94 numeric conditionals, 20 / 25 Number-coerced, ZERO text-fed-and-uncoerced in either fork. Action 170 — the exact site that killed build h — now carries the coercion."
+  falsification_test: >
+    ONE device sitting on build 2026-08-14i. BREADCRUMBS RETAINED for the third cycle running,
+    and this time their POSITIONS ARE UNCHANGED from build h (A=92, B=147, C=168, D=286, E=306,
+    F=415, G=424, H=458, I=473, J=527) because the fix adds no actions. The next report is
+    therefore directly comparable with the last one.
+      last letter D or beyond -> the class fix is CONFIRMED. Action 170, the site that killed
+        build h, has executed, and with it the first member of the class.
+      last letter C again -> THE HYPOTHESIS IS WRONG, or the coercion is not sufficient at this
+        site. Leading alternative: something else in span C->D that is not operand typing.
+        Because the artifact differs from build h by NOTHING except 20 coercions and two stamp
+        strings, a 'C again' result is an unusually clean refutation — it cannot be blamed on
+        collateral change.
+      all ten letters + the Leaving/Continue menu -> the OPEN pipeline has completed end-to-end
+        for the first time in the project's history.
+    "C again" is a wholly plausible outcome the fix cannot explain away, so this is a genuine
+    falsification test.
+  fix_rationale: >
+    ONE generator-level change fixes the WHOLE CLASS, per the cycle-9 requirement: a
+    normalise_numeric_operands() post-pass attaches Donor 4.1's Number coercion to the operand
+    of every numeric-code conditional whose operand is not already Number-typed. Site-by-site
+    fixing was explicitly rejected — the bisection can only ever localise the EARLIEST remaining
+    site, so incremental fixing would cost one device round trip per site.
+    A FIRST APPROACH WAS BUILT AND THEN DISCARDED, and that is worth recording. Before Donor 4.1
+    arrived, the fix was composed from corpus evidence: golden 2e0fb675 feeds a Dictionary Value
+    straight into is.workflow.actions.number, so a read_number() helper materialised each operand
+    through a Number action with a code-100 null guard. It validated, signed and measured clean.
+    It was discarded anyway, because the donor showed iOS doing something different for THIS
+    construct and device evidence outranks corpus composition. The coercion is also strictly
+    better on every axis that matters here: it adds NO actions (so breadcrumb positions and the
+    comparability of the measurement survive), it leaves every device-proven read chain
+    byte-identical, and it needs no null handling at all — coercing an absent value yields an
+    absent value and the comparison simply evaluates false, whereas a Number action fed a JSON
+    null was the one unevidenced link in the discarded design.
+    SCOPE IS DELIBERATELY MINIMAL. Only operands that are NOT already numeric are touched, so the
+    numeric conditionals that have executed on device — notably the Control Room refresh block
+    from the cycle-5 pass — stay byte-identical. Total artifact delta versus the build the user
+    just tested: 20 conditionals gain an Aggrandizements key, 2 display strings carry the new
+    stamp, and every one of the other 3662 actions is byte-identical.
+    RECURRENCE GUARD: verify_numeric_operands() asserts the invariant that
+    normalise_numeric_operands() establishes, and both run in BOTH forks' builders. They share
+    one provenance resolver so they cannot disagree. The generator now asserts five axes — KEY
+    NAME, VALUE ENVELOPE, PICKER LITERAL, VARIABLE SLOT and OPERAND TYPE.
+  blind_spots:
+    - "THE COERCION IS DEVICE-PROVEN AS A SERIALISATION, NOT AS A RUNTIME OUTCOME. Donor 4.1 proves iOS WRITES this shape when the user types a dictionary value as Number, and therefore that the shape is legal and the operator renders. It does not prove what the comparison EVALUATES TO when the underlying value is JSON null, which is the case for cooldown_until on a fresh state.json. The expectation is 'absent coerces to absent, comparison false, no live cooldown' — which is the desired branch — but it is an expectation, not a measurement."
+    - "PROVENANCE IS RESOLVED PER NAME, NOT PER EXECUTION PATH. Shortcuts types a named variable from ALL of its Set Variable definitions, so the pass treats a name as non-numeric if ANY definition is Text. That is the conservative direction (it coerces more sites, never fewer) and it is why 20 sites are coerced where the hand trace found 18 — Pressure Next and Overrun Seconds are mixed-typed names whose Text definition sits on a different arm entirely."
+    - "THE RIGHT-HAND OPERAND IS DELIBERATELY UNCHANGED. 17 numeric conditionals still carry a gettext-fed WFNumberValue (Heat Cap, Heat Floor, Threshold, Overrun Minimum, Exploit Minimum, Gravity Cap). The evidenced mechanism is the OPERATOR PICKER, driven by the LEFT input only; WFNumberValue is a value field, not a picker, and Donor 4.1 itself pairs a coerced left operand with a plain literal right operand. Recorded as a residual, not fixed."
+    - "MOST OF THE CLASS REMAINS UNTESTABLE THIS CYCLE. Only 170/377/384/409 sit before the first OPEN menu; the rest are on the per-Circle voice check and exit-stats paths the user has never reached. They are fixed by construction — the same pass — but this sitting cannot confirm them and they must not be reported as verified."
+    - "THE 14 WFConditionalActionString = token(...) SITES ARE STILL UNRESOLVED, carried forward unchanged from cycle 8. Same family, but the WFInput evidence does not transfer: that is a TEXT slot where the Shortcuts UI genuinely allows mixed literal+variable text. All 14 sit past breadcrumb J and cannot affect this measurement."
+    - "iOS STILL DOES NOT NAME THE OFFENDING ACTION. Unchanged since cycle 5. The breadcrumbs remain the only instrument, which is why they stay in."
+  candidate_causes:
+    - "code/generator OPERAND TYPE: a numeric condition code applied to a Text-typed operand, so the operator picker has no case to render (PRIMARY, this cycle's fix; 20 sites Dumb / 25 Sentient; device-proven shape from Donor 4.1, positionally matched to the build-h device result)"
+    - "code/generator NAME COLLISION: a variable name assigned from BOTH a numeric and a Text source is mixed-typed, and one Text definition poisons every numeric comparison of that name (CONFIRMED sub-class — Pressure Next, Overrun Seconds, Circle Next; invisible to a hand trace that follows only each conditional's immediate feeding action; covered by the same pass)"
+    - "data/state: cooldown_until is JSON null on fresh state (NOT a separate cause under this fix — the coercion has no failure mode on an absent value — but it is the reason the discarded Number-action design carried risk, and it is the residual uncertainty named in blind_spots)"
+    - "code/generator ENVELOPE: WFConditionalActionString holds a text template at 14 sites (SAME FAMILY, UNRESOLVED, all past breadcrumb J, deliberately unchanged)"
+    - "code/generator SCALAR TYPE: <integer> at number.random / repeat.count (LATENT AT MOST, downgraded in cycle 8, not on this path)"
+  and_gate: >
+    yes, and it is answered rather than assumed. Under the DISCARDED Number-action design the
+    gate genuinely fired at action 170: the operand had to be both Number-typed AND non-null,
+    because a Number action fed a JSON null was an unevidenced failure mode. The coercion design
+    collapses that gate — it types the reference without converting anything, so an absent value
+    stays absent and the comparison simply evaluates false. One condition, not two. That is a
+    substantive reason to prefer it, not merely a smaller diff.
+    The session's broader pattern still holds: the remaining defect count is NOT assumed to be
+    one. The breadcrumbs stay in precisely so a further defect reports as a LATER letter —
+    progress plus localisation — instead of an ambiguous "same error".
+
+CYCLE 8 reasoning_checkpoint (superseded, kept below for history):
+  hypothesis: >
+    ROOT CAUSE FOUND, and asserted as CONFIRMED rather than ranked, because for the first time
+    this session the evidence is positional as well as structural.
+    THE DEFECT: a conditional's WFInput is {"Type":"Variable","Variable": <token>}, and the
+    <token> slot must hold a VARIABLE REFERENCE serialization — WFTextTokenAttachment whose
+    Value is a {Type, VariableName} or {Type, OutputUUID, OutputName} descriptor. At 25 sites
+    the generator overwrites if_block()'s already-correct value with token(name), which returns
+    a WFTextTokenString TEXT TEMPLATE — {"Value": {"string":"￼","attachmentsByRange":{...}}}.
+    A text template is not a variable descriptor. Shortcuts cannot resolve the If's input,
+    renders the input field as UNSET, and refuses to run the action with exactly the reported
+    message, "Please choose a value for each parameter in this action".
+    THE POSITIONAL PROOF: of those 25 sites, exactly TWO sit before breadcrumb J. They are
+    actions 149 and 158 — BOTH INSIDE SPAN B->C, and 149 is the FIRST occurrence of the defect
+    class in the entire 3684-action artifact. The user saw B and did not see C. The first
+    instance of the only unproven shape in the span sits two actions past the last breadcrumb
+    they saw.
+    THIS IS AXIS 2 (value ENVELOPE), not the newest axis. It is the cycle-2 axis inverted:
+    cycle 2 established that string-typed parameters need WFTextTokenString; this site needs
+    the OPPOSITE, because WFInput.Variable is a variable slot, not a string slot. The generator
+    had the right shape and hand-overwrote it with the wrong one.
+  confirming_evidence:
+    - "DEVICE GROUND TRUTH — Donor 3, action 4, the user's own iPhone, this exact construct (a variable-vs-variable If): WFInput = {'Type':'Variable','Variable':{'Value':{'Type':'Variable','VariableName':'A'},'WFSerializationType':'WFTextTokenAttachment'}}. iOS writes an ATTACHMENT. It does not write a text template. Zero ambiguity."
+    - "GOLDEN CORPUS UNANIMOUS — 20 of 20 mode-0 conditionals that carry a WFInput across all 19 shortcuts use WFSerializationType WFTextTokenAttachment inside Variable. ZERO use WFTextTokenString. ZERO contain 'string'/'attachmentsByRange' in that slot. (18 further conditionals carry no WFInput at all and are not evidence either way.)"
+    - "INTERNAL CONTROL GROUP, largest of the session — 307 mode-0 conditionals in our own artifact: 282 carry the correct WFTextTokenAttachment form, 25 carry the text template. The 282 include the DEVICE-PROVEN router at actions 37/39/41 (cond 100 and cond 4, which have executed on every single device run this session) and the Control Room refresh conditional at 3612 (executed when the user ran Open Control Room). Same natural-experiment shape that settled cycles 2, 4 and 5."
+    - "EXECUTION-COVERAGE SEPARATION IS TOTAL: not one of the 25 defective sites has ever executed on device. 23 of them sit past breadcrumb J on the exit/contract paths the user has never reached; the remaining 2 are 149 and 158, which the bisection just proved were reached for the first time and killed the run."
+    - "THE SPAN IS OTHERWISE FULLY DEVICE-PROVEN. All 20 actions in B->C were read individually. 18 of them are classes already executed on device: comment; number with WFNumberActionNumber (proven at action 1359 inside Open Control Room); setvariable with an ActionOutput attachment (proven throughout PRE); setvalueforkey with WFDictionaryValue as WFTextTokenString (this is the cycle-2/3 symptom-2 fix, device-CONFIRMED); conditional modes 1 and 2, which carry only GroupingIdentifier and WFControlFlowMode. Exactly 2 of 20 actions carry a shape that has never run, and both carry this defect."
+    - "PRIORITY-3 DATE-ACTION LEAD CLOSED AFFIRMATIVELY, with device evidence rather than inference: gettimebetweendates appears at action 15 at control-flow DEPTH 0, unconditionally, 22 actions before the router. Every device run that reached the manual menu — cycles 3, 5, 6 and 7 — executed it. It carries WFTextTokenString in BOTH DateTime-typed slots (WFInput, WFTimeUntilFromDate) and 'Seconds' in WFTimeUntilUnit. Those shapes are therefore device-proven, and the date/adjustdate actions at 11/13/17/19 with them. No date action needs changing, and no donor is needed to settle it."
+  falsification_test: >
+    ONE device sitting on build 2026-08-14h. The BREADCRUMBS ARE DELIBERATELY RETAINED, so the
+    result is informative under a multi-defect world instead of collapsing to pass/fail:
+      last letter C or beyond -> span B->C is CLEARED. The fix is correct and any remaining
+        failure is a DIFFERENT, later defect, reported as a new letter and localised in one
+        more sitting rather than reading as "the fix did not work".
+      last letter B again -> THE HYPOTHESIS IS WRONG. The defect in B->C is not the conditional
+        envelope, and the 18 device-proven-by-class actions in that span must be re-examined
+        individually rather than by class.
+      all ten letters + the Leaving/Continue menu -> the OPEN pipeline has completed end-to-end
+        for the first time in the project's history.
+    This is a genuine falsification test: "last letter B again" is a wholly plausible outcome
+    that the fix cannot explain away.
+  fix_rationale: >
+    The fix DELETES the 13 generator lines that overwrite WFInput. It does not invent a shape.
+    Every one of those 13 overwrites passes the SAME variable name that if_block() was already
+    called with on the line above — they change the envelope and nothing else. Deleting them
+    leaves if_block()'s own output, which is byte-identical to the 282 correct sites and to
+    Donor 3. Nothing is guessed, nothing is fabricated, and the resulting shape is the one iOS
+    itself writes.
+    RECURRENCE GUARD, so the diff is not deletion-only and the axis closes rather than the
+    instance: verify_conditional_inputs() fails the build if any conditional's WFInput.Variable
+    is not a WFTextTokenAttachment wrapping a Type-bearing descriptor. Cycle 5 added
+    verify_required_pickers for the picker axis; this does the same for the variable-slot axis.
+    The generator now asserts KEY, ENVELOPE, PICKER LITERAL and VARIABLE-SLOT shape.
+  blind_spots:
+    - "THE 14 WFConditionalActionString = token(...) SITES ARE LEFT UNCHANGED AND ARE NOT CLAIMED CORRECT. They are the same family — a variable placed in an operand slot as a text template — but the evidence that settles WFInput does NOT transfer: WFInput.Variable is structurally a variable slot, whereas WFConditionalActionString is a TEXT slot, and the Shortcuts UI genuinely allows mixed literal+variable text there. Corpus coverage is zero (every corpus conditional operand is a literal), catalog coverage is zero (is.workflow.actions.conditional is absent from the ToolKit catalog entirely), device coverage is zero. All 14 sit PAST breadcrumb J, so they cannot affect this cycle's measurement. A donor settles them and one is requested in parallel, at zero device cost to this sitting."
+    - "THE SCALAR-TYPE AXIS IS NOW WEAKER THAN CYCLE 7 RECORDED, and this is a correction of my own prior reasoning, not a new finding. Donor 3 writes WFNumberActionNumber as plist <string>; our generator writes <integer>; and ours has EXECUTED SUCCESSFULLY ON DEVICE at action 1359 inside Open Control Room. So iOS demonstrably coerces plist scalar type on at least one of these numeric fields rather than failing to decode it. The cycle-7 inference 'iOS never writes <integer>, therefore <integer> is undecodable' does not follow, and the two latent sites at 418/454 are correspondingly weaker suspects than cycle 7 ranked them."
+    - "THE 23 SITES PAST J ARE FIXED BUT UNTESTABLE THIS CYCLE. They sit on exit-selection and Circle-9 contract paths the user has never reached. The fix is applied to them by construction (same generator lines), but this sitting cannot confirm them, and they must not be reported as verified."
+    - "A SECOND DEFECT IN B->C IS NOT EXCLUDED. The span's other 18 actions are cleared BY CLASS — the class has executed on device — not by having those specific instances execute. If a class-level clearance is wrong somewhere, the run stops at B again. That outcome is explicitly in the falsification test rather than argued away."
+    - "iOS STILL DOES NOT NAME THE OFFENDING ACTION. Unchanged since cycle 5. The breadcrumbs remain the only instrument; that is why they stay in."
+  candidate_causes:
+    - "code/generator ENVELOPE: conditional WFInput.Variable holds a WFTextTokenString text template where a WFTextTokenAttachment variable descriptor is required (CONFIRMED — donor + corpus 20/20 + internal control 282/307 + exact positional match to the bisection result)"
+    - "code/generator ENVELOPE: WFConditionalActionString holds a text template at 14 sites (SAME FAMILY, UNRESOLVED, all past breadcrumb J, donor requested, deliberately unchanged)"
+    - "code/generator SCALAR TYPE: <integer> at number.random 418 / repeat.count 454 (LATENT AT MOST, and downgraded this cycle by the WFNumberActionNumber counter-evidence; NOT symptom 1 — execution stops hundreds of actions upstream)"
+    - "environment/iOS: date-action DateTime slots carrying WFTextTokenString (ELIMINATED this cycle by device evidence — action 15 runs unconditionally at depth 0 on every successful manual invocation)"
+    - "data/state: a stored behavioural_day value that changes which arm of the rollover runs (NOT the cause — BOTH arms are gated by a defective conditional, so the failure occurs at the gate regardless of state)"
+  and_gate: >
+    yes, and this cycle answers it with a measurement rather than an argument. The remaining
+    defect count is NOT assumed to be one. That is precisely why the breadcrumbs are retained
+    rather than stripped: under a multi-defect world the next run reports a LATER letter, which
+    is progress plus localisation, instead of an ambiguous "same error" that would read as this
+    fix having failed — the exact failure mode that made cycle 1's correct fix look like a
+    refutation. The 14 unresolved WFConditionalActionString sites are a known, named, deferred
+    second condition on the post-menu path, not an unknown.
+
+CYCLE 7 reasoning_checkpoint (superseded, kept below for history):
+  hypothesis: >
+    TWO SEPARATE CLAIMS, DELIBERATELY KEPT APART, because conflating them is how three
+    static "confirmations" got refuted on device in this session.
+
+    CLAIM 1 — THE LOCALISATION, asserted with confidence. The failing action is INSIDE
+    PROSOCHE, on the OPEN arm, in actions 91-520 (build-f indexing), before the first OPEN
+    menu at 521. Cycle 6 closed the last device-side confound: the SAME unmodified wrapper
+    echoed RAW [OPEN] / NORMALISED [OPEN] through Probe 5 and then, on a FRESH re-selection
+    of PROSOCHE from the list, failed identically. Handoff proven, stored reference proven.
+
+    CLAIM 2 — THE RANKED PREDICTION, asserted as a candidate and NOT shipped as a fix.
+    A FOURTH defect axis exists, and it is one no sweep in this session modelled: the plist
+    SCALAR TYPE of numeric literal parameters. Cycle 6 predicted a fourth axis was
+    base-rate-likely; this is it. Neither the 19-shortcut golden corpus nor Donor 3 ever
+    writes these fields as <integer> — iOS uses <real> or <string> without exception. Our
+    generator emits <integer> at 78 sites. The axis is NOT broadly guilty (see below), but
+    it survives at EXACTLY TWO sites, and those two are precisely the sites with zero corpus
+    precedent, zero device coverage, and a donor that contradicts them:
+      action 418  number.random  WFRandomNumberMinimum/Maximum  <integer>  (donor: <string>)
+      action 454  repeat.count   WFRepeatCount = 9              <integer>  (donor: <real>)
+    A number field iOS cannot decode renders as an unfilled picker/field, which is exactly
+    "Please choose a value for each parameter in this action".
+  confirming_evidence:
+    - "DEVICE GROUND TRUTH, Donor 3 decrypted this cycle: iOS writes number.random's min/max as plist <string> and repeat.count's WFRepeatCount as plist <real>. We write <integer> for both."
+    - "GOLDEN CORPUS, all 19 shortcuts: conditional.WFNumberValue is <real> 4/4; number.WFNumberActionNumber is <real> 2 / <string> 1 / attachment 2; repeat.count.WFRepeatCount is attachment 2/2 with NO literal instance anywhere. Zero <integer> in any of them."
+    - "PERFECT SEPARATION against the device-proven MANUAL path — the same internal-control-group shape that settled cycles 2, 4 and 5, and applied here with cycle 6's stricter standard (EXECUTED, not merely 'appears on the manual arm'): number.WFNumberActionNumber <integer> at action 1359 sits inside the menu case 'Open Control Room' WHICH THE USER RAN SUCCESSFULLY, and conditional.WFNumberValue <integer> at 3646/3653 sits in the Control Room refresh block that ran on that same pass. Those two classes are therefore DEVICE-PROVEN FINE as <integer>, which is what narrows the axis from 78 sites to 2 rather than leaving it as a vague suspicion."
+    - "THE DONOR'S PRIMARY VALUE THIS CYCLE WAS ELIMINATION, and that is recorded as a positive result: cycle 6's #1 and #3 ranked candidates (variable-backed WFNumberValue; math with WFMathOperation omitted) are BYTE-IDENTICAL to iOS's own serialization, and round is a superset of it. DEV-05 is settled affirmatively. Three of four ranked candidates died on device evidence at zero device cost."
+  falsification_test: >
+    ONE device sitting. Install build 2026-08-14g (signed, decrypt-verified), re-point the
+    automation's Run Shortcut, open a watched app, report the LAST letter seen.
+    Ten breadcrumb alerts A-J sit at OPEN-arm base depth. The last letter localises the
+    failure to the span that follows it.
+      last letter G  -> number.random (suspect 1) is in span G->H. PREDICTION CONFIRMED.
+      last letter H  -> repeat.count  (suspect 2) is in span H->I. PREDICTION CONFIRMED.
+      any other letter -> PREDICTION KILLED, and the span is localised anyway, which is the
+        whole point of measuring instead of guessing.
+      NO letters at all -> would CONTRADICT cycle 6's probe result (execution never reaches
+        action 92) and reopens the router/PRE region as its own investigation.
+      all ten + the Leaving/Continue menu -> the OPEN pipeline completed for the first time
+        in the project's history and symptom 1's blocking defect is gone.
+  fix_rationale: >
+    NO FIX IS SHIPPED, for the second cycle running, and again deliberately. The cycle-7
+    instruction is explicit: a donor-derived defect is a CANDIDATE for the bisection to
+    confirm, never a blind ship, and the bisection is a MEASUREMENT that must not be
+    confounded. Shipping the <integer>-to-<string>/<real> change now would make a G/H result
+    uninterpretable and would be the fourth static guess of this session.
+    What IS shipped is the instrument. Its design rationale: (a) breadcrumbs sit at OPEN-arm
+    base depth or on the normal arm of each guard, so a breadcrumb cannot be skipped by the
+    conditional the failing action sits inside; (b) the alert introduces no inferred shape —
+    plain-string title is device-proven from the cycle-3 ROUTER TRACE, plain-string message is
+    corpus-verified 5 of 13 — and references no variable, so it cannot fail for its own
+    reason; (c) breadcrumb() calls no uid(), so the deterministic UUID counter never advances
+    and the artifact minus the alerts is byte-identical to build f at all 3674 actions bar the
+    two display-only stamp strings. Symptoms 2 and 3 are preserved BY CONSTRUCTION and that is
+    verified by comparison, not asserted.
+  blind_spots:
+    - "ONE PASS DOES NOT LOCALISE SPANS C, E OR I. C->D is 117 actions with 11 nested blocks at depth 4 (cooldown: live-Ice menu plus Ice-expiry restore); E->F is 108 actions, 11 blocks, depth 4 (the whole Heat pipeline); I->J is 53 actions, 3 blocks, depth 3 (pending exit, two repeat-each loops). A last letter of C, E or I buys a span, not an action, and REQUIRES a second finer bisection round inside it. This is stated in the shipped protocol rather than glossed."
+    - "THE PREDICTION MAY BE RIGHT ABOUT THE AXIS AND WRONG ABOUT THE SITE. <integer> could be benign everywhere (iOS may coerce NSNumber freely) and the real defect at 418/454 could be something else entirely in those spans — Detect Dictionary, the Gravity conditional, or the threshold Get Dictionary Value with a composite key. A G or H result CONFIRMS THE SPAN, not the mechanism; the follow-up fix must still be single-variable."
+    - "iOS DOES NOT NAME THE OFFENDING ACTION — unchanged since cycle 5. The user cannot narrow this by inspecting and must not be asked to."
+    - "TEN TAPS IS A REAL COST and a real risk: a mis-remembered last letter sends the next cycle at the wrong span. Mitigated by making each alert show one letter plus 'Report the LAST letter you see', but not eliminated."
+    - "THE RE-POINT IS LOAD-BEARING AND EASY TO SKIP. Deleting PROSOCHE to install build g orphans the automation's Run Shortcut target (BUILD-NOTES §automation-wrapper). If the user re-imports without re-selecting the target, the run fails with the SAME error for a wholly different reason and the cycle is wasted. It is step 0 of the protocol and flagged as unskippable."
+    - "SCALAR TYPE WAS NEVER CHECKED BEFORE CYCLE 7, across six cycles of sweeps that each believed they were exhaustive. Whatever the device says next, that is the recurrence-guard lesson: the generator has no invariant asserting the plist TYPE of any emitted parameter, only its key, envelope and picker literal."
+  candidate_causes:
+    - "code/generator SCALAR TYPE: number.random min/max emitted as <integer> where iOS writes <string> (PRIMARY prediction, action 418, span G->H, donor-contradicted, zero device coverage)"
+    - "code/generator SCALAR TYPE: repeat.count WFRepeatCount emitted as <integer> where iOS writes <real> (PRIMARY prediction, action 454, span H->I, donor-contradicted, zero corpus literal anywhere)"
+    - "code/generator: something else inside spans G->H or H->I — Detect Dictionary, the Gravity conditional, or the composite-key threshold lookup (SECONDARY; a G/H result confirms the span, not the mechanism)"
+    - "code/generator: a defect inside one of the deep spans C, E or I, requiring a second bisection round (LIVE, and the single most likely outcome by action count — those three spans hold 278 of the 429 measured actions)"
+    - "environment/iOS: Run Shortcut handoff semantics for a large nested shortcut (RESIDUAL only — Probe 5 was small, so a size interaction is not fully excluded, but the failure is now known to be inside PROSOCHE)"
+  and_gate: >
+    yes, and this cycle sharpens rather than repeats the point. The session's established
+    pattern is that reaching Circle 1 required THREE simultaneous conditions, each fixed in a
+    different cycle (Input Key envelope, positive-match router, picker parameters). Cycle 7
+    does not assume the remaining count is one. The bisection is designed to be informative
+    under a MULTI-DEFECT world too: it reports the FIRST failing span, so if there are two
+    remaining defects it finds the earlier one and the next round finds the next, rather than
+    a single "fix" appearing to fail because a second condition still gates the same outcome.
+    That is precisely the failure mode that made cycle 1's correct fix read as a refutation.
+
+CYCLE 6 reasoning_checkpoint (superseded, kept below for history):
+  hypothesis: >
+    NOT ASSERTED AS A CAUSE. Cycle 6 deliberately declines to nominate a fourth code-side
+    hypothesis, because static analysis has now been driven to exhaustion on the OPEN pre-UI
+    region and the honest state of the evidence is a CONTRADICTION, not a lead.
+    What cycle 6 DOES assert, and what the device test is designed to settle, is the PARTITION:
+      (A) input reaches PROSOCHĒ and the defect is inside the OPEN pipeline, or
+      (B) the failure occurs at/above the Run Shortcut handoff and no PROSOCHĒ action ever runs.
+    Five cycles have assumed (A) without ever testing it. The INPUT PROBE, designed in cycle 1
+    and deferred five times, is the experiment that decides it, and it is executed FIRST this
+    cycle rather than behind another static pass.
+    Two sub-hypotheses under (B), both live and both untested:
+      (B1) STALE STORED REFERENCE. The wrapper's Run Shortcut chip renders from a cached NAME,
+           while its stored workflowIdentifier still points at the shortcut instance that was
+           DELETED during a clean install. The chip therefore looks correct while the parameter
+           resolves to nothing. This is not the refuted orphan theory: that was refuted on the
+           user's VISUAL inspection, which the debug file itself flagged as caveat (i), weaker
+           than stored-representation evidence. Timeline fits exactly — the automation ran in
+           cycle 1 and has failed at the handoff ever since the first delete-and-reimport.
+      (B2) The automation TRIGGER's own app selection, not an action, holds the unset parameter.
+  confirming_evidence:
+    - "USER TESTIMONY, cycle 5 Q1, verbatim: 'No - nothing at all, straight to the error.' The first UI on the OPEN path is action 521; if execution had entered the OPEN arm and failed anywhere in 91-520, this is equally consistent. But it is ALSO exactly what (B) predicts, and (B) has never been excluded."
+    - "NEGATIVE STATIC RESULT, this cycle, on the region the device implicates: the OPEN pre-UI region is 91-520 (confirmed: the first UI action reachable on a normal OPEN is the choosefrommenu at 521; the only earlier UI, 169, sits inside the cooldown branch at 167). Across 91-520 there are ZERO empty-valued parameters, ZERO absent catalog parameters other than the four already-exonerated classes, and ZERO invalid picker literals."
+    - "PICKER-VALIDITY AXIS CLOSED, a genuinely new check: every emitted picker literal in the artifact was validated against the catalog's enum CASE lists (ids and titles), not merely checked for presence and literalness as in cycle 5. All 20 distinct literals are valid cases - round 'Ones Place'/'Always Round Down', gettimebetweendates 'Seconds', count 'Items', getitemfromlist 'Item At Index'/'First Item', setvolume 'Media', changecase 'UPPERCASE', adjustdate 'Subtract', ask 'Text'/'Number'/'URL', math '×'/'÷'/'-', searchweb 'Google', format.date 'Custom', getdevicedetails 'Current Volume'/'Current Brightness', appendnote 'append'. Zero invalid. A wrong enum case would render an unfilled picker exactly like a missing one, so this was a real candidate axis and it is now eliminated."
+    - "THE FOURTH AXIS IS REAL BUT IS A BLIND SPOT, NOT A DEFECT: 336 of the OPEN body's actions are the control-flow family (conditional 263, choosefrommenu 53, repeat.each 18, repeat.count 2), and NONE of these identifiers exists in the ToolKit catalog at all. Every catalog-driven sweep, including cycle 5's, is structurally blind to all of them. Inspecting them by hand shows the operand shapes are internally consistent (numeric codes 0/1/2/3 carry WFNumberValue, string codes 4/5/99 carry WFConditionalActionString, presence codes 100/101 carry WFInput alone) and cond 4 and cond 100 are both DEVICE-PROVEN by the router and the PRE region."
+    - "EXONERATION-BY-MANUAL-PATH IS WEAKER THAN CYCLE 5 TREATED IT. Cycle 5 exonerated a class if it 'also appears on the device-proven MANUAL path'. Appearing is not executing: the user exercised only the menu, Change Sequence -> Classic, and Open Control Room. The only region certain to have executed is PRE (0-89) plus those specific cases. Re-scored against PRE alone, these OPEN pre-UI shapes have NEVER run on device: conditional+WFNumberValue (13), math without WFMathOperation (13), math with WFMathOperation (3), setvalueforkey (29), number (5), number.random (1), round (1), repeat.count, repeat.each, appendvariable (2), getitemfromlist, returntohomescreen, setbrightness, setvolume."
+    - "CORPUS COVERAGE IS GENUINELY ABSENT for the top remaining candidates, so they cannot be settled statically: is.workflow.actions.round has ZERO golden-corpus instances; is.workflow.actions.number.random has ZERO; and across all 19 golden shortcuts EVERY conditional operand is a LITERAL - there is not one instance of a variable-backed WFNumberValue or WFConditionalActionString anywhere in the corpus."
+    - "DEV-05 RE-CHECKED INDEPENDENTLY rather than inherited: the corpus is 1 math WITH WFMathOperation ('-', golden 332c12a0) and 1 WITHOUT (golden 2e0fb675, our exact WFInput+WFMathOperand shape). Cycle 5 reported this as a refutation of the missing-operation theory; it is more accurately a 1-of-2 split. The omission stays UNCHANGED this cycle - it is corpus-supported and changing it would confound the probe - but it is NOT as settled as cycle 5 recorded, and it is on the donor request."
+  falsification_test: >
+    ONE device sitting, three ordered experiments, NO PROSOCHE rebuild and NO clean install.
+    ORDER IS LOAD-BEARING: a clean install of PROSOCHE would silently repair sub-hypothesis
+    (B1) and destroy the experiment, so the user is told explicitly not to reinstall.
+    STEP 1 - INPUT PROBE. Repoint the automation's Run Shortcut at "PROSOCHE Probe 5 - Input
+      Echo" (signed, 5 actions, mirrors PROSOCHE's own normalisation chain and root input
+      declaration byte-for-byte). Open a target app.
+        alert shows RAW [OPEN] / NORMALISED [OPEN]  -> handoff delivers input; pursue (A)
+        alert shows [] / []                          -> handoff runs but delivers nothing
+        SAME "please choose a value" error, no alert -> failure is AT/ABOVE the handoff, in the
+          wrapper or trigger, and is INDEPENDENT of shortcut content. This single outcome
+          refutes five cycles of plist-side theory outright and confirms (B).
+    STEP 2 - REPOINT BACK. Set the Run Shortcut target back to PROSOCHE by selecting it fresh
+      from the list. Open a target app again. This is a clean single-variable test of (B1),
+      because re-selecting rewrites the stored reference without changing anything else.
+        now works        -> (B1) CONFIRMED: the stored reference was stale; the plist was never
+                            the problem after cycle 3, and the recurrence guard belongs in the
+                            shipped setup instructions, not in the generator.
+        fails identically -> (B1) REFUTED with stored-representation evidence rather than a UI
+                            reading, and the defect is inside PROSOCHE's OPEN pipeline.
+    STEP 3 - DONOR 3 (only if step 1 shows input arriving). The user builds a small shortcut in
+      Shortcuts.app on the iPhone containing exactly the constructs that have zero corpus and
+      zero device coverage, then exports it. Decrypting it gives iOS's OWN serialization as
+      ground truth - the identical technique that cracked symptom 3 in cycle 4.
+  fix_rationale: >
+    NO CODE FIX IS SHIPPED THIS CYCLE, and that is the deliberate decision rather than an
+    absence of one. Three static-only "confirmations" have been refuted on device in this
+    session (cycles 1, 2, 5). The remaining plist-side candidates are all unverifiable on the
+    build Mac - zero corpus coverage and zero device coverage - so shipping a fix for any of
+    them would be a fourth guess, and would additionally confound the probe by changing the
+    artifact under test. The cheapest decisive move is to measure the partition first.
+    The cycle-5 picker fixes are RETAINED unchanged, per instruction and on their own merits.
+    Symptoms 2 and 3 are untouched: no generator change is made at all this cycle, so both
+    remain byte-identical to the build that device-confirmed them.
+  blind_spots:
+    - "STEP 2 IS ORDER-SENSITIVE AND SELF-REPAIRING. Repointing at the probe in step 1 already rewrites the wrapper's stored Run Shortcut reference. If (B1) is true, step 1 CANNOT show the handoff error - it will show the alert - and only step 2 distinguishes 'the reference was stale' from 'the handoff was always fine'. This is why step 2 exists and why its result must be read against step 1 rather than alone."
+    - "THE PROBE CANNOT PROVE PROSOCHE-SPECIFIC HANDOFF HEALTH. It is a different, much smaller shortcut. If input reaches the probe it does not strictly follow that input reaches PROSOCHE - e.g. a size/complexity or input-content-class interaction remains conceivable. The probe's root input declaration is therefore made identical to PROSOCHE's (WFWorkflowInputContentItemClasses = ['WFStringContentItem'], WFWorkflowHasShortcutInputVariables = true) to remove the most plausible confound, but this residual is recorded rather than argued away."
+    - "iOS DOES NOT NAME THE OFFENDING ACTION - re-confirmed in cycle 5 and unchanged. The user cannot narrow this by inspecting further and must not be asked to."
+    - "IF STEP 1 SHOWS INPUT ARRIVING AND STEP 2 STILL FAILS, the next move is BISECTION BY BREADCRUMB, not a fifth static sweep: flag-gated alerts at OPEN-arm base depth (91, ~200, ~300, ~400, ~470, 519) so the last letter the user sees localises the failing action to a span of tens. Static reading has now produced three refuted confirmations and one exhausted region; it should not be the primary instrument again."
+    - "REPO HAZARD, discovered this cycle and NOT a code finding: at session start the working tree was checked out at efb5a79 - a commit predating ALL of cycles 1-5, in which none of the generator fixes exist. It has since been moved to branch codex/automation-parameter-diagnosis at 7ca8ebb, which does carry them (BUILD_STAMP 'build 2026-08-14f', signed Dumb 188441 bytes, matching the cycle-5 record exactly). Anyone rebuilding while the tree is on codex/prosochedebug1 or codex/round1 would silently produce a pre-cycle-1 artifact and see all three original symptoms return. Verify HEAD before any rebuild."
+  candidate_causes:
+    - "config/device: the wrapper's Run Shortcut holds a STALE stored workflowIdentifier from a deleted install while rendering a valid-looking name chip (B1, PRIMARY untested candidate, step 2 decides it)"
+    - "config/device: the automation TRIGGER's own app selection carries the unset parameter (B2, untested)"
+    - "code/generator: a variable-backed WFNumberValue on the OPEN path resolves as an unfilled number field (A1 - zero corpus coverage, first site action 167, guaranteed path; donor step 3 settles it)"
+    - "code/generator: round / number.random parameter shapes, both with ZERO corpus instances (A2, guaranteed path at 316 and 418)"
+    - "code/generator: math with WFMathOperation omitted for '+' (A3, DEV-05; corpus 1-of-2, weaker than cycle 5 recorded)"
+    - "environment/iOS: Run Shortcut handoff semantics for a large nested shortcut invoked from an App automation (A4/B, residual)"
+  and_gate: >
+    yes, and cycle 6 is the first cycle to notice that the AND-gate may span the DEVICE
+    CONFIGURATION and the PLIST rather than two plist defects. Every prior cycle tested
+    plist-side conditions against a wrapper whose stored state was never verified - only its
+    rendering was. If (B1) holds, then cycles 3-5 were each testing a necessary plist fix
+    against a device-side condition that guaranteed failure regardless, which is precisely the
+    silent AND-gate the cycle-4 checkpoint warned about and then closed on the weaker evidence.
+
+CYCLE 5 reasoning_checkpoint (superseded, kept below for history):
+  hypothesis: >
+    SYMPTOM 1 is a THIRD instance of the session's recurring defect family — "the parameter
+    key/shape iOS actually reads was never emitted" — this time on a THIRD axis the previous
+    two passes never examined: REQUIRED PICKER (enum) PARAMETERS.
+    Cycle 1 fixed the KEY NAME axis. Cycles 2/4 fixed the VALUE ENVELOPE axis. Neither pass
+    ever asked "is a required enum picker present, and does it hold a literal enum case?"
+    Two sites violate it, and they are the ONLY two in the whole artifact:
+      is.workflow.actions.count.WFCountType         MISSING entirely (1 Dumb / 2 Sentient)
+      is.workflow.actions.getitemfromlist.WFItemSpecifier  holds a VARIABLE TOKEN, not a
+        literal enum case, at 31 of 33 sites, with WFItemIndex absent
+    An enum picker that is absent or holds a non-literal renders in Shortcuts as an unfilled
+    picker, and iOS refuses to run the action with exactly "Please choose a value for each
+    parameter in this action" — the user's verbatim error.
+    WHY IT SURFACED ONLY NOW, and why four cycles of router work never touched it: the OPEN
+    branch had NEVER ONCE EXECUTED on device before build d. On 2026-08-13 the automation DID
+    run PROSOCHĒ successfully, but Input Key was empty (pre-envelope-fix), so routing took the
+    MANUAL arm and the OPEN pipeline was skipped entirely. The cycle-2 envelope fix made
+    Input Key resolve to "OPEN" for the first time, so build d was the first build ever to
+    ENTER the OPEN branch — and it failed on the first defective action it met there.
+  confirming_evidence:
+    - "PERFECT SEPARATION across picker parameters, both forks, same artifact: 8 picker classes carry a literal enum case (searchweb 'Google', changecase 'UPPERCASE', getdevicedetails 'Current Volume'/'Current Brightness', setvolume 'Media', gettimebetweendates 'Seconds', round 'Ones Place', searchmaps 'Maps', getitemfromlist 'First Item' x2). EXACTLY TWO deviate: count.WFCountType missing, getitemfromlist.WFItemSpecifier non-literal x31. Same internal-control-group shape that settled cycles 2 and 4."
+    - "GOLDEN CORPUS UNANIMOUS on count: 11/11 real is.workflow.actions.count actions emit WFCountType (all 'Items'); 0 omit it. Catalog agrees — WFCountType is the FIRST parameter, name 'Type'."
+    - "GOLDEN CORPUS UNANIMOUS on getitemfromlist SHAPE: every corpus instance puts a LITERAL enum in WFItemSpecifier ('First Item' / 'Item At Index' / 'Items in Range') and the DYNAMIC index in WFItemIndex. Golden 332c12a0060043b388b2 does precisely what we need — WFItemSpecifier='Item At Index' with WFItemIndex holding a Repeat Index VARIABLE token. Our generator inverted this: it put the variable in the specifier and emitted no WFItemIndex."
+    - "INTERNAL CONTROL GROUP inside our own generator: build_state_engine.py:820 emits WFItemSpecifier='First Item' (literal, correct) while :435 and :552 emit WFItemSpecifier=variable(...) (wrong). Same action, same build, two shapes — the cycle-2/cycle-4 natural experiment recurring a third time."
+    - "PRE-FLIGHT VALIDATION REFUTED, so the failing action must genuinely EXECUTE: count/getitemfromlist/speaktext carried these identical defects in the 2026-08-13 build, and that build ran from the automation all the way to the MANUAL menu without this error. iOS therefore does not validate the whole shortcut on load; it errors on the action it reaches."
+    - "SEARCH SPACE CONFINED BY EXECUTION, not assumption: 12 identifiers appear in the OPEN body and NEVER in the device-exercised PRE+MANUAL population. Every missing-picker class that ALSO appears on the device-proven MANUAL path is exonerated by direct evidence."
+  falsification_test: >
+    Device, one clean install of build 2026-08-14f, opening a configured target app.
+    (a) If the automation still fails with "Please choose a value for each parameter in this
+        action", the required-picker hypothesis is WRONG for symptom 1 and the cause is not a
+        picker parameter.
+    (b) If a PROSOCHĒ menu now appears (prompt "PROSOCHĒ", options Leaving / Continue), the
+        OPEN pipeline has executed end-to-end for the first time in the project's history and
+        symptom 1's routing is resolved.
+    DISCRIMINATOR THAT COSTS NOTHING AND MUST BE READ FIRST: whether ANY PROSOCHĒ UI appears
+    before the failure. This single bit was never captured in cycles 3 or 4 and it partitions
+    the remaining space cleanly — see blind_spots.
+  fix_rationale: >
+    Emits the picker value iOS actually reads, in the literal enum form the golden corpus uses
+    unanimously, and moves the dynamic index to WFItemIndex where the corpus puts it. This
+    repairs the field the OS reads rather than masking a symptom, and every literal used is
+    corpus-verified — nothing is fabricated.
+    Generalised rather than patched: a new REQUIRED_PICKER_PARAMS table plus
+    verify_required_pickers() makes "a required enum picker must be present AND literal" a
+    build-failing invariant across NINE picker classes, not just the two that were broken. The
+    previous two cycles each fixed one axis and left the next one undefended; this closes the
+    axis itself.
+    speaktext.WFInput -> WFText is included because the same audit settled DEV-03: the catalog
+    DOES define speaktext parameters (WFText, str) — the earlier note that it "lists no
+    parameters at all" was simply wrong, so no fabrication is required to fix it.
+  blind_spots:
+    - "LOAD-BEARING UNVERIFIED ASSUMPTION, stated plainly: it is NOT established that the failure occurs before any PROSOCHĒ UI appears. That was the coordinator's characterisation; the user's verbatim reports in cycles 3 and 4 say only that the automation failed and never mention whether a menu appeared. It matters because the pre-menu OPEN region (actions 91-521) was swept EXHAUSTIVELY this cycle and is statically CLEAN — every parameter complete and correctly valued. Both confirmed defects sit AFTER the first OPEN menu (count at 576 inside case 'Leaving'; getitemfromlist at 580/1155/1160/1166). So if no menu ever appeared, this fix cannot be the whole story and the cause is upstream of action 521."
+    - "iOS DOES NOT NAME THE OFFENDING ACTION. The automation-failure notification reports the AUTOMATION's name and the message only. There is no drill-down, no action index, no log. The user cannot discover which action iOS objects to by inspecting further, and should not be asked to try."
+    - "getitemfromlist index base is asserted from the generator, not observed: Rotation Index = (counter % count) + 1 and Circle Next is seeded to 1 / assigned from Repeat Index, so both are 1-based and match Shortcuts' 1-based Item At Index. If Shortcuts were 0-based here the fix would be off by one — but the action has never once run successfully, so there is no prior behaviour to regress."
+    - "The 31 getitemfromlist sites span OPEN and MANUAL. The MANUAL ones sit on the Test-a-Circle / Circle-dispatch path, which the user exercised on 2026-08-13 and which failed then with the symptom-2 error — so it is UNKNOWN whether a defective getitemfromlist has ever been reached. This fix may therefore also repair a latent MANUAL-path failure that has been masked."
+    - "openapp emits a legacy WFAppIdentifier alongside the donor-verified WFSelectedApp, and omits the OS27-only WFWindowingFormat. Left UNCHANGED: extra keys are provably ignored (WFShowFilePicker, ShowWhenRun coexist on working paths) and WFWindowingFormat is OS27-gated, so adding it would violate the iOS-26 target."
+    - "math WFMathOperation is DELIBERATELY left absent at 25 sites. It looked like the leading candidate — a required enum picker missing on the OPEN Heat path — and was REFUTED by the corpus: golden 2e0fb675e459 (client 1146.11.1, minClient 900, same vintage as ours) omits WFMathOperation with our exact key shape. Per this project's own cycle-2 precedent, corpus evidence outranks catalog inference."
+  candidate_causes:
+    - "code/generator PICKER: required enum parameters absent or holding a variable token instead of a literal enum case (PRIMARY, this cycle's fix; corpus-unanimous on both sites)"
+    - "code/generator KEY: speaktext emits WFInput where the catalog defines WFText (SECONDARY, fixed, closes DEV-03)"
+    - "config/device: the automation wrapper (ELIMINATED this cycle by screenshot — two actions, both parameters bound, no third action)"
+    - "environment/iOS: whole-shortcut pre-flight validation on automation launch (ELIMINATED — the 2026-08-13 build carried the identical picker defects and ran from the automation to the MANUAL menu)"
+    - "data/state: a state value that makes the OPEN branch take a different path (NOT RULED OUT; the pre-menu region is clean for every branch, so this would have to act after action 521)"
+  and_gate: >
+    yes, and it is now the recorded pattern of this whole session rather than a suspicion.
+    Reaching Circle 1 from an OPEN required THREE conditions simultaneously, each fixed in a
+    different cycle: a populated Input Key (cycle 2 envelope), a router that routes on positive
+    match (cycle 3), and an OPEN pipeline whose actions all carry the parameters iOS reads
+    (cycle 5). Each earlier fix was necessary and none was sufficient, which is exactly why
+    symptom 1 appeared untouched for four cycles — and why cycle 2's fix, by finally letting
+    execution ENTER the OPEN branch, is what exposed this defect rather than causing it.
+
+CYCLE 4 reasoning_checkpoint (superseded, kept below for history):
+  hypothesis: >
+    SYMPTOM 3 is the SAME value-envelope mechanism as symptom 2, at THREE sites the cycle-2
+    allowlist never covered, because the allowlist was scoped to catalog type `str` and the
+    Notes body parameters are catalog type `AttributedString` — a third type category that
+    was never considered and that behaves like `str`, not like a content item.
+    Specifically: com.apple.mobilenotes.SharingExtension.WFCreateNoteInput (the note BODY)
+    carries a bare WFTextTokenAttachment, so the body resolves to EMPTY at run time while
+    the create call itself still succeeds — which is exactly "note exists but is empty".
+    A second, independent divergence sits in the same two-action chain: our reference to the
+    Make Rich Text from Markdown output names it "Rich Text"; its real output name is
+    "Rich Text from Markdown".
+    A third site, is.workflow.actions.appendnote.text (the manual Control Room refresh
+    snapshot), carries the same bare attachment and would append empty content.
+  confirming_evidence:
+    - "DEVICE DONOR, decrypted this cycle from .planning/debug/'Donor - notes.shortcut' (an Apple-signed Create Note shortcut exported from the USER'S OWN iPhone): its WFCreateNoteInput is {'string': '￼', 'attachmentsByRange': {'{0, 1}': <token>}} with WFSerializationType WFTextTokenString. Ours is a bare WFTextTokenAttachment. This is ground truth from the target device, not catalog inference."
+    - "The donor also names the markdown output 'Rich Text from Markdown'; ours says 'Rich Text'. INDEPENDENTLY CORROBORATED by golden shortcut f44f5caf5e3e action 14, which references a getrichtextfrommarkdown output by exactly that name. Two independent sources agree against us."
+    - "Exactly ONE link in the three-action create chain diverges from the donor. 3613 gettext (WFTextTokenString) matches; 3615 getrichtextfrommarkdown.WFInput as a BARE attachment matches the donor AND golden f44f5caf action 13 (WFInput is catalog-typed com_apple_shortcuts_wfcontent_item, so bare is correct there); 3616's body parameter is the only mismatch. The divergence is at the exact link whose output is empty."
+    - "ToolKit v78 catalog: SharingExtension.contents and appendnote.text are both typePythonName AttributedString. The cycle-2 allowlist keyed on `str` only, so BOTH were structurally invisible to normalise_string_envelopes AND to its recurrence guard."
+    - "INTERNAL CONTROL GROUP, same fork, same action identifier: appendnote at action 3668 already carries a WFTextTokenString (it is a composite template, so it was authored that way by accident of shape) while appendnote at 3648 carries a bare attachment. Same parameter, same action, two envelopes — the cycle-2 natural experiment repeating."
+    - "MECHANISM IS RUNTIME-CONFIRMED, not theorised: symptom 2 passed on device in cycle 3 precisely because its bare attachment was converted to WFTextTokenString. This cycle applies an already-proven mechanism to sites it never reached."
+  falsification_test: >
+    Device, one clean install of build 2026-08-14e. The two note writes are deliberately
+    instrumented as SEPARATE experiments:
+    (a) CREATE path (note body). Changes on TWO axes — envelope AND output name — so a pass
+        confirms the path but does NOT discriminate between them. If the note body is still
+        empty, the AttributedString-envelope hypothesis is WRONG for the create path.
+    (b) APPEND path (Control Room refresh snapshot, action 3648). Changes on the ENVELOPE
+        AXIS ONLY — its OutputName 'Text' is already correct for a gettext source. This is a
+        clean single-variable test. If the "## CURRENT SETTINGS" block does NOT appear after
+        choosing Open Control Room, the AttributedString-envelope hypothesis is refuted
+        outright, and the create-path result is uninterpretable.
+    (c) If the append block appears but the body is still empty, the envelope is right and
+        the create action has a further problem (the omitted folder/WFNoteGroup, or the
+        `name` parameter our build emits and the donor does not).
+  fix_rationale: >
+    Extends the existing, device-proven normalise_string_envelopes allowlist to the two
+    AttributedString-typed Notes body parameters, so the SAME converter and the SAME
+    build-failing recurrence guard now cover them. It repairs the field iOS actually reads
+    rather than masking the symptom, and it is derived from a device export of the target
+    iPhone rather than from catalog inference.
+    Deliberately NOT done, to keep the fix minimal and the test interpretable: the donor's
+    `folder`/`WFNoteGroup` parameters are not added (the note demonstrably creates without
+    them, and adding unproven parameters is how the resolved unsupported-device-import
+    session's import blocker was created), and the `name` parameter is left in place (it is
+    not implicated in an empty BODY, and removing it risks the Find-Notes reuse path).
+  blind_spots:
+    - "No golden-corpus instance of appendnote exists, so appendnote.text rests on catalog type + the donor's AttributedString analogue + the internal control group. Same shape of weakest link as cycle 2's setvalueforkey — which turned out to be correct."
+    - "Whether OutputName is load-bearing at all, or purely a display label, is not determinable on the build Mac. It is corrected because two independent sources say ours is wrong, not because it is believed to be the cause."
+    - "SYMPTOM 1 IS NOT ADDRESSED IN CODE THIS CYCLE and must not be recorded as progressed. Cycle 3 produced zero plist-side OPEN evidence. The plist-side OPEN path has never once been exercised on device with both the envelope fix and the router fix present."
+    - "The user has deleted the shortcut before every clean install. Deleting a shortcut orphans any Personal Automation's Run Shortcut reference. This is a strong, mechanistic explanation for the cycle-3 automation error but it is a HYPOTHESIS, not established — a screenshot settles it."
+    - "TEST-INVALIDATING CONFOUND, must be controlled on the next run: iOS Notes 'delete' moves a note to Recently Deleted for 30 days rather than destroying it. If Find Notes (action 3599, filter Name contains 'PROSOCHĒ — Control Room') matches a soft-deleted note, the REUSE branch at 3609 fires, no note is created, and the body stays empty NO MATTER WHAT THE FIX DOES. Whether Find Notes searches Recently Deleted is not determinable on the build Mac. The device protocol therefore requires emptying Recently Deleted, and the run is uninterpretable for the create path if it is skipped. The append path (3648) is unaffected by this confound, which is a further reason to read it first."
+    - "Diagnostic available for free on the next run: if the leftover empty notes are TITLED 'PROSOCHĒ — Control Room', the `name` parameter is honoured on device; if they are untitled, `name` is ignored and the title must come from the body's first line. This settles DEV-04's open question without a dedicated cycle."
+  candidate_causes:
+    - "code/generator ENVELOPE: AttributedString-typed Notes body parameters carry bare attachments (PRIMARY, this cycle's fix; runtime-proven mechanism, device-donor-verified shape)"
+    - "code/generator REFERENCE: the markdown output is referenced by the wrong OutputName (SECONDARY, corrected, donor + corpus evidenced)"
+    - "config/device: the Personal Automation's Run Shortcut target was orphaned by the clean-install delete (SYMPTOM 1, PRIMARY, addressed by instructions + screenshot request, NOT by code)"
+    - "data/Notes: the omitted folder/WFNoteGroup parameters (NOT changed; discriminated by outcome (c) above)"
+  and_gate: >
+    yes. Symptom 3 needs BOTH a correct body envelope AND a create action iOS accepts;
+    symptom 1 needs BOTH a correctly configured automation wrapper AND a correct plist-side
+    OPEN path, and only the second has ever been worked on. Three cycles of plist-side OPEN
+    theory were tested against a wrapper whose health was never once verified — that is the
+    AND-gate failing silently, and it is why the cycle-1 INPUT PROBE mattered.
+
+CYCLE 3 reasoning_checkpoint (retained for history):
+  hypothesis: >
+    The router's emptiness test is TOO WEAK to survive a correctly-enveloped empty input.
+    DERIVED FROM DEVICE EVIDENCE, not assumed: on a manual tap (no Shortcut Input at all),
+    the normalisation chain now yields a NON-EMPTY Input Key that equals neither OPEN nor
+    CLOSE. Proof is a two-point differential, both points observed on device:
+      pre-fix  -> cond 100 "Input Key has any value" evaluated FALSE (manual menu shown)
+      post-fix -> cond 100 evaluated TRUE (action 1349's unrecognised-input arm is
+                  reachable ONLY when cond 100 passes AND neither literal matches)
+    The ONLY difference in the 84->87 chain between those two builds is that actions 85
+    (Trim Whitespace) and 86 (Change Case) gained WFTextTokenString envelopes. Therefore
+    Uppercase(Trim(Text)) is non-empty when the Shortcut Input token is empty.
+    The EXACT identity of that value (call it X) is NOT determinable statically and I do
+    not claim it. Two live candidates, both consistent with every observation:
+      (i)  the literal U+FFFC placeholder survives unresolved-token substitution, so X is
+           a one-character non-printing string (the coordinator's hypothesis)
+      (ii) an unresolved ExtensionInput renders as some other non-empty text
+    BOTH candidates yield the identical actionable conclusion, which is why the fix does
+    not depend on resolving them: routing on ABSENCE is unsafe, routing on PRESENCE is not.
+  confirming_evidence:
+    - "Structural: action 1349 sits in the Otherwise of A2F7 (CLOSE), nested inside FA04-otherwise (OPEN), nested inside F646 (cond 100). Reaching its alert REQUIRES cond 100 to have passed. The user saw exactly that alert's verbatim text."
+    - "Differential: the 84->87 chain differs between the two device builds in exactly two actions (85 WFInput, 86 text), both bare-attachment -> WFTextTokenString. Action 84 was ALREADY WFTextTokenString in BOTH builds, so 84 is not the variable that changed."
+    - "cond-100 semantics ELIMINATED as the cause: pre-fix, actions 85/86 still emitted an output ITEM whose text was empty, and cond 100 evaluated FALSE on it. So cond 100 tests string emptiness, not item existence. The coordinator's third alternative is ruled out by the project's own prior device data."
+    - "U+FFFC is Unicode category So (OBJECT REPLACEMENT CHARACTER), not Zs/Zl/Zp and not whitespace. A Trim Whitespace step would NOT strip it. The coordinator's stated falsification test ('if Trim already strips it, this hypothesis is WRONG') therefore does not fire — candidate (i) survives it. Supporting, not decisive: iOS Trim semantics are not executable on the build Mac."
+    - "Nesting-depth check on the proposed restructure: current max control-flow depth is 12, restructured is 11. The fix REDUCES maximum nesting rather than deepening it."
+  falsification_test: >
+    Device step 1 (manual tap). The build shows a ROUTER TRACE alert as the first thing on
+    the manual arm, printing the normalised Input Key in brackets beside a literal
+    empty-string reference on the next line. (The trace contains no conditional: an earlier
+    draft tested cond 100 here, but that conditional was byte-identical to the router gate
+    being removed and broke both the recurrence guard and generator idempotency. The
+    cond-100 verdict is not needed — cycle 2 already established on device that it passes.)
+    (a) If the "Unrecognised Input" alert still appears -> the restructure did not take
+        effect on the device; hypothesis wrong about where that branch lives.
+    (b) If the menu appears with NO trace alert first -> the trace was not reached, so the
+        manual arm is not being entered the way this model predicts.
+    (c) If the two bracket lines render DIFFERENTLY -> Input Key holds visible text, so
+        candidate (ii) holds and candidate (i) (lone U+FFFC) is refuted.
+    Expected under the hypothesis: the trace appears, its two bracket lines look identical
+    (a present-but-non-printing value, i.e. candidate i), and the manual menu follows.
+    Either way the router fix stands, because it does not depend on which candidate is true.
+  fix_rationale: >
+    Route on POSITIVE identification instead of on absence. The outer "Input Key has any
+    value" gate is deleted; MANUAL becomes the Otherwise-of-Otherwise, so the router reads
+    "is it OPEN? else is it CLOSE? else this is a manual run". This is correct for EVERY
+    possible value of X without needing to know X, which is the whole point: cycle 2 failed
+    precisely because it changed what X is while leaving a test that depended on X being
+    exactly empty. It addresses the root cause (the router trusted absence as its manual
+    signal) rather than the symptom (this particular non-empty value).
+    It preserves the automation path unchanged: OPEN still matches literal OPEN at the same
+    conditional with the same cond-4 test, CLOSE likewise. Nothing on the OPEN/CLOSE arms
+    is touched; those arms simply become one level shallower.
+    The envelope fix is NOT reverted, per the coordinator's instruction and on its own
+    merits: the 367-site diagnosis and its internal control group still stand, and the old
+    emptiness was empty-by-accident.
+  blind_spots:
+    - "X's identity is unresolved and deliberately so. The fix is designed to be correct either way, but the ROUTER TRACE is included specifically to measure X on this round-trip so the question stops being open."
+    - "Losing the unrecognised-input fail-safe: a mis-typed automation now shows the manual menu instead of an explicit rejection. Accepted deliberately — the menu is inert until the user chooses, so the safety property ('a stray caller injects no phantom event into Heat/Pressure') is preserved; only the diagnostic distinction is lost. Recorded as a design deviation."
+    - "SYMPTOMS 1 AND 3 REMAIN UNMEASURED from cycle 2. Nothing in this cycle observes them. The cycle-2 envelope fix's effect on them is still entirely unknown, and this build is the first that can even reach them."
+    - "The trace alert adds one tap to every manual run. It is scaffolding behind a ROUTER_TRACE flag, alongside the BUILD_STAMP debt."
+    - "Whether iOS Trim Whitespace strips U+FFFC is asserted from Unicode properties, not observed. Irrelevant to the fix's correctness, relevant only to interpreting the trace."
+  candidate_causes:
+    - "code/generator ROUTER: manual invocation is detected by absence-of-input rather than by non-match, so it breaks whenever the empty case stops being byte-empty (PRIMARY, this cycle's fix)"
+    - "code/generator ENVELOPE: the cycle-2 WFTextTokenString conversion changed what an empty Shortcut Input resolves to (CONTRIBUTING, retained deliberately, not reverted)"
+    - "environment/iOS runtime: unresolved-token substitution semantics for U+FFFC in a WFTextTokenString (UNRESOLVED — now instrumented rather than guessed)"
+    - "data/input: the automation wrapper's Run Shortcut Input field (untouched this cycle; step 2 still tests it)"
+  and_gate: >
+    yes, and this is the third consecutive cycle where a single-cause reading was wrong.
+    The cycle-2 regression required BOTH conditions simultaneously: the envelope change
+    (which made the empty case non-empty) AND the router's absence-based manual test (which
+    could only tolerate a byte-empty value). Neither alone produces the observed failure —
+    the envelope change is harmless under positive-match routing, and the weak router was
+    harmless while the chain happened to evaporate. Fixing only the envelope, or only
+    reverting it, would leave the pair intact.
+
+CYCLE 2 reasoning_checkpoint (retained for history):
+  hypothesis: >
+    ONE systemic defect explains all three symptoms. The generator serializes every
+    variable / action-output reference as `WFTextTokenAttachment`. That is correct only
+    for parameters iOS types as a content item (WFInput on Set Variable, WFDictionary on
+    Set Dictionary Value, File, Placemark, float...). For parameters iOS types as a plain
+    string, the value must be a `WFTextTokenString` — a "￼" placeholder plus
+    attachmentsByRange. A bare attachment in a string-typed parameter imports cleanly,
+    validates cleanly, and resolves to EMPTY at run time.
+    -> symptom 2: setvalueforkey.WFDictionaryValue (catalog type `str`) held a bare
+       attachment, so the Value field was empty and iOS raised "No value was provided to
+       the Set Dictionary Value action for the key sequence".
+    -> symptom 1: text.trimwhitespace.WFInput and text.changecase.text (both `str`) held
+       bare attachments, so the OPEN/CLOSE normalisation chain evaporated between
+       action 84 and action 87, Input Key was empty, and routing took the MANUAL arm.
+    -> symptom 3: the Control Room refresh chain (actions 3623-3639+) reads each snapshot
+       field through gettext.WFTextActionText (`str`) carrying a bare attachment, so every
+       Snapshot* variable was empty and the refresh appended a contentless block.
+    Cycle 1 renamed the parameter KEY correctly but never examined the VALUE ENVELOPE,
+    which is exactly why the key fix was necessary but not sufficient.
+  confirming_evidence:
+    - "ToolKit v78 catalog TYPES (not just key names): setvalueforkey.WFDictionaryValue is typePythonName `str`, while WFDictionary/WFInput are `com_apple_shortcuts_wfcontent_item`. Cycle 1 compared key names only."
+    - "Golden corpus is unanimous where it has data: gettext.WFTextActionText is WFTextTokenString in 36/36 real actions and WFTextTokenAttachment in 0. text.match.text 8/8, text.replace.WFInput 3/3, alert.WFAlertActionMessage 8/8 — all WFTextTokenString."
+    - "INTERNAL CONTROL GROUP (the decisive evidence): within the same artifact, every path the user reported as WORKING uses WFTextTokenString on its string parameter — state.json template (action 75), Shortcut Input read (action 84), Control Room body (action 3615). Every path the user reported as FAILING used a bare attachment — actions 85/86 (Input Key), 1405 (key `sequence`), 3624+ (Note refresh). Perfect separation, same build, same device, same run."
+    - "Execution-order proof that the working state.json does NOT contradict the hypothesis: zero setvalueforkey actions exist before the routing gate at action 84. state.json is written at action 79 from the action-75 WFTextTokenString template. Actions 151/153 sit inside the OPEN branch and never executed, because Input Key was empty."
+    - "BEST_PRACTICES.md and VARIABLES.md both document the mechanism as runtime-verified: a bare WFTextTokenAttachment in a string-typed/display parameter renders default/empty at run time while importing and validating fine."
+  falsification_test: >
+    Run the rebuilt artifact on device after confirming the build stamp.
+    (a) If Change Sequence -> Classic still raises "No value provided" for key `sequence`,
+        the envelope hypothesis is wrong for symptom 2.
+    (b) If opening a configured target app still shows the manual menu (bearing the NEW
+        stamp), the envelope hypothesis is wrong for symptom 1.
+    The build stamp is what makes these tests meaningful: without it a stale install is
+    indistinguishable from a failed fix, which is the confound that made cycle 1's two
+    "refutations" uninterpretable.
+  fix_rationale: >
+    The converter re-wraps the same token payload, unchanged, inside the "￼" +
+    attachmentsByRange form that iOS reads for string-typed parameters. It restores the
+    field iOS actually reads rather than masking a symptom, and it is applied from a
+    catalog-and-corpus-derived allowlist rather than blanket-applied.
+  blind_spots:
+    - "SETTLED FOR THIS CYCLE, NOT PROVEN: no golden-corpus instance of setvalueforkey exists anywhere in the 19-shortcut corpus, so WFDictionaryValue's envelope is inferred from its `str` catalog type plus the unanimous behaviour of every other `str` parameter. It is the single weakest link and is exactly what device step 2 tests."
+    - "Symptom 3 may not be fully explained. The note-creation chain (3615/3617/3618) is byte-identical to the 2026-08-13 build in which the Note was confirmed created successfully, so the empty Note is NOT a cycle-1 regression. The envelope fix repairs the refresh block that appends snapshot content, but if the note body itself is empty on a fresh create, a second cause remains."
+    - "openurl.WFInput (4 sites) is catalog-typed `str` but the golden corpus uses a bare attachment 2/2, so it was deliberately left alone. Recorded as a knowing deviation; corpus evidence outranks catalog inference."
+    - "The 2026-08-13 report named Test a Circle while the only `sequence` setters live in Change Sequence. Day-old recall; unresolved, and it does not change the fix since the defect affected all 147 setters."
+  candidate_causes:
+    - "code/generator: string-typed parameters carry a bare WFTextTokenAttachment (PRIMARY, this cycle's fix)"
+    - "environment/device: stale duplicate install left the automation wrapper pointed at the pre-fix shortcut (UNRULED-OUT — now discriminated by the build stamp)"
+    - "config/plist root: WFWorkflowHasShortcutInputVariables (ELIMINATED as sufficient by the 2026-08-14 device test; kept because it matches every modern golden shortcut)"
+    - "data/Notes: note body or create-vs-reuse branch selection (symptom 3, partially open)"
+  and_gate: >
+    yes, and this is the crux of cycle 1's failure. Reaching Circle 1 requires BOTH a
+    populated Input Key AND a working setter chain. Cycle 1 fixed one contributing
+    condition (the parameter key) while a second (the value envelope) remained, so the
+    user-visible outcome did not move at all and the fix read as a total refutation. A
+    single-condition reading of this failure was wrong both times.
+
+superseded_next_action_cycle2_checkpoint: >
+  (ANSWERED 2026-08-14 — build "c" round-trip. Outcome: manual-invocation REGRESSION,
+  symptoms 1 and 3 unmeasured. Superseded by the cycle-4 next_action at the top of
+  Current Focus. Retained for history only — DO NOT ACT ON THIS.)
+  CHECKPOINT — awaiting the device round-trip. The rebuilt, re-signed artifacts carry the
+  visible stamp "PROSOCHĒ · build 2026-08-14c" in the manual menu prompt.
+
+--- cycle-1 reasoning_checkpoint, retained for history (both hypotheses refuted on device) ---
+reasoning_checkpoint:
+  hypothesis: >
+    SYMPTOM 2 (confirmed): every `is.workflow.actions.setvalueforkey` emitted by the
+    generator supplies the value under `WFInput`, but the action's Value parameter is
+    `WFDictionaryValue`. iOS ignores the unknown key, so the Value field is empty and
+    Shortcuts raises "No value was provided to the Set Dictionary Value action for the
+    key <WFDictionaryKey>".
+    SYMPTOM 1 (unconfirmed): the master shortcut consumes Shortcut Input via the
+    `ExtensionInput` token but the root plist omits `WFWorkflowHasShortcutInputVariables`,
+    so the Shortcut Input variable is not provisioned at run time, `Input Key` resolves
+    empty, and routing takes the documented empty-input arm to MANUAL.
+  confirming_evidence:
+    - "ToolKit v78 first-party parameter catalog: is.workflow.actions.setvalueforkey has exactly {WFDictionaryKey, WFDictionaryValue, WFDictionary}. No WFInput."
+    - "All 147 setters in both forks emit WFInput and none emit WFDictionaryValue."
+    - "Catalog displayName confirms setvalueforkey = 'Set Dictionary Value' and getvalueforkey = 'Get Dictionary Value', so the reported action is unambiguously the setter."
+    - "Router ancestry proves the MANUAL menu sits in the Otherwise arm of the 'Input Key has any value' conditional, so the observed menu means Input Key was empty."
+    - "Golden shortcut 51cc4e26 matches our Shortcut-Input pattern exactly (WFStringContentItem + gettext/WFTextTokenString/ExtensionInput) and differs from ours in exactly one root key: WFWorkflowHasShortcutInputVariables = true."
+  falsification_test: >
+    Symptom 2: if a rebuilt artifact using WFDictionaryValue still raises "No value
+    provided" on a Set Dictionary Value, the hypothesis is wrong.
+    Symptom 1: if an on-device probe shortcut receives "OPEN" from the same wrapper via
+    Run Shortcut while the imported PROSOCHE still falls through to MANUAL, the defect is
+    inside the imported plist (supports the hypothesis). If the probe ALSO receives
+    nothing, the wrapper is at fault and the hypothesis is refuted.
+  fix_rationale: >
+    Renaming the value parameter to the catalog-verified key restores the Value field that
+    Shortcuts actually reads — this is the mechanism, not a symptom workaround. Setting
+    the documented root key declares that the shortcut uses input variables.
+  blind_spots:
+    - "The reported key was 'sequence', but no setter with key 'sequence' is reachable inside the Test-a-Circle case (only inside Change Sequence). The defect class is proven; the exact menu path the user took is unresolved and must be confirmed on device."
+    - "WFWorkflowHasShortcutInputVariables is documented in PLIST_FORMAT.md but its runtime effect is not verifiable on the build Mac."
+  candidate_causes:
+    - "code/generator: wrong parameter key on setvalueforkey (CONFIRMED)"
+    - "config/plist root: missing WFWorkflowHasShortcutInputVariables (UNDER TEST)"
+    - "environment/device: wrapper's Run Shortcut Input field not actually wired (UNDER TEST via probe)"
+  and_gate: >
+    yes for symptom 1 — reaching Circle 1 needs BOTH a populated Shortcut Input AND a
+    working setter chain, because the OPEN pipeline writes opens_today via
+    Set Dictionary Value before it can reach the Circle dispatch. The two defects are
+    independent but both gate the same user-visible outcome.
+
+next_action: >
+  CHECKPOINT — awaiting the cycle-8 device sitting. A FIX IS SHIPPED this cycle (the first since
+  cycle 5), and the root cause is CONFIRMED, not ranked.
+  ROOT CAUSE: conditional WFInput.Variable held a WFTextTokenString TEXT TEMPLATE where a
+  WFTextTokenAttachment VARIABLE DESCRIPTOR is required. 25 sites; the first two are actions
+  149/158, inside span B->C, two actions after the breadcrumb the user last saw.
+  FIX: deleted the 13 generator lines that overwrote if_block()'s already-correct WFInput with
+  token(name). Verified programmatically that all 13 passed the SAME variable name, so the
+  deletion changes only the envelope. Added verify_conditional_inputs() as a build-failing
+  recurrence guard, wired into BOTH fork builders.
+  ARTIFACTS: artifacts/shortcuts/"PROSOCHĒ — Nine Circles — Dumb.shortcut" (AEA1, 188480 bytes,
+  3684 actions) and Sentient (AEA1, 192095 bytes, 3752 actions). Stamp "build 2026-08-14h"
+  verified INSIDE both signed files by decryption; "14g" verified absent. 307/317 conditional
+  inputs correct, 0 defective, confirmed in the DECRYPTED SIGNED artifacts. Both validate at
+  --target-macos 26 --target-platform all; plutil -lint OK.
+  PROTOCOL: artifacts/device-import-probes/TESTING-cycle8.md. Step 0 (delete, import, RE-POINT
+  the automation's Run Shortcut) remains unskippable. Step 1: menu prompt must read
+  "build 2026-08-14h".
+  BREADCRUMBS DELIBERATELY RETAINED. Rationale, stated so the next cycle does not re-litigate
+  it: under a multi-defect world a retained instrument turns "same error again" into "a LATER
+  letter", i.e. progress plus localisation in the same sitting, instead of a result that reads
+  as this fix having failed — the exact failure mode that made cycle 1's correct fix look like a
+  refutation. Strip with OPEN_BISECT = False once the OPEN path completes end to end.
+  READING THE RESULT:
+    last letter C or later -> span B->C CLEARED, fix correct, remaining failure is a DIFFERENT
+      and later defect; localise from the new letter.
+    all ten + the Leaving/Continue menu -> OPEN pipeline complete for the first time ever.
+    last letter B again -> HYPOTHESIS REFUTED. Re-examine the other 18 actions in the span
+      INDIVIDUALLY rather than by class; class-level device clearance would then be the wrong
+      standard and that is the lesson to record.
+  DELIBERATELY UNCHANGED, AND NOT CLAIMED CORRECT — the 14 WFConditionalActionString = token()
+  sites (generator lines 398/682/712 pre-edit). Same family, but the WFInput evidence does NOT
+  transfer: WFInput.Variable is a variable slot whereas WFConditionalActionString is a TEXT slot
+  that legitimately accepts mixed literal+variable content. Corpus coverage zero (all corpus
+  conditional operands are literals), catalog coverage zero (is.workflow.actions.conditional is
+  absent from the ToolKit catalog entirely), device coverage zero. All 14 sit past breadcrumb J
+  so they cannot confound this sitting. DONOR 4 IS REQUESTED in TESTING-cycle8.md as an optional
+  parallel task at zero device-testing cost; it settles them outright.
+  LATENT, NOT THIS BUG, AND NOW WEAKER THAN CYCLE 7 RANKED THEM: the two <integer> sites at
+  418/454. Left UNCHANGED. Cycle 7 inferred that because iOS never WRITES <integer>, <integer>
+  must be undecodable; that inference is refuted by our own <integer> WFNumberActionNumber at
+  action 1359, which has executed on device. Keeping them unchanged also keeps spans G and H
+  interpretable if the next run reaches them.
+  RECURRENCE GUARD ADDED: verify_conditional_inputs(). MUTATION-TESTED — re-introducing the exact
+  defect at line 802 makes the build exit non-zero and names "action 149: WFInput.Variable is
+  'WFTextTokenString', expected WFTextTokenAttachment". The generator now asserts KEY, ENVELOPE,
+  PICKER LITERAL and VARIABLE-SLOT shape. A verify_scalar_types() pass remains UNBUILT and is no
+  longer clearly warranted — see the scalar-type evidence entry.
+  PRESERVED BY CONSTRUCTION AND VERIFIED BY COMPARISON, not asserted: action counts unchanged
+  (3684 / 3752); the ONLY differing actions between build g and build h are the 25 conditional
+  WFInput envelopes plus TWO display-only build-stamp strings. All 147 setvalueforkey still carry
+  WFDictionaryValue (symptom 2); WFCreateNoteInput and both appendnote.text still carry
+  WFTextTokenString (symptom 3). Every internal UUID is unchanged.
+  REPO HAZARD — CHECK BEFORE ANY REBUILD: HEAD must be codex/automation-parameter-diagnosis.
+  A rebuild on codex/prosochedebug1 or codex/round1 emits a pre-cycle-1 artifact and all three
+  symptoms return looking like a regression.
+  HOUSEKEEPING, non-urgent and untouched: the DEV-03 collision in docs/BUILD-NOTES.md;
+  correcting .claude/CLAUDE.md §8's claim that signed artifacts cannot be decrypted; stripping
+  BUILD_STAMP / ROUTER_TRACE / OPEN_BISECT before ship.
+
+superseded_next_action_cycle7_checkpoint: >
+  CHECKPOINT — awaiting the cycle-7 device sitting. (ANSWERED: last letter "B" — localised to
+  span B->C.) NO FIX WAS SHIPPED; this cycle shipped a MEASUREMENT. Protocol: artifacts/device-import-probes/TESTING-cycle7.md.
+  ARTIFACT: artifacts/shortcuts/"PROSOCHĒ — Nine Circles — Dumb.shortcut", AEA1, 188667 bytes,
+  3684 actions, stamp "build 2026-08-14g" verified INSIDE the signed file by decryption ("14f"
+  verified absent). Sentient rebuilt/re-signed identically (192807 bytes). Both forks validate at
+  --target-macos 26 --target-platform all; plutil -lint OK.
+  STEP 0 IS UNSKIPPABLE: delete PROSOCHĒ, import build g, then RE-POINT the automation's Run
+  Shortcut by fresh selection. Deleting orphans the target and would produce the SAME error for a
+  wholly different reason, wasting the sitting.
+  STEP 1: manual tap — the menu prompt must read "build 2026-08-14g", else the old copy is live.
+  STEP 2: open a watched app; report the LAST of the ten breadcrumb letters A-J.
+  READING THE RESULT (spans and nesting computed from the artifact, build-g indices):
+    A@92  -> B@147  54 actions, flat            (state + config reads)
+    B@147 -> C@168  20 actions, 2 blocks d2     (behavioural-day rollover)
+    C@168 -> D@286 117 actions, 11 blocks d4    (cooldown: live-Ice menu + Ice-expiry restore)
+    D@286 -> E@306  19 actions, 3 blocks d2     (duplicate-OPEN debounce)
+    E@306 -> F@415 108 actions, 11 blocks d4    (whole ordered Heat pipeline)
+    F@415 -> G@424   8 actions, flat            (opens-today math + 3 dictionary writes)
+    G@424 -> H@458  33 actions, 1 block         <- CONTAINS number.random, SUSPECT 1
+    H@458 -> I@473  14 actions, 2 blocks        <- CONTAINS repeat.count, SUSPECT 2
+    I@473 -> J@527  53 actions, 3 blocks d3     (pending exit, 2 repeat-each loops)
+    J@527 -> menu@531  3 actions, flat          (Save File only)
+  A LAST LETTER OF C, E OR I DOES NOT LOCALISE TO AN ACTION — those three spans hold 278 of the
+  429 measured actions and nest to depth 4. Ship a SECOND, finer bisection inside that span; do
+  not attempt to reason the answer out statically, which has failed three times.
+  A LAST LETTER OF G OR H CONFIRMS this cycle's ranked prediction (donor-derived scalar-type
+  divergence). The follow-up fix is then SINGLE-VARIABLE: emit number.random's
+  WFRandomNumberMinimum/Maximum as plist <string> (donor shape) or repeat.count's WFRepeatCount as
+  plist <real> (donor shape) — ONE of them, not both, so the next result stays interpretable.
+  Note the fix would still confirm only the SPAN, not the mechanism: Detect Dictionary, the Gravity
+  conditional and the composite-key threshold lookup also live in those spans.
+  NO LETTERS AT ALL would contradict cycle 6's probe result and reopens the router/PRE region.
+  ALL TEN + the Leaving/Continue menu means the OPEN pipeline completed for the first time ever.
+  RECURRENCE GUARD TO ADD once the axis is settled, independent of the outcome: the generator has
+  invariants for parameter KEY, value ENVELOPE and picker LITERAL, but NONE for the plist TYPE of
+  an emitted parameter. Six cycles of "exhaustive" sweeps never modelled it. Add a
+  verify_scalar_types() pass keyed off the donor/corpus evidence.
+  ALSO NOW SETTLED, no action needed: DEV-05 (math WFMathOperation omitted at the default
+  operation is what iOS itself does — keep the omission). Donor 3 raw plist worth preserving:
+  it is the only device serialization we hold for variable-backed conditionals, round,
+  number.random and repeat.count.
+  RETAINED, DO NOT REVERT: every cycle-2/3/4/5 fix. KEEP BUILD_STAMP, ROUTER_TRACE, OPEN_BISECT
+  on until the OPEN path completes; strip OPEN_BISECT with OPEN_BISECT = False.
+  REPO HAZARD — CHECK BEFORE ANY REBUILD: HEAD must be codex/automation-parameter-diagnosis.
+  Verified this cycle at 7ca8ebb before regenerating. A rebuild on codex/prosochedebug1 or
+  codex/round1 emits a pre-cycle-1 artifact and all three symptoms return looking like a regression.
+  HOUSEKEEPING, non-urgent and untouched: the DEV-03 collision in docs/BUILD-NOTES.md (Use Model
+  literal still open vs speaktext key now closed); correcting .claude/CLAUDE.md §8's claim that
+  signed artifacts cannot be decrypted; stripping scaffolding before ship.
+
+superseded_next_action_cycle7_entry: >
+  CYCLE 7 — THE FAULT IS ISOLATED TO PROSOCHĒ'S OPEN PATH, actions 91-520, before the first
+  OPEN menu. Cycle 6 closed the wrapper and stale-reference hypotheses affirmatively: the SAME
+  wrapper succeeds against Probe 5 and fails against PROSOCHĒ. No device-side confound remains.
+  TWO WORKSTREAMS, RUN IN PARALLEL, SHIPPED AS SEPARATE ARTIFACTS:
+  (A) BISECTION — the primary instrument. Static reading is retired (three device-refuted
+      confirmations, one exhausted region, and 336 control-flow actions no catalog sweep can
+      evaluate). Ship flag-gated breadcrumb alerts at OPEN-arm base depth (91, ~200, ~300,
+      ~400, ~470, 519) as a SIGNED artifact, same as Probe 5 — the user reads letters rather
+      than judging state. TWO REQUIREMENTS:
+        - Place breadcrumbs at OPEN-ARM BASE DEPTH so a breadcrumb cannot itself be skipped by
+          a conditional that the failing action sits inside. If a span turns out to contain
+          nested control flow, SAY SO and plan a second bisection round rather than claiming
+          one pass localises to a single action.
+        - The breadcrumb alert must NOT introduce a parameter shape being inferred. Use the
+          alert shape already proven on device this session.
+  (B) DONOR 3 ANALYSIS — already in hand at .planning/debug/"Donor 3.shortcut" (AEA1, 22907
+      bytes, verified). Costs zero device time. Decrypt with the cycle-4 recipe. Settles:
+      DEV-05 outright; the first device ground truth for variable-backed WFNumberValue (13
+      sites, first at action 167, ON THE GUARANTEED PATH, zero corpus precedent anywhere);
+      plus `round`, `number.random`, `repeat.count` shapes (all zero-corpus).
+      If the donor diff reveals a defect at or before action 167, that is a CANDIDATE for the
+      bisection to confirm — not a fix to ship blind.
+  HARD SEPARATION: do NOT ship a donor-derived fix and the bisection build in the same
+  artifact. The bisection is a MEASUREMENT and must not be confounded.
+  PRESERVE BY CONSTRUCTION: symptoms 2 and 3 stay closed; keep the cycle-5 picker fixes and the
+  scaffolding. Confirm the tree is on codex/automation-parameter-diagnosis before ANY rebuild —
+  a rebuild on codex/prosochedebug1 or codex/round1 would silently emit a pre-cycle-1 artifact
+  and all three symptoms would return looking like a regression.
+
+superseded_next_action_cycle6_checkpoint: >
+  CHECKPOINT — awaiting the cycle-6 device sitting. (ANSWERED: probe received [OPEN]; repoint
+  still failed; Donor 3 delivered.) NO generator change was made this cycle, so
+  both forks and both signed artifacts are byte-identical to build 2026-08-14f and symptoms 2
+  and 3 remain exactly as device-confirmed. Nothing from cycles 2-5 is reverted.
+  SHIPPED FOR TEST: artifacts/device-import-probes/"PROSOCHE Probe 5 - Input Echo.shortcut"
+  (AEA1, 22953 bytes, decrypt-verified). Protocol written to
+  artifacts/device-import-probes/TESTING-cycle6.md. Generator: build_probe5.py in the same dir.
+  THE USER MUST NOT CLEAN-INSTALL OR RE-IMPORT PROSOCHĒ THIS SITTING. Step 1 already rewrites
+  the wrapper's stored Run Shortcut reference; a reinstall on top of that destroys step 2's
+  discriminating power.
+  STEP 1 (probe): repoint the OPEN automation's Run Shortcut at Probe 5, open a watched app.
+    RAW [OPEN] / NORMALISED [OPEN] -> handoff delivers input; defect is INSIDE PROSOCHĒ -> go to
+      breadcrumb bisection (below), NOT another static sweep.
+    RAW [] / NORMALISED []         -> handoff runs but delivers nothing.
+    same error, NO alert           -> failure is AT/ABOVE the handoff; five cycles of plist-side
+      theory were aimed at the wrong layer. Investigate the wrapper/trigger, not the generator.
+  STEP 2 (repoint back, fresh selection from the list): tests whether the stored reference was
+    STALE while the chip rendered from a cached name. Works now -> device-config root cause, and
+    the guard belongs in the shipped setup copy, not the generator. Fails identically -> stale
+    reference refuted on stored-representation evidence, defect is in the OPEN pipeline.
+  STEP 3 (donor 3, only if step 1 showed [OPEN]): user builds a shortcut in Shortcuts.app with a
+    variable-vs-VARIABLE numeric If, a default-operation Calculate, a Round, a Random Number and
+    a literal-count Repeat, then exports it. Decrypting it gives iOS's own serialization for the
+    five constructs with zero corpus coverage. Same technique that cracked symptom 3.
+  IF THE DEFECT IS INSIDE PROSOCHĒ, THE NEXT INSTRUMENT IS BISECTION, NOT READING. Flag-gated
+    breadcrumb alerts at OPEN-arm base depth (91, ~200, ~300, ~400, ~470, 519); the last letter
+    the user sees localises the failing action to a span of tens in ONE round-trip. Static
+    reading has now produced three device-refuted confirmations and one exhausted region.
+  CANDIDATE FIX SITES, ranked, all UNVERIFIABLE on the build Mac and none to be shipped on static
+    evidence alone: conditional WFNumberValue holding a variable (13 sites, first at 167, zero
+    corpus coverage); round (zero corpus instances, action 316); number.random (zero corpus
+    instances, action 418); math with WFMathOperation omitted for '+' (DEV-05, corpus 1-of-2 —
+    weaker than cycle 5 recorded, but still corpus-supported, so unchanged).
+  CHEAP GUARD IMPROVEMENT, independent of the outcome: extend verify_required_pickers() to
+    validate each literal against the catalog's enum CASE list, not just presence + literalness.
+    Cycle 6 ran that check by hand and it passed, so it is a recurrence guard rather than a fix.
+  REPO HAZARD — CHECK BEFORE ANY REBUILD: the tree was found at efb5a79 (branch
+    codex/prosochedebug1) at session start, which predates ALL cycle 1-5 work. It is now on
+    codex/automation-parameter-diagnosis at 7ca8ebb, which is correct. Confirm HEAD and that
+    BUILD_STAMP reads "build 2026-08-14f" before regenerating anything.
+  RETAINED, DO NOT REVERT: all cycle-2/3/4/5 fixes. KEEP BUILD_STAMP and ROUTER_TRACE ON.
+  Carried, NOT for this agent to act on unilaterally: correcting .claude/CLAUDE.md §8's claim
+    that signed artifacts cannot be decrypted; stripping scaffolding before ship.
+  HOUSEKEEPING, non-urgent and untouched this cycle: the DEV-03 collision in docs/BUILD-NOTES.md
+    (Use Model literal, still open, vs speaktext key, now closed). DEV-05 stays open.
+
+superseded_next_action_cycle6_entry: >
+  CYCLE 6 — SYMPTOM 1 IS THE SOLE REMAINING OPEN ITEM. Symptoms 2 and 3 are CLOSED and
+  verified; do not disturb them.
+  THE INPUT PROBE GOES FIRST. It has now been deferred for FIVE cycles and it is the decisive
+  experiment: every remaining hypothesis branches on its one bit. Design it and put it first;
+  do NOT defer it again behind another static pass. Run any static re-sweep in PARALLEL, not
+  instead.
+    Probe: a trivial one-action shortcut receiving the wrapper's input.
+      Shows OPEN  -> handoff works, defect is INSIDE PROSOCHĒ -> pursue (1)/(2) below.
+      Shows nothing / errors -> failure is AT OR BEFORE the handoff -> pursue (3).
+  CONTRADICTION TO RESOLVE: the cycle-5 sweep says actions 91-521 are clean; the device says
+  something at or before that region has an unfilled required parameter. Both cannot be true.
+  Candidate resolutions, ranked — ESTABLISH, do not assume:
+  (1) A FOURTH required-parameter axis the sweep does not model. Three have been found this
+      session (key name, value envelope, picker enum) and EACH was invisible to the previous
+      sweep's criteria — a fourth is the base-rate-likely answer. Enumerate what "required
+      parameter" can mean in the catalog beyond those three: required content-item inputs,
+      required entity/app references, required quantity fields with WFQuantityFieldValue
+      shape, anything carrying a non-optional flag. Re-sweep 91-521 against the FULL set.
+  (2) A parameter STRUCTURALLY PRESENT but resolving UNSET at run time. iOS may report an
+      action as lacking a value when its parameter holds a token that resolves to nothing on
+      the OPEN path specifically. Invisible to any purely structural sweep — which is exactly
+      how 91-521 can be "clean" and still fail. The manual path exercises different data,
+      which would explain why it survives.
+  (3) The failing action is NOT inside PROSOCHĒ at all. The orphaned-reference theory is
+      refuted and the wrapper screenshot shows both actions bound, BUT "no PROSOCHĒ UI
+      appears" is equally consistent with failure at the Run Shortcut HANDOFF itself, before
+      PROSOCHĒ's first action executes. Do not treat this as excluded merely because the
+      wrapper renders correctly.
+  ALSO WEIGH: bisection. If the probe proves input arrives, a cut-down harness containing only
+  PROSOCHĒ's actions 91-N on the OPEN path would localise the failing action far faster than a
+  fourth exhaustive read — decryption and rebuilding are both cheap now.
+  RETAINED, DO NOT REVERT: the cycle-5 picker fixes (corpus-verified 11/11 and 33/33, genuine
+  latent defects on a path that will execute once this is unblocked).
+  HOUSEKEEPING, non-urgent: disambiguate the DEV-03 collision in docs/BUILD-NOTES.md (Use
+  Model literal, still open, vs speaktext key, now closed). DEV-05 stays open, correctly.
+
+superseded_next_action_cycle5_checkpoint: >
+  CHECKPOINT — awaiting the cycle-5 device round-trip. (ANSWERED: no PROSOCHĒ UI appeared at
+  all; picker fixes refuted as the cause of symptom 1.) Stamp "build 2026-08-14f" (VERIFIED
+  PRESENT INSIDE THE SIGNED FILE by
+  decryption, and "14e" verified absent). Symptoms 2 and 3 remain CLOSED; symptom 1 is the
+  only open one.
+  ONE TEST, TWO BITS OF INFORMATION. Clean install, then open a configured target app.
+  BIT 1, READ IT FIRST AND REPORT IT EVEN IF THE RUN STILL FAILS: did ANY PROSOCHĒ UI appear
+    before the failure — specifically a menu prompted "PROSOCHĒ" offering "Leaving" and
+    "Continue"? This bit was never captured in cycles 3 or 4 and it partitions the remaining
+    space cleanly, because the OPEN region BEFORE that menu was swept exhaustively this cycle
+    and is statically CLEAN:
+      menu appeared  -> execution reached action 521, so both fixed defects were live and the
+                        fix is on the right path
+      nothing at all -> the failure is UPSTREAM of action 521, where no parameter defect
+                        exists, so the cause is NOT a picker parameter and the INPUT PROBE
+                        (designed in cycle 1, still never executed) becomes the next move
+  BIT 2: does the intervention now complete without "please choose a value"?
+  DO NOT ASK THE USER WHICH ACTION iOS OBJECTS TO. Established this cycle: iOS does not expose
+  it. The automation-failure notification carries the automation's name and the message only —
+  no action index, no drill-down, no log.
+  KEEP BUILD_STAMP and ROUTER_TRACE ON.
+  Carried open, NOT for this agent to act on unilaterally: correcting .claude/CLAUDE.md §8's
+  claim that signed artifacts cannot be decrypted (BUILD-NOTES §14 disproves it); stripping the
+  scaffolding constants before ship.
+  DEV-03 is now CLOSED (speaktext WFText, catalog-verified). DEV-04 confirmed NOT needed.
+  New recorded deviations: DEV-05 (math.WFMathOperation deliberately untouched, corpus-refuted)
+  and DEV-06 (openapp/count redundant keys retained).
+
+superseded_next_action_cycle5_entry: >
+  CYCLE 5 — SYMPTOM 1 IS THE ONLY REMAINING OPEN SYMPTOM. Symptoms 2 and 3 are CLOSED
+  (device-confirmed cycles 3 and 4). The orphaned-Run-Shortcut-reference theory is REFUTED.
+  THE WRAPPER IS NOW VERIFIED CORRECT BY SCREENSHOT (two actions, both parameters bound), so
+  the search space has INVERTED: the failing action almost certainly lives INSIDE PROSOCHĒ on
+  the OPEN pipeline, with iOS attributing the failure to the outermost automation by name.
+  (1) PRIORITY — STATIC ENUMERATION, no device round-trip needed. Do this FIRST; it may make
+      the INPUT PROBE unnecessary. Enumerate every action reachable on the OPEN branch but NOT
+      on the MANUAL branch, and check each one's REQUIRED parameters against the ToolKit
+      catalog for an unset or missing value. The manual path is now well exercised and works,
+      so the defect is confined to OPEN-only actions.
+      Specific leads: this session has already found TWO defect classes of exactly this kind —
+      wrong key name (WFInput vs WFDictionaryValue) and wrong value envelope
+      (WFTextTokenAttachment where WFTextTokenString/AttributedString was required). The
+      AttributedString case proved the converter's allowlist was scoped too narrowly BY
+      CATALOG TYPE. Check whether a THIRD type bucket on the OPEN-only path was missed by the
+      same allowlist logic. Also re-check speaktext (recorded as DEV-03, keys unverified, no
+      catalog parameters) — if it sits on the OPEN path, an unset required parameter there
+      would produce precisely this error.
+      Verify against the SHIPPED artifact too, not just the generated source — signed
+      .shortcut decryption is proven and available.
+  (2) FALLBACK ONLY — keep the INPUT PROBE ready if the static pass comes up empty. It would
+      then discriminate whether the input reaches PROSOCHĒ at all. Design it for unambiguous
+      pass/fail without the user judging a UI field.
+  (3) State plainly for the user whether iOS exposes WHICH nested action it is objecting to.
+      If it does not, say so rather than implying they can find out by inspecting further.
+  KEEP BUILD_STAMP and ROUTER_TRACE ON.
+  Carried open, NOT for this agent to act on unilaterally: correcting .claude/CLAUDE.md §8's
+  claim that signed artifacts cannot be decrypted; stripping the scaffolding constants before
+  ship. Both surfaced to the user by the coordinator.
+  Still open: DEV-03 (speaktext key unverified). DEV-04 confirmed NOT needed for correctness.
+
+superseded_next_action_cycle4_checkpoint: >
+  CHECKPOINT — awaiting the cycle-4 device round-trip. Artifacts staged and signed at
+  artifacts/shortcuts/, stamp "build 2026-08-14e" (verified present inside the SIGNED file,
+  not just the source). Two independent experiments in one pass:
+  (A) SYMPTOM 3, plist-side. Note body + Control Room refresh. The refresh append (action
+      3648) changed on the ENVELOPE AXIS ONLY and is the clean single-variable test; the
+      create path (3616) changed on two axes and cannot discriminate alone. Read the append
+      result FIRST — if the "## CURRENT SETTINGS" block is missing, the AttributedString
+      hypothesis is refuted and the body result is uninterpretable.
+  (B) SYMPTOM 1, device-side. REPAIR THE AUTOMATION WRAPPER, do not rebuild it: open the
+      existing "When any of 3 apps are opened" automation and check the Run Shortcut action's
+      SHORTCUT field first — deleting the shortcut for each clean install orphans that
+      reference, and an unset target produces the exact observed error. Screenshot requested.
+      Design answer, settled this cycle and not to be re-litigated: ONE automation covering
+      all watched apps is CORRECT (the shortcut consumes zero app identity; ARCHITECTURE.md
+      §5 makes Heat/Gravity/Pressure/Circle/active_session global). OPEN and CLOSE must stay
+      as two separate automations because they pass different literals.
+  IF (A) PASSES AND (B) STILL FAILS AFTER REPAIR: symptom 1 returns to the plist with, for
+  the first time, a wrapper whose health has been positively verified — at which point run
+  the cycle-1 INPUT PROBE that has still never been executed.
+  KEEP BUILD_STAMP and ROUTER_TRACE ON. DEV-03 (speaktext key) remains open and untouched.
+  CLOSED SO FAR: symptom 2 (device-confirmed), the cycle-2 manual-invocation regression,
+  DEV-01, and the "one shared automation" design question.
+
+superseded_next_action_cycle4_entry: >
+  CYCLE 4 — two workstreams, both in ONE pass so the next device test covers both.
+  (1) PRIORITY, plist-side and statically tractable: SYMPTOM 3, the Control Room note-body
+      write. Now cleanly isolated — the note is CREATED but its BODY is empty, and the
+      envelope defect is EXCLUDED BY DIRECT EVIDENCE (same build, same run, symptom 2 passed).
+      Investigate the note-body write specifically: is the body parameter content-item typed
+      or string typed, and do BOTH its parameter key and its value envelope match the catalog?
+      Known live candidate from the earlier whole-plist audit:
+      com.apple.mobilenotes.SharingExtension emits WFCreateNoteInput where the catalog defines
+      name/contents. .claude/CLAUDE.md flagged Notes actions as catalog-gated to macOS 27 with
+      an explicit "verify empirically on device" — that flag is now cashing in.
+  (2) CHEAP, unblocks the user in parallel: SYMPTOM 1 is no longer a plist question this
+      cycle. Produce precise, unambiguous instructions for the user to INSPECT AND REPAIR the
+      Personal Automation wrapper — action by action, which action, which field, what it must
+      contain. Must cover: the Run Shortcut action's target Shortcut field, and that its Input
+      field must carry the Text action's magic variable; that a Run Shortcut with NO target
+      shortcut selected produces exactly the observed error; and whether one shared automation
+      covering "any of 3 apps" is correct for PROSOCHĒ's design or whether it must be split
+      per-app. If a screenshot would settle it faster than prose, ask for one.
+  KEEP BUILD_STAMP and ROUTER_TRACE ON — still iterating.
+  CLOSED SO FAR: symptom 2 (device-confirmed), the cycle-2 manual-invocation regression,
+  and DEV-01 (--target-platform ios deviation recorded in docs/BUILD-NOTES.md §13).
+
+superseded_next_action_cycle3_checkpoint: >
+  CHECKPOINT — awaiting the cycle-3 device round-trip. Artifacts staged, stamp
+  "build 2026-08-14d", ROUTER TRACE alert prints normalised Input Key beside an empty
+  reference. (Answered 2026-08-14: manual invocation restored, symptom 2 fixed, symptom 1
+  moved off-plist to the automation wrapper, symptom 3 persists.)
+
+superseded_next_action_cycle3_entry: >
+  CYCLE 3 — the cycle-2 envelope fix REGRESSED the manual-invocation path. Restoring manual
+  invocation is the TOP priority: it is the gate on measuring symptoms 1 and 3, and every
+  remaining test route runs through it.
+  COORDINATOR HYPOTHESIS (proposed, NOT established — verify before adopting): a
+  WFTextTokenString carries a literal U+FFFC placeholder in its string body with
+  attachmentsByRange mapping that offset to the token. When the referenced token resolves to
+  nothing — exactly the manual-tap / no-Shortcut-Input case — does Shortcuts substitute empty,
+  or leave the placeholder standing as literal text? If the placeholder survives, Input Key
+  becomes a 1-character non-empty string, "has any value" (cond 100) PASSES, neither OPEN nor
+  CLOSE matches, and action 1349 emits exactly the observed message. The old bare
+  WFTextTokenAttachment form had no placeholder character and so degraded to genuinely empty,
+  which is why the previous build fell through to the manual menu.
+  MUST RULE IN OR OUT EXPLICITLY: is the Trim step even reached, and does Trim on a lone
+  U+FFFC yield empty or the character unchanged? If Trim already strips it, this hypothesis is
+  WRONG and the cause is elsewhere. Verify against the bundled Shortcuts Playground reference
+  rather than assuming U+FFFC behaviour.
+  IF CONFIRMED, this is NOT an argument for reverting the envelope fix — the 367-site
+  diagnosis and its control-group evidence still stand, and the old behaviour was
+  empty-by-accident. It means the router's emptiness test is too weak to survive a correctly
+  enveloped empty input and must treat a lone-placeholder / whitespace-only value as empty.
+  Fix at the ROUTER, in the generator — not by reverting envelopes.
+  Then re-run the full three-step device test in ONE pass.
+  Still open: record the `--target-platform ios` deviation (rejects 3675/3675 including
+  is.workflow.actions.comment) against the mandated invocation in .claude/CLAUDE.md.
+  DEBT: decide whether the "· build 2026-08-14c" menu-title stamp ships or gets stripped.
+
+superseded_next_action_cycle2: >
+  AWAITING DEVICE (cycle 2 fix staged). The stale-install confound is RULED OUT — the user
+  performed a fully clean install before the 2026-08-14 test (deleted the old shortcut,
+  deleted the Control Room Note, deleted the folder containing state.json). All three cycle-1
+  refutations therefore stand and are load-bearing.
+  The cycle-2 value-envelope fix (367 sites/fork converted from bare WFTextTokenAttachment to
+  WFTextTokenString on string-typed parameters) is built, validated, signed and staged at
+  artifacts/shortcuts/ (rebuilt 08:10, AEA1, 187758 / 191335 bytes).
+  User must run: (1) Change Sequence -> Classic [symptom 2], (2) open a configured target app
+  [symptom 1], (3) delete the Control Room Note, tap the shortcut once, reopen the note
+  [symptom 3]. The menu title carries the stamp "PROSOCHĒ · build 2026-08-14c" as a positive
+  confirmation that the fresh build is the one executing.
+  Still open regardless of outcome: `--target-platform ios` rejects 3675/3675 actions
+  including is.workflow.actions.comment (present in its own snapshot) — now VERIFIED as
+  indiscriminate tooling noise rather than inherited assumption, but the project mandates that
+  flag, so the validation invocation in .claude/CLAUDE.md needs a recorded deviation.
+  DEBT: the "· build 2026-08-14c" menu-title stamp is debug scaffolding. Decide whether to
+  keep it as a build identifier or strip it before ship — do not let it leak silently.
+
+## Evidence
+
+- timestamp: 2026-08-14 (cycle 12)
+  checked: "Condition code 5 ('is not') against CONTROL_FLOW.md's definitive table, the 19-shortcut golden corpus, and both generated forks — before emitting anything, per instruction"
+  found: "VERIFIED AS A CONSTRUCT. CONTROL_FLOW.md's table (stated as verified against an Apple-built sample) lists 5 = 'is not', string family, required field WFConditionalActionString. The golden corpus has ZERO code-5 sites but 3 code-4 sites, all with a PLAIN <string> operand — structurally identical, differing only in the integer. Our own forks already ship 4 code-5 sites, and 122 plain-string WFConditionalActionString operands across codes 4/5/99. Decisively, code-5 site action 149 sits INSIDE span B->C, which the device has EXECUTED (build h advanced the last letter from B to C), so code 5 with a Text-typed operand is DEVICE-PROVEN to render and run. Cycle 9's eight-string-operator finding independently confirms 'is not' is one of the operators a Text-typed operand offers."
+  implication: "Code 5 is real, evidenced and safe to emit. It is still the WRONG GATE HERE, and only verification revealed why — see the next entry. Verification was requested precisely because assumption is what produced the root cause; in this instance it changed the fix."
+
+- timestamp: 2026-08-14 (cycle 12)
+  checked: "Whether code 5 against the literal 'null' actually closes the build-j safety defect, enumerated over every value the leaf can hold"
+  found: "IT DOES NOT. `is not \"null\"` is TRUE for an EMPTY value. Build j seeded these leaves as EMPTY, so on any device that rebuilt state.json under build j the leaf reads '' -> 'is not null' TRUE -> Set Brightness receives ''. The prescribed code-5 fix closes the sentinel case and leaves the black-screen case open. A NUMERIC '> 0' gate closes BOTH and both inputs are device-measured: 'null' -> WFNumberContentItem -> > 0 -> FALSE with no error (Donor 6.1 test 2), and '' -> WFNumberContentItem -> > 0 -> FALSE with no error (Donor 6 action 8, the accidental measurement). It is also the exact test the CAPTURE side already uses on the same quantity — dim() and silence() both gate on if_block('Captured Brightness', 2, number=0)."
+  implication: "THE FIX CHANGED AS A RESULT OF VERIFYING IT. The leaf gates are numeric '> 0', not code 5. Capture and restore now agree on what counts as a real reading, the gate IS the safety property rather than a proxy for it, and no new shape enters the artifact because normalise_numeric_operands() supplies Donor 4.1's coercion automatically."
+
+- timestamp: 2026-08-14 (cycle 12)
+  checked: "The two new build guards run against the DECRYPTED shipped build-j artifact and the archived build-i source, before applying the fix"
+  found: "BOTH FIRE, AT THE EXACT ACTIONS OF THE INDEPENDENTLY-DERIVED UNSAFE TRACE. verify_restore_gates(): 'action 187: writes Restore Brightness, read from settings_snapshot, with no numeric gate above it' and the same at 206 (Dumb) / 189 and 208 (Sentient). verify_sentinel_gates(): 'action 181: condition 100 gates settings_snapshot.brightness, which is written with the cleared sentinel' and the same at 200. Build i fires identically, so this is a class latent since the restore block was written, not a build-j regression. Both pass on build k."
+  implication: "The recurrence guards were tested against the defect they target rather than authored alongside the fix. A guard that cannot be shown to fail on its own defect is decoration."
+
+- timestamp: 2026-08-14 (cycle 12)
+  checked: "Why a corrected bootstrap template did not change the device's behaviour — actions 21-48 (state load and validity) and 51-81 (bootstrap branch), read directly"
+  found: "TWO INDEPENDENT REASONS, BOTH READ FROM THE ARTIFACT. (a) The validity check is three tests — schema_version HAS ANY VALUE (37), schema_version IS '1' (39), profile HAS ANY VALUE (41). The device's stored state.json passes all three, so the bootstrap branch is NEVER ENTERED and the seeded template is never written. (b) Even when it IS entered, the branch at 52-81 builds the template, names it state.json and SAVES it — and never rebinds `State`, which stays bound to action 25's parse of the OLD file. So a rebuilt file cannot affect the run that rebuilt it."
+  implication: "SETTLES THE LONG-OPEN INCONSISTENCY (action 75 seeds settings_snapshot, yet the clean-install error said the top-level key was absent): the run reads the OLD document, not the one it just wrote. It also means build k's seed cannot reach the device unaided, which is why the predicted letter is C rather than D. The repair is a schema_version bump (invalidate the stored file) plus a rebind (consult the new one on the same run); it costs 2 actions and shifts every breadcrumb, and it was deliberately deferred out of the cycle whose job was to remove a black-screen risk."
+
+- timestamp: 2026-08-14 (cycle 12)
+  checked: "Whether the pending_exit and active_session gates can take the same treatment, enumerated over their bootstrap, written and cleared states"
+  found: "NO — NOT IN ISOLATION, AND FLIPPING THEM WOULD REGRESS. pending_exit is ABSENT from the bootstrap template entirely; active_session is a BARE JSON null there. A flat read of an absent key returns nothing (Donor 6.1 line 1), which PASSES `is not \"null\"` and would then run the nested DOTTED read of .type / .id / .declared_duration_seconds against a missing parent — an immediate hard error in place of a latent one. Their condition-100 gates are genuinely defective for the CLEARED case, and genuinely load-bearing for the ABSENT case."
+  implication: "Both are recorded in the generator as KNOWN_SENTINEL_EXISTENCE_GATES with the reason, so verify_sentinel_gates() passes them by name while failing any NEW occurrence. They sit past breadcrumb J on paths the device has never reached and neither gates a safety-critical write. Fixing them requires seeding both keys in the template AND closing the rebind gap, which is one coherent next cycle."
+
+- timestamp: 2026-08-14 (cycle 8)
+  checked: "All 20 actions in bisection span B->C (build-h indices 148-167), read individually against all four defect axes established this session: parameter KEY NAME, value ENVELOPE, picker ENUM literal, and PLIST SCALAR TYPE"
+  found: "18 of the 20 actions belong to classes ALREADY EXECUTED ON DEVICE — comment; number with WFNumberActionNumber (proven at action 1359 inside Open Control Room); setvariable with an ActionOutput attachment (proven throughout PRE); setvalueforkey with WFDictionaryValue as WFTextTokenString (the device-CONFIRMED symptom-2 fix); and conditional modes 1/2, which carry only GroupingIdentifier + WFControlFlowMode. The remaining 2 are the block's two If actions, 149 and 158. BOTH carry WFInput = {'Type':'Variable','Variable': <WFTextTokenString TEXT TEMPLATE>} instead of a WFTextTokenAttachment variable descriptor."
+  implication: "ROOT CAUSE (symptom 1). WFInput.Variable is a VARIABLE SLOT. A text template ({'string':'\ufffc','attachmentsByRange':{...}}) is not a variable reference, so Shortcuts cannot resolve the If's input, renders the field unset, and refuses to run with 'Please choose a value for each parameter in this action'. Exactly 2 of 20 actions in the span carry a never-executed shape and both carry this defect."
+
+- timestamp: 2026-08-14 (cycle 8)
+  checked: "Every mode-0 conditional in the artifact (307 in Dumb), classified by the serialization shape of WFInput.Variable; cross-checked against Donor 3 and all 19 golden shortcuts"
+  found: "PERFECT SEPARATION, largest control group of the session. 282/307 carry the correct WFTextTokenAttachment descriptor form — including the DEVICE-PROVEN router at 37/39/41 (executed on every device run) and the Control Room refresh conditional at 3612 (executed when the user ran Open Control Room). Exactly 25 carry the text template. DONOR 3 action 4 (device export, a variable-vs-variable If built in Shortcuts.app on the target iPhone) writes WFInput.Variable as {'Value':{'Type':'Variable','VariableName':'A'},'WFSerializationType':'WFTextTokenAttachment'}. GOLDEN CORPUS: 20 of 20 WFInput-carrying conditionals use the attachment form; ZERO use a text template."
+  implication: "Three independent sources — device donor, corpus, and our own internal control group — agree against the 25 sites. This is the same natural-experiment evidence shape that settled cycles 2, 4 and 5."
+
+- timestamp: 2026-08-14 (cycle 8)
+  checked: "Position of all 25 defective conditionals relative to the ten breadcrumbs"
+  found: "23 of the 25 sit PAST breadcrumb J, on exit-selection and Circle-9 contract paths the user has never reached. The only two before J are 149 and 158 — BOTH inside span B->C. Action 149 is the FIRST occurrence of the defect class in the entire 3684-action artifact, two actions after breadcrumb B."
+  implication: "POSITIONAL CONFIRMATION, not merely structural. The user saw B and did not see C. The first instance of the artifact's only unproven shape sits two actions past the last breadcrumb they saw. No other candidate in the span has this property."
+
+- timestamp: 2026-08-14 (cycle 8)
+  checked: "Whether the priority-3 DATE ACTION lead (format.date / adjustdate / gettimebetweendates with conventional-but-unconfirmed shapes) is implicated"
+  found: "gettimebetweendates appears at action 15 at control-flow DEPTH 0, unconditionally, 22 actions before the router — so it executes on every run that reaches the manual menu, which cycles 3, 5, 6 and 7 all did. It carries WFTextTokenString in BOTH DateTime-typed slots (WFInput, WFTimeUntilFromDate) and the literal 'Seconds' in WFTimeUntilUnit. date at 11/13/19 and adjustdate at 17 are likewise at depth 0."
+  implication: "The date-action axis is ELIMINATED by direct device evidence rather than inference, and no donor is needed for it. The catalog records these slots as DateTime-typed and our shape is a text template, yet it demonstrably runs — which also shows iOS coerces on that slot."
+
+- timestamp: 2026-08-14 (cycle 8)
+  checked: "Donor 3's plist scalar types vs ours, re-examined after the cycle-7 prediction was killed"
+  found: "Donor writes WFNumberActionNumber as <string> ('5','3'), WFRandomNumberMinimum/Maximum as <string>, WFRepeatCount as <real>. Our generator writes <integer> for all of these. BUT our <integer> WFNumberActionNumber at action 1359 has EXECUTED SUCCESSFULLY ON DEVICE inside Open Control Room."
+  implication: "SELF-CORRECTION of cycle 7's reasoning. 'iOS never writes <integer>, therefore <integer> is undecodable' does not follow — iOS demonstrably coerces plist scalar type on at least one of these numeric fields. The scalar-type axis is a serialization-STYLE difference, not an established decode failure, and the two latent sites at 418/454 are weaker suspects than cycle 7 ranked them. They remain UNCHANGED this cycle."
+
+- timestamp: 2026-08-14 (cycle 8)
+  checked: "Whether each of the 13 generator lines overwriting a conditional's WFInput changes anything other than the envelope (verified programmatically, not by eye)"
+  found: "13 of 13 pass the SAME variable name that if_block() was called with on the line immediately above. Zero mismatches. if_block() already emits the correct WFInput = {'Type':'Variable','Variable': variable(name)}; each overwrite replaces variable(name) with token(name), changing the envelope and nothing else."
+  implication: "Deleting all 13 lines is provably semantics-preserving apart from the envelope, and restores a shape byte-identical to the 282 correct sites and to Donor 3. No shape is invented, so the project's never-fabricate rule is honoured."
+
+
+- timestamp: 2026-08-14
+  checked: "Structural integrity of src/PROSOCHE-Dumb.xml (3675 actions)"
+  found: "0 duplicate action UUIDs; 342 control-flow groups all single-identifier; 0 nesting-balance errors; 23 menus with WFMenuItems exactly matching their mode-1 WFMenuItemTitle lists in order."
+  implication: "Control-flow wiring, GroupingIdentifier discipline, and menu wiring are NOT the cause. The generator's structural invariants hold. Eliminates the whole 'broken branch structure' family."
+
+- timestamp: 2026-08-14
+  checked: "Control-flow ancestry of the MANUAL menu block (action 1355) and the router conditionals"
+  found: "Action 89 = If 'Input Key' has any value (cond 100). Action 91 = If Input Key is 'OPEN' (cond 4). Action 1217 = If 'CLOSE'. Action 1349 (unrecognised-input arm) is nested three deep inside 89>91-otherwise>1217-otherwise. Action 1355 (PHASE 5 MANUAL EMERGENCY RESTORE, the observed menu) sits directly in the OTHERWISE arm of 89."
+  implication: "Seeing the manual menu proves Input Key had NO value at run time. The router itself is correctly built; the failure is upstream, in how Shortcut Input reaches the shortcut. Also eliminates 'the manual block was inserted into the wrong branch'."
+
+- timestamp: 2026-08-14
+  checked: "Parameter shape of every action in the input-normalisation chain (actions 84-87) against the ToolKit v78 first-party parameter catalog"
+  found: "gettext/WFTextActionText, text.trimwhitespace/WFInput, text.changecase/text+WFCaseType, setvariable/WFInput+WFVariableName — all four match the catalog exactly, all present on 'iOS 27 Simulator'. The ExtensionInput token form matches VARIABLES.md:181 and PARAMETER_TYPES.md:423 and is byte-equivalent to golden shortcut 51cc4e26."
+  implication: "The normalisation chain is correctly authored. A malformed Change Case / Trim Whitespace is eliminated as the cause of the empty Input Key."
+
+- timestamp: 2026-08-14
+  checked: "ToolKit v78 catalog entry for is.workflow.actions.setvalueforkey"
+  found: "displayName 'Set Dictionary Value'; parameters are exactly WFDictionaryKey (Key), WFDictionaryValue (Value), WFDictionary (Dictionary), all present on both iOS 27 Simulator and macOS 27. There is NO WFInput parameter. The companion getvalueforkey entry displayName is 'Get Dictionary Value' and DOES take WFInput as its Dictionary."
+  implication: "ROOT CAUSE (symptom 2). set_value() in the generator passes the value as WFInput, which the action does not define. The Value field is therefore unset and iOS reports 'No value was provided to the Set Dictionary Value action for the key X' — matching the reported text verbatim, including the key quoting. The displayName evidence also proves the reported action is the setter, not the getter."
+
+- timestamp: 2026-08-14
+  checked: "Whole-plist audit of every emitted (action identifier, parameter key) pair against the ToolKit catalog"
+  found: "147/147 setvalueforkey use WFInput, 0 use WFDictionaryValue — in BOTH forks. Additional independent shape defects: speaktext uses WFInput instead of WFText (10x); number.random uses WFNumberMin/WFNumberMax instead of WFRandomNumberMinimum/WFRandomNumberMaximum (1x, inside the OPEN Session-ID step); com.apple.mobilenotes.SharingExtension uses WFCreateNoteInput instead of name/contents; format.date sets WFDateFormatString which the OS27 catalog does not define (but DATE_TIME.md does); openapp carries a legacy extra WFAppIdentifier alongside a valid WFSelectedApp; documentpicker.open carries legacy WFShowFilePicker."
+  implication: "The defect is systemic parameter-key drift, not a single typo. The validator cannot catch it: at --target-macos 26 it checks identifier presence only and never loads the v78 parameter catalog. number.random sits on the OPEN critical path, so leaving it would waste the next device round-trip."
+
+- timestamp: 2026-08-14
+  checked: "Root plist keys of both forks vs the golden corpus (6 shortcuts that consume ExtensionInput)"
+  found: "Both forks: WFWorkflowInputContentItemClasses = ['WFStringContentItem'], WFWorkflowHasShortcutInputVariables ABSENT. All three modern golden shortcuts (client 1145.8/1306.1) that reference Shortcut Input set WFWorkflowHasShortcutInputVariables = true; only the three pre-iOS-14 ones (client 736/770, min client 411) omit it. Golden 51cc4e26 is an exact structural analogue of our usage and sets it true. PLIST_FORMAT.md:87 documents the key as 'True if shortcut uses input variables'."
+  implication: "Leading hypothesis for symptom 1. Our shortcut declares client 2700.0.4 / min 900 (modern), uses input variables, and omits the key that declares this. Not runtime-verifiable on the build Mac — needs the device probe."
+
+- timestamp: 2026-08-14
+  checked: "Reachability of a Set Dictionary Value with key 'sequence' from the Test-a-Circle menu case (actions 1448-3540)"
+  found: "The only three setters with key 'sequence' are actions 1405/1414/1423, all inside the 'Change Sequence' case. Inside the Test-a-Circle case the setter keys are only settings_snapshot.*, active_session.*, and cooldown_until (9 of each, one per Circle). The Test path's only 'sequence' reference is a Get Dictionary Value at action 1466."
+  implication: "The defect class is proven but the reported key implies the Change Sequence branch was exercised, not Test a Circle. Recorded as an open discrepancy to settle on device — it does not change the fix, since the same defect affects all 147 setters."
+
+- timestamp: 2026-08-14
+  checked: "ON-DEVICE test of the REBUILT Dumb artifact (post-fix, WFDictionaryValue + WFWorkflowHasShortcutInputVariables + random-number keys). User-reported, verbatim."
+  found: >
+    (a) OPEN automation: "Manual menu again. but this time the bootstrapped control room
+    note is empty as well. can confirm the .json was made correctly."
+    (b) Manual menu: "I get the No Value Provided error as soon as I click change
+    sequence., didn't even get to test a circle menu."
+    (c) Menu item tapped when the error FIRST appeared on 2026-08-13: "Test a Circle".
+  implication: >
+    BOTH falsification tests tripped. Symptom 1 hypothesis (missing
+    WFWorkflowHasShortcutInputVariables) is REFUTED — input still empty. Symptom 2 root
+    cause is REFUTED per its own stated criterion ("if a rebuilt artifact using
+    WFDictionaryValue still raises 'No value provided', the hypothesis is wrong"). The
+    catalog key match may be correct but INSUFFICIENT — e.g. the value may need a typed
+    serialization envelope (WFTextTokenString / WFTextTokenAttachment / dictionary-value
+    wrapper) rather than the bare token the emitter produces. Demoted from CONFIRMED.
+
+- timestamp: 2026-08-14
+  checked: "Where the 'sequence' error fires, across the original and the post-fix run"
+  found: >
+    2026-08-13 (pre-fix): fired after tapping Test a Circle, then a Circle button.
+    2026-08-14 (post-fix): fires immediately on tapping Change Sequence, before the Test a
+    Circle menu is even reached.
+  implication: >
+    The error is raised from BOTH menu paths. Static reachability showed the only three
+    'sequence' setters live inside Change Sequence, which contradicts the original Test a
+    Circle report. Two paths raising the same key points at a SHARED UPSTREAM write
+    (executed before menu-case dispatch) rather than a per-case setter. Locate where the
+    error actually originates instead of assuming which menu case owns it.
+
+- timestamp: 2026-08-14
+  checked: "NEW SYMPTOM (3) — Control Room Note bootstrap, on-device"
+  found: "The bootstrapped Control Room Note is EMPTY, while the user confirms state.json was written correctly."
+  implication: >
+    Third INDEPENDENT failure. The state-file write path works; the Note write path does
+    not. Do not fold into symptoms 1/2 without evidence. May share a defect class with
+    symptom 2 (wrong or under-specified parameter key / value envelope on the Notes action
+    family) — note that .claude/CLAUDE.md flags the Notes actions as catalog-gated to
+    macOS 27 and explicitly "verify empirically on device". The whole-plist audit already
+    found com.apple.mobilenotes.SharingExtension emitting WFCreateNoteInput instead of the
+    catalog's name/contents, which is a live candidate.
+
+- timestamp: 2026-08-14
+  checked: "Staged signed artifacts on the build Mac (independent check by session-manager)"
+  found: "Both .shortcut files carry AEA1 magic, rebuilt 07:45 2026-08-14 (183613 / 187866 bytes); generator + both forks show as modified in git."
+  implication: >
+    The BUILD side is confirmed fresh. This does NOT confirm the DEVICE ran the fresh
+    build — importing a .shortcut whose display name matches an installed shortcut can
+    create a second copy rather than replacing it, leaving the automation wrapper's Run
+    Shortcut pointed at the OLD one. This stale-install confound is UNRULED-OUT and could
+    explain all three failed observations at once. It must be discriminated FIRST.
+
+- timestamp: 2026-08-14 (cycle 2)
+  checked: "Golden-shortcut corpus for real setvalueforkey examples, as directed"
+  found: "ZERO instances of is.workflow.actions.setvalueforkey exist across all 19 golden shortcuts. That specific avenue is empty."
+  implication: >
+    The corpus cannot settle WFDictionaryValue's envelope directly. It does, however,
+    settle the general rule decisively via the parameters it does contain — see the next
+    entry. WFDictionaryValue's envelope therefore rests on its catalog type plus the
+    unanimous behaviour of every other string-typed parameter, and is the weakest link in
+    this cycle's chain.
+
+- timestamp: 2026-08-14 (cycle 2)
+  checked: "Catalog parameter TYPES (typePythonName) rather than key names, plus golden-corpus envelope usage for every string-typed parameter"
+  found: >
+    setvalueforkey parameters are WFDictionaryKey `str`, WFDictionaryValue `str`,
+    WFDictionary `com_apple_shortcuts_wfcontent_item`. Across the corpus, string-typed
+    parameters use WFTextTokenString 99 times and WFTextTokenAttachment 12 times, and the
+    12 are concentrated in list-shaped or URL parameters (text.combine.text 4/4,
+    text.split.text 4/4, openurl.WFInput 2/2, evernote 2). Single-value text parameters are
+    unanimous: gettext.WFTextActionText 36/36 WFTextTokenString and 0 attachment;
+    text.match.text 8/8; text.replace.WFInput 3/3; alert.WFAlertActionMessage 8/8.
+    Content-item, File, Placemark and float parameters use attachments in the corpus.
+  implication: >
+    Cycle 1 verified that key NAMES matched the catalog but never checked the VALUE
+    ENVELOPE, which is a distinct axis. This is the precise blind spot that let the defect
+    survive a full cycle.
+
+- timestamp: 2026-08-14 (cycle 2)
+  checked: "Whole-plist audit of emitted envelope vs catalog parameter type, both forks"
+  found: >
+    Nine string-typed parameters carried bare WFTextTokenAttachments:
+    gettext.WFTextActionText x220, setvalueforkey.WFDictionaryValue x131,
+    alert.WFAlertActionMessage x10, openurl.WFInput x4, searchweb.WFInputText x2,
+    text.trimwhitespace.WFInput x1, text.changecase.text x1, text.match.text x1.
+    Meanwhile 16 setvalueforkey and 11 gettext actions ALREADY used WFTextTokenString.
+  implication: >
+    The artifact contained a mixed population of both envelopes for the same parameters —
+    a natural experiment usable as an internal control group.
+
+- timestamp: 2026-08-14 (cycle 2)
+  checked: "DECISIVE — mapping the mixed envelope population onto the user's own working/failing observations"
+  found: >
+    WORKING (user-confirmed): action 75 builds the state.json body as a WFTextTokenString
+    template (1178 chars, 4 attachments) -> "can confirm the .json was made correctly".
+    Action 84 reads Shortcut Input as WFTextTokenString/ExtensionInput -> correctly formed.
+    Action 3615 builds the Control Room body as WFTextTokenString (5121 chars).
+    FAILING (user-observed): actions 85 and 86 (Trim Whitespace, Change Case) carried bare
+    attachments -> Input Key empty -> MANUAL menu. Action 1405 (key `sequence`) carried a
+    bare attachment -> "No value provided". Actions 3624-3639+ (Snapshot* reads) carried
+    bare attachments -> empty refresh content appended to the Note.
+  implication: >
+    Perfect separation between envelope form and observed outcome, within one build, one
+    device and one run. This is far stronger than the catalog inference that failed in
+    cycle 1, because the control and treatment groups are both inside the artifact the user
+    actually ran.
+
+- timestamp: 2026-08-14 (cycle 2)
+  checked: "Execution order — does the working state.json contradict the envelope hypothesis?"
+  found: >
+    Zero setvalueforkey actions exist before the routing gate (action 84); the pre-gate
+    region contains no literal `dictionary` action either. state.json is written at action
+    79 from the action-75 template. The bootstrap setters at 151/153/161/163 sit INSIDE the
+    OPEN branch (conditional 91), which was never entered because Input Key was empty.
+  implication: >
+    A correct state.json and a failing Set Dictionary Value are fully consistent: the
+    working writer uses the correct envelope, and the mis-enveloped setters never ran on
+    that pass. The apparent counter-evidence dissolves.
+
+- timestamp: 2026-08-14 (cycle 2)
+  checked: "Differential of the current build against the 2026-08-13 build in which the Note was confirmed created successfully (per the resolved unsupported-device-import session)"
+  found: >
+    Exactly 148 actions differ (147 setvalueforkey + 1 number.random) — i.e. only cycle 1's
+    changes. The note chain at actions 3615 / 3617 / 3618 is byte-identical between the two
+    builds.
+  implication: >
+    The empty Note is NOT a cycle-1 regression. The note-creation path is unchanged from a
+    build where creation succeeded. The envelope defect explains the empty REFRESH block
+    appended at 3623+, but if the body is empty on a fresh create there is a second,
+    still-unidentified cause. Symptom 3 is only partially explained.
+
+- timestamp: 2026-08-14 (cycle 2)
+  checked: "The inherited claim that `--target-platform ios` failure is pre-existing tooling noise, verified rather than assumed"
+  found: >
+    At --target-macos 26 --target-platform ios the validator rejects 3675 of 3675 actions —
+    every single one, including is.workflow.actions.comment and is.workflow.actions.nothing,
+    which ARE present in the bundled iOS-27 snapshot. So rejection is not driven by
+    identifier presence. The snapshots are also demonstrably incomplete:
+    is.workflow.actions.conditional is absent from BOTH the iOS-27 and v63 snapshots.
+    --target-macos 26 --target-platform all passes cleanly for both forks.
+  implication: >
+    Confirmed genuine tooling noise, not a masked real error — nothing can hide inside a
+    check that fails 100% of inputs indiscriminately. The claim inherited from cycle 1 is
+    now verified rather than assumed, and this line of inquiry is closed.
+
+- timestamp: 2026-08-14
+  checked: "Stale-install confound — whether the device actually ran the rebuilt artifact during the 2026-08-14 test"
+  found: >
+    User-reported, verbatim: "i did delete the old shortcut before importing, as well as
+    delete the control room note, and delete the folder containing the json, for a clean
+    install". Session-manager independently confirmed the build side: both .shortcut files
+    carry AEA1 magic, rebuilt 08:10 2026-08-14 (187758 / 191335 bytes); the build stamp
+    appears exactly once in each generated fork; Dumb now carries 792 WFTextTokenString.
+  implication: >
+    CONFOUND RULED OUT. No duplicate-name shadowing was possible, so the automation wrapper
+    cannot have targeted a pre-fix copy; the empty Note is a genuine fresh-bootstrap result,
+    not a stale leftover; and bootstrap ran from nothing. All three cycle-1 refutations are
+    load-bearing. Critically, this SHARPENS the decisive asymmetry: within ONE bootstrap pass
+    on freshly-created state, the file-write path succeeded while the Note-write path produced
+    an empty Note. A defect that killed value payloads universally would have emptied
+    state.json too — so the defect is action-family / parameter-type specific, which is
+    exactly what the cycle-2 value-envelope hypothesis predicts (string-typed parameters fail,
+    content-item-typed parameters do not).
+
+- timestamp: 2026-08-14
+  checked: "ON-DEVICE test of the cycle-2 envelope-fix artifact (367 sites/fork converted to WFTextTokenString). Clean install. User-reported, verbatim."
+  found: >
+    (a) Step 1, manual tap / Change Sequence: "import success. first run gives 'unrecognised
+    input. prosoche received input it did not recognise and took no action. nothing was read,
+    written, or changed.'. Well done, you made a brand new error we didn't have before."
+    (b) Step 2, open a configured target app: "didn't get here."
+    (c) Step 3, Control Room note: "couldn't test."
+  implication: >
+    REGRESSION introduced by the cycle-2 envelope fix, on the MANUAL-INVOCATION path.
+    Before: tapping the shortcut with no input reached the manual menu. After: it hits
+    PROSOCHĒ's own unrecognised-input rejection and takes no action.
+    SYMPTOMS 1 AND 3 ARE UNMEASURED THIS CYCLE — not untested-but-probably-fine, simply no
+    data. The rejection fires first and blocks both remaining test routes.
+    The build IS live: the import succeeded and execution reached PROSOCHĒ's own guard
+    message. The `· build 2026-08-14c` stamp is NEITHER confirmed NOR missing — the user
+    never reached a menu, so it was never displayed.
+    Diagnostic significance: the error text is PROSOCHĒ's own branch, not an iOS error. That
+    branch (action 1349) is reachable ONLY when "Input Key has any value" PASSES and the value
+    matches neither OPEN nor CLOSE. So a manual tap now yields something NON-EMPTY matching
+    neither literal, where it previously yielded empty. The envelope change altered what Input
+    Key resolves to when there is no input at all. This is new information about the router
+    that the previous two cycles could not have obtained.
+
+- timestamp: 2026-08-14 (cycle 3)
+  checked: "Exact router topology in the regressed build, by GroupingIdentifier, in src/PROSOCHE-Dumb.xml (3675 actions)"
+  found: >
+    F646324A (cond 100, 'Input Key has any value') = actions 89 / 1353 / 3674.
+    FA045F2B (cond 4, 'OPEN')                      = actions 91 / 1215 / 1352.
+    A2F7247B (cond 4, 'CLOSE')                     = actions 1217 / 1348 / 1351.
+    The unrecognised-input arm is exactly two actions: comment 1349 + alert 1350, sitting in
+    A2F7's Otherwise. Alert 1350's WFAlertActionMessage is the literal string the user quoted,
+    verbatim and complete: "PROSOCHĒ received input it did not recognise and took no action.
+    Nothing was read, written, or changed."
+    The MANUAL arm is actions 1354-3673, sitting in F646's Otherwise, and F646's End If is the
+    LAST action in the shortcut (3674).
+  implication: >
+    The user's reported error is positively identified as alert 1350, three conditionals deep.
+    Its reachability precondition is unambiguous: cond 100 PASSED. This converts the
+    coordinator's inference into a structural fact and pins the exact edit sites.
+
+- timestamp: 2026-08-14 (cycle 3)
+  checked: "Which actions in the input-normalisation chain actually changed between the two device builds"
+  found: >
+    Action 84 (gettext, WFTextActionText = '￼' + ExtensionInput) is WFTextTokenString in BOTH
+    builds — it was never a bare attachment and was never converted. Only actions 85
+    (text.trimwhitespace.WFInput) and 86 (text.changecase.text) changed. Action 87
+    (setvariable.WFInput -> 'Input Key') is a content-item parameter and remains a bare
+    attachment by design, in both builds.
+  implication: >
+    Narrows the cycle-2 regression to a two-action delta. Combined with the two device
+    observations (cond 100 FALSE before, TRUE after), this yields the derived fact that
+    Uppercase(Trim(<action 84 output>)) is NON-EMPTY when Shortcut Input is absent — without
+    needing to know what that value is. It also shows the placeholder was already being
+    produced at action 84 pre-fix and was simply being discarded by 85's bare attachment.
+
+- timestamp: 2026-08-14 (cycle 3)
+  checked: "The coordinator's own stated falsification test for the U+FFFC candidate — does Trim strip it?"
+  found: >
+    U+FFFC is OBJECT REPLACEMENT CHARACTER, Unicode general category So. It is not in Zs/Zl/Zp
+    and is not whitespace under any standard definition; Python's str.strip() leaves it intact.
+  implication: >
+    The stated refutation condition ("if Trim already strips it, THIS HYPOTHESIS IS WRONG")
+    does not fire. Candidate (i) survives. This is supporting evidence only — iOS Trim
+    Whitespace cannot be executed on the build Mac, so it is NOT treated as confirmation, and
+    the fix is deliberately built to be correct whether or not (i) is true.
+
+- timestamp: 2026-08-14 (cycle 3)
+  checked: "Nesting-depth impact of the proposed positive-match restructure, simulated over the real action list"
+  found: >
+    Current maximum control-flow depth is 12; after the restructure it is 11, with balanced
+    open/close (final depth 0) in both. OPEN and CLOSE each become one level shallower; the
+    MANUAL body becomes one level deeper. Action count goes 3675 -> 3671 (removing the gate
+    If, its Otherwise, its End If, and the unrecognised alert).
+  implication: >
+    The restructure does not deepen the shortcut and does not risk the nesting ceiling. It
+    reduces it. (Both figures already exceed the depth-7 corpus evidence cited in CLAUDE.md;
+    that is pre-existing and this change moves it in the safe direction.)
+
+- timestamp: 2026-08-14
+  checked: "ON-DEVICE test of the cycle-3 router-restructure artifact (build 2026-08-14d). Clean install. User-reported, verbatim."
+  found: >
+    Step 1 (manual tap): "Identical. / Input Key: [] / Empty ref: []"
+    Step 2 (open target app): "Automation failed. 'When any of 3 apps are opened' encountered
+    an error: Please choose a value for each parameter in this action."
+    Step 3 (Change Sequence -> Classic): "first I get an allow prosoche to save 1 dictionary
+    to a file. looks like a success."
+    Step 4 (Control Room note): "Exists but empty"
+  implication: >
+    MANUAL INVOCATION RESTORED — cycle-2 regression CLOSED. The router restructure took on
+    device; the unrecognised-input rejection is gone and the user reached the menu.
+    SYMPTOM 2 FIXED — first genuine device confirmation. Change Sequence -> Classic completed
+    with no "No value provided"; the expected iOS file-save permission prompt appeared and
+    succeeded. The WFDictionaryValue key + WFTextTokenString envelope combination is now
+    confirmed at RUNTIME, not merely statically. This retroactively validates the cycle-2
+    envelope diagnosis that looked refuted at the time — it was necessary but had been
+    masked by the router defect (A).
+    ROUTER TRACE — candidate (i) SUPPORTED, candidate (ii) ELIMINATED. Input Key renders
+    identically to the known-empty reference, so on a manual tap it holds a value that is
+    non-empty to cond 100 but renders as nothing: a non-printing character, not visible text.
+    Consistent with a lone U+FFFC. Moot for correctness after the restructure; logged as
+    observed.
+
+- timestamp: 2026-08-14
+  checked: "SYMPTOM 1 — where the OPEN failure now originates"
+  found: >
+    The automation fails BEFORE PROSOCHĒ runs at all: iOS reports "When any of 3 apps are
+    opened" encountered an error: "Please choose a value for each parameter in this action."
+    No PROSOCHĒ action produced this; the shortcut was never reached.
+  implication: >
+    CAUSE HAS MOVED OFF THE PLIST. This is iOS reporting an action inside the user's
+    manually-created Personal Automation WRAPPER with a required parameter left unset. This
+    cycle therefore produced ZERO evidence about the plist-side OPEN path — do not record it
+    as progressed.
+    This is precisely the discrimination the cycle-1 INPUT PROBE was designed to make and
+    which was never executed. LIVE HYPOTHESIS, ranked first, not yet asserted: the wrapper's
+    Run Shortcut action may never have passed `OPEN` at all because its Shortcut and/or Input
+    parameter is unset — in which case every plist-side OPEN theory across three cycles was
+    chasing a device-side misconfiguration. A Run Shortcut with no target shortcut selected
+    produces exactly this error text.
+    Also unresolved: "any of 3 apps" means one shared automation covers three target apps —
+    whether that is correct for PROSOCHĒ's design or needs splitting per-app must be stated.
+
+- timestamp: 2026-08-14
+  checked: "SYMPTOM 3 — Control Room note, first hard data in three cycles"
+  found: "Note EXISTS but is EMPTY, on a clean install, in the SAME run where the envelope fix demonstrably worked for Set Dictionary Value (symptom 2 passed)."
+  implication: >
+    SYMPTOM 3 IS NOT THE ENVELOPE DEFECT. Excluded by DIRECT EVIDENCE now, not by argument:
+    the same build, same run, same envelope treatment produced a working dictionary write and
+    an empty note. It is a separate cause in the Note WRITE path specifically.
+    The note is CREATED (it exists) but its BODY is empty — so the create call succeeds and
+    the body parameter is what fails. .claude/CLAUDE.md flagged the Notes actions' parameter
+    shapes as catalog-gated to macOS 27 with an explicit "verify empirically on device"; that
+    flag is now cashing in. The prior whole-plist audit already found
+    com.apple.mobilenotes.SharingExtension emitting WFCreateNoteInput instead of the catalog's
+    name/contents — a live candidate. Investigate whether the body parameter is content-item
+    or string typed, and whether its key AND value envelope match the catalog.
+
+- timestamp: 2026-08-14 (cycle 4)
+  checked: "The note-write chain end to end (actions 3613-3617, 3646-3648) against the ToolKit v78 catalog, the golden corpus, AND a Create Note shortcut exported from the USER'S OWN iPhone (.planning/debug/'Donor - notes.shortcut'), decrypted this cycle"
+  found: >
+    The donor decrypts to a three-action chain identical in structure to ours:
+    gettext -> getrichtextfrommarkdown -> com.apple.mobilenotes.SharingExtension with
+    AppIntentIdentifier CreateNoteLinkAction. EXACTLY ONE LINK DIVERGES.
+    Link 1 (3613 gettext, WFTextTokenString)              matches.
+    Link 2 (3615 getrichtextfrommarkdown.WFInput, BARE)   matches the donor AND golden
+      f44f5caf action 13; catalog-typed com_apple_shortcuts_wfcontent_item, so bare is
+      CORRECT and must not be converted.
+    Link 3 (3616 WFCreateNoteInput)                       DIVERGES. Donor serialises it as
+      {'string': '￼', 'attachmentsByRange': {'{0, 1}': <token>}} / WFTextTokenString.
+      Ours was a bare WFTextTokenAttachment.
+    Second divergence in the same pair: the donor names the markdown output
+    'Rich Text from Markdown'; ours said 'Rich Text'. Golden f44f5caf action 14 independently
+    uses the donor's name.
+    Catalog types: SharingExtension.contents and appendnote.text are BOTH `AttributedString`.
+  implication: >
+    ROOT CAUSE (symptom 3). The cycle-2 envelope rule is correct and already runtime-proven,
+    but its allowlist was scoped to catalog type `str`. `AttributedString` is a THIRD type
+    category — a text type, not a content item — that obeys the same rule and was never
+    considered, so both Notes body parameters were invisible to the normaliser AND to its
+    recurrence guard. A bare attachment there creates the note successfully with an EMPTY
+    BODY, which is precisely "exists but empty".
+    The divergence sits at the exact link whose output is empty, and the device donor is
+    higher authority than the macOS-27-tagged catalog for this action family.
+
+- timestamp: 2026-08-14 (cycle 4)
+  checked: "Whole-plist re-audit by catalog TYPE, both forks, after adding AttributedString to the analysis"
+  found: >
+    Only three sites in the whole artifact were affected: 3616 WFCreateNoteInput (envelope +
+    output name), 3648 appendnote.text (envelope only). The state-recovery appendnote at 3668
+    was ALREADY a WFTextTokenString because it happens to be a composite template.
+    Remaining bare attachments on text-typed parameters after the fix: only the 4 deliberately
+    excluded openurl.WFInput sites (corpus-evidenced, unchanged since cycle 2).
+  implication: >
+    A second internal control group, same action identifier: appendnote 3668 (correct
+    envelope, authored that way by accident of shape) beside appendnote 3648 (bare). Same
+    natural experiment that settled cycle 2, now inside the Notes family.
+    It also gives the next device test its discriminator: 3648 changes on the ENVELOPE AXIS
+    ONLY (its OutputName 'Text' was already correct), so the Control Room refresh block is a
+    clean single-variable test of the AttributedString hypothesis, while the create path
+    changes on two axes and cannot discriminate on its own.
+
+- timestamp: 2026-08-14 (cycle 4)
+  checked: "SYMPTOM 1 — whether one shared automation covering 3 apps is correct for PROSOCHĒ's design; answered from the design, not deferred"
+  found: >
+    `CurrentApp` appears ZERO times in either fork — the master shortcut consumes no app
+    identity whatsoever. .planning/research/ARCHITECTURE.md §5 states the decision explicitly:
+    "Heat, Gravity, Pressure, Circle, and `active_session` are GLOBAL across all tracked apps,
+    not per-app... there is exactly one `active_session` pointer at a time", and §5 further
+    records the cross-app rapid-return approximation as INTENTIONAL. The shipped Control Room
+    copy (Automation A / Automation B) tells the user to select "the apps" plural in ONE
+    automation per trigger.
+  implication: >
+    ONE App automation covering all watched apps is CORRECT; splitting per-app is unnecessary
+    and would not improve anything, because the shortcut cannot tell the apps apart by design.
+    What must remain split is OPEN from CLOSE — two automations, one per trigger, because they
+    pass different literals. The user's "any of 3 apps" automation is therefore not the defect.
+
+- timestamp: 2026-08-14 (cycle 4)
+  checked: "SYMPTOM 1 — a mechanistic explanation for the automation-side error that fits the session's own history"
+  found: >
+    The user has performed a full clean install before EVERY cycle, explicitly including
+    deleting the installed shortcut. Deleting a shortcut orphans any Personal Automation's
+    Run Shortcut reference, leaving that action with no target selected. iOS reports a Run
+    Shortcut with no target selected as exactly "Please choose a value for each parameter in
+    this action" — the user's verbatim error — attributed to the automation's own name
+    ("When any of 3 apps are opened"), which is why no PROSOCHĒ action appears in the message.
+    Timeline fit: cycle 1 the automation ran (manual menu appeared, so the shortcut executed);
+    cycle 2 step 2 was never reached; cycle 3 the automation errored. The break appears after
+    the first delete-and-reimport, not before.
+  implication: >
+    STRONG HYPOTHESIS, NOT ESTABLISHED — a screenshot settles it in one exchange and costs
+    nothing. If true, symptom 1's cycle-1 appearance is separately and fully explained by the
+    envelope defect (input arrived as OPEN, actions 85/86 evaporated it, Input Key empty,
+    MANUAL menu), meaning the plist-side OPEN path may already be repaired by cycles 2+3 and
+    has simply never been exercised. Recorded as a hypothesis precisely because that would be
+    a very convenient conclusion to reach without evidence.
+
+- timestamp: 2026-08-14 (cycle 4)
+  checked: "NEW CAPABILITY — reading a signed .shortcut back on the build Mac"
+  found: >
+    A signed .shortcut's AEA1 header carries its own signing certificate chain as a bplist in
+    the auth-data blob at offset 12. Extract the leaf, take its public key AS PEM (aea rejects
+    the raw X9.63 point and the DER SPKI; PEM works), then `aea decrypt -sign-pub pub.pem`
+    followed by `aa extract` yields Shortcut.wflow, a normal binary plist. Recipe recorded in
+    docs/BUILD-NOTES.md §14.
+  implication: >
+    Closes a verification gap that stood through cycles 1-3, where build freshness could only
+    be argued from the unsigned XML plus file mtime. The cycle-4 signed Dumb artifact was
+    decrypted and confirmed to carry 3674 actions, WFCreateNoteInput as WFTextTokenString,
+    both appendnote.text as WFTextTokenString, and the stamp "PROSOCHĒ · build 2026-08-14e".
+    "Did the device get the artifact we think it got" is now answerable from the shipped file.
+
+- timestamp: 2026-08-14
+  checked: "ON-DEVICE test of the cycle-4 AttributedString-envelope artifact (build 2026-08-14e). Clean install WITH Recently Deleted purged. User-reported, verbatim."
+  found: >
+    Router trace, manual tap: "the inputkey[] is still empty ref[]"
+    Note creation: "note creates successfully"
+    Step 1(b) "## CURRENT SETTINGS" block with real values: "Present, with real values"
+    Step 1(a) full note body: "Full body present"
+    Step 2 Run Shortcut Shortcut+Input fields: "Both look correctly set"
+    Automation behaviour: "when I run the automation it says 'failed... please choose a value
+    for each parameter in this action.'"
+    (User had a session crash mid-test and re-answered from the same build; treated as one
+    coherent cycle-4 result set.)
+  implication: >
+    SYMPTOM 3 CLOSED. Both experiments passed. (b) the APPEND path — the clean
+    single-variable test, changed on the envelope axis only — produced a real CURRENT
+    SETTINGS block, confirming the AttributedString envelope fix at RUNTIME. Because (b)
+    passed, (a) is interpretable, and (a) passed too, so DEV-04 (the deferred donor
+    folder/WFNoteGroup parameter) is NOT required for correctness. This was also the first
+    cycle with Recently Deleted purged, so the soft-deleted-note reuse-branch contamination
+    was a real risk and is now excluded.
+    ROUTER TRACE unchanged and expected — Input Key still renders identically to Empty ref on
+    a manual tap. Harmless post-restructure. Manual invocation remains working.
+    TWO OF THREE ORIGINAL SYMPTOMS NOW CLOSED: symptom 2 (cycle 3), symptom 3 (cycle 4).
+
+- timestamp: 2026-08-14
+  checked: "SYMPTOM 1 — the orphaned Run Shortcut reference theory"
+  found: >
+    User inspected the Run Shortcut action in the Personal Automation: both the Shortcut and
+    Input fields "look correctly set". The automation still fails with "please choose a value
+    for each parameter in this action".
+  implication: >
+    ORPHANED-REFERENCE THEORY REFUTED. Symptom 1 returns to the plist with a positively
+    verified wrapper — the exact condition under which the cycle-1 INPUT PROBE becomes the
+    next move. It was designed in cycle 1 and has still NEVER been executed; it is now the
+    priority.
+    TWO CAVEATS that must be built into the next step rather than assumed past:
+    (i) "Both look correctly set" is the user's VISUAL INSPECTION of a Shortcuts UI, not proof
+        that the parameters are populated in the automation's stored representation. Shortcuts
+        can render a field as populated while the underlying parameter is unset — precisely
+        the class of error the message describes. The probe is valuable exactly because it
+        does not depend on trusting that inspection, so it must be designed to give an
+        unambiguous pass/fail WITHOUT the user judging a UI field.
+    (ii) It is NOT established that the failing action is the Run Shortcut. The error names the
+        AUTOMATION, not an action. Other candidates in the user's hand-built wrapper must be
+        enumerated — the Text action holding OPEN, the trigger configuration itself, anything
+        else it contains — and the user given a way to identify WHICH action iOS objects to,
+        or told plainly that Shortcuts does not expose one.
+    NEW LEVERAGE: signed .shortcut decryption (proven this cycle on the Notes donor) may let
+    the wrapper's STORED parameters be read directly, settling both caveats from ground truth
+    instead of UI inspection — the same move that cracked symptom 3.
+
+- timestamp: 2026-08-14
+  checked: "SCREENSHOT of the Personal Automation's action list (user-supplied). Ground truth on the wrapper's contents, not UI-field inspection."
+  found: >
+    Automation "When any of 3 apps are open…" contains EXACTLY TWO actions:
+    (1) Text — body contains exactly `OPEN`, single line, no visible whitespace or extra
+        characters.
+    (2) Run — target shortcut chip reads "PROSOCHĒ — Nine Circles — Dumb", rendered as a live
+        shortcut chip with its icon (populated, not a placeholder). Directly below, `Input`
+        carries a yellow Text magic-variable chip, i.e. wired to action 1's output.
+    No third action. No visibly blank or placeholder parameter anywhere in the wrapper.
+  implication: >
+    THE WRAPPER IS VERIFIED CORRECT. Both standing caveats are closed by evidence rather than
+    by trusting a field reading: the Shortcut reference is populated (not orphaned) and the
+    Input carries the Text magic variable. There is no third action that could hold an unset
+    parameter.
+    THIS INVERTS THE SEARCH SPACE. "Please choose a value for each parameter in this action"
+    is attributed to the automation BY NAME, but the automation contains no action lacking a
+    value. The remaining reading: the failing action lives INSIDE PROSOCHĒ, invoked via Run
+    Shortcut, with iOS surfacing the failure against the OUTERMOST automation rather than the
+    nested shortcut. LEADING HYPOTHESIS — test before anything else.
+    It explains the whole shape of symptom 1 and why it survived four cycles of router work:
+    manual invocation reaches the MANUAL menu and is now well exercised (Change Sequence,
+    Open Control Room, note creation all succeed); the OPEN literal path fails immediately,
+    before any PROSOCHĒ alert appears. Therefore the defective action executes on the OPEN
+    pipeline and NOT on the manual path — an action with a required parameter empty or unset
+    in the emitted plist.
+    CRITICALLY: this is STATICALLY ANSWERABLE on the build machine with no device round-trip.
+
+- timestamp: 2026-08-14 (cycle 5)
+  checked: "STATIC ENUMERATION of every action reachable on the OPEN branch but NOT on the device-exercised (PRE + MANUAL) population, per the cycle-5 priority order"
+  found: >
+    Router spans, by GroupingIdentifier: OPEN body = actions 91-1213; CLOSE body = 1217-1346;
+    MANUAL body = 1348-3671; PRE (runs on every path) = 0-89.
+    TWELVE identifiers appear in the OPEN body and NEVER in PRE+MANUAL: repeat.each(18),
+    openapp(18), appendvariable(7), openurl(4), round(3), repeat.count(2),
+    calculateexpression(2), searchweb(2), searchmaps(2), number.random(1), count(1),
+    choosefromlist(1).
+  implication: >
+    The search space really did invert and really is small — 12 identifiers, not 3674 actions.
+    Every parameter-defect class that ALSO appears on the device-proven MANUAL path is
+    exonerated by direct evidence rather than by argument, which is the same control-group
+    method that settled cycles 2 and 4.
+
+- timestamp: 2026-08-14 (cycle 5)
+  checked: "Whether iOS pre-flight-validates the whole shortcut on automation launch, or errors only on the action it reaches"
+  found: >
+    count.WFCountType, getitemfromlist.WFItemSpecifier and speaktext.WFInput carried IDENTICAL
+    defects in the 2026-08-13 build. That build ran from the Personal Automation and reached
+    the MANUAL menu — the user saw it. No "please choose a value" error occurred.
+  implication: >
+    PRE-FLIGHT VALIDATION REFUTED. iOS errors on the action it EXECUTES, not on load. Combined
+    with the verified-correct wrapper, this pins the failing action to the OPEN branch and
+    makes the coordinator's inversion an evidenced conclusion rather than an assumption.
+    It also explains the timeline exactly: the OPEN branch had NEVER executed on device before
+    build d, because Input Key was empty pre-envelope-fix and every automation run took the
+    MANUAL arm. Cycle 2's fix did not cause this defect — it EXPOSED it.
+
+- timestamp: 2026-08-14 (cycle 5)
+  checked: "Every picker/enum-typed parameter in both forks, for presence and for literal-vs-token value"
+  found: >
+    PERFECT SEPARATION, identical in both forks. Eight picker classes carry a literal enum
+    case: searchweb 'Google', text.changecase 'UPPERCASE', getdevicedetails 'Current Volume'
+    and 'Current Brightness', setvolume 'Media', gettimebetweendates 'Seconds', round
+    'Ones Place', searchmaps 'Maps', getitemfromlist 'First Item' (x2).
+    EXACTLY TWO deviate:
+      is.workflow.actions.count.WFCountType             MISSING (1 Dumb / 2 Sentient)
+      is.workflow.actions.getitemfromlist.WFItemSpecifier  a VARIABLE TOKEN at 31/33 sites,
+        with WFItemIndex absent entirely.
+    Generator source shows the same split internally: build_state_engine.py:820 emits the
+    literal 'First Item' (correct) while :435 and :552 emit WFItemSpecifier=variable(...).
+  implication: >
+    ROOT CAUSE (symptom 1), identified. A picker parameter that is absent or non-literal
+    renders as an unfilled picker, and iOS refuses to run the action with exactly
+    "Please choose a value for each parameter in this action" — attributing it to the
+    outermost caller (the automation, by name) and never naming the action.
+    Third instance of this session's recurring family: the parameter shape iOS actually reads
+    was never emitted. Cycle 1 = key name. Cycles 2/4 = value envelope. Cycle 5 = required
+    picker. Each pass fixed one axis and left the next undefended.
+
+- timestamp: 2026-08-14 (cycle 5)
+  checked: "Golden-shortcut corpus for count and getitemfromlist, to source the enum literals rather than fabricate them"
+  found: >
+    count: 11/11 corpus instances emit WFCountType (all 'Items'); 0 omit it. Catalog agrees —
+    WFCountType is the action's FIRST parameter, display name 'Type'.
+    getitemfromlist: every corpus instance puts a LITERAL in WFItemSpecifier and the DYNAMIC
+    index in WFItemIndex. Golden 332c12a0060043b388b2 does precisely what we need:
+    WFItemSpecifier='Item At Index' with WFItemIndex holding a Repeat Index VARIABLE token.
+  implication: >
+    Both literals are corpus-sourced, so the fix fabricates nothing. The corpus also supplies
+    the correct SHAPE for a dynamic index, which is what the generator had inverted.
+
+- timestamp: 2026-08-14 (cycle 5)
+  checked: "math.WFMathOperation — the strongest-looking candidate, tested against the corpus before acting"
+  found: >
+    25 of 42 math actions omit WFMathOperation (the generator's helper does
+    `if op and op != "+"`), and 13 of those sit in the pre-menu OPEN Heat-arithmetic path —
+    a required enum picker missing on the guaranteed OPEN path. But golden shortcut
+    2e0fb675e459 (client 1146.11.1, minimum client 900 — our exact vintage) omits
+    WFMathOperation with our exact key shape (WFInput + WFMathOperand).
+  implication: >
+    REFUTED, and deliberately NOT changed. Corpus evidence outranks catalog inference under
+    this project's own cycle-2 openurl precedent; '+' is genuinely the implicit default.
+    Recorded as DEV-05. This is the check that stopped a plausible-looking wrong fix.
+
+- timestamp: 2026-08-14 (cycle 5)
+  checked: "The pre-menu OPEN region (actions 91-521, everything before the first OPEN-path menu) exhaustively, against the ToolKit catalog"
+  found: >
+    STATICALLY CLEAN. Every action's parameters are complete and correctly valued:
+    round WFRoundTo='Ones Place' (so TenToThePowerOf is not needed), setvolume
+    WFVolumeSetting='Media', gettimebetweendates WFTimeUntilUnit='Seconds',
+    number.random keys correct, getitemfromlist@360 WFItemSpecifier='First Item',
+    repeat.count WFRepeatCount=9 (matches corpus shape). No empty-valued parameter anywhere in
+    the OPEN body. Every remaining discrepancy in the region is a class that also appears on
+    the MANUAL path and was demonstrably EXECUTED there (getvalueforkey missing
+    WFGetDictionaryValueType, documentpicker.save missing WFFolder, documentpicker.open
+    WFShowFilePicker, setitemname missing WFDontIncludeFileExtension).
+    Both confirmed defects sit AFTER the first OPEN menu: count at 576 inside case 'Leaving',
+    getitemfromlist at 580 / 1155 / 1160 / 1166.
+  implication: >
+    LOAD-BEARING CAVEAT, recorded rather than smoothed over. The claim "the OPEN path fails
+    before any PROSOCHĒ alert appears" is the coordinator's characterisation; the user's
+    verbatim cycle-3 and cycle-4 reports say only that the automation failed and never state
+    whether a menu appeared. If NO PROSOCHĒ UI ever appeared, this cycle's fix cannot be the
+    whole story, because the region before the first menu is clean. That single bit was never
+    captured and is the cheapest discriminator available — it is now requested explicitly.
+
+- timestamp: 2026-08-14 (cycle 5)
+  checked: "Whether iOS exposes WHICH nested action it is objecting to (coordinator priority 3)"
+  found: >
+    It does not. The automation-failure notification reports the AUTOMATION's name and the
+    message text only. There is no action index, no drill-down, and no log. Shortcuts does not
+    surface the offending action for a failure inside a nested Run Shortcut.
+  implication: >
+    The user cannot narrow this by inspecting further and must not be asked to try. This is
+    stated plainly to them rather than implied away.
+
+- timestamp: 2026-08-14 (cycle 5)
+  checked: "Ask-Each-Time tokens and import questions, as an alternative mechanism for an unset parameter"
+  found: >
+    Zero 'Ask' tokens anywhere in either fork (token census: 2016 Variable, 963 ActionOutput,
+    1 ExtensionInput). WFWorkflowImportQuestions targets only actions 2 and 4, both Text
+    actions in the PRE region that run on every path including the working MANUAL one.
+  implication: "Ask-Each-Time and import-question mechanisms are ELIMINATED as the cause."
+
+- timestamp: 2026-08-14
+  checked: "ON-DEVICE test of the cycle-5 picker-axis artifact (build 2026-08-14f). Clean install. User-reported, verbatim."
+  found: >
+    Q1, did ANY PROSOCHĒ UI appear first (the menu offering Leaving / Continue)?
+      "No — nothing at all, straight to the error"
+    Q2, does the intervention complete without a "please choose a value" error?
+      "'Please choose a value' again"
+  implication: >
+    CYCLE 5 REFUTED for symptom 1. The picker-axis fixes did not resolve it. Q1 settles the
+    caveat the debugger correctly isolated: NO PROSOCHĒ UI appears at all, so the failure is
+    UPSTREAM of the first OPEN menu — inside the region (actions 91-521) that the cycle-5
+    sweep read exhaustively and pronounced statically clean.
+    METHODOLOGICAL NOTE: the debugger flagged that "fails before any PROSOCHĒ UI appears" was
+    an unverified INFERENCE carried by the coordinator and session-manager, not user
+    testimony, and designed the single bit that would settle it. It returned opposite to what
+    the fix required. This is falsification working as intended, not a wasted cycle.
+    THE PICKER FIXES STAND. They were corpus-verified (11/11 and 33/33), are genuine latent
+    defects on a path that will execute once this is unblocked, and the new guard caught a
+    real second instance in the Sentient-only insertion path. Do NOT revert them merely
+    because they did not fix this symptom.
+    DIRECT CONTRADICTION TO RESOLVE: the sweep says 91-521 is clean; the device says something
+    at or before that region has an unfilled required parameter. Both cannot be true.
+
+- timestamp: 2026-08-14 (cycle 6)
+  checked: "REPO STATE, before any analysis — which commit the working tree actually held"
+  found: >
+    At session start the tree was checked out at efb5a79 on branch codex/prosochedebug1, a
+    commit predating ALL of cycles 1-5: grep for REQUIRED_PICKER_PARAMS, verify_required_pickers,
+    normalise_string_envelopes, verify_string_envelopes, restructure_router, verify_router_shape,
+    ACTION_OUTPUT_NAMES, BUILD_STAMP and ROUTER_TRACE returned 0 hits each in
+    tools/build_state_engine.py, and artifacts/shortcuts/ held the 183703/187660-byte pre-cycle
+    artifacts. The tree has since moved to branch codex/automation-parameter-diagnosis at 7ca8ebb,
+    which carries all of it (BUILD_STAMP = "build 2026-08-14f", signed Dumb 188441 bytes,
+    Dumb.xml 3674 actions) — matching the cycle-5 record exactly.
+  implication: >
+    NOT A CODE FINDING, but a live operational hazard worth more than most code findings: a
+    rebuild performed while the tree sits on codex/prosochedebug1 or codex/round1 would silently
+    regenerate a PRE-CYCLE-1 artifact, and all three original symptoms would return looking like
+    a regression. Verify `git rev-parse --abbrev-ref HEAD` and the BUILD_STAMP value before any
+    rebuild or re-sign. All cycle-6 analysis was run against blobs read out of 7ca8ebb rather
+    than the working tree, so it is unaffected.
+
+- timestamp: 2026-08-14 (cycle 6)
+  checked: "The true extent of the OPEN pre-UI region, computed rather than assumed"
+  found: >
+    OPEN body = actions 91-1213 (GroupingIdentifier FA045F2B spans 90/1214/3673). There is NO
+    UI action at the OPEN arm's base depth anywhere in the body — every OPEN-path UI is inside a
+    conditional. Only three UI actions exist in the whole body: 169 (menu "Ice is active", depth
+    2, reachable only through the live-cooldown conditional at 167), 521 (menu "PROSOCHĒ",
+    items ["Leaving","Continue"]) and 669 (menu "Leave now").
+  implication: >
+    On a normal OPEN with no live cooldown the FIRST thing a user can see is action 521.
+    "Nothing at all, straight to the error" therefore localises the failure to actions 91-520 —
+    IF execution entered the OPEN arm at all. It is equally consistent with PROSOCHĒ never
+    having run, which is the partition cycle 6 exists to settle. Cycle 5's 91-521 region was
+    the right region.
+
+- timestamp: 2026-08-14 (cycle 6)
+  checked: "The FOURTH required-parameter axis, per the coordinator's priority (1) — what 'required parameter' can mean in the catalog beyond key name, value envelope and picker presence"
+  found: >
+    The catalog exposes NO required/optional bit at all. Parameter `flags` takes only four
+    values across all 2585 tools — 0 (4658 params), 1 (3098, entity sort/compound query keys),
+    2 (260, exclusively ShowWhenRun/OpenWhenRun) and 4 (68, exclusively AttributedString rich-text
+    params). None of these encodes "required". A sweep therefore cannot enumerate required
+    parameters from the catalog; it can only compare emitted keys against the full key list.
+    Run that way over actions 91-520: ZERO empty-valued parameters of any shape, and the only
+    absent catalog keys are round.TenToThePowerOf (not applicable at WFRoundTo='Ones Place'),
+    getvalueforkey.WFGetDictionaryValueType, documentpicker.save.WFFolder,
+    setitemname.WFDontIncludeFileExtension, getitemfromlist's index/range keys (correct for
+    'First Item'), and math's scientific keys.
+  implication: >
+    The axis the coordinator predicted is REAL but it is a COVERAGE hole, not a defect: 336 of
+    the OPEN body's actions are the control-flow family — conditional (263), choosefrommenu (53),
+    repeat.each (18), repeat.count (2) — and NONE of those four identifiers exists in the ToolKit
+    catalog at all. Every catalog-driven sweep, cycle 5's included, is structurally blind to all
+    336. That fully explains how 91-520 can read "clean" and still fail, without requiring any
+    new defect class.
+
+- timestamp: 2026-08-14 (cycle 6)
+  checked: "PICKER VALIDITY — a genuinely new axis: cycle 5 checked that required pickers are PRESENT and LITERAL, but never that the literal is a VALID enum case"
+  found: >
+    Every emitted picker literal in the artifact was validated against the catalog's enum case
+    lists (both `id` and `title` forms). All 20 distinct literals are valid cases: getitemfromlist
+    'Item At Index' (31) and 'First Item' (2), setvolume 'Media' (14), math '×' (12) '÷' (3) '-'
+    (2), ask 'Text' (12) 'Number' (10) 'URL' (2), getdevicedetails 'Current Volume' (10) and
+    'Current Brightness' (10), gettimebetweendates 'Seconds' (5), round 'Ones Place' (3) and
+    'Always Round Down' (3), searchweb 'Google' (2), appendnote 'append' (2), adjustdate
+    'Subtract', format.date 'Custom', text.changecase 'UPPERCASE', count 'Items'. ZERO invalid.
+  implication: >
+    A picker holding an INVALID case would render as an unfilled picker and produce the observed
+    error exactly like a missing one, so this was a live candidate axis. It is now ELIMINATED.
+    Worth keeping as a guard extension: verify_required_pickers() currently checks presence and
+    literalness; validating the literal against the enum case list costs nothing and closes the
+    axis permanently.
+
+- timestamp: 2026-08-14 (cycle 6)
+  checked: "Cycle 5's exoneration rule re-scored — 'the class also appears on the device-proven MANUAL path' vs 'that class actually EXECUTED'"
+  found: >
+    The only region certain to have executed is PRE (actions 0-89, which runs on every
+    invocation), plus the specific manual cases the user drove: the menu, Change Sequence ->
+    Classic, and Open Control Room. Re-scored against PRE alone, these shapes in the OPEN pre-UI
+    region have NEVER run on device: conditional+WFNumberValue (13), math without WFMathOperation
+    (13), math with WFMathOperation (3), setvalueforkey (29), number (5), number.random (1),
+    round (1), repeat.count, repeat.each, appendvariable (2), getitemfromlist, returntohomescreen,
+    setbrightness, setvolume.
+  implication: >
+    Cycle 5's exoneration was weaker than recorded — appearing on a branch is not executing on it,
+    and the user exercised only a handful of manual cases. This does not overturn any cycle-5 fix,
+    but it means the OPEN-path candidate set is larger than cycle 5 concluded, and it is why
+    cycle 6 declines to nominate a fourth static hypothesis.
+
+- timestamp: 2026-08-14 (cycle 6)
+  checked: "Golden-corpus coverage for every construct still unverified on the guaranteed OPEN path"
+  found: >
+    is.workflow.actions.round — ZERO corpus instances. is.workflow.actions.number.random — ZERO.
+    Across all 19 golden shortcuts EVERY conditional operand is a LITERAL: not one instance of a
+    variable-backed WFNumberValue or WFConditionalActionString exists anywhere in the corpus
+    (numeric operands appear 4 times, all literal floats; string operands 18 times, all literal
+    strings). repeat.count's WFRepeatCount is a variable attachment 2/2 in the corpus where ours
+    is the literal string '9' — though the `number` action shows numeric fields accepting plain
+    strings ("0") and reals (10.0) interchangeably, so that is not itself suspicious.
+    DEV-05 re-checked independently: the corpus is 1 math WITH WFMathOperation ('-', golden
+    332c12a0 action 105) and 1 WITHOUT (golden 2e0fb675 action 21, our exact WFInput+WFMathOperand
+    shape) — a 1-of-2 split, not the unanimous refutation cycle 5 recorded.
+  implication: >
+    The remaining plist-side candidates are genuinely UNDECIDABLE on the build Mac. The corpus has
+    no coverage and the device has no execution history for any of them. Shipping a fix for one
+    would be a fourth guess and would confound the probe by changing the artifact under test.
+    This is why cycle 6 ships NO generator change and spends the round-trip on measurement.
+    It also defines the donor request precisely: the constructs to have iOS serialise are a
+    variable-vs-variable numeric If, a default-operation Calculate, a Round, a Random Number and
+    a literal-count Repeat.
+
+- timestamp: 2026-08-14 (cycle 6)
+  checked: "PROBE 5 built, validated, signed and verified end-to-end on the SHIPPED file"
+  found: >
+    artifacts/device-import-probes/PROSOCHE Probe 5 - Input Echo.shortcut — AEA1 (41454131),
+    22953 bytes, generated by artifacts/device-import-probes/build_probe5.py (never hand-written
+    XML), plutil -lint OK, validator passes at --target-macos 26 --target-platform all.
+    Decrypted via the §14 recipe and confirmed to carry: 7 actions
+    [comment, comment, gettext, text.trimwhitespace, text.changecase, comment, alert],
+    WFWorkflowHasShortcutInputVariables = true, WFWorkflowInputContentItemClasses =
+    ['WFStringContentItem'], the ExtensionInput token as a WFTextTokenString, and an alert whose
+    attachmentsByRange offsets {12,1} and {27,1} both land on real U+FFFC placeholders.
+  implication: >
+    The normalisation chain is copied in shape from PROSOCHĒ's device-proven actions 84-86
+    (same envelopes, same producing-action output names 'Text' and 'Trimmed Text'), and the two
+    root keys that govern input handoff are identical to PROSOCHĒ's — so a null result cannot be
+    dismissed as "the probe declares its input differently". Pass/fail is read as literal
+    characters inside brackets, so it does not depend on the user judging whether a UI field
+    looks populated, which was the explicit weakness of the cycle-4 refutation.
+
+- timestamp: 2026-08-14 (cycle 7)
+  checked: "DONOR 3 decrypted — .planning/debug/'Donor 3.shortcut' (AEA1, 22907 bytes, built in Shortcuts.app on the target iPhone and exported). 13 actions. Decrypted with the §14 recipe; raw plist retained at scratchpad d3/donor3.xml."
+  found: >
+    iOS's OWN serialization for the five constructs that had ZERO corpus and ZERO device coverage:
+    (1) VARIABLE-BACKED WFNumberValue, conditional cond 2 (A > B):
+        WFInput  = {"Type":"Variable","Variable":{"Value":{"Type":"Variable","VariableName":"A"},
+                    "WFSerializationType":"WFTextTokenAttachment"}}
+        WFNumberValue = {"Value":{"Type":"Variable","VariableName":"B"},
+                    "WFSerializationType":"WFTextTokenAttachment"}
+        Our if_block() emits BYTE-IDENTICAL shapes via variable().
+    (2) MATH AT DEFAULT OPERATION: WFInput + WFMathOperand, both bare WFTextTokenAttachment,
+        and WFMathOperation ABSENT ENTIRELY. Ours is byte-identical.
+    (3) ROUND: WFInput bare attachment + WFRoundMode "Always Round Down", WFRoundTo ABSENT
+        (left at its default). Ours emits both, i.e. an explicit valid default — a superset.
+    (4) NUMBER.RANDOM: WFRandomNumberMinimum "1" and WFRandomNumberMaximum "100", both as
+        plist <string>. Ours emits <integer>.
+    (5) REPEAT.COUNT: WFRepeatCount as plist <real> 9. Ours emits <integer>.
+    Also: is.workflow.actions.number emits WFNumberActionNumber as <string> "5"; an alert with a
+    completely EMPTY parameter dict is legal; device WFWorkflowClientVersion is "4711".
+  implication: >
+    The donor did its work by ELIMINATING, which is the more valuable outcome here. The top TWO
+    ranked cycle-6 candidates (A1 variable-backed WFNumberValue, A3 math WFMathOperation omitted)
+    are refuted against ground truth from the target device, and A2's round half is exonerated.
+    DEV-05 IS SETTLED AFFIRMATIVELY: omitting WFMathOperation at the default operation is what iOS
+    itself does, upgrading it from "corpus 1-of-2" to device-proven. What survives is a genuinely
+    NEW axis — the plist SCALAR TYPE of numeric literals — see the next entry.
+
+- timestamp: 2026-08-14 (cycle 7)
+  checked: "SCALAR-TYPE AXIS (a fourth axis, and the first one cycle 6 predicted would exist): plist type of every numeric literal parameter, swept across both forks by region, cross-checked against the 19-shortcut golden corpus and Donor 3."
+  found: >
+    NEITHER the golden corpus NOR the device donor EVER serializes these fields as plist <integer>.
+    Corpus: conditional.WFNumberValue 4/4 <real>; number.WFNumberActionNumber 2 <real> / 1 <string>
+    / 2 attachment; repeat.count.WFRepeatCount 2/2 attachment (no literal instance anywhere).
+    Donor: number.random min/max <string>; repeat.count <real>; number <string>.
+    Our artifact emits <integer> at 78 sites. BUT the axis has PERFECT SEPARATION against the
+    device-proven MANUAL path, which is the discriminator that settled cycles 2, 4 and 5:
+      - number.WFNumberActionNumber <integer> — action 1359 sits inside the menu case "Open Control
+        Room", which the user EXERCISED SUCCESSFULLY (the note refresh ran). DEVICE-PROVEN OK.
+      - conditional.WFNumberValue <integer> — actions 3646 and 3653 sit in the Control Room refresh
+        block (3620-3666) that ran on the same successful pass. DEVICE-PROVEN OK.
+      - EXACTLY TWO <integer> sites are uniquely OPEN, have zero corpus precedent, zero device
+        coverage, AND a donor that says iOS writes them differently:
+          action 418  is.workflow.actions.number.random  WFRandomNumberMinimum/Maximum  (donor: <string>)
+          action 454  is.workflow.actions.repeat.count   WFRepeatCount = 9              (donor: <real>)
+        Both sit inside the pre-UI region 91-520 that the device implicates. (build-f indices)
+  implication: >
+    This is a ranked, falsifiable PREDICTION, not a fix to ship. Three static "confirmations" have
+    been refuted on device this session, and the cycle-7 instruction is explicit that a donor-derived
+    defect is a candidate for the bisection to confirm, never a blind ship. The bisection is therefore
+    built so breadcrumb G immediately precedes Random Number and breadcrumb H immediately follows the
+    session/gravity/pressure block: span G->H isolates suspect 1 and span H->I isolates suspect 2.
+    A last-letter of G or H confirms the prediction; ANY other letter kills it. Nothing was changed.
+
+- timestamp: 2026-08-14 (cycle 7)
+  checked: "BISECTION INSTRUMENT built, validated, signed, and verified INSIDE the shipped signed file by decryption."
+  found: >
+    artifacts/shortcuts/'PROSOCHĒ — Nine Circles — Dumb.shortcut' — AEA1 (41454131), 188667 bytes,
+    3684 actions, stamp 'build 2026-08-14g' present and '14f' verified ABSENT. Sentient rebuilt and
+    re-signed identically (192807 bytes). Validator passes for BOTH forks at --target-macos 26
+    --target-platform all; plutil -lint OK. (--target-platform ios still rejects every action
+    indiscriminately including is.workflow.actions.comment — DEV-01, unchanged tooling noise.)
+    Ten breadcrumbs land at actions 92 A, 147 B, 168 C, 286 D, 306 E, 415 F, 424 G, 458 H, 473 I,
+    527 J; the first OPEN menu (terminal signal) is action 531.
+    Span sizes and nesting, computed from the artifact rather than asserted:
+      A->B  54 actions, 0 nested blocks (flat state+config reads)
+      B->C  20 actions, 2 nested blocks, depth 2 (behavioural-day rollover)
+      C->D 117 actions, 11 nested blocks, depth 4 (cooldown: live-Ice menu + Ice-expiry restore)
+      D->E  19 actions, 3 nested blocks, depth 2 (duplicate-OPEN debounce)
+      E->F 108 actions, 11 nested blocks, depth 4 (whole ordered Heat pipeline)
+      F->G   8 actions, 0 nested blocks (opens-today math + 3 dictionary writes)
+      G->H  33 actions, 1 nested block  — CONTAINS number.random (suspect 1)
+      H->I  14 actions, 2 nested blocks — CONTAINS repeat.count (suspect 2)
+      I->J  53 actions, 3 nested blocks, depth 3 (pending-exit, 2 repeat-each loops)
+      J->menu 3 actions, 0 nested blocks (Save File only)
+  implication: >
+    ONE pass does NOT localise to a single action for spans C, E and I — each carries 3-11 nested
+    blocks up to depth 4, so a last-letter of C, E or I requires a SECOND, finer bisection round
+    inside that span. This is stated rather than glossed, per the cycle-7 instruction. Spans A, F,
+    G, H and J are small or flat enough to localise effectively immediately.
+    PRESERVATION IS PROVEN, NOT ASSERTED: with the 10 breadcrumb alerts removed, build g is
+    byte-identical to build f across all 3674 actions except exactly two — both the BUILD_STAMP
+    display string ('14f'->'14g') at actions 1350 and 1354, both on the MANUAL arm. breadcrumb()
+    calls no uid(), so the deterministic UUID counter never advances and every downstream action
+    keeps the UUID it had in build f. Symptoms 2 and 3 are therefore preserved BY CONSTRUCTION.
+    The breadcrumb alert introduces NO inferred parameter shape: plain-string WFAlertActionTitle is
+    device-proven (the cycle-3 ROUTER TRACE alert displayed on device) and plain-string
+    WFAlertActionMessage is corpus-verified in 5 of the 13 golden-corpus alerts. It references no
+    variable and contains no control flow, so it cannot fail for a reason of its own.
+
+- timestamp: 2026-08-14 (cycle 7 result)
+  checked: "TEN-LETTER BISECTION on device, build 2026-08-14g. Ten flag-gated breadcrumb alerts A-J at OPEN-arm base depth. User-reported, verbatim."
+  found: '"B. Same error."'
+  implication: >
+    LOCALISED TO SPAN B->C: 20 actions, nesting depth 2, the DAY-ROLLOVER section.
+    Breadcrumb B was seen; C was not. Execution reached B and died before reaching C, still
+    producing "Please choose a value for each parameter in this action".
+    BEST-CASE OUTCOME the protocol allowed. B->C is the second-smallest span and is NOT one of
+    the C/E/I spans that would have bought only a region. NO SECOND BISECTION ROUND NEEDED —
+    20 actions at depth 2 is directly readable.
+    THE DONOR-DERIVED PREDICTION IS DEAD. Both nominated suspects — number.random (action 418,
+    span G->H) and repeat.count (action 454, span H->I) — sit hundreds of actions DOWNSTREAM of
+    where execution stopped. They cannot be the cause. Cycle 7's own stated criterion was that
+    any letter other than G or H kills the prediction; B does.
+    UNSTAGE THE DEFERRAL: the two <integer> sites at 418/454 no longer need holding back to
+    keep a measurement clean, because the measurement is COMPLETE. Decide them on their merits
+    — donor evidence says iOS writes <string> and <real> there while we write <integer>, so
+    they are plausibly real LATENT defects on a path that has never executed. They are NOT
+    this bug and must not be described as a fix for it.
+    DO NOT CONCLUDE THE <integer> AXIS IS EXONERATED. Cycle 7 cleared two PARTICULAR sites
+    because they had demonstrably executed on device, and nominated two others by elimination.
+    A THIRD site inside B->C would be entirely consistent with everything established and
+    would now carry the strongest possible evidence. The day-rollover section is exactly where
+    date arithmetic and numeric comparison live.
+
+- timestamp: 2026-08-14 (cycle 8 addendum)
+  checked: "SIX USER SCREENSHOTS (.planning/debug/IMG_5624.jpg .. IMG_5629.jpg, 15:38-15:40) — first UI-level evidence in the session. Cross-checked by session-manager against the 25 sites fixed in cycle 8."
+  found: >
+    User, verbatim: "I can eyeball the shortcut and see that a few of the if operators are red,
+    so not accepted. you can't do is greater than or is less than."
+    Five distinct If actions render their OPERATOR IN RED (invalid): Cooldown Until >,
+    Previous Declared Duration >, Previous Overrun >, Heat Clamped >, Stats Count <. All five
+    operand chips are orange-x named variables. The operator picker, opened on four of the
+    five, offers EXACTLY EIGHT options — is / is not / has any value / does not have any value
+    / contains / does not contain / begins with / ends with. NO numeric comparator appears.
+    SESSION-MANAGER CROSS-CHECK (programmatic, plistlib, pre-fix vs post-fix Dumb):
+    - The 25 cycle-8 sites carry condition codes 4, 5 and 99 ONLY — all STRING conditions.
+      Their variables are Stored Day, Exit/Contract/Session Owner IDs, counters and flags.
+    - The five red Ifs map to actions 170, 377, 384, 409, 579, all with NUMERIC codes
+      (2 = is greater than, 0 = is less than).
+    - NONE of the five is among the 25. Zero overlap.
+    - All 87 numeric-code conditionals in the POST-FIX build already carry the correct
+      ser=WFTextTokenAttachment envelope with WFNumberValue present.
+  implication: >
+    THE UNIFICATION HYPOTHESIS IS REFUTED. The red operators are NOT the visible symptom of
+    the cycle-8 envelope defect. They are a SECOND, GENUINELY DISTINCT defect on the
+    operator/operand-TYPE axis — a FIFTH axis for this session. Per the coordinator's own
+    stated criterion ("if any of the five is NOT among your 25, that site is a distinct defect
+    and you have found it for free"), all five qualify.
+    MECHANISM (well-supported, not yet device-confirmed): the operand variables are TEXT-typed
+    — image 1's own comment says the cooldown deadline is "routed through text". Shortcuts
+    types the operand as text, a text-typed operand offers only the eight STRING operators, so
+    the numeric comparator the plist specifies has no valid case to render and shows red.
+    Donor 3 is the contrast case: it fed its operands from NUMBER actions and the numeric
+    comparators rendered correctly with the identical envelope — which is exactly why the
+    envelope check passes here while the UI still rejects the operator.
+    .claude/CLAUDE.md anticipated this trap for EQUALITY ("there is no numeric-equals code;
+    use string code 4 on text-coerced numbers") but the generator walked into it for ORDERING
+    comparisons.
+    KEY PREDICTION FOR THE BUILD-h DEVICE TEST: action 170 (Cooldown Until >) is the FIRST red
+    site and sits immediately after breadcrumb C. The cycle-8 fix should carry execution past
+    149/158 and reach C — then fail at 170. EXPECT THE LETTER TO ADVANCE FROM B TO C. That is
+    progress plus a new location, not a failed fix. "B again" would instead mean the cycle-8
+    fix did not take.
+    NEW EVIDENCE CHANNEL, first-class: operator/operand-TYPE validity is visible in the
+    Shortcuts UI and INVISIBLE in the plist file. Every static sweep in eight cycles was blind
+    to it by construction. The on-device eyeball is not a nicety here — it is the only
+    instrument that can see this defect class.
+    NOT FIXED THIS CYCLE, deliberately: shipping a speculative fix now would confound the
+    letter measurement already in flight.
+
+- timestamp: 2026-08-14 (cycle 8 device result)
+  checked: "ON-DEVICE test of build 2026-08-14h (cycle-8 WFInput.Variable envelope fix, 25 sites/fork). Clean install + automation re-point. User-reported, verbatim."
+  found: '"ok, I ran build h and got to C, then same error."'
+  implication: >
+    CYCLE-8 FIX CONFIRMED ON DEVICE. The letter ADVANCED from B to C, so execution now passes
+    actions 149 and 158 — the two WFInput.Variable text-template sites. Symptom 1's FIRST
+    defect is device-verified, not merely statically argued.
+    TWO INDEPENDENT PREDICTIONS BOTH LANDED IN ONE RUN:
+      (1) the letter would advance from B to C rather than repeat B, with "B again" stated in
+          advance as meaning the envelope fix had not taken. It advanced.
+      (2) the next failure would be at ACTION 170 — the first numeric-operator-on-text-operand
+          site — which sits immediately after breadcrumb C. The run reached C and then failed.
+    RETROACTIVELY CONFIRMS THE REFUTATION OF THE UNIFICATION HYPOTHESIS. If the red operators
+    had been a mere rendering artefact of the envelope defect, fixing 149/158 would have
+    carried execution well past 170. It did not. The two defects are genuinely distinct, as the
+    programmatic cross-check found, and the user's screenshots identified a real second cause
+    that no static sweep could have seen.
+    THE BISECTION MEASUREMENT IS NOW COMPLETE. The confounding argument that withheld the
+    numeric-operator fix for two cycles no longer applies.
+
+- timestamp: 2026-08-14 (session-manager provenance trace)
+  checked: "Operand provenance for ALL 87 (Dumb) / 94 (Sentient) numeric-condition-code conditionals, traced Set Variable -> feeding action via OutputUUID."
+  found: >
+    DEFECTIVE — operand fed by `gettext` (text-coerced): 18 per fork.
+      Dumb:     170, 377, 384, 409, 579, 1187, 1260, 1300, 1443, 1658, 1890, 2122, 2354,
+                2586, 2818, 3050, 3282, 3514
+      Sentient: 172, 379, 386, 411, 581, 1255, 1328, 1368, 1511, 1726, 1958, 2190, 2422,
+                2654, 2886, 3118, 3350, 3582
+      Eight distinct variables: Cooldown Until, Declared Duration, Heat Clamped, Manual Voice,
+      Previous Declared Duration, Previous Overrun, Stats Count, Voice Enabled.
+    NOT DEFECTIVE:
+      40 fed by getdevicedetails — only two distinct sources, 'Current Volume' and
+         'Current Brightness', both numeric.
+      10 fed by ask — the numerically-compared one is action 1079, WFInputType='Number'.
+      13 fed by number / math / gettimebetweendates / round — genuinely numeric.
+       4 Repeat Index — built-in numeric.
+       1 calculateexpression; 1 Heat After Contract (fed by math at 380).
+  implication: >
+    THE FIX SIZE IS 18 PER FORK — not 87, and not the 6 visible by eye.
+    ALL SIX PHOTOGRAPHED RED SITES FALL INSIDE THE 18, AND ZERO FALL OUTSIDE IT. Voice Enabled
+    — the site that broke the "five" sample — is fed by gettext at action 1184, so it was
+    always in this bucket. Six-for-six correspondence between the classifier and independent
+    UI evidence.
+    Confirms the user's instinct exactly: there were more than five, the visual sample was not
+    exhaustive, and the rest are unfixed.
+    ROUTING TENSION TO SETTLE BEFORE FIXING: all 18 are dictionary values routed through Text —
+    and that routing exists deliberately, because .claude/CLAUDE.md warns that a Dictionary
+    Value compared directly in an If renders blank. So "replace Text with Number" is the very
+    substitution the project docs caution against, and Donor 3 does NOT cover it (its operands
+    came from Number actions, not dictionary values). Needs a donor or corpus proof.
+
+- timestamp: 2026-08-14 (cycle 9)
+  checked: "THE ROUTING TENSION the cycle-9 objective required settling before any fix: all 18 defective operands are dictionary values routed through Text, and that routing exists deliberately per .claude/CLAUDE.md. Searched the golden corpus first, then received Donor 4 / Donor 4.1 built on the target iPhone."
+  found: >
+    SETTLED, AND BY DEVICE EVIDENCE RATHER THAN INFERENCE.
+    Donor 4.1 (.planning/debug/"Donor 4.1.shortcut", built in Shortcuts.app on the target
+    iPhone, decrypted with the BUILD-NOTES §14 recipe) is EXACTLY the construct in question —
+    a Get Dictionary Value output compared numerically:
+      0  dictionary            {"heat": "42"}
+      1  getvalueforkey        key "heat"          -> output "Dictionary Value"
+      2  conditional  WFCondition 2, WFNumberValue "10",
+         WFInput = {"Type":"Variable","Variable":{"Value":{
+             "Type":"ActionOutput","OutputName":"Dictionary Value","OutputUUID":"...",
+             "Aggrandizements":[{"Type":"WFCoercionVariableAggrandizement",
+                                 "CoercionItemClass":"WFNumberContentItem"}]},
+           "WFSerializationType":"WFTextTokenAttachment"}}
+    iOS INSERTS NO Number ACTION AND CHANGES NO READ CHAIN. It types the variable reference in
+    place, with a coercion aggrandizement, in the conditional's own input slot.
+    THE CONTROL CASE IS THE SAME SHORTCUT ONE STEP EARLIER. Donor 4 has the identical
+    descriptor with NO Aggrandizements and a code-100 test. The only delta between the two
+    donors is the coercion plus the numeric condition, which isolates the coercion as the thing
+    that makes a numeric operator legal on a dictionary value.
+    THE UI ACTION IS PHOTOGRAPHED: IMG_5636.jpg is the type list for a "Dictionary Value"
+    chip — Contact / Date / Dictionary / ... / NUMBER / PDF. Choosing Number emitted the
+    aggrandizement. The fix is the plist form of a tap the user made and recorded.
+    CORPUS CROSS-CHECK, needed because our operands are NAMED VARIABLES rather than raw
+    ActionOutputs: golden 332c12a0060043b388b22b806be7ab58 carries
+    WFCoercionVariableAggrandizement on both {Type: Variable, VariableName: ...} and
+    {Type: ActionOutput, ...} descriptors (24 instances corpus-wide). The aggrandizement is a
+    property of the descriptor, not of the ActionOutput form.
+  implication: >
+    THE TENSION DISSOLVES WITHOUT TOUCHING THE TEXT HOP AT ALL. The .claude/CLAUDE.md rule —
+    materialise a Dictionary Value before comparing it — is not challenged by this fix, because
+    the read chain is untouched. What was missing was never the materialisation; it was the
+    TYPE DECLARATION on the reference at the point of comparison.
+    None of the four candidate shapes the cycle-9 objective listed is what iOS does. It is the
+    fifth, "something else iOS does that none of us has predicted" — which is precisely why the
+    donor was worth having and why guessing between the four would have cost a device round trip.
+
+- timestamp: 2026-08-14 (cycle 9)
+  checked: "A FIRST FIX WAS BUILT, VALIDATED, SIGNED AND THEN DISCARDED. Recorded because the discard is the methodologically load-bearing part, not the build."
+  found: >
+    Before the donors arrived, the fix was composed from corpus evidence alone: golden
+    2e0fb675e45948aaacee7e534f910492 actions 12->13->15 feed a Get Dictionary Value STRAIGHT
+    into is.workflow.actions.number and consume the "Number" output in a numeric slot. A
+    read_number() helper was written on that basis — Get Dictionary Value -> Number action ->
+    Set Variable, with a WFCondition-100 null guard because cooldown_until is JSON null on a
+    fresh state.json. It passed the new invariant, validated, signed, and measured clean:
+    zero text-fed operands in both forks.
+    It was discarded anyway when Donor 4.1 showed iOS doing something different for this exact
+    construct.
+  implication: >
+    DEVICE EVIDENCE OUTRANKS CORPUS COMPOSITION, and this is the fourth time that ordering has
+    mattered in this session. The corpus construct is REAL — it is the shape for materialising
+    a number into the data flow — but it is not the shape for TYPING A CONDITIONAL OPERAND, and
+    composing two separately-evidenced links into an unobserved chain is inference, not evidence.
+    The coercion is additionally better on every axis that matters here: it adds NO actions, so
+    breadcrumb positions survive and the next device report is directly comparable with the
+    last; it leaves every device-proven read chain byte-identical; and it removes the one
+    unevidenced link the discarded design carried, namely what a Number action does when handed
+    a JSON null. That last point converts a two-condition AND-gate at action 170 into one
+    condition.
+
+- timestamp: 2026-08-14 (cycle 9 build)
+  checked: "Build 2026-08-14i produced, validated, signed, and verified INSIDE THE SHIPPED SIGNED FILE by decryption (BUILD-NOTES §14 recipe), not read back from the build tree."
+  found: >
+    Dumb signed artifact decrypted: 3684 actions; 87 numeric conditionals; 20 Number-coerced;
+    ZERO text-fed-and-uncoerced. Action 170 — the exact site that killed build h — now reads
+    WFInput.Variable.Value = {VariableName: "Cooldown Until", Type: "Variable",
+    Aggrandizements: [{Type: WFCoercionVariableAggrandizement,
+    CoercionItemClass: WFNumberContentItem}]}. Stamp "build 2026-08-14i" x2, zero stale "h".
+    10 breadcrumbs, ROUTER TRACE present, 147 setvalueforkey actions. AEA1 magic confirmed.
+    Sentient: 3752 actions, 94 numeric conditionals, 25 coerced, zero uncoerced.
+    Both forks pass validate-shortcut --target-macos 26.
+    SYMPTOMS 2 AND 3 PRESERVED BY CONSTRUCTION, and this cycle the proof is total rather than
+    class-by-class. A whole-artifact action-by-action comparison against build h — the build the
+    user tested hours ago — gives: action counts IDENTICAL (3684 = 3684); exactly 22 actions
+    differ; 20 of them are conditionals whose ONLY delta is the added Aggrandizements key (each
+    verified by deleting that key and confirming byte-equality with build h); the remaining 2
+    are the BUILD_STAMP display strings. Every other action in the artifact — all 3662 of them,
+    including all 147 Set Dictionary Value actions and the entire Notes family — is BYTE-
+    IDENTICAL to the build that device-confirmed symptoms 2 and 3.
+    BREADCRUMB POSITIONS ARE UNCHANGED from build h: A=92, B=147, C=168, D=286, E=306, F=415,
+    G=424, H=458, I=473, J=527.
+  implication: >
+    This is the cleanest single-variable experiment of the session. A "C again" result cannot be
+    attributed to collateral change, because there is none: the artifact differs from the one
+    the user just ran by 20 type declarations and two display strings. And because no actions
+    were added, the letter the user reports next is directly comparable with the letter they
+    reported last, with no re-indexing.
+
+- timestamp: 2026-08-14 (cycle 9, carried-forward candidates)
+  checked: "The three fold-in candidates, checked against the artifact. Cheap analysis only — NONE was fixed this cycle, deliberately, because any unmeasured change would confound the build-i letter measurement now in flight."
+  found: >
+    (b) 'Spoken This Run' — NOT A DEFECT, a cheap elimination rather than a deferral. The tests
+        use WFCondition 101 ("does not have any value"), not a positive test:
+        `if Spoken This Run does not have any value -> speak -> set Spoken This Run`. Six
+        instances, each with its Set Variable immediately inside its own body. That is the
+        CORRECT once-per-run latch idiom — unset on the first Circle so the branch runs, set
+        thereafter so it does not. The reported concern ("it can never be available at its own
+        test") is exactly the intended precondition.
+    (a) 'Session ID' — REAL, SAFETY-RELEVANT, AND LARGER THAN REPORTED. Control-flow ancestry
+        walk: Session ID is set once, at action 460, ancestry [90 OPEN, 177 not-in-cooldown,
+        316 genuine-open]. Of the twenty `settings_snapshot.*.changed_by_session_id` writes,
+        only TWO share that ancestry. The other EIGHTEEN sit under a different depth-1 branch
+        (1279, not 177) on which Session ID is never assigned at all — so every
+        brightness/volume snapshot taken outside the genuine-OPEN dispatch records an EMPTY
+        owner, and the ownership check guarding restore cannot match it. Eighteen sites, not
+        the three originally noted.
+    (c) The variable-bearing WFItems List shape — SETTLED BY THE SAME DONORS, and our shape is
+        WRONG. Donor 4 / 4.1 action 5 is a List whose WFItems mixes bare strings with a
+        variable-bearing entry, and iOS WRAPS that entry:
+          WFItems: ["Circle",
+                    {"WFItemType": 0, "WFValue": {"Value": {"string": "\\ufffc",
+                       "attachmentsByRange": {...}},
+                     "WFSerializationType": "WFTextTokenString"}},
+                    "follows"]
+        Our artifact puts the {Value, WFSerializationType} object in the array DIRECTLY, with
+        no {WFItemType, WFValue} wrapper. That is the shape the cycle-8 addendum recorded as
+        matching neither golden List action; it does not match the device donor's shape either,
+        and there is now a device precedent to conform to.
+  implication: >
+    (b) is closed at zero cost and removes a false lead from the board.
+    (a) is the next non-blocking work item and should be fixed in its own cycle, where it can be
+    measured alone. Fixing it now would put an unmeasured semantic change into the artifact
+    whose letter result is the entire point of the next device sitting.
+    (c) now has a device shape to conform to and no longer needs a donor request. It sits past
+    breadcrumb J so it cannot affect this measurement; fix it alongside (a).
+
+- timestamp: 2026-08-15 (cycle 14, orchestrator-decrypted donors read directly)
+  checked: "Donor 7 (.planning/debug/Donor 7.shortcut) and Donor 7.1 (.planning/debug/Donor 7.1.shortcut), both decrypted before this cycle by the orchestrator; claims re-verified against the literal decrypted plist content rather than trusted as summarised, per directive 6."
+  found: >
+    Donor 7's Date -> Format Date -> Adjust Date -> Get Time Between Dates chain uses plain
+    WFTextTokenString (ActionOutput-backed) with ZERO coercion aggrandizements on
+    format.date.WFDate, adjustdate.WFDate and gettimebetweendates.WFInput/WFTimeUntilFromDate.
+    This artifact's own hand-authored CLOCK block already matches this shape exactly (verified
+    by reading src/PROSOCHE-Dumb.xml lines ~226-345 directly) -- so the CLOCK block's
+    Now Date/Now Epoch construction was ALREADY CORRECT and needed no change.
+    Donor 7.1 (superset, some exploratory/non-canonical wiring per the user's own flag --
+    treated as such, not copied wholesale) shows format.date's ACTUAL pattern key is
+    WFDateFormat, not WFDateFormatString as this artifact (and DATE_TIME.md's own prose)
+    assumed. This artifact's one format.date action was found to carry WFDateFormatStyle=
+    "Custom", WFDateFormat="Custom" (the literal word, not a pattern -- the key iOS actually
+    reads), and WFDateFormatString=<the real Config-driven pattern> (a key iOS never reads for
+    this action) -- read directly from src/PROSOCHE-Dumb.xml lines 436-469 before any edit.
+  implication: >
+    The date-coercion blocker is NOT a missing CoercionItemClass on the CLOCK block's own
+    date-to-date construct (that was a false lead from HANDOFF §3's framing, now retracted).
+    It is (a) three downstream call sites using a date-typed action on already-numeric data,
+    and (b) an unrelated wrong-key defect on the CLOCK block's format.date action. Both are
+    fixable without inventing any new, unverified shape.
+
+- timestamp: 2026-08-15 (cycle 14, orchestrator-decrypted Donor 8 read directly)
+  checked: "Donor 8 (.planning/debug/Donor 8.shortcut), decrypted before this cycle by the orchestrator; claims re-verified against the literal decrypted plist rather than trusted as summarised."
+  found: >
+    is.workflow.actions.shownote's only parameter in the donor is WFInput (bare
+    WFTextTokenAttachment, no coercion) -- NOT `target` as HANDOFF §6 item 6 suspected.
+    is.workflow.actions.filter.notes shape: WFContentItemFilter as WFContentPredicateTableTemplate,
+    WFActionParameterFilterPrefix=1, one template {Operator:99 (contains), Property:"Name",
+    Values.String:<name>}, WFContentItemLimitEnabled/Number. This artifact's own filter.notes
+    action (src/PROSOCHE-Dumb.xml ~line 78082, hand-authored, outside every python marker)
+    matches this shape byte-for-byte already -- confirmed by direct read, not assumed.
+    "Control Room Note" IS bound in BOTH branches of the hand-authored find-or-create block
+    that precedes the PHASE 7 marker (getitemfromlist First Item of the filter.notes result in
+    the found branch; the Create Note SharingExtension's own "Notes" output in the created
+    branch) -- read directly, lines ~78300-78620. This REFUTES the orchestrator's static-grep
+    hypothesis that "Control Room Note" is unbound; that grep only covered
+    tools/build_state_engine.py and could not see this hand-authored region.
+    The artifact's one shownote action (line ~79918, end of the manual flow) carried `target`
+    instead of WFInput -- confirmed by direct read before any edit.
+  implication: >
+    The Control Room open-flow fault is a single, narrow, donor-confirmed axis-1 defect
+    (wrong parameter key on one hand-authored action), not a broader unbound-variable or
+    filter-shape defect. Fixing the one key closes the reported symptom (picker + editable
+    box) without touching the already-correct find/create logic.
+
+- timestamp: 2026-08-15 (cycle 14, raw bootstrap block read directly, pre-fix)
+  checked: "src/PROSOCHE-Dumb.xml's hand-authored STATE LOAD & BOOTSTRAP block, lines ~517-1665, read in full before any edit -- the three validity checks, the rebuild branch, and every write it performs."
+  found: >
+    The three-check validity gate (schema_version present, == "1" via WFConditionalActionString
+    literal "1", profile non-empty) is the ONLY gate deciding whether the rebuild branch runs.
+    The rebuild branch (mode-0 arm of group 6D32F6F2, "not valid") writes "Default State JSON"
+    (raw text) via gettext, names it state.json, and saves it -- and performs NO OTHER write to
+    any variable named "State" anywhere in that branch. The variable "State" was last set at
+    action ~26 (Detect Dictionary output of whatever the initial file load produced) and is
+    never reassigned inside the rebuild arm.
+  implication: >
+    Confirms HANDOFF §6 item 4 exactly, from the source rather than from the summary: any
+    device whose stored file has schema_version 1 never enters the rebuild branch at all
+    (permanently stale), and on the rare path where it does (clean install, corrupted file),
+    the freshly-written template is saved to DISK but the REST OF THAT SAME RUN keeps reading
+    the old/absent in-memory "State". Fix needs both a schema bump (forces re-entry into the
+    rebuild branch on every existing device's next run) and a rebind (makes that rebuild
+    actually reach State on the same run) -- exactly the "schema bump + rebind, ~2 actions"
+    HANDOFF already estimated, now confirmed against the source rather than assumed.
+
+- timestamp: 2026-08-15 (cycle 14, nested-descent type audit, run twice)
+  checked: "Custom scratchpad audit script (not part of the generator) performing the nested-descent classification directive 2 asked for: descends into BOTH {\"Type\":\"Variable\",\"Variable\":{\"Value\":desc}} (conditional-style) and {\"Value\":desc} (direct variable()/output()) wrapper shapes, for every numeric-typed field on conditional/math/getitemfromlist actions, not just conditionals. Run against src/PROSOCHE-Dumb.xml before AND after the generator fix, and a third time against the shipped signed artifact after aea decrypt + aa extract, per the project's own evidence-hierarchy preference for what actually shipped over what the build tree claims."
+  found: >
+    BEFORE: 227 numeric-field sites; 142 already-correct (114 already-numeric-source + 28
+    already-coerced, all from the cycle-9 conditional pass); 85 uncoerced offenders -- 30
+    getitemfromlist.WFItemIndex, 26 math.WFMathOperand, 14 setbrightness.WFBrightness, 11
+    math.WFInput, 4 setvolume.WFVolume. Zero conditional offenders (cycle 9's own fix already
+    complete; my first draft of this script had a wrapper-unwrap bug that WRONGLY flagged 95
+    conditional sites as offenders -- caught and fixed by re-deriving the extraction logic
+    from tools/build_state_engine.py's own _numeric_operand_report rather than reasoning
+    abstractly, and re-run to confirm zero conditional offenders both before and after).
+    AFTER the generalised coercion pass + elapsed_since() swap: 235 sites (8 new, from the
+    four elapsed_since() call sites' two operands each minus overlaps); 217 already-correct;
+    18 offenders remaining, ALL 18 are setbrightness(14)/setvolume(4) -- the deliberately
+    deferred class (directive 1). Identical result against the decrypted SHIPPED signed
+    artifact.
+  implication: >
+    The type-audit second pass is complete and its numbers are now trustworthy (nested-descent,
+    cross-checked against two independent implementations). Every numeric-typed operand this
+    session can act on this cycle is now coerced except the 18 brightness/volume sites, which
+    are explicitly out of scope by user directive, not overlooked. Safe to proceed to build/
+    sign/decrypt-verify without a known-but-unaddressed defect class blocking symptom 1.
+
+- timestamp: 2026-08-15 (cycle 14, local build/validate/sign/decrypt-verify, via shortcuts-playground skill tooling)
+  checked: "python3 tools/build_state_engine.py (regenerate; provenance guard passed: git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678 HEAD); run TWICE to confirm idempotency (byte-identical second run); bin/validate-shortcut --target-macos 26 --target-platform all (the project's own MANIFEST.md-documented invocation -- --target-platform ios was tried first and floods 'requires macOS 27+' on literally every action including index 0, a pre-existing bundled-data gap already noted in cycle_12_verification, not a regression; `all` is what every prior cycle's own verification actually used); bin/sign-shortcut --name \"PROSOCHĒ — Nine Circles — Dumb\" --mode anyone --output-dir artifacts/shortcuts; then the aea decrypt + aa extract recipe (CLAUDE.md §8) on the freshly signed artifact, not read back from the build tree. Sentient NOT touched (build_sentient.py not invoked), per directive 3."
+  found: >
+    Generator: exit 0, all seven axes' verify_* passes hold. Validator: \"Validation passed.\"
+    Signer: AEA1 magic confirmed, 189618 bytes (non-zero). Decrypted signed artifact: 3683
+    actions; build stamp \"build 2026-08-15l\" (single occurrence, the menu prompt -- no stale
+    \"14k\"); breadcrumbs A-J at 94/149/170/288/308/417/426/460/475/529 (uniform +2 from build
+    k, matching the 2-action rebind sitting BEFORE breadcrumb A while the 3-action
+    ROUTER_TRACE removal sits AFTER it in the MANUAL arm); ROUTER TRACE marker ABSENT;
+    shownote carries WFInput only; format.date's WFDateFormat is now the dynamic pattern
+    token, WFDateFormatString absent; bootstrap template's schema_version is 2; exactly one
+    gettimebetweendates action remains in the whole artifact (the CLOCK block); the rebind
+    (Detect Dictionary at action 77, immediately followed by Set Variable State at 78,
+    referencing "Default State JSON") is present and correctly wired.
+    UUID-STRIPPED SEMANTIC DIFF against the last committed build (build k, via git show
+    HEAD:src/PROSOCHE-Dumb.xml) shows ONLY the intended change classes -- format.date (action
+    19), the schema-version bump (39, 75), the rebind insert (77-78), the four
+    elapsed()->math() replacements, Aggrandizements insertions on math/getitemfromlist sites,
+    the ROUTER_TRACE removal, and the shownote key rename (final action). No unexplained
+    collateral change in 3683 actions; every Set Dictionary Value and the entire Notes family
+    (symptoms 2 and 3) are absent from the diff, i.e. untouched.
+  implication: >
+    All four in-scope fix classes (date/elapsed, numeric-operand coercion generalisation,
+    shownote key, state rebind + schema bump) are present, internally consistent, and
+    self-verified in the artifact that would actually ship. Nothing here substitutes for a
+    device pass -- stated explicitly, matching this session's own established discipline of
+    never treating build-side verification as device verification.
+
+- timestamp: 2026-08-15 (cycle 14 continuation, checkpoint response received)
+  checked: "The user's answer to the CYCLE 14 checkpoint (Control Room open-flow behavior),
+    passed verbatim in this turn's <checkpoint_response> data block: 'Make it read-only.
+    Decouple Open Control Room from the refresh-append mechanism; only explicit actions
+    (Sync My Profile, Change Profile, Change Sequence, etc.) should write to the note. Give
+    Status its own separate read path so it isn't left without a mechanism.'"
+  found: >
+    A clear, unambiguous design decision resolving the one item cycle 14's own blind_spots
+    left open. Two independent sub-decisions: (1) Open Control Room becomes read-only, no
+    exceptions; (2) Status is explicitly NOT one of the "explicit actions" that should write
+    -- it needs its own read mechanism, distinct from both the write path and from Open
+    Control Room's now-bare note-open.
+  implication: >
+    This is a design decision, not new evidence about a bug -- there is no hypothesis to
+    test or falsify here, only an implementation to apply against the existing
+    manual_emergency_restore()/manual_note_refresh() shape. Proceeded directly to
+    implementation per the objective's instructions (ponytail-minimal: one flag rename, one
+    flag removal, one new display branch reusing already-verified constructs).
+
+- timestamp: 2026-08-15 (cycle 14 continuation, source read before editing)
+  checked: "tools/build_state_engine.py's manual_emergency_restore() (the menu builder) and
+    manual_note_refresh() (PHASE 7) read in full, plus the hand-authored find-or-create +
+    shownote tail in src/PROSOCHE-Dumb.xml (~78640-80500) that every manual choice falls
+    through to after its case body, to establish the exact mechanism before changing it."
+  found: >
+    All 9 manual menu choices share ONE Choose-from-Menu group; every case's body runs only
+    for that choice, then execution falls through to the SAME post-menu tail (find-or-create
+    the note -> PHASE 7 -> a "State Recovery Occurred" best-effort note -> shownote, always).
+    "Manual Refresh Requested" was set to 1 by 8 of the 9 choices (everything except Test a
+    Circle); PHASE 7's only gate on the append was `if_block("Manual Refresh Requested", 2,
+    number=0)`. alert() (is.workflow.actions.alert) is already a verified, repeatedly-used
+    helper in this file (knock(), ash(), the OPEN_BISECT breadcrumb instrument itself),
+    already in VERIFIED_PARAMETER_KEYS, and already used with a multi-variable text_token()
+    message (knock()'s Circle/Pressure/Heat alert) -- the exact shape a Status display needs.
+  implication: >
+    A read-only "Open Control Room" only requires REMOVING its flag-set (the shared tail
+    already finds/creates and shows the note unconditionally, so nothing needs to be ADDED
+    for it to keep working). A "Status" read path only requires a NEW flag plus one new
+    if_block-gated alert() call reusing the Snapshot* variables PHASE 7 already computes
+    unconditionally for every manual run -- no new action identifier, no new parameter key,
+    no new envelope shape, and no restructuring of the shared tail or the router.
+
+- timestamp: 2026-08-15 (cycle 14 continuation, fix applied and locally verified)
+  checked: "Full local verification chain, via the shortcuts-playground skill's own
+    wrappers (bin/validate-shortcut, bin/sign-shortcut) per this turn's directive -- see the
+    Current Focus checkpoint-resolution block above for the complete, itemised list."
+  found: >
+    Generator exit 0, idempotent (byte-identical second run). Structural sweep: 0 duplicate
+    UUIDs, 0 GroupingIdentifier imbalance, 23 menu opens (unchanged), Status/Open Control
+    Room case bodies wired exactly as designed. UUID-stripped semantic diff against the
+    pre-checkpoint 2026-08-15l source: exactly 4 hunks, all confined to
+    manual_emergency_restore()/manual_note_refresh(); nothing else in 3683->3689 actions
+    changed. bin/validate-shortcut --target-macos 26 --target-platform all -> "Validation
+    passed." bin/sign-shortcut -> AEA1, 190,208 bytes. SHIPPED SIGNED ARTIFACT DECRYPTED and
+    inspected directly: 3689 actions; stamp "build 2026-08-15m" (single occurrence, no stale
+    "15l"); breadcrumbs A-J UNCHANGED at 94/149/170/288/308/417/426/460/475/529 (confirms the
+    entire change sits after breadcrumb J, inside the MANUAL arm, exactly as HANDOFF.md's
+    established position rule predicts -- verified directly against the decrypted plist, not
+    assumed); shownote still WFInput-only; Open Control Room's case body is a single
+    is.workflow.actions.nothing with no flag set; Status's case body sets "Manual Status
+    Requested" and the new PHASE 7 branch shows an alert built from the same Snapshot*
+    variables the append branch uses.
+  implication: >
+    The checkpoint-response fix is applied, internally consistent with every earlier fix
+    this cycle (none of the four original defect fixes or their recurrence guards were
+    touched), and self-verified in the artifact that would actually ship. Symptom 1's full
+    fix set (five defects across cycle 14, now plus this checkpoint resolution) is complete
+    at the local-verification level. Device confirmation remains the user's own call, not
+    directed by this turn.
+
+- timestamp: 2026-08-15 (cycle 15, device result received)
+  checked: >
+    The user's device report on build 2026-08-15m (the build cycle 14 shipped and left
+    awaiting a device pass).
+  found: >
+    Reached breadcrumb E (last letter seen), then failed with "Get Dictionary Value failed
+    because Shortcuts couldn't convert Text to Dictionary." Get Dictionary Value is
+    is.workflow.actions.getvalueforkey; the error means its WFInput (the dictionary being
+    read) resolved as Text at runtime, not Dictionary.
+  implication: >
+    CONFIRMS every cycle-14 fix as far as breadcrumb E: elapsed_since(), the numeric-operand
+    coercion generalisation, the shownote key, the format.date key, the state rebind, and
+    the checkpoint's Control Room split are all now device-verified correct on this span
+    (none of them sit between D and E, or between E and the new failure point). Per this
+    session's own inverted lesson (same-ish letter, different error text = new defect, not
+    a recurrence), this is NOT the date/gettimebetweendates defect returning -- different
+    action identifier (getvalueforkey vs gettimebetweendates), different error class
+    (type-conversion on a dictionary read vs a date parse). Requires fresh investigation.
+
+- timestamp: 2026-08-15 (cycle 15, source trace)
+  checked: >
+    tools/build_state_engine.py's open_pipeline(), specifically every action between
+    breadcrumb E's own alert() call and breadcrumb F's, read in full.
+  found: >
+    Immediately after E: `read_value("recent_sessions", variable("State"), "Recent
+    Sessions")` (a getvalueforkey -> gettext -> setvariable chain, per read_value()'s own
+    docstring: "Get a dictionary value, coerce via Text, then name it for comparison").
+    The bootstrap template seeds recent_sessions as a genuine JSON array (`"recent_sessions":
+    []`, confirmed by direct grep of src/PROSOCHE-Dumb.xml). The very next actions are
+    getitemfromlist("First Item", WFInput=variable("Recent Sessions")) binding "Previous
+    Session", then read_value("declared_duration_seconds", variable("Previous Session"),
+    ...) -- the first getvalueforkey call in the whole E->F span whose WFInput cannot
+    resolve to a genuine Dictionary, because "Recent Sessions" was stringified by the
+    gettext step three actions earlier.
+  implication: >
+    This is the exact and only candidate action in the E->F span the device error's wording
+    (Get Dictionary Value, Text->Dictionary) can refer to. get_value() (a corrected version
+    of the existing but dead/broken get_value() helper) is the fix: same getvalueforkey
+    call, gettext step removed, variable bound directly to "Dictionary Value" -- preserving
+    whatever native type (Array, Dictionary, or scalar) the underlying JSON value actually
+    has. The artifact's own write side already assumes this exact type for recent_sessions
+    (set_value() writes back a variable built purely by appendvariable, never
+    re-serialized to text), so this is not a new assumption about iOS behaviour.
+
+- timestamp: 2026-08-15 (cycle 15, systematic scan)
+  checked: >
+    Every read_value() call site in tools/build_state_engine.py (55 distinct target
+    variable names) cross-referenced against every WFInput=variable(name) reference feeding
+    a Repeat With Each / Get Item From List / Count / Filter action (a Python scratchpad
+    scan, cross-checked by manual reading of each hit's surrounding code before trusting it
+    -- same discipline as cycle 14's nested-descent type audit).
+  found: >
+    FIVE total call+consume pairs share the identical defect: (1) recent_sessions in
+    open_pipeline() -- the confirmed E->F blocker; (2) recent_sessions in close_pipeline();
+    (3) profile_snapshot.enabled_exits in enabled_exits() (called from
+    select_exit()/universal_leaving(), strictly AFTER breadcrumb J); (4) exit_events in
+    record_exit_and_route() (also after J, inlined at 2 call sites in the final action
+    list, so it appears twice in the semantic diff); (5) exit_stats.<type>.samples in
+    complete_pending_exit(), which is called BETWEEN breadcrumbs I and J -- on the OPEN
+    critical path, not merely a sibling function. A sixth candidate,
+    manual_note_refresh()'s "Snapshot Exits" read of the SAME profile_snapshot.enabled_exits
+    key, was checked and found to be used ONLY for text display (embedded in a Note/alert
+    template) -- read_value()'s correct, intended use -- and deliberately left unchanged.
+  implication: >
+    Matches this session's own established doctrine exactly ("fix whole classes, never
+    site-by-site" -- cycle 14's numeric-operand generalisation was the same pattern for a
+    different axis). One design-level mismatch (read_value() applied to a compound value),
+    five sites, one fix (get_value()) applied uniformly. exit_stats.<type>.samples being on
+    the I->J span means this class would have blocked symptom 1 a SECOND time, on the first
+    OPEN following any exit, had it not been fixed alongside the confirmed blocker.
+
+- timestamp: 2026-08-15 (cycle 15, build/verify)
+  checked: >
+    Provenance guard, generator exit code, idempotency (second run byte-identical),
+    UUID-stripped semantic diff against the pre-cycle-15 source, validate-shortcut /
+    sign-shortcut via the shortcuts-playground skill's own wrappers, and the SHIPPED SIGNED
+    ARTIFACT decrypted (aea decrypt + aa extract, CLAUDE.md §8) and inspected directly.
+  found: >
+    `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678 HEAD` passed.
+    `python3 tools/build_state_engine.py` exits 0 (all eight generator-asserted axes hold,
+    including the new verify_compound_value_reads() guard); a second run is byte-identical
+    (idempotent). UUID-stripped semantic diff against the pre-cycle-15 (build 2026-08-15m)
+    source: exactly 7 hunks -- 6 are "gettext+setvariable -> setvariable" removals (5
+    logical fix sites; exit_events's containing function is inlined at 2 call sites, hence
+    6 appearances), the 7th is the BUILD_STAMP text change ("...15m" -> "...15n") inside the
+    manual-menu prompt string. Nothing else in the 3689->3683 action array changed.
+    `bin/validate-shortcut --target-macos 26 --target-platform all` -> "Validation passed."
+    `bin/sign-shortcut` -> AEA1, 189,781 bytes, non-zero. SHIPPED SIGNED ARTIFACT DECRYPTED
+    and inspected directly (not read back from the build tree): 3683 actions; stamp "build
+    2026-08-15n" (single occurrence, zero stale "15m"); breadcrumbs A-J at
+    94/149/170/288/308/416/425/459/474/527 (A-E unchanged; F/G/H/I each -1; J -2, matching
+    the prediction that two of the five fixed sites -- recent_sessions in open_pipeline,
+    exit_stats.<type>.samples in complete_pending_exit() -- sit inside the A-J span);
+    exactly one profile_snapshot.enabled_exits getvalueforkey site is still followed by
+    gettext (action 3644, confirmed to be manual_note_refresh()'s "Snapshot Exits" display
+    read, correctly left alone); every other compound-key getvalueforkey site (5 of them)
+    is now followed directly by setvariable. 0 duplicate action UUIDs across all 3683
+    actions; 0 GroupingIdentifier imbalance; 23 Choose-from-Menu opens (unchanged).
+  implication: >
+    Build 2026-08-15n is internally consistent, idempotent, self-verified against the
+    artifact that would actually ship, and its breadcrumb-position prediction is confirmed
+    directly against the decrypted plist rather than assumed from arithmetic -- matching
+    this session's full established rigor. Device confirmation remains the user's own call,
+    not directed by this turn.
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Device evidence from build 2026-08-15n against the CYCLE 15 falsification_test table, before forming any new hypothesis"
+  found: "MATCHES the table's 'letter I or J with an error inside complete_pending_exit() (Exit Samples / Repeat With Each)' branch exactly, with the actual error naming a different site within that same function than the table anticipated ('no value was found for dictionary key' at the OUTER flat read, not a Repeat-With-Each/List error at the .samples read the table's wording emphasised). The table's own instruction for this branch -- 're-inspect that specific site, not the recent_sessions fix' -- was followed."
+  implication: "Cycle 15's own five-site coercion fix (get_value(), the compound-array class) is confirmed NOT implicated in this new failure; investigation correctly scoped to complete_pending_exit()'s OTHER defect, the pre-existing KNOWN_SENTINEL_EXISTENCE_GATES gap, rather than re-opening a closed axis."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "The reported error text against cycle 11's own settings_snapshot precedent, both stored verbatim in this file"
+  found: "IDENTICAL SHAPE. Cycle 11 (line ~1746, pre-cycle-16 comment): 'clean state -> \"In '', no value was found for dictionary key 'settings_snapshot'\"'. Cycle 16 device report: 'In '', no value was found for dictionary key 'pending_exit''. Both are a flat Get Dictionary Value against a key the bootstrap template never declared -- axis 6, STATE SHAPE. This is NOT the axis-8 'couldn't convert Text to Dictionary' error cycle 15 closed for compound values."
+  implication: "Correctly classified as a state-shape gap (needs seeding), not a structured-value coercion gap (needs get_value() instead of read_value()) -- the two axes have textually distinct, non-overlapping error signatures in this artifact, confirmed by direct comparison rather than assumed from the symptom category alone."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Whether a naive fix (seed pending_exit with the CLEARED_SENTINEL text and leave the existing condition-100 gate unchanged) would fully close the defect, by tracing what happens on the run AFTER the first exit completes"
+  found: "IT WOULD NOT. complete_pending_exit()'s pre-fix clear (`set_value(\"pending_exit\", cleared_value())`) replaces the WHOLE key with the sentinel wholesale -- the exact cycle-10-finding-5 anti-pattern (clear_snapshot()'s own docstring) replayed at the top level instead of a nested leaf. A condition-100 gate on that same key would then read TRUE for the cleared sentinel (present and non-empty), entering the branch and running a dotted read (.type, .timestamp) against a STRING parent -- 'could not evaluate the key path', per Donor 6.1's own device-measured semantics, on the SECOND OPEN following any exit."
+  implication: "The fix must close BOTH the state-shape gap (seed the container) AND the gate-semantics gap (leaf-scoped condition 5, not container-scoped condition 100) together -- matching cycle 12's own established doctrine that these are two independently-necessary axes. Implemented as the container/leaf split, mirroring settings_snapshot exactly rather than inventing a new shape."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Whether active_session (the sibling in KNOWN_SENTINEL_EXISTENCE_GATES) has the same live exposure on this confirmed device run, per the standing directive not to fix a non-reachable defect speculatively"
+  found: "SAFELY INERT ON THIS RUN. The device reached breadcrumb I -- past every point in open_pipeline() where active_session could be read on the direct A-J sequence (grep of open_pipeline() shows its own active_session reads sit strictly after breadcrumb J; the only active_session reads BEFORE J belong to record_exit_and_route(), which lives on the exit-selection/universal_leaving() path, not open_pipeline()'s direct sequence) -- with no active_session-related error reported."
+  implication: "active_session is left unchanged in KNOWN_SENTINEL_EXISTENCE_GATES this cycle, per the directive's own instruction. Its own container/leaf fix is recorded as a candidate follow-up, not performed speculatively without a confirmed live trigger."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Whether the reported Control Room note-picker symptom is a binding defect (Control Room Note unbound or re-broken) or a duplicate/leftover Notes action, by direct grep and plist inspection of src/PROSOCHE-Dumb.xml, before forming a hypothesis"
+  found: "REFUTED both candidates. Exactly ONE is.workflow.actions.filter.notes, ONE is.workflow.actions.shownote, and TWO is.workflow.actions.appendnote (Sync My Profile's explicit write, and the state-recovery conditional write -- both legitimate, unrelated to Open Control Room) exist in the whole artifact. 'Control Room Note' is bound correctly in both the found branch (Get Item From List 'First Item' off filter.notes' own output) and the created branch (Create Note's own output), matching cycle 14's own already-confirmed account exactly -- no re-break."
+  implication: "The symptom is not a binding or duplication defect; investigation correctly redirected to filter.notes' own parameter completeness, per the directive's own third listed candidate."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Donor 8, re-decrypted this cycle (aea decrypt + aa extract, CLAUDE.md §8), specifically its own filter.notes action's full parameter set -- not just the shownote action cycle 14 already used it for"
+  found: "Donor 8's filter.notes carries THREE keys this artifact's own filter.notes site lacked entirely: AppIntentDescriptor ({AppIntentIdentifier: NoteEntity, BundleIdentifier: com.apple.mobilenotes, Name: Notes, ActionRequiresAppInstallation: true, TeamIdentifier: 0000000000}), WFContentItemLimitEnabled (true), and WFContentItemLimitNumber (1.0, a plist <real>, confirmed by raw XML inspection not just plistlib's Python-side type). This artifact's site had only UUID and WFContentItemFilter."
+  implication: "Direct, device-ground-truth evidence matching the directive's own hypothesis ('a user-facing prompt parameter that needs explicit suppressing'). fix_notes_filter_limit() copies Donor 8's shape verbatim (all three keys, exact types) rather than guessing which subset matters."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Whether WFContentItemLimitEnabled/WFContentItemLimitNumber are genuine catalog-documented parameters for filter.notes, not an artifact specific to Donor 8's own authoring session"
+  found: "CONFIRMED in data/toolkit-v78-first-party-parameter-keys.json (bundled Shortcuts Playground catalog, independent of any donor): both keys are real, typed parameters (bool / count respectively) on this action's schema."
+  implication: "Corroborates Donor 8's shape as the action's genuine, general schema rather than a one-off authoring quirk -- raises confidence the fix addresses the actual mechanism, not a coincidental donor artifact."
+
+- timestamp: 2026-08-15 (cycle 16)
+  checked: "Full local build/validate/sign/decrypt-verify cycle for build 2026-08-15o, both fixes together"
+  found: "python3 tools/build_state_engine.py exits 0 (all generator-asserted axes hold, including the two new guards: verify_pending_exit_seed() and verify_sentinel_gates() now passing cleanly with pending_exit removed from KNOWN_SENTINEL_EXISTENCE_GATES); a second run is byte-identical (idempotent). UUID-stripped semantic diff against the pre-cycle-16 (build 2026-08-15n, commit 1cb857c) source: exactly 8 hunks, all matching the two intended fixes plus the BUILD_STAMP bump -- full breakdown in cycle_16_verification. `bin/validate-shortcut --target-macos 26 --target-platform all` -> \"Validation passed.\" `bin/sign-shortcut` -> AEA1, 189,899 bytes, non-zero. SHIPPED SIGNED ARTIFACT DECRYPTED and inspected directly (not read back from the build tree): 3684 actions; stamp \"build 2026-08-15o\" (single occurrence, zero stale \"15n\"); breadcrumbs A-I UNCHANGED at 94/149/170/288/308/416/425/459/474; J at 524 (-3, matching the prediction that complete_pending_exit()'s read+gate restructure removes 3 net actions between I and J); pending_exit present in the decrypted bootstrap template exactly as seeded; 0 bare \"pending_exit\" sites remain anywhere; filter.notes carries WFContentItemLimitEnabled=True/WFContentItemLimitNumber=1.0 matching Donor 8's own plist types. 0 duplicate action UUIDs across all 3684 actions; 0 GroupingIdentifier imbalance; 23 Choose-from-Menu opens (unchanged)."
+  implication: >
+    Build 2026-08-15o is internally consistent, idempotent, self-verified against the
+    artifact that would actually ship, and both breadcrumb-position and parameter-shape
+    predictions are confirmed directly against the decrypted plist rather than assumed
+    from arithmetic -- matching this session's full established rigor. Device confirmation
+    remains the user's own call, not directed by this turn.
+
+- timestamp: 2026-08-15 (closure)
+  checked: >
+    Final on-device run of build 2026-08-15o (the canonical artifact -- cycle 16's
+    pending_exit + filter.notes fixes, plus the immediately-preceding archive/sign
+    output-dir process fix) against the CYCLE 16 falsification_test table's strongest
+    branch: "letter I, then continuing PAST J with no error at all, into the Circle 1
+    intervention actually displaying."
+  found: >
+    User report, verbatim: "we did it! we got every single letter, I clicked Always
+    allow save 1 dictionary to a file (good). we got a menu of 'Leaving / Continue' and
+    we got Circle 1. pressure 0.166666666666667 heat 0. amazing." This matches the
+    falsification_test's strongest branch exactly. "Every single letter" means
+    breadcrumbs A through J all fired with no error -- the pending_exit read/gate that
+    hard-errored on build 2026-08-15n (breadcrumb I, "no value was found for dictionary
+    key 'pending_exit'") did NOT recur. The "Always Allow" prompt is Shortcuts' own
+    one-time system permission dialog for the Set Dictionary Value -> Save File write to
+    state.json; the user confirming it and execution continuing past it is the expected
+    one-time behaviour, not a defect. The "Leaving / Continue" menu is the intervention
+    decision-point UI reached only after the full OPEN pipeline (bootstrap through
+    breadcrumb J) completes without error. Circle 1 firing with Pressure =
+    0.166666666666667 (exactly 1/6) and Heat = 0 is internally consistent with a
+    first-ever OPEN under this project's Pressure/Heat model -- not an anomalous,
+    partially-corrupted, or NaN-shaped read, which would have been the expected
+    signature of a lingering state-shape defect.
+    NOT COVERED by this report: an explicit "Open Control Room, confirm no note
+    picker appears" check. The user's report addresses the OPEN critical path only
+    (symptom 1, the original todo's item); it does not confirm or refute Finding 2
+    (the filter.notes result-bound fix for the Control Room note-picker symptom, cycle
+    16). That fix remains locally verified (build/validate/sign/decrypt-verify passed,
+    Donor-8-matched) but is NOT claimed device-confirmed by this evidence -- recorded
+    honestly rather than inferred, and carried forward as an open follow-up (see
+    Resolution's closing summary and the new ship-readiness todo).
+  implication: >
+    Symptom 1 (OPEN path never reaches the intervention) is CLOSED, device-verified,
+    joining symptoms 2 (`sequence` write) and 3 (Control Room note bootstraps empty),
+    which closed earlier this session. All three original symptoms from the 2026-08-13
+    todo are now resolved. This is the terminal, on-device confirmation this 16-cycle
+    session was chasing. Finding 2 (the independent Control Room note-picker defect
+    discovered mid-session) is fixed and locally verified but its own device
+    confirmation is a separate, still-open follow-up -- not silently folded into this
+    closure.
+
+## Eliminated
+
+- hypothesis: "'Spoken This Run' is defective because the If that tests it can never see it — its only Set Variable sits inside that If's own body."
+  evidence: "The tests use WFCondition 101 ('does not have any value'), not a positive test. `if not set -> speak -> set` is the correct once-per-run latch: unset on the first Circle so the branch runs, set thereafter so it does not. Six instances, all identical. Checked against the rebuilt artifact at actions 1242/1748/2001/2254/2507/2760."
+  timestamp: 2026-08-14 (cycle 9)
+
+- hypothesis: "Fixing a numeric operand requires REPLACING the Text materialisation — either with a Number action or by restructuring the comparison — which is the substitution .claude/CLAUDE.md cautions against, so the Text hop and the numeric comparison are in genuine conflict."
+  evidence: "Donor 4.1, built on the target iPhone and decrypted 2026-08-14: iOS neither replaces nor adds a materialising action. It attaches a WFCoercionVariableAggrandizement (CoercionItemClass WFNumberContentItem) to the variable reference IN THE CONDITIONAL'S OWN INPUT SLOT, leaving the read chain untouched. Donor 4 is the same shortcut before the type was set and carries the identical descriptor with no Aggrandizements, isolating the coercion as the operative difference. There was never a conflict: the missing thing was a TYPE DECLARATION on the reference, not a different materialiser. None of the four candidate shapes considered was correct."
+  timestamp: 2026-08-14 (cycle 9)
+
+- hypothesis: "The construct 'dictionary value fed into a numeric comparison' has zero coverage in the corpus, the catalog, or any existing donor, so it cannot be resolved without requesting a new one."
+  evidence: "Partially wrong on the corpus and fully resolved by donor. Golden 2e0fb675e45948aaacee7e534f910492 actions 12->13->15 DOES feed a Get Dictionary Value output straight into is.workflow.actions.number — that construct was always covered; prior sweeps searched the corpus for CONDITIONALS when the evidence sat one action upstream in how the OPERAND was produced. It is nonetheless the wrong construct for this problem: it materialises a number into the data flow, whereas the conditional needs its reference TYPED. Donor 4.1 settles the actual construct on device."
+  timestamp: 2026-08-14 (cycle 9)
+
+- hypothesis: "The five red If operators seen in the user's screenshots are the visible symptom of the cycle-8 WFInput.Variable envelope defect — an unresolvable input cannot be typed, so Shortcuts falls back to offering only the eight string operators and the numeric comparator renders red. (Unification: one defect, two presentations.)"
+  evidence: "Session-manager programmatic cross-check: the 25 cycle-8 sites carry ONLY string condition codes (4, 5, 99) with variables Stored Day / Owner IDs / counters. The five red Ifs are actions 170, 377, 384, 409, 579 with NUMERIC codes (0, 2) and entirely different variables. Zero overlap. Furthermore all 87 numeric-code conditionals in the POST-FIX build already carry the correct WFTextTokenAttachment envelope, so the envelope fix cannot be what makes them render — they were never envelope-defective."
+  timestamp: 2026-08-14 (cycle 8 addendum)
+
+- hypothesis: "The failing OPEN-path action is one of the two donor-contradicted <integer> literal sites — number.random (action 418) or the nine-step repeat.count (action 454) — where iOS writes <string> and <real> respectively."
+  evidence: "Cycle 7 bisection, build 2026-08-14g: the user's last breadcrumb was B, so execution died in span B->C (actions ~145-165). Actions 418 and 454 sit in spans G->H and H->I, hundreds of actions downstream, and were never reached. Killed by cycle 7's own pre-stated criterion (only G or H would have confirmed). Retained as candidate LATENT defects, not as this bug."
+  timestamp: 2026-08-14 (cycle 7 result)
+
+- hypothesis: "A variable-backed WFNumberValue on a conditional resolves as an unfilled number field on the OPEN path (cycle 6's #1 ranked candidate A1; 13 sites, first on the guaranteed path, ZERO corpus precedent anywhere)."
+  evidence: "Donor 3, built in Shortcuts.app on the target iPhone and decrypted 2026-08-14: iOS serializes a variable-vs-variable numeric If as WFInput {Type:Variable, Variable:<bare WFTextTokenAttachment>} plus WFNumberValue as a bare WFTextTokenAttachment. Our if_block()/variable() emit byte-identical shapes. Device ground truth, outranking every catalog and corpus inference."
+  timestamp: 2026-08-14 (cycle 7)
+
+- hypothesis: "math with WFMathOperation omitted for '+' is a missing required picker on the OPEN Heat path (DEV-05; cycle 5 called it refuted on corpus evidence, cycle 6 re-scored it as a weak 1-of-2 split and left it open)."
+  evidence: "Donor 3: a Calculate action left at its DEFAULT operation carries WFInput + WFMathOperand as bare attachments and omits WFMathOperation ENTIRELY. Omitting it is what iOS itself does. DEV-05 is settled affirmatively on device evidence and the generator needs no change."
+  timestamp: 2026-08-14 (cycle 7)
+
+- hypothesis: "is.workflow.actions.round carries a defective parameter shape on the OPEN path (cycle 6 candidate A2, zero corpus instances)."
+  evidence: "Donor 3: WFInput bare attachment + WFRoundMode literal, with WFRoundTo simply absent because it was left at its default. Ours emits the same WFInput and WFRoundMode plus an explicit, catalog-valid WFRoundTo 'Ones Place' — a superset of the device shape, not a divergence."
+  timestamp: 2026-08-14 (cycle 7)
+
+- hypothesis: "The plist SCALAR TYPE of numeric literals (<integer> where iOS writes <real> or <string>) is broadly responsible — 78 sites across both forks, and NEITHER the golden corpus NOR the device donor ever writes <integer>."
+  evidence: "PARTIALLY eliminated, and the surviving remainder is this cycle's ranked prediction. Refuted for the two classes with device coverage: number.WFNumberActionNumber <integer> at action 1359 ran inside the device-exercised 'Open Control Room' menu case, and conditional.WFNumberValue <integer> at actions 3646/3653 ran in the Control Room refresh block on the same successful pass. Both are DEVICE-PROVEN to execute as <integer>. Survives ONLY at the two uniquely-OPEN, zero-precedent sites: number.random (418) and repeat.count (454) — deliberately NOT fixed, and bracketed by breadcrumbs G/H so the bisection confirms or kills it."
+  timestamp: 2026-08-14 (cycle 7)
+
+- hypothesis: "The Personal Automation WRAPPER is at fault — the Text action, the Run Shortcut handoff, the trigger configuration, or the input declaration fails to deliver `OPEN` to PROSOCHĒ. (Shadowed the session from cycle 1; the INPUT PROBE was designed in cycle 1 to test it and then deferred five times.)"
+  evidence: "Cycle 6 device pass, step 1: Probe 5 — carrying an input declaration identical to PROSOCHĒ's (WFWorkflowHasShortcutInputVariables=true, WFWorkflowInputContentItemClasses=['WFStringContentItem']) and a normalisation chain copied from its device-proven actions 84-86 — received RAW [OPEN] / NORMALISED [OPEN] through the UNMODIFIED wrapper. Handoff proven end to end; the result transfers to PROSOCHĒ."
+  timestamp: 2026-08-14 (cycle 6)
+
+- hypothesis: "The wrapper's stored Run Shortcut reference is STALE — the chip renders from a cached name while the underlying target points at a deleted install — which would explain the error with no plist defect at all."
+  evidence: "Cycle 6 device pass, step 2: PROSOCHĒ re-selected FRESH from the list (rewriting the stored reference) moments after the probe ran successfully through the same wrapper — identical 'Please choose a value' error. Refuted on stored-representation evidence rather than UI rendering, which the file had flagged as the weaker channel."
+  timestamp: 2026-08-14 (cycle 6)
+
+- hypothesis: "Symptom 1 is caused by a picker parameter holding an INVALID enum case (as opposed to a missing or non-literal one) somewhere on the OPEN path — which would render an unfilled picker and produce the identical error."
+  evidence: "Cycle 6 validated every emitted picker literal in both forks against the ToolKit catalog's enum CASE lists (id and title forms). All 20 distinct literals are valid cases; zero invalid. Checked because cycle 5's REQUIRED_PICKER_PARAMS guard tests presence and literalness only, so an invalid literal would have passed it silently."
+  timestamp: 2026-08-14 (cycle 6)
+
+- hypothesis: "A FOURTH required-parameter axis exists in the catalog that cycle 5's sweep did not model — required content-item inputs, required entity/app references, required quantity fields, or anything carrying a non-optional flag."
+  evidence: "The ToolKit catalog exposes no required/optional bit at all: parameter `flags` takes only 0, 1 (entity sort/compound query keys), 2 (ShowWhenRun/OpenWhenRun) and 4 (AttributedString rich text) across all 2585 tools. Re-sweeping 91-520 against the FULL catalog key list finds zero empty-valued parameters and no unexplained absent keys. PARTIALLY REPLACED rather than simply eliminated: the real gap is coverage, not axis — 336 OPEN-body actions are the control-flow family (conditional, choosefrommenu, repeat.each, repeat.count) and none of those identifiers exists in the catalog, so every catalog-driven sweep is blind to them."
+  timestamp: 2026-08-14 (cycle 6)
+
+- hypothesis: "Symptom 1 is caused by a required PICKER/ENUM parameter left unfilled on the OPEN path (count.WFCountType missing; getitemfromlist.WFItemSpecifier holding a variable token instead of a literal + WFItemIndex)."
+  evidence: "Device test 2026-08-14 build f: both sites corpus-verified and fixed, shipped artifact decrypted and confirmed to carry them — yet the automation still fails identically, and Q1 established NO PROSOCHĒ UI appears at all, so execution never even reaches the fixed sites (both sit after the first OPEN menu). Refuted as the cause of symptom 1; the fixes are RETAINED as genuine latent defects."
+  timestamp: 2026-08-14
+
+- hypothesis: "Symptom 1's automation failure is caused by an ORPHANED Run Shortcut reference — deleting the installed shortcut for each clean install cleared the wrapper's target Shortcut field, and a Run Shortcut with no target produces exactly 'please choose a value for each parameter in this action'."
+  evidence: "Device test 2026-08-14 build e: user inspected the Run Shortcut action directly; both the Shortcut and Input fields were populated, and the automation still failed with the identical error. NOTE: refuted on UI inspection, which is weaker than stored-representation evidence — see caveat (i)."
+  timestamp: 2026-08-14
+
+- hypothesis: "Symptom 3 (empty Control Room note) is the same value-envelope defect as symptom 2, manifesting on the Notes action family."
+  evidence: "Device test 2026-08-14 build d: in ONE run on a clean install, the envelope fix demonstrably worked for Set Dictionary Value (symptom 2 passed, no 'No value provided') while the Control Room note was still created empty. Same build, same envelope treatment, opposite outcomes."
+  timestamp: 2026-08-14
+  RETRACTED: 2026-08-14 (cycle 4) — the phrase "same envelope treatment" was FALSE and is
+    what made this elimination look decisive. Neither Notes body parameter was ever given the
+    envelope treatment: the cycle-2 allowlist keyed on catalog type `str`, and both are typed
+    `AttributedString`, so normalise_string_envelopes never touched them and
+    verify_string_envelopes never checked them. The run compared a treated site against two
+    UNTREATED sites and read the difference as evidence against the mechanism. Symptom 3 IS
+    the envelope defect, at sites the allowlist did not reach. Reinstated and fixed in cycle 4.
+    Lesson (third occurrence, see also the retraction below): an elimination that rests on
+    "we already fixed that class" must first prove the specific site was in the fix's scope.
+
+- hypothesis: "com.apple.mobilenotes.SharingExtension emitting WFCreateNoteInput instead of the catalog's name/contents is the cause of the empty Control Room Note."
+  evidence: "The resolved unsupported-device-import session decrypted an Apple-signed donor shortcut exported from this exact iPhone: the device's own native Create Note uses AppIntentIdentifier CreateNoteLinkAction with a WFCreateNoteInput token attachment. Our emission matches the device donor. The catalog's name/contents entry is macOS-27-tagged and is the less authoritative source here."
+  timestamp: 2026-08-14 (cycle 2)
+  PARTIALLY RETRACTED: 2026-08-14 (cycle 4) — the KEY NAME verdict stands and is confirmed:
+    WFCreateNoteInput is correct and the catalog's `contents` is not what iOS 26.6 reads. But
+    "our emission matches the device donor" was checked on the key axis only. Re-decrypting
+    the same donor this cycle shows its WFCreateNoteInput is a WFTextTokenString while ours
+    was a bare WFTextTokenAttachment, and that it names the markdown output
+    'Rich Text from Markdown' where ours said 'Rich Text'. This is the SAME blind spot as the
+    cycle-1 retraction above — "keys match" is not "the serialization matches" — and it has
+    now cost three of four cycles. Guard added: verify_output_names().
+
+- hypothesis: "The 2026-08-14 device observations came from a STALE install — importing a .shortcut whose display name matches an installed one created a duplicate rather than replacing it, leaving the Personal Automation's Run Shortcut pointed at the pre-fix copy. If so, all three refutations would be void."
+  evidence: "User performed a fully clean install: deleted the old shortcut before importing, deleted the Control Room Note, and deleted the folder containing state.json. Build side independently confirmed fresh (AEA1, 08:10 rebuild, stamp present once per fork)."
+  timestamp: 2026-08-14
+
+- hypothesis: "Broken Choose from Menu wiring (item/case title or order mismatch) causes the Test-a-Circle selection to fall into the Change Sequence body."
+  evidence: "All 23 menus have WFMenuItems exactly equal to their ordered mode-1 WFMenuItemTitle list; stack-based nesting walk reports 0 imbalance and 0 unclosed groups."
+  timestamp: 2026-08-14
+
+- hypothesis: "Reused or colliding GroupingIdentifier / UUID values (the generator re-seeds a deterministic uuid5 counter on every run over a file it also rewrites) corrupt block boundaries."
+  evidence: "0 duplicate action UUIDs across 3675 actions; every GroupingIdentifier maps to exactly one control-flow action identifier."
+  timestamp: 2026-08-14
+
+- hypothesis: "The MANUAL menu block was inserted into the wrong router arm, so an OPEN run reaches it."
+  evidence: "Ancestry walk places action 1355 in the Otherwise arm of the 'Input Key has any value' conditional (action 89) — the correct, documented location for a no-input manual run."
+  timestamp: 2026-08-14
+
+- hypothesis: "A malformed action in the input-normalisation chain (Text / Trim Whitespace / Change Case) silently yields empty output, emptying Input Key."
+  evidence: "All four actions' parameter keys match the ToolKit v78 catalog exactly and are marked available on iOS; the ExtensionInput token is byte-equivalent to golden shortcut 51cc4e26."
+  timestamp: 2026-08-14
+  RETRACTED: 2026-08-14 (cycle 2) — this elimination was WRONG and cost a cycle. The
+    check compared parameter KEY NAMES only. Actions 85 (text.trimwhitespace.WFInput) and
+    86 (text.changecase.text) are both string-typed and both carried a bare
+    WFTextTokenAttachment, so the chain did silently yield empty output — exactly the
+    hypothesis as originally stated. Reinstated and fixed in cycle 2. Lesson: "keys match
+    the catalog" is not the same claim as "the serialization is correct".
+
+- hypothesis: "The reported 'Set Dictionary Value' error actually came from a Get Dictionary Value on key 'sequence' (action 1466) on the Test path."
+  evidence: "ToolKit catalog displayName for is.workflow.actions.getvalueforkey is 'Get Dictionary Value', distinct from setvalueforkey's 'Set Dictionary Value'. The user's quoted message names the setter."
+  timestamp: 2026-08-14
+
+- hypothesis: "The `--target-platform ios` validation failure might be masking a real error that survived two cycles."
+  evidence: "It rejects 3675/3675 actions indiscriminately, including is.workflow.actions.comment and is.workflow.actions.nothing which are present in its own bundled iOS-27 snapshot. A check that fails every input carries no signal and can conceal nothing."
+  timestamp: 2026-08-14 (cycle 2)
+
+- hypothesis: "com.apple.mobilenotes.SharingExtension emitting WFCreateNoteInput instead of the catalog's name/contents is the cause of the empty Control Room Note."
+  evidence: "The resolved unsupported-device-import session decrypted an Apple-signed donor shortcut exported from this exact iPhone: the device's own native Create Note uses AppIntentIdentifier CreateNoteLinkAction with a WFCreateNoteInput token attachment. Our emission matches the device donor. The catalog's name/contents entry is macOS-27-tagged and is the less authoritative source here."
+  timestamp: 2026-08-14 (cycle 2)
+
+- hypothesis: "Renaming the Set Dictionary Value parameter key from WFInput to WFDictionaryValue was the complete root cause of symptom 2."
+  evidence: "Refuted on device by its own stated falsification criterion, then explained: the key was necessary but the value envelope remained wrong, so the Value field stayed empty either way. Retained as a required part of the fix, demoted from sufficient to necessary."
+  timestamp: 2026-08-14 (cycle 2)
+
+- hypothesis: "'Control Room Note' is an unbound variable in the generated artifact (orchestrator's static grep of tools/build_state_engine.py alone), and that is the cause of the Control Room open-flow fault."
+  evidence: "Read the raw src/PROSOCHE-Dumb.xml directly: the hand-authored find-or-create block (filter.notes -> Get Item From List First Item, or Create Note's own output) precedes the PHASE 7 marker and binds 'Control Room Note' in BOTH branches, byte-for-byte matching Donor 8's confirmed filter.notes shape. This block lives outside every python marker, so the orchestrator's grep of the generator source alone could not see it. The real defect (Donor 8-confirmed) is narrower: the one shownote action at the end of the flow used the wrong parameter key (`target` instead of `WFInput`)."
+  timestamp: 2026-08-15 (cycle 14)
+
+- hypothesis: "The date-coercion blocker needs a Date CoercionItemClass established from donor evidence (HANDOFF §3's framing going into this cycle)."
+  evidence: "Donor 7 shows the CLOCK block's own Date->Date construct (format.date/adjustdate/gettimebetweendates, all genuine Date-typed operands) needs ZERO coercion and this artifact already matches that shape exactly. The actual breadcrumb-D->E failure was not a missing coercion at all: it was three downstream call sites (elapsed()) feeding an already-NUMERIC epoch reading, re-read as Text, into a DATE-typed parameter. No Date CoercionItemClass was ever needed; the fix is recognising the operands were never dates and using the numeric subtraction this artifact already uses for the identical shape elsewhere (Session Duration)."
+  timestamp: 2026-08-15 (cycle 14)
+
+## Resolution
+
+### FINAL — session closure, 2026-08-15
+
+root_cause: >
+  Across 16 cycles, nine independently-necessary parameter-defect axes were found on the
+  OPEN critical path and the MANUAL Control Room path, all traced to one systemic
+  generator-wide misunderstanding of the Shortcuts plist format (never a hand-authoring
+  slip in any single action). For the SPECIFIC symptom this closure confirms (symptom 1,
+  OPEN never reaching the intervention), the terminal blocker was a two-part AND-gated
+  defect closed in cycle 16: axis 6 (STATE SHAPE) -- `pending_exit` entirely absent from
+  the bootstrap `state.json` template, so `complete_pending_exit()`'s flat read hard-
+  errored on the first OPEN -- compounded with axis 7 (GATE SEMANTICS) -- the pre-existing
+  clearing gate tested container-existence (condition 100) rather than leaf-value
+  (condition 5), which would have reproduced a different hard error on the very next OPEN
+  after any exit even if the state-shape half alone were fixed. Full per-axis root causes
+  for cycles 1-16 are documented below in `cycle_N_root_cause` entries; the complete
+  9-axis table with site counts is in `HANDOFF.md` §2.
+
+fix: >
+  See `cycle_16_fix` (this symptom's terminal fix) plus every `cycle_N_fix` entry below
+  for the cumulative session fix: one generator, `tools/build_state_engine.py`, corrected
+  at the SOURCE for all nine axes (never by hand-editing generated XML), each paired with
+  a build-time recurrence guard that runs before the single serialize/write. Cycle 16's
+  specific fix: `pending_exit` restructured to a permanent `{type, timestamp}` container
+  (`seed_pending_exit()` + `verify_pending_exit_seed()`, mirroring `settings_snapshot`'s
+  already-verified container/leaf split), with `record_exit_and_route()` and
+  `complete_pending_exit()` writing/clearing/gating only the leaves against
+  `CLEARED_SENTINEL` via condition 5. `KNOWN_SENTINEL_EXISTENCE_GATES` narrowed to
+  `("active_session",)` only. Full axis-by-axis fix list and guard names: `HANDOFF.md` §2.
+
+verification: >
+  Device-confirmed end to end on build 2026-08-15o (the canonical artifact, including
+  cycle-16's fixes and the immediately-preceding archive/sign output-dir process fix):
+  every breadcrumb A through J fired, the one-time Shortcuts file-save permission prompt
+  behaved correctly, the Leaving/Continue intervention menu displayed, and Circle 1 fired
+  with Pressure=0.166666666666667 (1/6) / Heat=0, consistent with a first-ever OPEN. See
+  the final Evidence entry (2026-08-15, closure) for the full account. All applicable
+  static fix-acceptance guardrail signals passed across all 16 cycles -- guard
+  sensitivity (each guard rejects its matching pre-fix artifact and names the exact
+  sites), mutation-at-fix-site (disabling any fix fails the build before the
+  serialize/write, artifact md5 unchanged), blast-radius accounting, structural
+  regression (0 duplicate UUIDs / GroupingIdentifier imbalance across every cycle),
+  validator pass, idempotency, and signing -- and, this closure only, the terminal
+  runtime signal itself, which no prior cycle could self-supply.
+
+files_changed: >
+  Primary generator: `tools/build_state_engine.py` (all 16 cycles' fixes; see the
+  per-cycle `cycle_N_files_changed` entries below for the complete itemised list).
+  Fork generator: `tools/build_sentient.py` (imports/runs the shared guards; NOT yet
+  re-run against cycles 14-16's fixes -- see the new Sentient re-fork todo). Generated
+  artifacts: `src/PROSOCHE-Dumb.xml`, `artifacts/shortcuts/PROSOCHĒ — Nine Circles —
+  Dumb.shortcut`. Documentation: `docs/BUILD-NOTES.md`, `.claude/CLAUDE.md` §
+  Conventions (the 7+1-axis authoring rules), `.planning/debug/HANDOFF.md`.
+
+oracle_type: specified (user-observable, on-device behaviour against the original todo's
+  stated expected behaviour -- OPEN reaches the Circle 1 intervention with no runtime
+  error, verified by direct device report rather than inferred from static analysis)
+
+### Prevention — blameless postmortem (session closure, 2026-08-15)
+
+**Branching root cause, not a single chain.** This session's defects were almost never
+one cause with one fix. The clearest example is this closure's own terminal blocker
+(cycle 16): fixing the STATE-SHAPE half alone (seeding `pending_exit`) without ALSO
+fixing the GATE-SEMANTICS half (leaf-scoped condition 5, not container-scoped condition
+100) would have traded one confirmed hard error for a different, already-documented one
+on the very next OPEN following any exit -- the AND-gate fired, and both a data/state
+category cause and a code/generator category cause were independently necessary. The
+SAME shape recurred at least twice more this session: cycle 3's router defect required
+BOTH the absence-gate design AND the (at-the-time-still-broken) string-envelope bug to
+compound before the symptom appeared, and the reported turn's own Finding 1/Finding 2
+pair (pending_exit vs. filter.notes) were two unrelated single-category defects
+discovered together but independently confirmed and independently fixed, correctly NOT
+merged into one hypothesis. A 5-whys-style trace of the terminal blocker: (1) why did
+OPEN fail at breadcrumb I? -> a dictionary-key read hard-errored. (2) why did the read
+hard-error? -> the key was never seeded in the bootstrap template. (3) why was it never
+seeded? -> the container/leaf pattern that `settings_snapshot` already used had not yet
+been applied to `pending_exit`, a gap the code's own `KNOWN_SENTINEL_EXISTENCE_GATES`
+comment had flagged in advance as deferred, not forgotten. (4) why was it deferred
+rather than fixed proactively? -> it was believed latent (unreached by any device run to
+date) and this session's own explicit discipline is to fix only what a device run
+confirms is live, not to fix speculatively. (5) why did it become live on this run? ->
+"latent" is a property of what a *specific* device run has exercised so far, not a
+permanent property of the defect -- this run was simply the first to progress far enough
+(E to I) to reach it, per this file's own cycle-16 "addendum" lesson.
+
+**Why wasn't this class caught sooner, mechanically (not "should have tried harder")?**
+No single gate exists in this toolchain that can catch any of these defect classes
+before an actual on-device run, and each class fails a DIFFERENT set of existing gates
+for a different structural reason:
+- Value-envelope / output-name / string-coercion axes (1-5, 8): the generated plist is
+  well-typed and structurally valid XML/plist -- `plutil -lint` and the bundled
+  Shortcuts Playground validator both pass. The defect only exists in Shortcuts.app's
+  OWN runtime interpretation of which envelope a given parameter's TYPE requires, which
+  is nowhere expressed in the file itself. No static tool in this toolchain understands
+  that semantic layer.
+- Operand-type/coercion axes (6, 6b): the "red chip" signal proving a type mismatch is
+  rendered by Shortcuts.app's own UI-level type inference at edit time -- it is not
+  present in the plist bytes in any form. Decrypting a signed `.shortcut` (this
+  session's most powerful verification channel) still cannot see it, because there is
+  nothing to see; only an on-device open of the action, or a user screenshot of that
+  open action, surfaces it.
+- State-shape + gate-semantics axes (6/7, this closure's own blocker): these are
+  data-dependent, not structure-dependent. A key absent from a JSON *template* string
+  is not a plist-shape violation by any definition a validator applies -- and the
+  failure additionally requires the SPECIFIC code path that reads that key to actually
+  execute on that specific run, which is exactly why this defect survived 15 prior
+  cycles of the SAME rigorous build/validate/sign/decrypt-verify discipline undetected:
+  none of those cycles' device runs had progressed far enough to exercise it.
+- App-Intent cardinality axis (9, `filter.notes`): also UI-only and data/runtime-
+  dependent -- the plist is structurally valid with or without a declared result limit;
+  only iOS's own Notes App-Intent framework decides, at run time, whether to show a
+  disambiguation UI. No file-level analysis (validator, catalog, or decrypted-artifact
+  inspection) can predict this without device ground truth.
+In short: the existing gates (validator, `plutil -lint`, decrypt-and-inspect,
+catalog cross-check) all check STRUCTURAL correctness. Every defect this session found
+was a SEMANTIC/RUNTIME correctness defect, a category none of those gates were ever
+designed to catch. This is not a gap in diligence -- it is a gap in what CAN be checked
+without a physical device, which this project's own constraints (no way to execute
+Shortcuts on the build Mac) make unavoidable for the first instance of any defect class.
+
+**Concrete recurrence guards that now exist (not just documentation):**
+- Nine build-time guard functions in `tools/build_state_engine.py` -- one per axis
+  (`verify_string_envelopes`, `verify_output_names`, `verify_required_pickers`,
+  `verify_router_shape`, `verify_compound_value_reads`, `verify_pending_exit_seed`,
+  `verify_sentinel_gates`, plus the `VERIFIED_PARAMETER_KEYS` allowlist extended for
+  `filter.notes`/`shownote`/`count`/`getitemfromlist`/`speaktext`) -- each proven this
+  session to run BEFORE the single serialize/write (the "mutation at fix site" test:
+  disabling any one fix makes the build exit 1 with the artifact's md5 unchanged) and
+  each proven sensitive (run directly against the matching PRE-FIX artifact, each
+  guard rejects it and names the exact offending sites). This converts what were
+  previously silent, device-only runtime failures into guaranteed, immediate,
+  file-naming build-time failures for any FUTURE regression of the same class.
+- `KNOWN_SENTINEL_EXISTENCE_GATES` -- a living, greppable registry inside the generator
+  source of every remaining sentinel-existence-gate risk, now narrowed to exactly
+  `("active_session",)`. This is the mechanism that let cycle 16 predict this closure's
+  own blocker IN ADVANCE (the pre-existing comment named `pending_exit` before any
+  device run reached it) -- it converts "latent defect, presumed safe" from an
+  unwritten assumption into an explicit, tracked, greppable TODO the next cycle (or the
+  new `active_session`/`exit_events` todo spun off by this closure) inherits directly.
+- The defect-axis taxonomy itself (nine axes, site counts, exact error-text signatures
+  per axis) is now written into `.claude/CLAUDE.md` § Conventions, not left living only
+  inside this single 4,800-line debug file -- discoverable by whoever authors the NEXT
+  plist-generating pass on this project, agent or human, without first re-reading this
+  entire session.
+- The evidence hierarchy (donor > golden corpus > ToolKit catalog > inference), also
+  promoted into CLAUDE.md, is the direct, load-bearing guard against this project's own
+  named hard failure mode: fabricating a plausible-looking but unverified parameter
+  shape under time pressure. Every fix this session copied a verified shape from a
+  higher-hierarchy source rather than guessing (e.g. `filter.notes`' shape copied
+  verbatim from Donor 8, byte-for-byte including plist type).
+- Breadcrumb bisection (flag-gated alert markers at ten control-flow milestones,
+  deliberately kept in the build across cycles rather than stripped after first use) is
+  now a documented, reusable technique in this file and `HANDOFF.md` -- it converted a
+  binary "did OPEN work?" device signal into a ~10x more informative "which of ten
+  spans failed?" signal, which is the single biggest reason 16 cycles fully closed nine
+  defect axes rather than requiring one device round-trip per individual site (147,
+  367, 2, 2, 25, 20+25, 67, 8+1, 5, 1 -- roughly 670 individual sites across the
+  session, closed in 16 device-round-trip-gated cycles, not 670).
+- "Fix whole classes, never site-by-site" is enforced by practice, not slogan: every
+  cycle ran a systematic sweep of the FULL codebase for the axis in question before
+  writing a fix, rather than patching the one site bisection happened to reveal.
+
+**One honestly-named residual gap (blameless, not swept under the rug):** the
+archive/sign output-dir mistake found and corrected in the Process Note below has NO
+code-level recurrence guard -- its only guard is the documented canonical invocation
+now pinned at the top of `HANDOFF.md`. This is weaker than every guard above (a
+documentation convention, not a build-time assertion) because the mistake is a CLI
+invocation error in tooling this project does not own (the shortcuts-playground
+plugin's `bin/sign-shortcut` wrapper, whose own default behaviour is already correct by
+design) -- there is no generator-side hook this project's own guard mechanism could
+attach to. Named honestly here rather than folded silently into the stronger set above.
+
+### Process note — 2026-08-15, archive/sign output-dir mistake (NOT a new cycle)
+
+Not a defect in `tools/build_state_engine.py` — that script owns only `src/PROSOCHE-Dumb.xml`
+generation and contains zero archive/sign/output-dir logic (confirmed by direct read). The
+cycle-16 signed artifact was found at `artifacts/shortcuts/2026-08-15/PROSOCHĒ — Nine Circles
+— Dumb.shortcut`, with a doubled unsigned-XML archive at
+`artifacts/shortcuts/2026-08-15/2026-08-15/...xml`, instead of overwriting the canonical
+`artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut`.
+
+**Root cause:** a one-off invocation mistake, not a tooling bug. The shortcuts-playground
+skill's `bin/sign-shortcut` wrapper is correctly designed: it archives the pre-sign unsigned
+XML to `"$OUTPUT_DIR/$(date +%F)/<name>-<HHMMSS>.xml"` (its own dated-archive step) and
+separately copies/signs directly to `"$OUTPUT_DIR/<name>.shortcut"` (the canonical path — no
+"promote" step needed; this already matches option (b) in the report, and is in fact already
+the *default* behaviour, not something requiring a code fix). Cycle 14's own recorded
+invocation used the correct `--output-dir artifacts/shortcuts` (Evidence, cycle 14, "local
+build/validate/sign/decrypt-verify" entry). Whatever invoked `sign-shortcut` for the cycle-16
+build instead passed an already-dated `--output-dir` (e.g. `artifacts/shortcuts/$(date +%F)`),
+which reproduces the exact reported shape: the wrapper's own `$(date +%F)` then appends a
+*second* date segment to that already-dated dir for the archive (`2026-08-15/2026-08-15/`),
+while the signed `.shortcut` lands one dated level too deep
+(`2026-08-15/PROSOCHĒ...shortcut`).
+
+**Verification performed this turn (routed through the skill's own tooling throughout,
+per the standing directive):**
+1. Confirmed the user's manual repair as the correct starting point: canonical
+   `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut` (189,899 bytes) decrypted
+   (`aea decrypt` + `aa extract`, CLAUDE.md §8) and inspected directly — single occurrence of
+   `build 2026-08-15o`, `pending_exit` and `filter.notes` limit keys present, no stale content.
+   No leftover `artifacts/shortcuts/2026-08-15/` directory found anywhere before this turn's
+   own rebuild.
+2. Regenerated (`python3 tools/build_state_engine.py`, provenance guard passed, exit 0),
+   validated (`bin/validate-shortcut --target-macos 26 --target-platform all` -> "Validation
+   passed."), and re-signed via `bin/sign-shortcut --name "PROSOCHĒ — Nine Circles — Dumb"
+   --mode anyone --output-dir artifacts/shortcuts` (the correct, non-dated output-dir).
+   Result: `{"archive":"artifacts/shortcuts/2026-08-15/PROSOCHĒ — Nine Circles —
+   Dumb-205232.xml","signed":"artifacts/shortcuts/PROSOCHĒ — Nine Circles —
+   Dumb.shortcut", ...}` — archive at a single dated level (the wrapper's own intended
+   behaviour, matching the `2026-08-13`/`2026-08-14` precedent already in
+   `artifacts/shortcuts/MANIFEST.md`), signed artifact written directly to the canonical path.
+   No doubled nesting.
+3. Re-decrypted the freshly re-signed canonical artifact: 3684 actions, single occurrence of
+   `build 2026-08-15o`, `pending_exit` (8 occurrences) and `filter.notes` limit keys (2
+   occurrences) both present, AEA1 magic confirmed — byte-for-byte semantic match to the
+   pre-rebuild canonical artifact (deterministic `uuid5`-keyed generation, confirmed by
+   inspecting `uid()` in `tools/build_state_engine.py`). No regression from this turn's
+   rebuild.
+
+**Conclusion:** option (a)/(b) resolved as "already correct by design" — `bin/sign-shortcut`
+needs no code change. The only fix needed is procedural: always invoke it with
+`--output-dir artifacts/shortcuts` (never a pre-dated path), documented in `HANDOFF.md` as the
+canonical invocation so this doesn't recur. `artifacts/shortcuts/MANIFEST.md` remains stale
+(still dated 2026-08-13 only) — noted as a known follow-up, not fixed this turn
+(ponytail-minimal scope).
+
+cycle_16_root_cause: >
+  TWO INDEPENDENT DEFECTS, one on each of the two paths this cycle's device evidence
+  named, both confirmed against the device's own error text / behaviour report rather
+  than inferred, neither requiring a new or unverified plist construct.
+  (1) FINDING 1, THE BREADCRUMB I->J BLOCKER (OPEN critical path): pending_exit was
+      entirely absent from the bootstrap state.json template -- the STATE SHAPE gap
+      (axis 6) this file's own KNOWN_SENTINEL_EXISTENCE_GATES note predicted in advance.
+      complete_pending_exit()'s unconditional flat read of "pending_exit" therefore hard-
+      errored on the first OPEN this device pass exercised: "In '', no value was found
+      for dictionary key 'pending_exit'" -- the identical error shape cycle 11 found for
+      settings_snapshot. A second, independent axis (GATE SEMANTICS, axis 7, cycle 12's
+      own already-proven invariant) compounds it: the pre-existing condition-100
+      existence gate on the same key would have misfired the moment the key held the
+      cleared sentinel (every OPEN following any exit's completion), reproducing cycle-
+      10-finding-5's exact anti-pattern (clear_snapshot()'s own docstring) at the top
+      level. Both had to close together; see the cycle-16 reasoning_checkpoint's and_gate.
+  (2) FINDING 2, THE CONTROL ROOM NOTE PICKER (MANUAL path, independent of Finding 1):
+      the ONE is.workflow.actions.filter.notes ("Find Notes") site in this artifact
+      carried no declared result bound (no WFContentItemLimitEnabled/Number, no
+      AppIntentDescriptor) -- an App-Intent-backed entity query with no declared
+      cardinality, which iOS resolves via its own disambiguation UI. Donor 8's own
+      device-authored filter.notes action, re-decrypted this cycle, carries all three
+      keys explicitly, confirming the artifact's own established evidence hierarchy
+      (donor > catalog > inference) rather than a guess. Control Room Note's own binding
+      (both branches) and shownote's WFInput (cycle 14's own fix) were directly re-
+      inspected and confirmed unbroken -- this is not a re-regression of either.
+
+cycle_16_fix: >
+  See cycle_16_fix_applied in Current Focus for the full account (both findings, all
+  seven code changes, exact action-count/breadcrumb arithmetic). Summary: (1) pending_exit
+  restructured to a permanent {type, timestamp} container (seed_pending_exit() +
+  verify_pending_exit_seed(), mirroring settings_snapshot's own already-verified
+  container/leaf split exactly), with record_exit_and_route() and complete_pending_exit()
+  writing/clearing/gating only the leaves (condition 5 against CLEARED_SENTINEL, not
+  condition 100); KNOWN_SENTINEL_EXISTENCE_GATES narrowed to ("active_session",) only.
+  (2) filter.notes gained AppIntentDescriptor + WFContentItemLimitEnabled +
+  WFContentItemLimitNumber, copied verbatim from Donor 8; VERIFIED_PARAMETER_KEYS
+  extended as the recurrence guard. tools/build_state_engine.py only; Dumb regenerated,
+  validated, signed, decrypt-verified; Sentient not touched (standing reason, every
+  cycle: forks additively from src/PROSOCHE-Dumb.xml, will pick this up on its next fork).
+
+cycle_16_verification: >
+  See cycle_16_verification in Current Focus for the full account (build exit code,
+  idempotency, 8-hunk semantic diff breakdown, skill-routed validate/sign, decrypted-
+  shipped-artifact inspection: 3684 actions, breadcrumbs A-I unchanged, J at 524,
+  pending_exit correctly seeded, filter.notes correctly shaped, 0 duplicate UUIDs, 0
+  GroupingIdentifier imbalance, 23 Choose-from-Menu opens unchanged). NOT device-
+  confirmed -- explicitly out of scope this cycle, matching every prior cycle's own
+  discipline; the phone build is the user's own call.
+
+cycle_16_files_changed:
+  - tools/build_state_engine.py (KNOWN_SENTINEL_EXISTENCE_GATES narrowed to
+    ("active_session",); PENDING_EXIT_SEED + seed_pending_exit() +
+    verify_pending_exit_seed() added and wired into main(); record_exit_and_route() and
+    complete_pending_exit() restructured to the pending_exit container/leaf shape;
+    NOTES_FILTER_APP_INTENT + fix_notes_filter_limit() added and wired into main();
+    VERIFIED_PARAMETER_KEYS gained a filter.notes entry; BUILD_STAMP bumped
+    "build 2026-08-15n" -> "build 2026-08-15o")
+  - src/PROSOCHE-Dumb.xml (regenerated)
+  - artifacts/shortcuts/2026-08-15/PROSOCHĒ — Nine Circles — Dumb.shortcut (re-signed,
+    189,899 bytes)
+
+cycle_15_root_cause: >
+  THE COMPOUND-VALUE COERCION DEFECT, confirmed by direct source trace matching the
+  device error's own wording exactly, plus a systematic scan proving it is a class of
+  five sites rather than one. read_value() -- the helper backing every scalar state
+  read in this artifact -- unconditionally applies Get Text (gettext) to whatever
+  Dictionary Value it reads, coercing it into a comparable Text scalar. This is correct
+  for a leaf meant for text/numeric comparison and is a categorical mismatch for a
+  COMPOUND value (an Array) meant to be consumed structurally by a downstream Get Item
+  From List or Repeat With Each: the array collapses into one Text blob before that
+  consumer ever sees it. The confirmed device blocker: open_pipeline() reads
+  recent_sessions via read_value() immediately after breadcrumb E, then feeds the
+  resulting (now-Text) "Recent Sessions" into getitemfromlist("First Item"), which does
+  not itself error (Get Item From List accepts a bare Text input) and returns that same
+  Text blob as "Previous Session"; the NEXT action -- a read_value()-driven Get
+  Dictionary Value reading "declared_duration_seconds" off "Previous Session" -- then
+  fails exactly as reported, because its WFInput resolves to Text, not Dictionary.
+  A systematic scan (every read_value() call site intersected with every
+  WFInput=variable(name) reference feeding a List-consuming action) found FOUR sibling
+  instances of the identical defect: recent_sessions again in close_pipeline();
+  profile_snapshot.enabled_exits in enabled_exits(); exit_events in
+  record_exit_and_route(); and exit_stats.<type>.samples in complete_pending_exit() --
+  the last of which sits BETWEEN breadcrumbs I and J, i.e. on the OPEN critical path
+  itself, reachable on the first OPEN following any exit. A sixth candidate
+  (manual_note_refresh()'s "Snapshot Exits", also profile_snapshot.enabled_exits) was
+  checked and found to be a legitimate text-display-only use of read_value(), correctly
+  left unchanged.
+  A SEPARATE, INDEPENDENT gap was found while auditing exit_events and is NOT fixed
+  this cycle: the key is entirely absent from the bootstrap state.json template (unlike
+  recent_sessions/enabled_exits/exit_stats, which are all seeded), the same STATE-SHAPE
+  category as KNOWN_SENTINEL_EXISTENCE_GATES (pending_exit, active_session). Fixing the
+  coercion defect does not establish the key exists; recorded as a known follow-up, not
+  silently claimed as resolved.
+
+cycle_15_fix: >
+  tools/build_state_engine.py ONLY; Dumb regenerated, validated, signed, and decrypt-
+  verified. Sentient NOT touched, same standing reason as every prior cycle -- it forks
+  additively from src/PROSOCHE-Dumb.xml and will pick this up automatically once
+  re-forked after Dumb is device-confirmed.
+  (1) get_value() REPAIRED. It existed already but was dead code with a broken
+      implementation (it duplicated read_value()'s own gettext coercion, contradicting
+      its evident original purpose, and its third line was unreachable dead code behind
+      an `if False`). Rewritten to the minimal correct shape: the SAME getvalueforkey
+      call read_value() already makes, with the gettext step removed, binding the
+      result directly to getvalueforkey's own "Dictionary Value" output -- which already
+      carries the key's real underlying JSON type. No new action identifier, no new
+      parameter key, no new envelope shape: the fix removes a step rather than adding
+      one, matching the artifact's own already-relied-upon behaviour for every other
+      Dictionary-typed value (Config, State, Previous Session's own siblings).
+  (2) FIVE CALL SITES SWAPPED from read_value() to get_value(): open_pipeline()'s and
+      close_pipeline()'s recent_sessions reads; enabled_exits()'s
+      profile_snapshot.enabled_exits read; record_exit_and_route()'s exit_events read
+      (both of its two inlined call sites); complete_pending_exit()'s
+      exit_stats.<type>.samples read. Each site loses exactly one action (the removed
+      gettext), so each site's own downstream span shifts by -1.
+  (3) verify_compound_value_reads() -- A NEW BUILD GUARD, the eighth defect axis
+      (STRUCTURED VALUE). COMPOUND_STATE_KEYS registers every literal state key known
+      to be a JSON array in the bootstrap template (recent_sessions, recent_contracts,
+      exit_events, profile_snapshot.enabled_exits). The guard reuses the existing
+      _read_variable_keys() helper (already used by verify_restore_gates and
+      verify_sentinel_gates) plus a new _list_consumed_variables() helper, and fails
+      the build if any variable is BOTH read via read_value() from a compound key AND
+      fed as WFInput to a List-consuming action (Repeat With Each, Get Item From List,
+      Count, Filter). It deliberately does NOT flag a compound key read for
+      text-display purposes only (manual_note_refresh()'s "Snapshot Exits" passes
+      cleanly), avoiding the false positive an unscoped "never read_value() a compound
+      key" rule would have produced on the very first run. Documented limitation
+      (recorded in the guard's own comment, not hidden): exit_stats.<type>.samples is a
+      dynamic (text_token-built) key and cannot be matched by this guard's
+      literal-string scan; it was found and fixed by the manual systematic scan, and
+      remains a recurrence risk this specific guard cannot mechanically catch.
+  BUILD_STAMP bumped "build 2026-08-15m" -> "build 2026-08-15n". The get_value() fix is
+  idempotent (verified: a second full regeneration over the already-patched artifact is
+  byte-identical).
+  Net action count: 3689 -> 3683 (-6: one gettext removed per of the six appearances of
+  the five logical fix sites -- exit_events's containing function is inlined at two call
+  sites in the final action list). Breadcrumbs A-E unchanged (94/149/170/288/308); F/G/H/I
+  each shift -1 (416/425/459/474, the recent_sessions fix sits between E and F); J shifts
+  a further -1, to -2 total (527, the exit_stats.<type>.samples fix sits between I and J).
+
+cycle_15_verification: >
+  NOT device-confirmed -- explicitly out of scope this cycle, matching every prior
+  cycle's own discipline; the phone build is the user's own call, not directed here.
+  Build-side and decrypt-verified only, stated as such:
+  - `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678 HEAD` passed
+    before regenerating (provenance guard).
+  - `python3 tools/build_state_engine.py` exits 0 (all eight generator-asserted axes
+    hold, including the new verify_compound_value_reads() guard, which correctly does
+    NOT fire on the legitimate "Snapshot Exits" text-display read); run a second time
+    over its own output, byte-identical (idempotent).
+  - Systematic scan re-run POST-fix confirms zero remaining offenders: no
+    List-consuming action (Repeat With Each / Get Item From List / Count / Filter) is
+    fed by a read_value()-produced variable anywhere in the file.
+  - UUID-STRIPPED SEMANTIC DIFF (difflib SequenceMatcher) against the pre-cycle-15
+    (build 2026-08-15m) source: exactly 7 hunks. Six are
+    "getvalueforkey+gettext+setvariable -> getvalueforkey+setvariable" replacements
+    (removing exactly one gettext action each), matching the five logical fix sites
+    (exit_events's containing function is inlined at two call sites, hence six
+    appearances) -- confirmed by inspecting each hunk's WFDictionaryKey/WFVariableName
+    directly. The seventh hunk is the BUILD_STAMP text change inside the manual-menu
+    prompt string ("...15m" -> "...15n"), confirmed to be textually identical
+    otherwise. Nothing else in the 3689->3683 action array changed -- every other fix
+    from every prior cycle is byte-identical to the artifact already locally verified
+    before this turn.
+  - `bin/validate-shortcut --target-macos 26 --target-platform all` (shortcuts-playground
+    skill's own wrapper, per the standing directive to route validate/sign/archive
+    through the skill rather than ad hoc) -> "Validation passed."
+  - `bin/sign-shortcut` (same skill wrapper) -> signed artifact confirmed AEA1, 189,781
+    bytes, non-zero.
+  - SHIPPED SIGNED ARTIFACT DECRYPTED (aea decrypt + aa extract, CLAUDE.md §8) and
+    inspected directly, not read back from the build tree: 3683 actions; stamp "build
+    2026-08-15n" with zero stale "15m"; breadcrumbs A-J at
+    94/149/170/288/308/416/425/459/474/527, matching the prediction exactly (A-E
+    unchanged; F/G/H/I each -1; J -2) -- CONFIRMED DIRECTLY AGAINST THE DECRYPTED
+    PLIST, not assumed from arithmetic. Of the six compound-key getvalueforkey sites in
+    the shipped artifact, five are now followed directly by setvariable (fixed) and
+    exactly one (action 3644) is still followed by gettext, confirmed by direct
+    inspection to be manual_note_refresh()'s "Snapshot Exits" display read -- the
+    deliberately-untouched, correct usage, not a missed site. 0 duplicate action UUIDs
+    across all 3683 actions; 0 GroupingIdentifier imbalance; 23 Choose-from-Menu opens
+    (unchanged from every prior cycle).
+  Predicted next breadcrumb letter and refutation criteria are stated in the CYCLE 15
+  Current Focus falsification_test, in advance of any device run.
+
+oracle_type: specified (user-observable device behaviour -- the exact reported error
+  string -- traced against a statically-read, statically-verifiable source defect and a
+  device-measured breadcrumb position; the same oracle class used by every prior cycle
+  in this session)
+
+cycle_15_files_changed:
+  - tools/build_state_engine.py (get_value() repaired; 5 call sites swapped from
+    read_value(); verify_compound_value_reads() + COMPOUND_STATE_KEYS + LIST_CONSUMING_ACTIONS
+    + _list_consumed_variables() added; wired into main(); BUILD_STAMP bumped)
+  - src/PROSOCHE-Dumb.xml (regenerated)
+  - artifacts/shortcuts/2026-08-15/PROSOCHĒ — Nine Circles — Dumb.shortcut (re-signed)
+
+cycle_14_root_cause: >
+  FOUR INDEPENDENT DEFECTS, all confirmed against donor evidence or the raw artifact source
+  rather than inferred, none requiring a new/unverified plist construct.
+  (1) THE BREADCRUMB D->E BLOCKER: elapsed() -- the helper backing "Last Open"/"Last Close"/
+      "Pending Exit Timestamp" debounce/decay/pending-exit checks -- fed an already-NUMERIC
+      epoch-seconds reading (re-read from state.json as Text) into gettimebetweendates, a
+      DATE-typed action. Donor 7 confirms the CLOCK block's own genuine Date->Date construct
+      needed no change; the fix is recognising these three sites were never dates at all.
+  (2) A SIBLING TYPE-SCOPE GAP, found by the directive-2 nested-descent type-audit second
+      pass: the cycle-9 numeric-operand coercion pass only ever unwrapped one of two wrapper
+      shapes, and only for conditionals, leaving 85 real uncoerced numeric operands on
+      math/getitemfromlist actions (18 of them setbrightness/setvolume, deliberately
+      deferred). The getitemfromlist class sits directly on the Circle 1 intervention
+      (mirror_text()'s WFItemIndex=variable("Circle Next")), so it was load-bearing for
+      symptom 1 completing past breadcrumb J, not just past D.
+  (3) THE CONTROL ROOM OPEN-FLOW FAULT: the hand-authored shownote action used a nonexistent
+      parameter key (`target`) instead of the one Donor 8 confirms iOS actually reads
+      (WFInput). "Control Room Note" itself was already correctly bound in both branches of
+      the preceding find-or-create block -- the orchestrator's unbound-variable hypothesis
+      (based on grepping only tools/build_state_engine.py, which does not own that
+      hand-authored region) is refuted; the actual defect is one wrong key on one action.
+  (4) THE STALE-STATE REBIND GAP: the three-check validity gate accepts any file with
+      schema_version=="1" forever, so a device's pre-session file never triggers a rebuild;
+      and on the rare path where a rebuild does run, the fresh dictionary was written to disk
+      but the `State` variable was never rebound to it for the rest of that run.
+  A fifth, independent, silent (non-blocking) defect was also found and fixed while auditing
+  the same date-parameter class: format.date's Custom pattern sat in WFDateFormatString, a key
+  iOS never reads for this action; the literal word "Custom" sat in WFDateFormat, the key iOS
+  does read, which is why the day-key format string rendered as the literal word "Custom" in
+  the UI. Donor 7.1 confirms the correct key.
+
+cycle_14_fix: >
+  tools/build_state_engine.py ONLY; Dumb fork regenerated, validated, signed, and decrypt-
+  verified. Sentient NOT touched (build_sentient.py not invoked), per explicit instruction --
+  it will pick up all of this automatically on its next fork once Dumb is device-confirmed.
+  (1) elapsed() REMOVED. New elapsed_since(earlier_name, result_name, now_name="Now Epoch") =
+      math(now_name, variable(earlier_name), result_name, "-"), replacing all four former
+      elapsed() call sites (Pending Exit Timestamp, Last Open, Last Close x2). Same action
+      count per site; conforms to the identical shape this artifact already uses correctly
+      elsewhere (close_pipeline()'s Session Duration).
+  (2) normalise_numeric_operands()/verify_numeric_operands() GENERALISED via a shared
+      table-driven _numeric_operand_sites()/_operand_descriptor() pair covering conditionals
+      (unchanged behaviour) PLUS math.WFInput/WFMathOperand PLUS Item-At-Index
+      getitemfromlist.WFItemIndex. Same Donor-4.1 WFCoercionVariableAggrandizement:
+      WFNumberContentItem shape already established for conditionals. setbrightness/
+      setvolume deliberately excluded (directive 1 deferral, recorded not deleted).
+  (3) fix_date_format_key() -- swaps format.date's real Config-driven pattern from
+      WFDateFormatString into WFDateFormat (the key Donor 7.1 confirms iOS reads) and removes
+      the bogus "Custom" literal. ISO-8601-preset simplification evaluated and rejected per
+      directive 7b: the preset includes time + timezone, which would break the yyyy-MM-dd
+      day-rollover sort key this action exists to produce.
+  (4) fix_shownote_key() -- renames the one shownote action's `target` key to `WFInput`
+      (Donor 8). VERIFIED_PARAMETER_KEYS gained a shownote entry as the recurrence guard.
+      The append-on-every-manual-choice question (should "Open Control Room" itself append a
+      snapshot to the Note) is left open -- see Resolution's open items below, not silently
+      redesigned.
+  (5) fix_state_rebind() -- schema_version bumped 1->2 (bootstrap template text + the
+      version-check conditional's literal), forcing every existing device's file to be
+      treated as stale on its next run; two new actions (Detect Dictionary + Set Variable
+      State) inserted immediately after "Default State JSON" is assigned, rebinding State to
+      a genuine Dictionary-content-item (not raw text), matching normalize_setters()'s own
+      established rule.
+  ROUTER_TRACE = False (directive 5; mechanically removes 3 actions via the existing
+  remove_marker_block() pass). BUILD_STAMP bumped to "build 2026-08-15l".
+  All three new fix_*() passes are IDEMPOTENT (verified: a second full regeneration over the
+  already-patched artifact is byte-identical).
+  Net action count: 3684 -> 3683 (+2 rebind, -3 ROUTER_TRACE, -1 net). Breadcrumbs shift
+  uniformly +2 (the rebind sits before breadcrumb A; the ROUTER_TRACE removal sits after
+  breadcrumb J, inside the MANUAL arm, so it cannot move them): Dumb A=94 B=149 C=170 D=288
+  E=308 F=417 G=426 H=460 I=475 J=529.
+
+cycle_14_verification: >
+  NOT device-confirmed -- explicitly out of scope this cycle (the phone build is the user's
+  own call, not directed here). Build-side and decrypt-verified only, stated as such:
+  - `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678 HEAD` passed before
+    regenerating (project provenance guard).
+  - `python3 tools/build_state_engine.py` exits 0 (all seven generator-asserted axes hold,
+    including the newly-widened numeric-operand axis); run a second time over its own output
+    with zero further changes (idempotency proven, not asserted).
+  - Nested-descent type audit (directive 2, cross-checked against two independent
+    implementations): 0 offenders in scope after the fix; the only 18 remaining are the
+    deliberately deferred setbrightness/setvolume sites. Identical result run against source,
+    against the pre-sign archive, and against the DECRYPTED shipped signed artifact.
+  - `bin/validate-shortcut --target-macos 26 --target-platform all` (the project's own
+    MANIFEST.md-documented invocation, matching every prior cycle's actual verification
+    command) -> "Validation passed." (`--target-platform ios` was also tried and floods
+    "requires macOS 27+" on every action including index 0 -- a pre-existing bundled-data
+    gap already flagged in cycle_12_verification, not a regression here.)
+  - `bin/sign-shortcut` -> signed artifact confirmed AEA1, 189,618 bytes, non-zero.
+  - SHIPPED SIGNED ARTIFACT DECRYPTED (aea decrypt + aa extract, CLAUDE.md §8) and inspected
+    directly, not read back from the build tree: 3683 actions; stamp "build 2026-08-15l" with
+    zero stale "14k"; breadcrumbs A-J at 94/149/170/288/308/417/426/460/475/529; ROUTER TRACE
+    marker absent; shownote carries WFInput only; format.date's WFDateFormat holds the dynamic
+    pattern token, WFDateFormatString absent; bootstrap schema_version is 2; exactly one
+    gettimebetweendates action remains (the CLOCK block); the rebind (Detect Dictionary ->
+    Set Variable State, referencing "Default State JSON") is present and correctly wired.
+  - UUID-STRIPPED SEMANTIC DIFF against the last committed build (build k) shows ONLY the
+    intended change classes (format.date, schema bump, rebind insert, the four
+    elapsed()->math() replacements, the Aggrandizements insertions, ROUTER_TRACE removal, the
+    shownote key rename). No unexplained collateral change across 3683 actions.
+  - SYMPTOMS 2 AND 3 PRESERVED BY CONSTRUCTION AND BY THE SAME DIFF: every Set Dictionary
+    Value and the entire Notes family (aside from the single deliberate shownote key edit) are
+    absent from the diff, i.e. byte-identical to the build that device-confirmed them.
+  Predicted next breadcrumb letter and refutation criteria are stated in the CYCLE 14
+  Current Focus falsification_test, in advance of any device run.
+
+cycle_14_checkpoint_decision: >
+  The CYCLE 14 reasoning_checkpoint above (build 2026-08-15l) deliberately left one item
+  unresolved rather than redesigning the manual menu unilaterally: should "Status"/"Open
+  Control Room" append a current-state snapshot to the permanent Control Room Note on every
+  tap, or should opening the Note be read-only? The user's answer, given via checkpoint
+  response this turn: READ-ONLY. "Open Control Room" is decoupled from the refresh-append
+  mechanism entirely; only explicit state-changing actions (Sync My Profile, Change Profile,
+  Change Sequence, Toggle Voice, Reset Today, Emergency Restore) write to the Note. "Status"
+  gets its own separate read path so it is not left without any display mechanism at all.
+
+cycle_14_checkpoint_fix: >
+  tools/build_state_engine.py ONLY (manual_emergency_restore(), manual_note_refresh());
+  Dumb regenerated, validated, signed, decrypt-verified. Sentient NOT touched, same standing
+  reason as the rest of cycle 14 (forks additively from src/PROSOCHE-Dumb.xml; will pick
+  this up automatically once re-forked after Dumb is device-confirmed).
+  (1) "Open Control Room"'s case body changed from *number(1, "Manual Refresh Requested")
+      (2 actions: Number + Set Variable) to a single action("is.workflow.actions.nothing").
+      It sets NO flag. The unchanged shared post-menu tail (find-or-create the note -> PHASE
+      7 -> shownote, which every one of the 9 manual choices already fell through to) still
+      opens the note on every choice, so Open Control Room still opens the note -- it simply
+      never triggers a snapshot append first.
+  (2) "Status"'s case body changed from *number(1, "Manual Refresh Requested") to
+      *number(1, "Manual Status Requested") -- identical shape, new flag name, so it too no
+      longer triggers the append. A NEW branch was added to manual_note_refresh() (PHASE 7),
+      gated on if_block("Manual Status Requested", 2, number=0) -- the SAME numeric ">" 0
+      gate shape already used two lines above it for "Manual Refresh Requested"/"Manual Sync
+      Requested", not a new construct. It reuses the Snapshot Fork/Profile/Sequence/Voice/
+      Circle/Pressure/Cooldown variables PHASE 7 already reads UNCONDITIONALLY at the top of
+      the function for every manual run (no new dictionary reads added) and displays them
+      via alert() -- is.workflow.actions.alert, VERIFIED_PARAMETER_KEYS since cycle 1,
+      already used identically elsewhere in this exact file (knock(), ash(), the OPEN_BISECT
+      breadcrumb instrument) including with a multi-variable text_token() message (knock()'s
+      Circle/Pressure/Heat alert is the direct precedent for Status's Fork/Profile/Sequence/
+      Voice/Circle/Pressure/Cooldown alert) -- instead of appendnote. Status therefore shows
+      a fresh alert with the current snapshot AND (via the unchanged shared tail) the
+      unmodified Note; it never writes to it.
+  No new action identifier, no new parameter key, and no new value-envelope shape was
+  introduced anywhere in this fix -- every piece reuses a construct already verified
+  elsewhere in this exact artifact, per the objective's ponytail-minimal directive.
+  BUILD_STAMP bumped "build 2026-08-15l" -> "build 2026-08-15m" so a device pass can
+  distinguish this build from the one the checkpoint was raised against.
+  Net action count: 3683 -> 3689 (+6: -1 net across the two menu case bodies, +7 for the new
+  PHASE 7 status branch -- 6 authored actions plus 1 auto-inserted "Control-flow check"
+  comment the main() structural pass adds ahead of any conditional whose immediate
+  predecessor is not already a comment, which the new status conditional's predecessor
+  -- the refresh block's own end_if -- was not).
+
+cycle_14_checkpoint_verification: >
+  NOT device-confirmed -- explicitly out of scope this turn, matching every prior turn this
+  cycle; the phone build remains the user's own call. Build-side and decrypt-verified only:
+  - `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678 HEAD` passed
+    before regenerating (provenance guard, same as every prior cycle-14 rebuild).
+  - `python3 tools/build_state_engine.py` exits 0; run a second time over its own output,
+    byte-identical (idempotent -- the two new fix sites are no-ops on an already-patched
+    artifact by construction, same as every other pass this cycle).
+  - STRUCTURAL SWEEP against the regenerated plist (independent of the generator's own
+    guards): 0 duplicate action UUIDs across 3689 actions; 0 GroupingIdentifier imbalance
+    (every mode-0/1 open has a matching mode-2 close); 23 Choose-from-Menu opens (unchanged
+    from before this fix); Status's case body starts with is.workflow.actions.number
+    targeting "Manual Status Requested"; Open Control Room's case body is a single
+    is.workflow.actions.nothing with no flag set anywhere in the artifact.
+  - UUID-STRIPPED SEMANTIC DIFF (difflib SequenceMatcher) against the pre-checkpoint
+    2026-08-15l source: exactly 4 hunks, ALL inside manual_emergency_restore()/
+    manual_note_refresh() -- the MANUAL_MARKER comment text, the Status/Open Control Room
+    case bodies, the PHASE 7 comment text, and one clean insertion (the new
+    Manual-Status-Requested conditional, its comment, its alert, and the auto-inserted
+    Control-flow-check comment). Nothing else in the 3683->3689 action array changed --
+    every Set Dictionary Value, the entire Notes family, and all five of this cycle's
+    earlier fixes (elapsed_since(), the numeric-operand coercion generalisation, the
+    shownote key, the format.date key, the state rebind) are byte-identical to the build
+    that was already locally verified before this turn.
+  - `bin/validate-shortcut --target-macos 26 --target-platform all` (shortcuts-playground
+    skill's own wrapper, per this turn's explicit directive to route validate/sign/archive
+    through the skill rather than ad hoc) -> "Validation passed."
+  - `bin/sign-shortcut` (same skill wrapper) -> signed artifact confirmed AEA1, 190,208
+    bytes, non-zero.
+  - SHIPPED SIGNED ARTIFACT DECRYPTED (aea decrypt + aa extract, CLAUDE.md §8) and inspected
+    directly, not read back from the build tree: 3689 actions; stamp "build 2026-08-15m"
+    (single occurrence, zero stale "15l"); breadcrumbs A-J UNCHANGED at
+    94/149/170/288/308/417/426/460/475/529 -- confirms the entire checkpoint fix sits after
+    breadcrumb J, inside the MANUAL arm, exactly as HANDOFF.md's established position rule
+    predicts (verified directly against the decrypted plist, not assumed from the rule);
+    shownote still carries WFInput only; the Status/Open Control Room wiring matches the
+    pre-sign source exactly.
+  BREADCRUMB POSITIONS FOR THE NEXT DEVICE SITTING ARE THEREFORE UNCHANGED FROM THE
+  PRE-CHECKPOINT BUILD: A=94 B=149 C=170 D=288 E=308 F=417 G=426 H=460 I=475 J=529.
+  PREDICTED LETTER: unchanged from cycle_14_verification's own prediction -- D or later, on
+  the first run after the device's existing state.json is exercised at least once (the
+  schema bump from earlier this cycle still applies). This checkpoint fix touches ONLY the
+  MANUAL arm, which the OPEN-path breadcrumb sequence never enters, so it cannot move or
+  invalidate that prediction in either direction.
+  ADDITIONAL DEVICE CHECKS THIS TURN INTRODUCES (supplementing, not replacing, cycle 14's
+  own falsification_test): choosing "Open Control Room" should open the Note with NO new
+  snapshot section appended (the Note's length/last-edited state should be unchanged from
+  before the tap); choosing "Status" should show an alert with the current Fork/Profile/
+  Sequence/Voice/Circle/Pressure/Cool-down values, and the Note that opens afterward should
+  likewise be unmodified. Any snapshot appearing in the Note after either of these two
+  choices, specifically, refutes this checkpoint fix (not the rest of cycle 14).
+
+cycle_12_root_cause: >
+  AXIS 7, GATE SEMANTICS — and the SAFETY DEFECT IN BUILD 2026-08-14j, which is withdrawn.
+  An EXISTENCE gate (condition 100) cannot distinguish a CLEARED key from a CAPTURED one,
+  because any placeholder that keeps a dotted read alive is by construction PRESENT, and
+  Donor 6.1 measured that a present-but-empty value passes `has any value`. Build j seeded
+  the settings_snapshot leaves EMPTY and left the leaf gates at 100, so the restore path
+  reached Set Brightness with an EMPTY value — a runtime error or brightness 0, forbidden
+  outright by .claude/CLAUDE.md, at actions 187/206 inside the C->D span that runs on EVERY
+  OPEN. Axis 6 (STATE SHAPE) was satisfied completely and the artifact was still unsafe:
+  asserting that a key EXISTS is not asserting that the gate over it can READ it.
+  A SECOND, INDEPENDENT CONDITION was found while verifying the fix and is NOT fixed here:
+  the device's stored state.json passes the three validity checks (schema_version present,
+  == "1", profile non-empty) so the bootstrap branch never runs, and when it does run it
+  saves the new file without rebinding `State`. A corrected template therefore cannot reach
+  the device unaided. This settles the long-open clean-install inconsistency.
+
+cycle_12_fix: >
+  tools/build_state_engine.py and tools/build_sentient.py only; both forks regenerated,
+  validated and re-signed. Nothing from cycles 2, 3, 4, 5, 8, 9 or 11 is reverted.
+  (1) CLEARED_SENTINEL stays "null" and the bootstrap leaves are SEEDED WITH IT rather than
+      with "". Present, so the dotted read cannot raise; non-empty, so cycle 11's Half-2
+      write-side validator blocker dissolves entirely and never has to be settled.
+      seed_settings_snapshot() also rewrites a build-j tree's empty leaves in place, so a
+      re-run over the defective source converges instead of silently keeping "".
+  (2) THE TWO LEAF GATES BECOME NUMERIC "> 0" (WFCondition 2, WFNumberValue 0), NOT code 5.
+      Code 5 was verified against CONTROL_FLOW.md, the golden corpus and the artifact's own
+      device-executed site at action 149 — and then REJECTED, because `is not "null"` is
+      TRUE for an EMPTY value and build j seeded exactly that. The numeric gate is
+      device-measured FALSE for both "null" (Donor 6.1 test 2) and "" (Donor 6 action 8),
+      is the safety property itself rather than a proxy, and is the same test the CAPTURE
+      side already uses (dim()/silence(): if_block("Captured Brightness", 2, number=0)).
+      normalise_numeric_operands() supplies Donor 4.1's coercion, so no new shape is added.
+      STATED COST: a genuine captured Media volume of exactly 0 is not restored; skipping is
+      the fail-safe direction and is what "never guess an original setting" already required.
+  (3) clear_snapshot() CLEARS settings_snapshot.<key>.original_value, NOT the container.
+      This kills cycle 10 finding 5 (the container was being replaced by a string, so the
+      next run's dotted read hard-errored) and makes the seeded subtree a permanent
+      invariant — which is precisely what licenses keeping the CONTAINER gates at condition
+      100 while the LEAF gates change. Same action count, deeper key.
+  (4) TWO NEW BUILD GUARDS, run in BOTH forks' builders, both DEMONSTRATED FIRING on the
+      decrypted build-j artifact AND on build i before the fix, at the exact actions of the
+      independently-derived unsafe trace (187/206 for the writes, 181/200 for the gates):
+        verify_restore_gates()  — a brightness/volume write whose value is read out of
+          settings_snapshot must be dominated by a NUMERIC conditional on that variable.
+          Stated over the WRITE, so no future re-gating can reintroduce an empty/zero write.
+        verify_sentinel_gates() — no sentinel-written key may be gated by condition 100/101
+          and no dotted read may hang beneath a sentinel-written parent. This enforces the
+          container-vs-leaf split MECHANICALLY: revert (3) and the build fails.
+          KNOWN_SENTINEL_EXISTENCE_GATES = ("pending_exit", "active_session") records the
+          two keys still carrying the defect, by name and with the reason, so they pass while
+          any NEW occurrence fails.
+  (5) verify_state_seed()'s final assertion INVERTED: leaves must equal the sentinel. The old
+      assertion demanded EMPTY — the build-j safety defect written down as an invariant — and
+      would have failed this build.
+  The generator now asserts SEVEN axes: KEY NAME, VALUE ENVELOPE, PICKER LITERAL, VARIABLE
+  SLOT, OPERAND TYPE, STATE SHAPE, GATE SEMANTICS.
+  BUILD_STAMP "build 2026-08-14k". OPEN_BISECT and ROUTER_TRACE remain ON; no action is
+  added, removed or reordered, so breadcrumb positions are UNCHANGED for the fourth cycle:
+  Dumb A=92 B=147 C=168 D=286 E=306 F=415 G=424 H=458 I=473 J=527; Sentient uniformly +2.
+
+cycle_12_verification: >
+  NOT device-confirmed. Build-side only, and stated as such.
+  - GUARDS TESTED AGAINST THE DEFECT FIRST: verify_restore_gates and verify_sentinel_gates
+    both FIRE on build j and on build i, naming actions 187/206 and 181/200 (Dumb) and
+    189/208 and 183/202 (Sentient). Both PASS on build k.
+  - Both forks: validate-shortcut --target-macos 26 --target-platform all -> "Validation
+    passed." (the project's documented invocation, per artifacts/shortcuts/MANIFEST.md).
+    NOTE: --target-platform ios floods with "requires macOS 27+" on EVERY action; build i
+    does the same, so it is a pre-existing bundled-data gap, not something introduced here.
+  - SHIPPED SIGNED ARTIFACTS DECRYPTED AND INSPECTED (not read back from the build tree),
+    both AEA1: Dumb 3684 actions, Sentient 3752. Stamp "build 2026-08-14k" x2 in each with
+    ZERO stale "14j" or "14i". ROUTER TRACE present. Ten breadcrumbs at
+    A=92 B=147 C=168 D=286 E=306 F=415 G=424 H=458 I=473 J=527 (Dumb) and +2 (Sentient).
+    ALL EIGHT restore writes (4 per fork) are immediately preceded by a conditional with
+    WFCondition 2 / WFNumberValue 0. The seed line reads
+    "brightness": {"original_value": "null", "changed_at": "null", "changed_by_session_id": "null"}
+    and zero empty-string leaves remain.
+  - SYMPTOMS 2 AND 3 PRESERVED BY CONSTRUCTION AND PROVEN BY PER-ACTION BYTE DIFF AGAINST
+    BUILD i (not j — j is withdrawn): 3684/3684 and 3752/3752 actions, exactly 23 differing
+    per fork — 1 bootstrap template, 4 restore-block instances x 5 actions, and 2
+    display-only BUILD_STAMP strings. The container gates at 181/200 are ABSENT from the
+    diff, which proves the container-vs-leaf split by byte-equality rather than asserting it.
+    Every other Set Dictionary Value and the entire Notes family are byte-identical to the
+    build that device-confirmed them.
+  Awaiting the build-k device pass. PREDICTED LETTER AND REFUTATION CRITERION ARE STATED IN
+  ADVANCE in Current Focus: C with a settings_snapshot error is EXPECTED (the stale-state
+  gap, not a refutation); D or beyond confirms both halves; the fix is REFUTED only by the
+  error naming brightness/volume rather than a dictionary key, or by any report of the
+  screen going dark.
+
+cycle_9_root_cause: >
+  SYMPTOM 1, SECOND DEFECT — the fifth axis of this session, and the first that is invisible
+  in the plist. A conditional's OPERATOR PICKER is populated from the STATIC TYPE of the
+  variable in WFInput. read_value() defines its variable from an is.workflow.actions.gettext
+  output, so Shortcuts types it Text and offers only the eight STRING operators; a numeric
+  WFCondition (0/1/2/3/1003) then has no case to render, the operator chip shows RED, and iOS
+  refuses to run the action. Keys, envelope, picker literals and condition code are all
+  well-formed at a defective site, so every existing invariant passes over it and decrypting
+  the signed artifact does not reveal it either.
+  20 sites in Dumb / 25 in Sentient. That is more than the 18 the hand trace found, because a
+  variable NAME assigned from both a numeric and a Text source anywhere in the artifact is
+  mixed-typed, and one Text definition poisons every numeric comparison of that name — even on
+  an arm the Text definition can never reach (Pressure Next, Overrun Seconds, Circle Next).
+  Device-localised, not argued: the cycle-8 pass reached breadcrumb C and died, and action 170
+  (Cooldown Until > Now Epoch) is the first site of the class in the artifact and sits
+  immediately after C.
+
+cycle_9_fix: >
+  tools/build_state_engine.py and tools/build_sentient.py only; both forks regenerated,
+  validated and re-signed. Nothing from cycles 2, 3, 4, 5 or 8 is reverted.
+  (1) NEW normalise_numeric_operands() — a post-pass that attaches
+      {"Type": "WFCoercionVariableAggrandizement",
+       "CoercionItemClass": "WFNumberContentItem"}
+      to the operand descriptor of every numeric-code conditional whose operand is not already
+      Number-typed. Shape taken verbatim from Donor 4.1, built in Shortcuts.app on the target
+      iPhone and decrypted this cycle; Donor 4 is the same shortcut before the type was set and
+      supplies the control case. Golden 332c12a0 confirms the aggrandizement attaches to a NAMED
+      variable as well as to an ActionOutput, which is the form our operands take.
+      Structural, not site-by-site: any future numeric comparison on a text-coerced value is
+      corrected automatically.
+  (2) NEW verify_numeric_operands() asserts the invariant that (1) establishes. Both run in
+      BOTH forks' builders and share one provenance resolver, so they cannot disagree. The
+      generator now asserts five axes — KEY NAME, VALUE ENVELOPE, PICKER LITERAL, VARIABLE SLOT
+      and OPERAND TYPE.
+  (3) Nothing else changes. Operands that are already numeric are deliberately left untouched,
+      so the numeric conditionals that have executed on device stay byte-identical. No action is
+      added, removed or reordered anywhere in either fork.
+  BUILD_STAMP bumped to "build 2026-08-14i". OPEN_BISECT and ROUTER_TRACE remain ON, and because
+  no actions were added the breadcrumb positions are UNCHANGED from build h: A=92, B=147, C=168,
+  D=286, E=306, F=415, G=424, H=458, I=473, J=527.
+  A FIRST FIX WAS BUILT AND DISCARDED — a read_number() helper materialising each operand
+  through a Number action with a code-100 null guard, composed from golden corpus 2e0fb675. It
+  validated, signed and measured clean, and was discarded when Donor 4.1 showed iOS doing
+  something different for this exact construct. See Evidence for why the discard was correct.
+
+cycle_9_verification: >
+  NOT device-confirmed. Build-side only, and stated as such.
+  - Both forks: validate-shortcut --target-macos 26 passes; signed files carry AEA1 magic.
+  - Shipped signed Dumb artifact DECRYPTED and inspected (not read back from the build tree):
+    3684 actions, 87 numeric conditionals, 20 Number-coerced, ZERO text-fed-and-uncoerced.
+    Action 170 — the exact site that killed build h — carries the coercion. Stamp
+    "build 2026-08-14i" x2 with zero stale "h", 10 breadcrumbs, ROUTER TRACE present.
+  - Sentient: 3752 actions, 94 numeric conditionals, 25 coerced, zero uncoerced.
+  - SYMPTOMS 2 AND 3 PRESERVED BY CONSTRUCTION, proven exhaustively rather than by class:
+    whole-artifact action-by-action comparison against build h gives identical action counts
+    (3684 = 3684) and exactly 22 differing actions — 20 conditionals whose ONLY delta is the
+    added Aggrandizements key (each verified by deleting that key and confirming byte-equality
+    with build h), plus the 2 BUILD_STAMP display strings. All 147 Set Dictionary Value actions
+    and the entire Notes family are BYTE-IDENTICAL to the build that device-confirmed them.
+  Awaiting the build-i device pass. Decision rule stated in advance: last letter D or beyond
+  confirms the class fix; C again refutes it, and unusually cleanly, since the artifact differs
+  from the one just tested by 20 type declarations and two display strings and nothing else.
+
+
+cycle_8_root_cause: >
+  SYMPTOM 1, CONFIRMED. A conditional's WFInput is {"Type":"Variable","Variable": <token>}, and
+  that <token> slot must hold a WFTextTokenAttachment wrapping a Type-bearing descriptor. At 25
+  sites the generator overwrote if_block()'s already-correct value with token(name), which
+  returns a WFTextTokenString TEXT TEMPLATE ({"string":"\ufffc","attachmentsByRange":{...}}).
+  A text template is not a variable reference: Shortcuts cannot resolve the If's input, renders
+  the input field as UNSET, and refuses to run the action with exactly the reported message,
+  "Please choose a value for each parameter in this action".
+  This is the ENVELOPE axis (cycle 2's axis) INVERTED. Cycle 2 established that string-typed
+  PARAMETERS require WFTextTokenString; a variable SLOT requires the opposite. That inversion is
+  why 13 hand-written overwrites survived four static sweeps and six cycles.
+  Localised by the cycle-7 breadcrumb bisection (user reported last letter "B"), then confirmed
+  positionally: of the 25 sites, 23 sit past breadcrumb J on never-reached paths, and the only
+  two before J are actions 149 and 158 — both inside span B->C, with 149 the FIRST occurrence of
+  the class in the entire artifact, two actions after breadcrumb B.
+
+cycle_8_fix: >
+  tools/build_state_engine.py and tools/build_sentient.py only; both forks regenerated,
+  validated and re-signed. Nothing from cycles 2, 3, 4 or 5 is reverted.
+  (1) Deleted the 13 lines matching
+      <name>["WFWorkflowActionParameters"]["WFInput"] = {"Type":"Variable","Variable": token(...)}
+      (pre-edit lines 397, 555, 569, 611, 617, 627, 630, 683, 713, 730, 802, 810, 966).
+      VERIFIED PROGRAMMATICALLY before deletion: all 13 passed the SAME variable name that
+      if_block() was called with on the line above, so the deletion changes only the envelope.
+      No shape is invented; the result is byte-identical to the 282 already-correct sites and to
+      Donor 3 action 4.
+  (2) NEW verify_conditional_inputs() recurrence guard, wired into BOTH fork builders. Fails the
+      build if any mode-0 conditional's WFInput.Variable is missing, is not a
+      WFTextTokenAttachment, or wraps a text template rather than a Type-bearing descriptor.
+      Closes the VARIABLE-SLOT axis rather than the two instances.
+  (3) Documented the invariant at if_block() itself, with the donor and corpus citations, so the
+      next author who reaches for token() there sees why not.
+  (4) BUILD_STAMP bumped to "build 2026-08-14h". ROUTER_TRACE and OPEN_BISECT left ON —
+      see next_action for why the breadcrumbs stay.
+  DELIBERATELY NOT CHANGED: the 14 WFConditionalActionString = token() sites (no corpus, no
+  catalog, no device evidence; all past breadcrumb J; Donor 4 requested); the two <integer> sites
+  at 418/454 (not this bug, and the axis is weaker than cycle 7 recorded).
+
+cycle_8_verification: >
+  guardrail_verdict: static signals pass; the runtime signal is the open checkpoint.
+  - GUARD SENSITIVITY (MUTATION TEST, not merely "the guard runs"): re-introducing the exact
+    deleted line at 802 makes the build exit non-zero with
+    "action 149: WFInput.Variable is 'WFTextTokenString', expected WFTextTokenAttachment (1 total)".
+    Against the fixed artifacts all five guards accept. The guard bites at the true defect site.
+  - SHAPE EQUALITY WITH DEVICE GROUND TRUTH: the repaired WFInput at 149/158 is structurally
+    identical to Donor 3 action 4 (checked by recursive type comparison, not by eye).
+  - RESIDUAL SCAN: 0 remaining text-template conditional inputs in either fork.
+  - BLAST RADIUS, verified by action-by-action comparison of build g vs build h: action counts
+    unchanged (3684 / 3752); exactly 27 actions differ per fork — the 25 conditional WFInput
+    envelopes plus TWO display-only build-stamp strings (alert title, menu prompt). Every other
+    action, including every internal UUID, is byte-identical.
+  - SYMPTOMS 2 AND 3 PRESERVED BY CONSTRUCTION, verified rather than asserted: all 147
+    setvalueforkey still carry WFDictionaryValue; WFCreateNoteInput and both appendnote.text
+    still carry WFTextTokenString. None appears in the diff.
+  - SHIPPED-ARTIFACT VERIFICATION (not just the source): both signed .shortcut files were
+    DECRYPTED and inspected. AEA1 magic confirmed; Dumb 188480 bytes / 3684 actions, Sentient
+    192095 bytes / 3752 actions; 307 and 317 conditional inputs correct with 0 defective; stamp
+    "build 2026-08-14h" present and "14g" absent; 10 breadcrumbs present.
+  - VALIDATOR: both forks pass at --target-macos 26 --target-platform all. plutil -lint OK.
+  - RUNTIME: NOT YET VERIFIED. Requires the device sitting. The fix is not claimed to work until
+    the user reports a letter later than B.
+
+cycle_5_root_cause: >
+  SYMPTOM 1 (OPEN routing) — IDENTIFIED, pending device confirmation.
+  A THIRD parameter axis, never examined by cycles 1-4: REQUIRED PICKER (enum) PARAMETERS.
+  A picker parameter must be PRESENT and must hold a LITERAL enum case. If it is absent, or
+  holds a variable/attachment token, Shortcuts renders an unfilled picker and iOS refuses to
+  run the action with "Please choose a value for each parameter in this action", attributing
+  it to the outermost caller — the Personal Automation, by name — and never naming the action.
+    is.workflow.actions.count.WFCountType              MISSING (1 Dumb / 2 Sentient)
+    is.workflow.actions.getitemfromlist.WFItemSpecifier  VARIABLE TOKEN at 31/33 sites, with
+      WFItemIndex absent entirely
+  Both are corpus-unanimous defects; eight other picker classes in the same artifact were
+  already correct, giving perfect internal separation in both forks.
+  WHY IT SURVIVED FOUR CYCLES: the OPEN branch had never once executed on device. Pre-cycle-2,
+  Input Key resolved empty, so every automation run took the MANUAL arm and skipped the OPEN
+  pipeline. Build d was the first build ever to ENTER it. Cycle 2 did not cause this — it
+  exposed it. Whole-shortcut pre-flight validation is refuted: the 2026-08-13 build carried
+  these identical defects and ran from the automation to the MANUAL menu.
+  ALSO FIXED, same axis-family: speaktext emitted WFInput where the catalog defines WFText —
+  this closes DEV-03, whose original premise ("the catalog lists no parameters at all") was
+  simply wrong.
+  NOT ASSERTED: that this is sufficient. Both defective sites sit AFTER the first OPEN menu,
+  and the region before that menu is statically clean — so if no PROSOCHĒ UI ever appeared,
+  a further cause remains upstream. See the blind_spots entry in Current Focus.
+
+cycle_5_fix: >
+  tools/build_state_engine.py and tools/build_sentient.py only; both forks regenerated,
+  validated and re-signed. Nothing from cycles 2, 3 or 4 is reverted.
+  (1) getitemfromlist: WFItemSpecifier="Item At Index" + WFItemIndex=<variable>, replacing
+      WFItemSpecifier=<variable>. Corpus-verified shape (golden 332c12a0060043b388b2).
+      Sites: build_state_engine.py:435 (Circle Next) and :552 (Rotation Index) -> 31 actions.
+  (2) count: WFCountType="Items" added (corpus 11/11). Both forks, including the Sentient-only
+      insertion at build_sentient.py:140.
+  (3) speaktext: WFInput -> WFText, plus a STRING_ENVELOPE_PARAMS entry so the str-typed
+      parameter takes the WFTextTokenString envelope. Closes DEV-03. 10 sites.
+  (4) NEW REQUIRED_PICKER_PARAMS table + verify_required_pickers() recurrence guard covering
+      NINE picker classes, run by BOTH fork builders. Generalises the axis rather than
+      patching the two broken sites.
+  (5) VERIFIED_PARAMETER_KEYS extended with count, getitemfromlist and speaktext so the
+      existing unknown-key guard also covers them.
+  (6) BUILD_STAMP bumped to "build 2026-08-14f". ROUTER_TRACE left ON.
+  (7) docs/BUILD-NOTES.md §15 records CAP-06, DEV-03 CLOSED, DEV-05 (math deliberately
+      untouched) and DEV-06 (openapp/count redundant keys retained).
+
+cycle_5_verification: >
+  guardrail_verdict: static signals pass; runtime signal is the open checkpoint.
+  - GUARD SENSITIVITY: verify_required_pickers run against the PRE-FIX artifacts REJECTS both
+    and names the exact sites — Dumb "action 576 count.WFCountType missing; action 580/1155/
+    1160/1166 getitemfromlist.WFItemSpecifier non-literal (32 total)"; Sentient (33 total).
+    Against the fixed artifacts, all four guards accept.
+  - THE GUARD CAUGHT A REAL DEFECT DURING THIS CYCLE: a SECOND count action inserted only by
+    build_sentient.py:140, invisible to the Dumb pass, failed the Sentient build until fixed.
+    Same class of catch as cycle 2's text.match.text.
+  - MUTATION at fix site: reintroducing WFItemSpecifier=variable() fails the build (exit 1,
+    30 offenders named) and the artifact md5 is UNCHANGED, proving the guard runs before the
+    single serialize/write. Restoring the fix reproduces a byte-identical artifact.
+  - BLAST RADIUS, Dumb: 44 actions differ from build e — 1 count, 31 getitemfromlist,
+    10 speaktext, plus the 2 build-stamp carriers. Sentient: 45 (2 count). Action counts
+    UNCHANGED (3674 / 3742). No other action touched.
+  - STRUCTURAL REGRESSION, both forks: 0 duplicate UUIDs, 0 multi-identifier
+    GroupingIdentifiers, 0 nesting imbalance, final depth 0, 0 menu item/case mismatches.
+    Max depth unchanged (11 Dumb / 14 Sentient). plutil -lint OK.
+  - VALIDATOR: --target-macos 26 --target-platform all passes for BOTH forks.
+  - IDEMPOTENCY: both generators re-run to byte-identical artifacts.
+  - SIGNING: both signed, AEA1 magic 41454131, 188441 / 192341 bytes.
+  - END-TO-END on the SHIPPED file: the signed Dumb .shortcut was decrypted (§14 recipe) and
+    confirmed to carry 3674 actions, WFCountType present, WFItemSpecifier literal at 31 sites
+    ('Item At Index') plus 2 'First Item', all 10 speaktext on WFText, the stamp
+    "build 2026-08-14f" present and "build 2026-08-14e" ABSENT.
+  - OUTSTANDING: no runtime signal. Shortcuts cannot execute on the build Mac.
+
+cycle_4_root_cause: >
+  SYMPTOM 3 (empty Control Room Note) — IDENTIFIED, pending device confirmation.
+  The cycle-2 value-envelope rule is correct and runtime-proven, but its allowlist was scoped
+  to catalog type `str`. The two Notes body parameters are typed `AttributedString` — a text
+  type, not a content item — which obeys the same rule and was never considered. Both were
+  therefore invisible to normalise_string_envelopes AND to verify_string_envelopes:
+    com.apple.mobilenotes.SharingExtension.WFCreateNoteInput  -> note created, body EMPTY
+    is.workflow.actions.appendnote.text (Control Room refresh) -> empty content appended
+  A second, independent divergence in the same action pair: the reference to the Make Rich
+  Text from Markdown output was named 'Rich Text'; its real name is 'Rich Text from Markdown'.
+  Verified correct and deliberately untouched: getrichtextfrommarkdown.WFInput is
+  content-item-typed and is a bare attachment in BOTH the device donor and golden f44f5caf.
+  SYMPTOM 1 (OPEN misrouting) — NOT a plist question this cycle. Cycle 3 moved it off the
+  plist entirely; the automation wrapper now fails before PROSOCHĒ runs. Leading hypothesis
+  (not asserted): the clean-install delete orphaned the wrapper's Run Shortcut target.
+
+cycle_4_fix: >
+  tools/build_state_engine.py and tools/build_sentient.py only; both forks regenerated,
+  validated and re-signed. Nothing from cycles 2 or 3 is reverted.
+  (1) STRING_ENVELOPE_PARAMS extended with com.apple.mobilenotes.SharingExtension
+      {WFCreateNoteInput} and is.workflow.actions.appendnote {text}, with per-entry
+      provenance in the source. This reuses the existing converter AND the existing
+      build-failing guard rather than adding a parallel mechanism.
+  (2) NEW ACTION_OUTPUT_NAMES table + normalise_output_names(): points every magic-variable
+      reference at the producing action's real output name. Seeded with
+      getrichtextfrommarkdown -> 'Rich Text from Markdown' (device donor AND golden
+      f44f5caf action 14 agree).
+  (3) NEW verify_output_names() recurrence guard: fails the build if any reference carries an
+      output name that differs from the producing action's real one.
+  (4) tools/build_sentient.py runs both new passes and both guards, since Sentient-only
+      actions are inserted after the Dumb generator finishes.
+  (5) BUILD_STAMP bumped to "build 2026-08-14e". ROUTER_TRACE left ON.
+  (6) docs/BUILD-NOTES.md §14 records CAP-05a (AttributedString needs the text envelope),
+      DEV-04 (donor folder/WFNoteGroup deliberately not emitted), the signed-.shortcut
+      decrypt recipe, and the automation-wrapper design record.
+
+cycle_4_verification: >
+  guardrail_verdict: static signals pass; runtime signal is the open checkpoint.
+  - GUARD SENSITIVITY (the meaningful test for an in-place generator): both new guards run
+    directly against the PRE-FIX cycle-3 artifact REJECT it and name the exact sites —
+    verify_string_envelopes -> "action 3616 SharingExtension.WFCreateNoteInput; action 3648
+    appendnote.text (2 total)"; verify_output_names -> "action 3616 says 'Rich Text', real
+    name is 'Rich Text from Markdown' (1 total)". Against the fixed artifact both accept.
+  - MUTATION at fix site: artifact mutated back to the pre-fix defect AND the normalisers
+    disabled -> build exits 1 and the artifact md5 is UNCHANGED, proving the guard runs
+    before the single serialize/write. With the normalisers enabled the same mutated artifact
+    self-heals to an md5 byte-identical to the good build.
+  - BLAST RADIUS, Dumb: exactly 4 actions differ from the cycle-3 build — 3616 (envelope +
+    output name), 3648 (envelope only), 1350/1354 (build stamp). Sentient: the same 4 at
+    1418/1422/3684/3716. Action counts unchanged (3674 / 3742).
+  - EXPERIMENTAL DESIGN PRESERVED: 3648's OutputName was already correct ('Text' from a
+    gettext), so it changed on the envelope axis ONLY and remains a clean single-variable
+    test on device. 3616 changed on two axes and is deliberately not treated as discriminating.
+  - DONOR SHAPE EQUALITY: our emitted WFCreateNoteInput now matches the target iPhone's own
+    export exactly — same WFSerializationType, same '￼' string, same '{0, 1}' range key,
+    same token key set.
+  - STRUCTURAL REGRESSION, both forks: 0 duplicate UUIDs, 0 multi-identifier
+    GroupingIdentifiers, 0 nesting imbalance, final depth 0, 0 menu item/case mismatches.
+    Max depth unchanged (11 Dumb / 14 Sentient). plutil -lint OK.
+  - VALIDATOR: --target-macos 26 --target-platform all passes for BOTH forks.
+  - IDEMPOTENCY: both generators re-run twice to byte-identical artifacts.
+  - SIGNING: both signed, AEA1 magic 41454131, 188513 / 192368 bytes; dated archives verified
+    byte-identical to their sources via cmp.
+  - END-TO-END (new this cycle): the SIGNED Dumb .shortcut was decrypted and confirmed to
+    carry 3674 actions, WFCreateNoteInput as WFTextTokenString with the corrected output
+    name, both appendnote.text as WFTextTokenString, and the stamp "build 2026-08-14e".
+    No prior cycle could verify the shipped artifact itself.
+  - OUTSTANDING: no runtime signal. Shortcuts cannot execute on the build Mac.
+
+cycle_3_root_cause: >
+  TWO CONTRIBUTING CONDITIONS, both required simultaneously (the AND-gate fired):
+  (A) ROUTER (primary, fixed this cycle): manual invocation was detected by ABSENCE of
+      input — an outer "Input Key has any value" gate (cond 100) whose Otherwise arm held
+      the MANUAL menu, with a non-matching non-empty value falling into an
+      "Unrecognised Input" fail-safe. That design is only correct while an absent Shortcut
+      Input normalises to a byte-empty string.
+  (B) ENVELOPE (cycle 2, retained deliberately): string-typed parameters carried bare
+      WFTextTokenAttachments and resolved to empty at run time. While that was true, the
+      Trim/Change Case chain discarded its input and the empty case WAS byte-empty — so
+      (A) worked by accident. Correcting (B) made the empty case non-empty, (A)'s gate
+      passed, and every manual tap was rejected as unrecognised input.
+  Neither condition alone produces the observed failure. Reverting (B) would restore the
+  accident, not fix the defect, and would reinstate the three original symptoms.
+  Still-unknown and deliberately not guessed: the exact value an absent Shortcut Input
+  normalises to. The fix is correct for every possible value; the ROUTER TRACE measures it.
+
+cycle_3_fix: >
+  tools/build_state_engine.py and tools/build_sentient.py only; both forks regenerated,
+  validated and re-signed. The envelope fix is NOT reverted.
+  (1) NEW restructure_router(): rebuilds the router as positive-match —
+        If Input Key is "OPEN" -> OPEN | Otherwise If "CLOSE" -> CLOSE | Otherwise -> MANUAL
+      Deletes the cond-100 absence gate (If / Otherwise / End If) and the unrecognised-input
+      alert; moves the MANUAL arm into the CLOSE Otherwise; rewrites the two routing comments.
+      Idempotent — returns immediately once the gate is gone, so the in-place generator can
+      run any number of times.
+  (2) NEW verify_router_shape() recurrence guard, run in BOTH fork builders: fails the build
+      if the absence gate reappears, if the Input Key tests drift from exactly
+      [(4,"OPEN"), (4,"CLOSE")], or if the MANUAL arm leaves the CLOSE Otherwise branch.
+  (3) NEW ROUTER_TRACE scaffolding (flag-gated, marker-block managed so it is idempotent and
+      strippable): one alert at the head of the MANUAL arm printing the normalised Input Key
+      in brackets beside an empty-string reference. Deliberately contains NO control flow —
+      an earlier draft tested cond 100 here, which was byte-identical to the router gate and
+      broke both the guard and idempotency. The guard caught that during development.
+  (4) BUILD_STAMP bumped to "build 2026-08-14d" in the manual menu prompt.
+  (5) Deviations recorded in docs/BUILD-NOTES.md §13: DEV-01 (--target-platform ios not used,
+      with the 3675/3675 measurement), DEV-02 (loss of the unrecognised-input distinction,
+      with the safety argument), DEV-03 (speaktext key still unverified), plus the scaffolding
+      debt table for BUILD_STAMP and ROUTER_TRACE.
+
+cycle_3_verification: >
+  guardrail_verdict: static signals pass; runtime signal is the open checkpoint.
+  - PRESERVES BOTH PATHS (the explicit requirement): semantic diff of pre vs post shows the
+    OPEN pipeline body and the CLOSE pipeline body are BYTE-IDENTICAL. The only changed
+    actions are the two routing comments, the deleted gate, the deleted unrecognised alert,
+    the 3 inserted trace actions, the menu-prompt stamp, and the two relocated End Ifs. Both
+    literal comparisons keep the same conditional, the same cond-4 test and the same target
+    strings; the automation arms merely lose one enclosing level.
+  - mutation at fix site: commenting out the restructure_router() call fails the build with
+    the guard's message, exit 1, and the source md5 is UNCHANGED after the rejected build —
+    proving the guard runs before the single serialize/write.
+  - guard sensitivity, unit-tested against synthetic mutants of the real artifact: MANUAL
+    hoisted out of the CLOSE arm -> caught; OPEN literal drifted to "OPENN" -> caught;
+    unmutated artifact -> accepted.
+  - structural regression, both forks: 0 duplicate UUIDs, 0 multi-identifier
+    GroupingIdentifiers, 0 nesting imbalance, 0 unclosed groups, 0 menu item/case mismatches,
+    0 control-flow starts missing their required comment. plutil -lint OK.
+  - nesting: max depth 12 -> 11 (Dumb) and 15 -> 14 (Sentient). The fix REDUCES depth.
+  - action counts: 3675 -> 3674 (Dumb), 3743 -> 3742 (Sentient).
+  - validator: --target-macos 26 --target-platform all passes for BOTH forks. It also caught
+    a real defect in this cycle's work — the new routing comment used an internal parameter
+    name — which was reworded before signing.
+  - idempotency: both generators re-run to byte-identical artifacts across three runs.
+  - signing: both signed, AEA1 magic confirmed (41454131), 188493 / 192130 bytes; dated
+    archives verified byte-identical to their sources via cmp.
+  - OUTSTANDING: no runtime signal. Shortcuts cannot execute on the build Mac.
+
+cycle_2_root_cause: >
+  IDENTIFIED (single systemic defect), PENDING DEVICE CONFIRMATION — not marked confirmed
+  on static evidence alone, per this cycle's standing rule.
+  The generator serialized every variable / action-output reference as a bare
+  `WFTextTokenAttachment`. That envelope is correct only for parameters iOS types as a
+  content item (Set Variable's WFInput, Set Dictionary Value's WFDictionary, File,
+  Placemark, float). For parameters iOS types as a plain string, the value must be a
+  `WFTextTokenString` — a "\ufffc" placeholder plus attachmentsByRange. A bare attachment in
+  a string-typed parameter imports cleanly, passes the bundled validator, and resolves to
+  EMPTY at run time. One mechanism, three symptoms:
+   - symptom 2: setvalueforkey.WFDictionaryValue (`str`) -> Value empty -> "No value was
+     provided to the Set Dictionary Value action for the key sequence".
+   - symptom 1: text.trimwhitespace.WFInput and text.changecase.text (`str`) -> the
+     OPEN/CLOSE normalisation chain evaporates between actions 84 and 87 -> Input Key
+     empty -> routing takes the MANUAL arm.
+   - symptom 3 (partial): the Control Room refresh reads every snapshot field through
+     gettext.WFTextActionText (`str`) -> all Snapshot* variables empty -> a contentless
+     block is appended to the Note.
+  Cycle 1's key rename (WFInput -> WFDictionaryValue) is retained and was necessary, but it
+  was never sufficient, because the value it named was still wrapped in the wrong envelope.
+
+cycle_2_fix: >
+  tools/build_state_engine.py and tools/build_sentient.py only; both forks regenerated.
+  (1) NEW normalise_string_envelopes() re-wraps a bare WFTextTokenAttachment as
+      WFTextTokenString ("\ufffc" + attachmentsByRange) for every parameter on a verified
+      allowlist, preserving the token payload byte-for-byte. Allowlist derived from catalog
+      TYPE plus golden-corpus usage, with provenance recorded per entry in the source.
+      Applies to gettext.WFTextActionText, setvalueforkey.WFDictionaryValue,
+      text.trimwhitespace.WFInput, text.changecase.text, text.match.text,
+      alert.WFAlertActionMessage/Title, searchweb.WFInputText.
+  (2) DELIBERATE EXCLUSION (recorded deviation): openurl.WFInput is catalog-typed `str` but
+      the golden corpus uses a bare attachment 2/2, as do text.combine.text and
+      text.split.text. Corpus evidence outranks catalog inference, so these are untouched.
+      4 openurl sites remain as bare attachments by design.
+  (3) NEW BUILD_STAMP surfaced in the manual menu prompt ("PROSOCHĒ · build 2026-08-14c").
+      This exists solely to discriminate the stale-install confound: without a visible
+      version marker, a duplicate install with the automation wrapper still pointed at the
+      old shortcut is indistinguishable from a failed fix, which is what made cycle 1's two
+      refutations uninterpretable.
+  (4) RECURRENCE GUARD: new verify_string_envelopes() fails the build if any allowlisted
+      string-typed parameter still holds a bare attachment. It runs before the single
+      serialize/write, so a rejected build leaves the artifact untouched.
+  (5) tools/build_sentient.py now imports and runs the same normaliser and guard, because
+      Sentient-only actions are inserted after the Dumb generator has finished and
+      previously bypassed the pass entirely (this caught a real leftover: text.match.text).
+
+cycle_2_verification: >
+  guardrail_verdict: static signals pass; runtime signal is the open checkpoint.
+  - reproduction: pre-fix artifact had 9 distinct string-typed parameters carrying bare
+    attachments (367 sites). Post-fix only the 4 deliberately excluded openurl.WFInput
+    sites remain, in BOTH forks.
+  - mutation at fix site: removing the normalise_string_envelopes() call fails the build
+    with "string-typed parameters carry a bare WFTextTokenAttachment (resolves to empty at
+    run time) ... (367 total)", exit 1, and the artifact md5 is unchanged after the
+    rejected build — proving the guard runs before the write. Running the guard against the
+    pre-fix artifact also rejects it, naming action 85 first.
+  - blast radius: exactly 367 actions differ per fork (220 gettext, 131 setvalueforkey,
+    10 alert, 2 searchweb, 1 each trimwhitespace/changecase/text.match) plus the 1 menu
+    prompt stamp. Action counts unchanged (3675 / 3743). Automated payload-preservation
+    check confirms every converted parameter carries the ORIGINAL token dict unchanged
+    inside attachmentsByRange["{0, 1}"] with string "\ufffc"; the only non-conversion diff
+    is the intended build stamp.
+  - regression: structural invariants re-verified on both forks — 0 duplicate UUIDs,
+    0 unclosed groups, 0 nesting imbalance, 0 multi-identifier GroupingIdentifiers,
+    0 menu item/case mismatches. plutil -lint OK for both.
+  - validator: --target-macos 26 --target-platform all passes for both forks.
+    --target-platform ios rejects 3675/3675 actions indiscriminately (including
+    is.workflow.actions.comment) and is now proven to be tooling noise rather than an
+    inherited assumption.
+  - idempotency: re-running both generators reproduces byte-identical artifacts (md5
+    stable across runs).
+  - signing: both forks signed, AEA1 magic confirmed, 187758 / 191335 bytes; dated
+    archives are byte-identical to their sources.
+  - OUTSTANDING: no runtime signal. Shortcuts cannot execute on the build Mac. Nothing is
+    confirmed until the device checkpoint returns, and the build stamp must be read back
+    FIRST or the results are not interpretable.
+
+oracle_type: specified (user-observable device behaviour against stated expected behaviour)
+
+files_changed:
+  - tools/build_state_engine.py (cycle 3: restructure_router, verify_router_shape, router_trace, stamp 14d; cycle 2: envelope normaliser + guard)
+  - tools/build_sentient.py (cycle 3: imports and runs verify_router_shape)
+  - docs/BUILD-NOTES.md (§13 recorded deviations DEV-01/02/03 + scaffolding debt)
+  - tools/build_state_engine.py (envelope normaliser, guard, build stamp)
+  - tools/build_sentient.py (reuses the same normaliser and guard)
+  - src/PROSOCHE-Dumb.xml (regenerated)
+  - src/PROSOCHE-Sentient.xml (regenerated)
+  - artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut (re-signed)
+  - artifacts/shortcuts/PROSOCHĒ — Nine Circles — Sentient.shortcut (re-signed)
+
+open_findings_not_fixed: >
+  - openurl.WFInput x4 — knowing deviation, see fix item (2).
+  - speaktext passes WFInput; the catalog does not define WFInput for it and lists no
+    parameters at all for that identifier, so no verified replacement key exists. NOT
+    changed: fabricating a key would violate the project's hard rule. Needs its own
+    device probe.
+  - format.date sets WFDateFormatString, undefined in the OS27 catalog but documented in
+    DATE_TIME.md — genuinely conflicting evidence, left alone.
+  - documentpicker.open carries a legacy WFShowFilePicker; openapp carries WFAppIdentifier
+    alongside a valid WFSelectedApp (the latter is donor-verified from the device).
+  - Symptom 3 is only partially explained; see the blind_spots entry in Current Focus.
