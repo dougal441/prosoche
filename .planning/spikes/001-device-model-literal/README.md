@@ -3,7 +3,7 @@ spike: 001
 name: device-model-literal
 type: standard
 validates: "Given a real iPhone, when Get Device Details queries \"Device Model\", then the exact literal string format (identifier vs marketing name) is known"
-verdict: PARTIAL
+verdict: INVALIDATED
 related: []
 tags: [shortcuts, device-detection]
 ---
@@ -167,5 +167,37 @@ Model returns a raw identifier (`iPhone16,1`) or a marketing name (`iPhone 16 Pr
 **Literal validity: RESOLVED** (by catalog evidence, corroborated by donor evidence — see
 the case table above). No device run was required.
 
-**Returned value format: PENDING** — awaiting the on-device round trip. Record the four
-values here when reported.
+**Returned value format: RESOLVED — and it kills the capability-detection premise.**
+
+On-device run (2026-08-16, real iPhone, iOS 26.6):
+
+| Field | Returned value |
+|---|---|
+| Device Model | `iPhone` |
+| Device Name | *(the phone's user-assigned name — omitted here, not load-bearing)* |
+| System Version | `26.6` |
+| System Build Number | `23G71` |
+
+**Device Model returns the bare literal `"iPhone"` — not a model identifier
+(`iPhone16,1`) and not a marketing name (`iPhone 15 Pro`/`iPhone 16`).** It does not
+disambiguate hardware generation at all. Every iPhone running Shortcuts, from an
+iPhone 8 to the newest Pro Max, would return the identical string. This makes it
+structurally impossible to build the hardware-capability lookup table spike 002 was
+scoped to build — there is no signal here to gate on.
+
+`System Version` (`26.6`) is real OS-version data, but OS version alone cannot stand in
+for hardware capability: iOS 26 runs on both Apple-Intelligence-capable (iPhone 15 Pro+)
+and non-capable hardware. Gating on OS version alone would incorrectly mark plenty of
+real devices as capable.
+
+**No other `WFDeviceDetail` case offers a usable proxy either.** Of the 12 confirmed
+literals (see enum table above), the only device-shape-adjacent ones are `Screen Width` /
+`Screen Height` — and screen dimensions repeat across many hardware generations, so they
+can't reliably distinguish an Apple-Intelligence-eligible model from an ineligible one.
+
+**Verdict: INVALIDATED.** `Get Device Details` cannot support automatic
+Apple-Intelligence-capability detection on iOS 26 Shortcuts. This is a hard platform
+ceiling, not a wiring mistake — there is no available action, parameter, or picker case
+anywhere in the audited surface that exposes a disambiguating hardware identifier.
+Spike 002 (capability-gate) as originally scoped depends entirely on this signal existing
+and cannot proceed as planned. See MANIFEST.md for the pivot decision.
