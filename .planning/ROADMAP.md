@@ -231,8 +231,10 @@ Full context: `.planning/phases/999.3-grayscale-ash-capability-donor-test/2026-0
 ### Phase 9: Dimming/Silence Stateful Restore (Experimental Fork)
 
 **Goal:** On this experimental branch only, finish the stateful capture-and-restore design
-for Dimming (§11 Primitive E) and Silence (§11 Primitive C) — fix the 18 uncoerced
-`setbrightness`/`setvolume` sites left over from the cycle-14 type audit, then prove
+for Dimming (§11 Primitive E) and Silence (§11 Primitive C) — fix the 28 uncoerced
+`setbrightness`/`setvolume` sites left over from the cycle-14 type audit and the later
+Test-a-Circle menu unroll (corrected 2026-08-16 from the stale 18 figure — see criterion 1
+and `09-RESEARCH.md`), then prove
 capture → apply → restore as a closed loop on a real device, including force-quit,
 device-restart, CLOSE-never-fires, and overlapping-session failure modes. Deliver a
 verdict (works safely / does not) that the main-line cut in
