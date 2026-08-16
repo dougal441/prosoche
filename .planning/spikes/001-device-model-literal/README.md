@@ -201,3 +201,69 @@ ceiling, not a wiring mistake — there is no available action, parameter, or pi
 anywhere in the audited surface that exposes a disambiguating hardware identifier.
 Spike 002 (capability-gate) as originally scoped depends entirely on this signal existing
 and cannot proceed as planned. See MANIFEST.md for the pivot decision.
+
+### Follow-up research: is there ANY indirect signal? (web search, 2026-08-16)
+
+Requested by the user after the on-device result came back, to check whether
+`System Build Number` or some other indirect proxy could substitute. All dead ends:
+
+- **`System Build Number` is a pure OS-build identifier** (e.g. `23G71` = iOS 26.6 RC),
+  identical across every device running that build regardless of hardware. No
+  hardware signal at all. [BetaWiki](https://betawiki.net/wiki/IOS_26.6_build_23G71),
+  [TidBITS build-number explainer](https://tidbits.com/2020/07/08/how-to-decode-apple-version-and-build-numbers/).
+- **Apple Intelligence hardware floor:** A17 Pro (iPhone 15 Pro / 15 Pro Max) or
+  A18 / A18 Pro (iPhone 16 family), plus an 8 GB RAM minimum. Notably the plain
+  **iPhone 15 / 15 Plus do not qualify** (A16 Bionic, 6 GB RAM) despite shipping the same
+  generation and same iOS as the 15 Pro — capability doesn't even track cleanly by
+  "device generation," only by specific SKU/chip.
+  [macobserver](https://www.macobserver.com/iphone/what-iphones-have-apple-intelligence/),
+  [techpp](https://techpp.com/2026/04/01/apple-intelligence-supported-devices/).
+- **iOS 26 itself supports back to iPhone 11 / SE (2nd gen)**, i.e. any A13+ device —
+  a huge population, the large majority of which is *not* Apple-Intelligence-capable.
+  So `System Version` returning "26.x" carries almost no capability signal; most
+  iOS-26-capable devices are ineligible for Apple Intelligence.
+  [SimplyMac iOS 26 compatibility list](https://www.simplymac.com/ios/ios-26-compatible-phones-full-list),
+  [TechRadar iOS 26 compatibility](https://www.techradar.com/phones/iphone/ios-26-and-ipados-26-compatibility-explained-which-models-are-supported).
+- **The real capability check exists, but isn't reachable from Shortcuts.** Apple's
+  actual API for this is `SystemLanguageModel.default.availability` (Foundation
+  Models framework) — a Swift API for native app code, not a Shortcuts action. Even if
+  it were reachable, PROSOCHĒ's own constraints ("no companion app, no private APIs")
+  already rule out that path. [dev.to fallback-gracefully writeup](https://dev.to/arshtechpro/how-to-fall-back-gracefully-when-apple-intelligence-isnt-available-48j).
+- **No app-presence check exists in Shortcuts** to probe for an Apple-Intelligence-only
+  system app (e.g. Image Playground) as a proxy — consistent with the project's own
+  capability audit finding "no native file/app-existence check anywhere in Shortcuts."
+- **`Use Model` failing on ineligible hardware wouldn't help even if confirmed** —
+  Shortcuts has no try/catch, so any failure surfaces as a visible user-facing error
+  dialog rather than something a shortcut can silently branch on. One forum thread
+  ([Apple Developer Forums](https://developer.apple.com/forums/thread/813757)) confirms
+  `Use Model` error-handling is already a known pain point for context-window overflows;
+  nothing suggests ineligible-hardware failures behave differently or more catchably.
+
+**Net: confirmed, not just suspected — there is no detection path, direct or indirect,
+available to a pure Shortcuts implementation.** The ceiling is architectural (Apple's own
+API surface + PROSOCHĒ's no-companion-app constraint), not a gap in this research pass.
+
+### Second follow-up: could a try/catch pattern work instead? (2026-08-16)
+
+User's proposal: attempt the on-device model, catch failure, save the result as a
+boolean. Checked against the toolchain docs (zero error/try/catch parameters documented
+on `askllm` or any other action in `ACTIONS.md`/`APPINTENTS.md`/`CONTROL_FLOW.md`) and web
+research, both agree:
+
+- **Shortcuts has no catch branch, structurally.** When an action errors, the entire
+  shortcut halts immediately — no action after the failure point runs, including a
+  "save this to a boolean" step. There is no "if fail" to attach recovery logic to; the
+  shortcut just stops and surfaces an error to the user.
+  [Apple Community thread](https://discussions.apple.com/thread/254812093),
+  [Apple Developer Forums — Use Model error handling](https://developer.apple.com/forums/thread/813757).
+- **`Use Model` reportedly shows as greyed out in the Shortcuts editor UI itself** on
+  incapable hardware, per Apple's own support docs — meaning the incompatibility can
+  surface at the authoring/configuration level, not only at runtime. Even setting aside
+  the no-catch-branch problem, there may be no clean "attempt it and observe the result"
+  moment to hook into at all.
+  [Apple Support — Use Apple Intelligence in Shortcuts](https://support.apple.com/guide/iphone/use-apple-intelligence-in-shortcuts-iph78c41eaf8/ios).
+
+**Verdict: also infeasible, for a different reason than the device-detection path (no
+catch mechanism exists at all, vs. no disambiguating data exists).** Both routes to
+automatic fork selection are closed. The only remaining mechanism is an explicit,
+user-set toggle.
