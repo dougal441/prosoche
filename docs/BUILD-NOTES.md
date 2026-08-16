@@ -936,3 +936,72 @@ prerequisite, not a surprise.** Do not spend a cycle on the scope alone while DE
 Items 1–3 are mechanical. **Items 4 and 5 are a judgement call the user has explicitly reserved
 to themselves, and item 5 is conditional on item 4.** Neither may be resolved by an agent acting
 alone.
+
+---
+
+## 18. Dimming/Silence coercion fix merged to main UNTESTED — live-path risk (2026-08-16, explicit user decision)
+
+Phase 9 added `is.workflow.actions.setbrightness` (`WFBrightness`) and
+`is.workflow.actions.setvolume` (`WFVolume`) to `NUMERIC_OPERAND_FIELDS` in
+`tools/build_state_engine.py`, closing the axis-6 coercion gap at all 28 sites
+(14 `setbrightness` + 14 `setvolume`; 18 receive the aggrandizement, 10 `Silence Target`
+sites are already numeric via `number()` and correctly do not). This was merged to main by
+explicit user decision on 2026-08-16 **without any on-device verification**.
+
+### What this changes behaviourally — read before touching Circles
+
+Prior to this fix the operands were text-typed. Per §15/§16 and `.claude/CLAUDE.md`'s axis-6
+rule, a numeric parameter fed a text-typed operand is structurally valid in the file, passes
+the validator, signs, imports — **and fails at runtime**. The practical consequence is that
+Dimming and Silence almost certainly *no-opped* on device: no brightness or volume change
+occurred, therefore no restore was ever required. The defect was inert.
+
+After this fix those writes should actually execute. That means:
+
+1. **Brightness and volume will genuinely change** when Circles carrying Dimming (Primitive E)
+   or Silence (Primitive C) fire.
+2. **`restore_managed_settings()` becomes load-bearing for the first time** — the four
+   restoration triggers (owning CLOSE, live-Ice Emergency Restore, `ice_expiry()`,
+   manual-menu Emergency Restore) now guard real state rather than an empty snapshot.
+3. **That restore loop has never executed on a real device.** Per
+   `.planning/phases/05-nine-primitives-environmental-safety/05-UAT.md`, exactly one Circle has
+   ever fired on hardware (Circle 1, once, build `2026-08-15o`). Dimming and Silence have never
+   run. Zero device evidence exists for capture, restore, or any failure mode.
+
+**Net effect: this fix converted a dead defect into a live, unproven safety-critical path.**
+That is the inverse of the §21 rule ("if the original value cannot be captured and restored
+reliably, do not make the change at all"), and it was merged in full knowledge of that.
+
+### Untested failure modes (all of them)
+
+None of the following has ever been observed on hardware. Each was scripted as a numbered test
+in `.planning/phases/09-reintroduce-and-validate-dimming-silence-stateful-restore-on/09-UAT.md`
+and none was run:
+
+| # | Untested behaviour |
+|---|---|
+| 3 | `Get Device Details` capture returns a real, non-empty, correctly-typed value |
+| 4 | `WFBrightness = 0.0` is dim rather than black (BD-02 addendum rests on a user report, not a measurement) |
+| 5 | Capture → apply → restore returns the exact original value on CLOSE |
+| 6 | Force-quit mid-session does not strand the device dim/quiet |
+| 7 | Device restart mid-session does not strand the device |
+| 8 | CLOSE never firing does not strand the device |
+| 9 | Two overlapping sessions restore the correct original |
+| 10 | Compound: overlap + force-quit of the winning session |
+| 11 | Emergency Restore recovers from each failure mode above |
+
+Only test 1 (coercion chip does not render red in Shortcuts.app) was checked, by user
+spot-inspection rather than an exhaustive pass over all ~3,500 actions.
+
+### What to do before trusting this path
+
+Run `09-UAT.md` end to end on an Apple-Intelligence-capable iPhone (15 Pro+, iOS 26.x). It is
+fully authored and ready. Until it passes, treat any Circle carrying Dimming or Silence as
+capable of leaving the device dimmed or muted with Emergency Restore as the only recovery —
+and note that Emergency Restore's own effectiveness on this path (test 11) is equally unproven.
+
+**DEV-06 (restore-ownership check) remains open and is unaffected by this merge.** §17 stands:
+the decision is reserved to the user. `09-UAT.md`'s DEV-06 write-up argues from code trace that
+the current no-ownership-check design is already correct for the two-session overlap case and
+that a naive equality check would regress it — that argument is a trace, not device evidence,
+and tests 9/10/12 exist to check it.
