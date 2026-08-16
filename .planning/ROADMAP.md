@@ -371,7 +371,7 @@ and abolishes combined entries.
 **Severity:** major
 **Requirements**: AUDIT-03, AUDIT-04, SESS-07, CIRC-01, CIRC-03, CIRC-05, CIRC-13, CIRC-14, ROOM-01, ROOM-02, ROOM-03, ROOM-10, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-01, DIST-02, DIST-03, DIST-04, DIST-05, DIST-06 (no new IDs expected — this phase touches existing ones)
 **Depends on:** Phase 9
-**Plans:** 1/5 plans executed
+**Plans:** 2/5 plans executed
 
 Plans:
 **Wave 1**
@@ -380,7 +380,7 @@ Plans:
 
 **Wave 2** *(depends on 10-01)*
 
-- [ ] 10-02-PLAN.md — Control Room quieting: `gate_control_room_shownote()`, the `Setup Check` menu item and its read-only display, the reframed manual prompt, ROOM-10 amended
+- [x] 10-02-PLAN.md — Control Room quieting: `gate_control_room_shownote()`, the `Setup Check` menu item and its read-only display, the reframed manual prompt, ROOM-10 amended
 
 **Wave 3** *(depends on 10-01, 10-02)*
 
