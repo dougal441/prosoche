@@ -336,17 +336,22 @@ strategy §12's stated key failure. Deliverables:
   `heat.open_base` is `1`, so any first open scores Circle 1). Shift each profile's
   curve up so band widths stay as designed and only entry is delayed. The numbers are
   explicitly for on-device tuning.
+
 - **Remove the OPEN notification entirely.** Users learn their Circle because something
   happens, not because they are told a number.
+
 - **Reword `Leaving / Continue`** so it says what is being left, what continuing means,
   and why it is being asked. It stays as §6.4's easy-dismissal mechanism wherever it
   fires; it simply no longer fires in the silent band.
+
 - **Gate the ungated `shownote`** behind an explicit request flag, so only "Open Control
   Room" opens the Note instead of all nine menu items ending in the Notes app. The
   cycle-16 `filter.notes` picker fix is already applied in source — do not re-patch it.
+
 - **Add a `Setup Check` menu item** reporting which of the two Personal Automations has
   ever fired, via a numeric `> 0` gate on the existing flat `last_open_at`/`last_close_at`
   keys. No new state, no schema bump, no migration.
+
 - **Amend the canonical strategy** to record the silent band, since §Primitive A and
   §Circle I both currently prescribe the Knock as Circle 1's intervention.
 
@@ -366,12 +371,12 @@ and abolishes combined entries.
 **Severity:** major
 **Requirements**: AUDIT-03, AUDIT-04, SESS-07, CIRC-01, CIRC-03, CIRC-05, CIRC-13, CIRC-14, ROOM-01, ROOM-02, ROOM-03, ROOM-10, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-01, DIST-02, DIST-03, DIST-04, DIST-05, DIST-06 (no new IDs expected — this phase touches existing ones)
 **Depends on:** Phase 9
-**Plans:** 5 plans
+**Plans:** 1/5 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 10-01-PLAN.md — Circle 0 silent band: raised thresholds, Circle floor of 0, silent-band gate, OPEN notification removed, `verify_circle_zero_silence()`, canonical-strategy amendment
+- [x] 10-01-PLAN.md — Circle 0 silent band: raised thresholds, Circle floor of 0, silent-band gate, OPEN notification removed, `verify_circle_zero_silence()`, canonical-strategy amendment
 
 **Wave 2** *(depends on 10-01)*
 

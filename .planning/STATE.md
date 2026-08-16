@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 09
-current_phase_name: Dimming/Silence Stateful Restore (Experimental Fork)
-status: verifying
-stopped_at: "09-02 Task 1 complete; Tasks 2-3 blocked on device access (checkpoint:human-verify)"
-last_updated: "2026-08-16T10:09:29.989Z"
-last_activity: 2026-08-16
-last_activity_desc: Phase 09 execution started
+current_phase: 10
+current_phase_name: Ship-readiness remainder and UX-lite pass
+status: executing
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-08-16T15:10:17.733Z"
+last_activity: 2026-08-17
+last_activity_desc: Phase 10 Plan 01 complete (Circle 0 silent band, raised thresholds, OPEN notification deleted, canonical strategy §10.6)
 progress:
-  total_phases: 9
-  completed_phases: 6
-  total_plans: 20
-  completed_plans: 20
+  total_phases: 10
+  completed_phases: 7
+  total_plans: 27
+  completed_plans: 23
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 09 — Dimming/Silence Stateful Restore (Experimental Fork)
+**Current focus:** Phase 10 — Ship-readiness remainder and UX-lite pass
 
 ## Current Position
 
-Phase: 09 (Dimming/Silence Stateful Restore — Experimental Fork) — MERGED TO MAIN, DEVICE-PROVING OUTSTANDING
-Plan: 2 of 2 (09-01 complete; 09-02 Task 1 complete, Tasks 2-3 never run)
-Status: Coercion fix merged to main UNTESTED by explicit user decision 2026-08-16 — see `docs/BUILD-NOTES.md` §18. Dimming/Silence writes now execute where they previously no-opped, which makes `restore_managed_settings()` load-bearing on a path with zero device evidence. `09-UAT.md` (12 tests) is authored and ready; only test 1 (coercion chip not red) passed. Also outstanding: Phase 8 awaiting real-iPhone import / Manual UAT; Phase 4 UAT tests 1, 3-6 reopened.
-Last activity: 2026-08-16 — Phase 9 merged to main untested; prior: quick task 260816-ukb stripped OPEN_BISECT debug breadcrumbs (Phase 4 UAT unblock)
+Phase: 10 (Ship-readiness remainder and UX-lite pass) — IN PROGRESS
+Plan: 1 of 5 (10-01 complete; 10-02 through 10-05 outstanding)
+Status: 10-01 landed Circle 0, the silent band — a low-Pressure OPEN now shows nothing at all while still accumulating and persisting state, enforced by `verify_circle_zero_silence()` with both negative controls demonstrated. Brightness/volume cut remains CANCELLED; all 28 sites and the 20 device-detail reads are untouched. Outstanding from earlier phases: Phase 9 device-proving (`09-UAT.md`, 12 tests, only test 1 passed — see `docs/BUILD-NOTES.md` §18); Phase 8 awaiting real-iPhone import / Manual UAT; Phase 4 UAT tests 1, 3-6 reopened. Phase 10 adds one on-device observation: a first open of a cold day must produce no visible reaction while `state.json` still shows heat 1, pressure 1, circle 0.
+Last activity: 2026-08-17 — Phase 10 Plan 01 complete (Circle 0 silent band, raised thresholds, OPEN notification deleted, canonical strategy §10.6)
 
-Progress: [██████████] 100%
+Progress: [█████████░] 85%
 
 ## Performance Metrics
 
@@ -78,6 +78,7 @@ Progress: [██████████] 100%
 | Phase 08-sentient-fork-dual-distribution P03 | 10m | 1 tasks | 10 files |
 | Phase 09 P01 | 25min | 3 tasks | 7 files |
 | Phase 09 P02 | 7min | 1 tasks | 3 files |
+| Phase 10 P01 | 5m | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -130,6 +131,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Kept the numeric-coercion fix purely additive at the NUMERIC_OPERAND_FIELDS table per plan instruction; no other function edited.
 - [Phase ?]: Fixed two pre-existing, unrelated stale self-check assertions (docs/state_engine_self_check.py gettimebetweendates count; docs/phase5_self_check.py router-gate ancestry) because the plan's own required verify chain needed both scripts to pass (Rule 1/3 deviation).
 - [Phase ?]: [Phase 9]: 09-02 Task 1 complete (both forks re-signed with coercion fix, 09-UAT.md authored with 12 tests + DEV-06 first-principles write-up); Tasks 2-3 (device trials) blocked — zero iPhones connected, matching the open DIST-03 blocker. Did not auto-approve despite auto_advance=true, per do-not-fabricate rule.
+- [Phase ?]: Circle 0 promoted as a first-class value of the existing circle field (0..9) rather than a parallel silent flag — one source of truth, no schema_version bump
+- [Phase ?]: Threshold curves raised by each profile's own first band width, preserving band widths and delaying only entry into Circle 1 (Paradise 4, Limbo 3, Inferno 2)
 
 ### Pending Todos
 
@@ -206,6 +209,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-16T10:09:29.978Z
-Stopped at: 09-02 Task 1 complete; Tasks 2-3 blocked on device access (checkpoint:human-verify)
-Resume file: .planning/phases/09-reintroduce-and-validate-dimming-silence-stateful-restore-on/09-UAT.md
+Last session: 2026-08-16T15:10:17.723Z
+Stopped at: Completed 10-01-PLAN.md
+Resume file: None
