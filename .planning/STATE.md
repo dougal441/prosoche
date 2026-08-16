@@ -212,7 +212,7 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 | 260814-kqm | Correct signed AEA1 `.shortcut` recovery instructions | 2026-08-14 | adc96a3 | [260814-kqm-correct-8-signed-aea1-shortcut-artifacts](./quick/260814-kqm-correct-8-signed-aea1-shortcut-artifacts/) |
 | 260814-kut | Disambiguate deviation IDs and guard rebuild provenance | 2026-08-14 | 05f69fc | [260814-kut-disambiguate-the-cycle-3-speaktext-devia](./quick/260814-kut-disambiguate-the-cycle-3-speaktext-devia/) |
 | 260816-ukb | Strip OPEN_BISECT/ROUTER_TRACE/BUILD_STAMP debug scaffolding | 2026-08-16 | 154b998 | [260816-ukb-strip-the-open-bisect-debug-breadcrumb-s](./quick/260816-ukb-strip-the-open-bisect-debug-breadcrumb-s/) |
-| 260817-2ng | Reconcile stale Use Model On-Device literal audit trail (CAP-26/DEV-03/UA-02/BD-04) | 2026-08-17 | pending | [260817-2ng-use-model-literal-reconciliation](./quick/260817-2ng-use-model-literal-reconciliation/) |
+| 260817-2ng | Reconcile stale Use Model On-Device literal audit trail (CAP-26/DEV-03/UA-02/BD-04) | 2026-08-17 | 1732448 | [260817-2ng-use-model-literal-reconciliation](./quick/260817-2ng-use-model-literal-reconciliation/) |
 
 ## Deferred Items
 
