@@ -35,4 +35,4 @@ check whether the screen is currently locked at any point in its OPEN/CLOSE pipe
 | # | Name | Type | Validates | Verdict | Tags |
 |---|------|------|-----------|---------|------|
 | 001 | device-is-locked-literal | standard | Given Donor 10's decrypted plist, when inspected for `WFDeviceDetail`, then the literal `"Device Is Locked"` is present as donor-confirmed ground truth | VALIDATED | device-details, capability-audit, evidence-hierarchy |
-| 002 | close-automation-vs-screen-lock | standard | Given a tracked app in foreground, when the user locks the screen (vs. switches app), then determine whether the "App Is Closed" Personal Automation fires the same `CLOSE` signal in both cases | PENDING (on-device) | session-model, close-pipeline, personal-automations |
+| 002 | close-automation-vs-screen-lock | standard | Given a tracked app in foreground, when the user locks the screen (vs. switches app), then determine whether the "App Is Closed" Personal Automation fires the same `CLOSE` signal in both cases | PENDING — probe built, validated, signed; awaiting on-device run | session-model, close-pipeline, personal-automations |
