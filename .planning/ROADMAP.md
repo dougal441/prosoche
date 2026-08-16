@@ -371,7 +371,7 @@ and abolishes combined entries.
 **Severity:** major
 **Requirements**: AUDIT-03, AUDIT-04, SESS-07, CIRC-01, CIRC-03, CIRC-05, CIRC-13, CIRC-14, ROOM-01, ROOM-02, ROOM-03, ROOM-10, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-01, DIST-02, DIST-03, DIST-04, DIST-05, DIST-06 (no new IDs expected — this phase touches existing ones)
 **Depends on:** Phase 9
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 **Wave 1**
@@ -388,7 +388,7 @@ Plans:
 
 **Wave 4** *(depends on 10-01, 10-02, 10-03)*
 
-- [ ] 10-04-PLAN.md — Rebuild, validate, sign, AEA1 decrypt-verify both forks; `manifest_check.py`; MANIFEST refresh; BUILD-NOTES record and requirement resolutions
+- [x] 10-04-PLAN.md — Rebuild, validate, sign, AEA1 decrypt-verify both forks; `manifest_check.py`; MANIFEST refresh; BUILD-NOTES record and requirement resolutions
 
 **Wave 5** *(depends on 10-04; blocked on DIST-03)*
 
