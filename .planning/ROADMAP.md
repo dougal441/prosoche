@@ -371,7 +371,7 @@ and abolishes combined entries.
 **Severity:** major
 **Requirements**: AUDIT-03, AUDIT-04, SESS-07, CIRC-01, CIRC-03, CIRC-05, CIRC-13, CIRC-14, ROOM-01, ROOM-02, ROOM-03, ROOM-10, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-01, DIST-02, DIST-03, DIST-04, DIST-05, DIST-06 (no new IDs expected — this phase touches existing ones)
 **Depends on:** Phase 9
-**Plans:** 2/5 plans executed
+**Plans:** 3/5 plans executed
 
 Plans:
 **Wave 1**
@@ -384,7 +384,7 @@ Plans:
 
 **Wave 3** *(depends on 10-01, 10-02)*
 
-- [ ] 10-03-PLAN.md — Guards: `environmental_restore_check.py` pins the cancelled brightness/volume cut, `router_ui_census.py` enforces Circle-0 silence, `sequence_dispatch_check.py` records the Voice orphan, `phase6_self_check.py` repaired
+- [x] 10-03-PLAN.md — Guards: `environmental_restore_check.py` pins the cancelled brightness/volume cut, `router_ui_census.py` enforces Circle-0 silence, `sequence_dispatch_check.py` records the Voice orphan, `phase6_self_check.py` repaired
 
 **Wave 4** *(depends on 10-01, 10-02, 10-03)*
 

@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 10
 current_phase_name: Ship-readiness remainder and UX-lite pass
 status: executing
-stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-08-16T15:18:27.548Z"
+stopped_at: Completed 10-03-PLAN.md
+last_updated: "2026-08-16T15:31:03.035Z"
 last_activity: 2026-08-17
 last_activity_desc: Phase 10 Plan 01 complete (Circle 0 silent band, raised thresholds, OPEN notification deleted, canonical strategy §10.6)
 progress:
   total_phases: 10
   completed_phases: 7
   total_plans: 27
-  completed_plans: 24
+  completed_plans: 25
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 ## Current Position
 
 Phase: 10 (Ship-readiness remainder and UX-lite pass) — IN PROGRESS
-Plan: 2 of 5 (10-01 complete; 10-02 through 10-05 outstanding)
+Plan: 3 of 5 (10-01 complete; 10-02 through 10-05 outstanding)
 Status: 10-01 landed Circle 0, the silent band — a low-Pressure OPEN now shows nothing at all while still accumulating and persisting state, enforced by `verify_circle_zero_silence()` with both negative controls demonstrated. Brightness/volume cut remains CANCELLED; all 28 sites and the 20 device-detail reads are untouched. Outstanding from earlier phases: Phase 9 device-proving (`09-UAT.md`, 12 tests, only test 1 passed — see `docs/BUILD-NOTES.md` §18); Phase 8 awaiting real-iPhone import / Manual UAT; Phase 4 UAT tests 1, 3-6 reopened. Phase 10 adds one on-device observation: a first open of a cold day must produce no visible reaction while `state.json` still shows heat 1, pressure 1, circle 0.
 Last activity: 2026-08-17 — Phase 10 Plan 01 complete (Circle 0 silent band, raised thresholds, OPEN notification deleted, canonical strategy §10.6)
 
-Progress: [█████████░] 89%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
@@ -80,6 +80,7 @@ Progress: [█████████░] 89%
 | Phase 09 P02 | 7min | 1 tasks | 3 files |
 | Phase 10 P01 | 5m | 3 tasks | 4 files |
 | Phase 10 P02 | ~12 minutes | 3 tasks | 4 files |
+| Phase 10 P03 | ~20 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -136,6 +137,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Threshold curves raised by each profile's own first band width, preserving band widths and delaying only entry into Circle 1 (Paradise 4, Limbo 3, Inferno 2)
 - [Phase ?]: Gated the single shownote on Manual Show Note Requested; filter.notes and Create Note stay unconditional so BOOT-08 self-heal survives
 - [Phase ?]: Setup Check derives automation status from last_open_at/last_close_at flat reads with numeric > 0 gates — no new state key, no schema bump
+- [Phase ?]: Cancelled-cut guard: when a subtractive change is proposed and then reversed by decision, write a checker whose docstring states the cancellation and its dates and whose assertions name every symbol the cut would have removed
+- [Phase ?]: Structurally-derived exemption: an assertion false at HEAD for a by-construction reason gets a named helper located by the same structural handle the generator uses, never an index or a silent skip
+- [Phase ?]: docs/sequence_dispatch_check.py never filters on a condition code; semantics are resolved per branch from the branch's own code, so BD-06's contains-to-exact move needs no edit
 
 ### Pending Todos
 
@@ -212,6 +216,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-16T15:18:27.538Z
-Stopped at: Completed 10-02-PLAN.md
+Last session: 2026-08-16T15:30:56.479Z
+Stopped at: Completed 10-03-PLAN.md
 Resume file: None
