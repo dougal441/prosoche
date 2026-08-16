@@ -366,8 +366,31 @@ and abolishes combined entries.
 **Severity:** major
 **Requirements**: AUDIT-03, AUDIT-04, SESS-07, CIRC-01, CIRC-03, CIRC-05, CIRC-13, CIRC-14, ROOM-01, ROOM-02, ROOM-03, ROOM-10, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-01, DIST-02, DIST-03, DIST-04, DIST-05, DIST-06 (no new IDs expected — this phase touches existing ones)
 **Depends on:** Phase 9
-**Plans:** 0 plans
+**Plans:** 5 plans
 
 Plans:
+**Wave 1**
 
-- [ ] TBD (run /gsd-plan-phase 10 to break down)
+- [ ] 10-01-PLAN.md — Circle 0 silent band: raised thresholds, Circle floor of 0, silent-band gate, OPEN notification removed, `verify_circle_zero_silence()`, canonical-strategy amendment
+
+**Wave 2** *(depends on 10-01)*
+
+- [ ] 10-02-PLAN.md — Control Room quieting: `gate_control_room_shownote()`, the `Setup Check` menu item and its read-only display, the reframed manual prompt, ROOM-10 amended
+
+**Wave 3** *(depends on 10-01, 10-02)*
+
+- [ ] 10-03-PLAN.md — Guards: `environmental_restore_check.py` pins the cancelled brightness/volume cut, `router_ui_census.py` enforces Circle-0 silence, `sequence_dispatch_check.py` records the Voice orphan, `phase6_self_check.py` repaired
+
+**Wave 4** *(depends on 10-01, 10-02, 10-03)*
+
+- [ ] 10-04-PLAN.md — Rebuild, validate, sign, AEA1 decrypt-verify both forks; `manifest_check.py`; MANIFEST refresh; BUILD-NOTES record and requirement resolutions
+
+**Wave 5** *(depends on 10-04; blocked on DIST-03)*
+
+- [ ] 10-05-PLAN.md — Deferred device UAT: author `10-UAT.md` (ten tests) and gate on a human running it or recording the blocker
+
+**Planning notes (2026-08-17):**
+
+- `src/PROSOCHE-Dumb.xml` is both input and output of `tools/build_state_engine.py`, so every plan that runs a builder mutates it. That makes it a phase-wide mutex and is why the five plans are strictly sequential rather than parallelised.
+- Two positions in this phase's brief were measured false at `HEAD` and are corrected in 10-04: the self-check baseline is one-of-seven red (only `phase6_self_check.py`), not three-of-six; and `sentient_core_check.py` passes at `HEAD` because `c6d8737` regenerated both forks, so it is kept green by rebuilding Sentient rather than left red.
+- Strand A items 2 and 3 needed no work at planning time: `.gitignore` already covers `.DS_Store`, `__pycache__/` and `*.pyc`, and all six MANIFEST rows matched their artifacts exactly. The MANIFEST is refreshed in 10-04 only because this phase rebuilds.
