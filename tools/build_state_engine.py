@@ -13,36 +13,6 @@ from pathlib import Path
 
 
 SOURCE = Path("src/PROSOCHE-Dumb.xml")
-# Shown in the manual menu prompt so a device run states, in its first seconds,
-# which build is actually executing.  Importing a .shortcut whose display name
-# matches an installed one can create a second copy and leave an automation
-# wrapper pointed at the old shortcut; without a visible stamp that stale-install
-# case is indistinguishable from a failed fix.  Bump on every device-bound build.
-BUILD_STAMP = "build 2026-08-15o"
-# CYCLE 7 MEASUREMENT INSTRUMENT, not a fix.  Cycle 6 proved on device that the Run
-# Shortcut handoff DOES deliver "OPEN" (Probe 5 echoed it) while PROSOCHE still fails,
-# so the failing action is inside the OPEN arm, before the first OPEN menu.  Static
-# reading has produced three device-refuted "confirmations" and cannot evaluate the 336
-# control-flow actions that exist in no ToolKit catalog, so the primary instrument is now
-# bisection: one plain alert per span, at OPEN-arm base depth, so the LAST letter the user
-# sees localises the failure to a span of tens in one round trip.
-# The alert carries a plain-string title and a plain-string message.  Both shapes are
-# already evidenced: the plain-string title ran on device as the cycle-3 ROUTER TRACE, and
-# a plain-string WFAlertActionMessage appears in 5 of the 13 golden-corpus alerts.  No
-# variable is referenced, so a breadcrumb cannot fail for a reason of its own.
-# Set False to strip every breadcrumb; nothing else depends on them.
-OPEN_BISECT = True
-BISECT_TITLE = "PROSOCHĒ OPEN TRACE"
-# One-run debug scaffolding on the MANUAL arm: report the cond-100 verdict and the
-# bracketed Input Key value.  It exists because what an ABSENT Shortcut Input resolves
-# to after normalisation is not determinable on the build Mac, and guessing it is what
-# cost cycle 2.  Set False to strip it; the router fix does not depend on it.
-# CYCLE 14, directive 5: the router restructure is device-verified (builds h through k all
-# reached breadcrumb A, which sits inside the OPEN arm the restructure produces); the
-# "Input Key: [] / Empty ref: []" alert is now noise on every manual run.  Flipped off.
-ROUTER_TRACE = False
-TRACE_MARKER = "--- ROUTER TRACE ---"
-TRACE_END_MARKER = "--- ROUTER TRACE END ---"
 # comment_index matches on startswith, so this prefix is a structural locator, not prose.
 # replace_branch_body uses it to bound the CLOSE arm; keep it as the literal start of that
 # comment's text.
@@ -391,20 +361,6 @@ def notification(title: str, body):
     startling" default posture."""
     return action("is.workflow.actions.notification", WFNotificationActionTitle=title,
                   WFNotificationActionBody=body)
-
-
-def breadcrumb(letter: str):
-    """One OPEN-path bisection breadcrumb (cycle 7 measurement, see OPEN_BISECT).
-
-    Returns a list so call sites can splice it unconditionally.  Deliberately
-    contains no variable reference, no control flow and no UUID: it must be
-    incapable of failing for a reason of its own, and it must not perturb the
-    deterministic uid() counter, so that every action downstream of the OPEN arm
-    keeps the UUIDs it had in build 2026-08-14f.
-    """
-    if not OPEN_BISECT:
-        return []
-    return [alert(BISECT_TITLE, f"{letter}\n\nReport the LAST letter you see.")]
 
 
 def list_items(items, name: str):
@@ -1001,8 +957,6 @@ def open_pipeline():
 - Start from the loaded full State dictionary and the shared run clock.
 - A duplicate or active cooldown changes no Heat; a genuine open writes one final State.
 - The persisted Circle is arithmetic only; Phase 5 attaches behaviour at the marker below.""")]
-    # BREADCRUMB A - the OPEN arm was entered at all.
-    a += breadcrumb("A")
     # Read all mutable fields before any state mutation; null values are guarded.
     a += read_value("behavioural_day", variable("State"), "Stored Day")
     a += read_value("last_open_at", variable("State"), "Last Open")
@@ -1014,8 +968,6 @@ def open_pipeline():
     a += config("heat.reopen_bonus_mode", "Reopen Bonus Mode") + config("heat.overrun_penalty", "Overrun Penalty")
     a += config("heat.overrun_ratio", "Overrun Ratio") + config("heat.overrun_min_seconds", "Overrun Minimum")
     a += config("heat.contract_respected_relief", "Respect Relief") + config("gravity.opens_per_point", "Opens Per Gravity") + config("gravity.cap", "Gravity Cap")
-    # BREADCRUMB B - every state read and every config read completed.
-    a += breadcrumb("B")
     # Behavioural day rollover is the first state update (only opens_today resets).
     # Condition 101 ("does not have any value") -- see the identical comment at
     # select_exit()'s "Exit Selection Counter" guard for why condition 5 vs an empty
@@ -1035,8 +987,6 @@ def open_pipeline():
 - A different day resets only opens_today and records today's key.
 - A matching day leaves the counter intact."""), day_if, otherwise(day_group)]
     a += number(0, "Zero") + [set_value("opens_today", variable("Zero")), set_value("behavioural_day", variable("Behavioural Day")), end_if(day_group), end_if(g)]
-    # BREADCRUMB C - the behavioural-day rollover block resolved (either arm).
-    a += breadcrumb("C")
     # Cooldown and debounce each choose their own genuine no-inflation branch.
     a += [comment("""Short-circuit a live cooldown before any Heat arithmetic:
 - Input is the saved cooldown deadline routed through text.
@@ -1044,9 +994,6 @@ def open_pipeline():
 - Otherwise the regular duplicate guard and OPEN pipeline continue.""")]
     cooldown_group, cooldown_if = if_block("Cooldown Until", 2, number=variable("Now Epoch"))
     a += [cooldown_if] + save_state() + [otherwise(cooldown_group)]
-    # BREADCRUMB D - no live cooldown, and the Ice-expiry restoration block (which
-    # install_cooldown_branches splices in immediately above this point) completed.
-    a += breadcrumb("D")
     a += [comment("""Debounce duplicate OPEN triggers with the saved last-open timestamp:
 - A short repeat OPEN is not a new interaction and takes the no-mutation path.
 - A genuine later OPEN continues to ordered Heat arithmetic.
@@ -1060,8 +1007,6 @@ def open_pipeline():
           *number(0, "Genuine Open"), otherwise(debounce_group), action("is.workflow.actions.nothing"), end_if(debounce_group), otherwise(debounce_exists), action("is.workflow.actions.nothing"), end_if(debounce_exists)]
     genuine_group, genuine = if_block("Genuine Open", 2, number=0)
     a += [genuine]
-    # BREADCRUMB E - the duplicate-OPEN debounce resolved and this is a genuine open.
-    a += breadcrumb("E")
     # Current state values are loaded only after the short circuit branches.
     a += read_value("heat", variable("State"), "Heat Current") + read_value("opens_today", variable("State"), "Opens Today")
     a += [comment("""Compute Heat in its required order, then clamp it last:
@@ -1106,15 +1051,9 @@ def open_pipeline():
     a += read_value("heat", variable("State"), "Heat Clamped")
     cap_g, cap_if = if_block("Heat Clamped", 2, number=variable("Heat Cap"))
     a += [cap_if, set_value("heat", variable("Heat Cap")), otherwise(cap_g), action("is.workflow.actions.nothing"), end_if(cap_g)]
-    # BREADCRUMB F - the whole ordered Heat pipeline is done: decay, base, reopen bands,
-    # previous-contract adjustment, floor clamp and cap clamp.
-    a += breadcrumb("F")
     # Genuine OPEN writes active session and all derived fields to the same rooted State dictionary.
     a += math("Opens Today", variable("Open Base"), "Opens Today Next")
     a += [set_value("opens_today", variable("Opens Today Next")), set_value("last_open_at", variable("Now Epoch")), set_value("last_app", text_token([("tracked", None)]))]
-    # BREADCRUMB G - placed immediately BEFORE Random Number.  Span G->H isolates the
-    # first of the two scalar-type suspects Donor 3 surfaced this cycle.
-    a += breadcrumb("G")
     random_id, session_id = uid(), uid()
     # Random Number takes WFRandomNumberMinimum/WFRandomNumberMaximum (ToolKit v78
     # catalog); WFNumberMin/WFNumberMax are not parameters of this action.
@@ -1142,9 +1081,6 @@ def open_pipeline():
 - Start at Circle 1 and use the active profile's Config threshold list.
 - Each satisfied greater-than-or-equal comparison overwrites Circle with the current index.
 - Ascending thresholds make the final satisfied index the correct Circle; no numeric equality is used.""")]
-    # BREADCRUMB H - Random Number, Session ID, Detect Dictionary, Gravity and Pressure
-    # all completed.  Span H->I isolates the second scalar-type suspect (Repeat count).
-    a += breadcrumb("H")
     a += number(1, "Circle Next")
     scan = uid()
     a += [action("is.workflow.actions.repeat.count", GroupingIdentifier=scan, WFControlFlowMode=0, WFRepeatCount=9)]
@@ -1157,16 +1093,11 @@ def open_pipeline():
     hit_g, hit_if = if_block("Pressure Next", 3, number=variable("Threshold"))
     a += [hit_if, set_var("Circle Next", variable("Repeat Index")), otherwise(hit_g), action("is.workflow.actions.nothing"), end_if(hit_g),
           action("is.workflow.actions.repeat.count", UUID=uid(), GroupingIdentifier=scan, WFControlFlowMode=2)]
-    # BREADCRUMB I - the nine-step Circle threshold scan completed all nine iterations.
-    a += breadcrumb("I")
     a += [set_value("circle", variable("Circle Next")), set_value("behavioural_day", variable("Behavioural Day"))]
     a += complete_pending_exit()
-    # BREADCRUMB J - Circle written and any pending exit completed.  The only actions
-    # left before the first OPEN menu are Save File and the Phase 6 leaving block.
-    a += breadcrumb("J")
-    # Permanent, unconditional OPEN confirmation -- fires on every genuine open
-    # regardless of OPEN_BISECT, replacing breadcrumb J's de facto confirmation role
-    # (G-04-4b). Reuses knock()'s exact "Circle X · pressure Y · heat Z" phrasing.
+    # Permanent, unconditional OPEN confirmation, fired on every genuine open once
+    # Circle is written and any pending exit has completed (G-04-4b). Reuses knock()'s
+    # exact "Circle X · pressure Y · heat Z" phrasing.
     a += [notification("PROSOCHĒ", text_token([("Circle ", "Circle Next"),
                                                 (" · pressure ", "Pressure Next"),
                                                 (" · heat ", "Heat Final")]))]
@@ -1359,35 +1290,6 @@ ROUTE_FALLBACK_COMMENT = ROUTE_FALLBACK_MARKER + """, so this run is MANUAL.
 - OPEN and CLOSE never reach this arm."""
 
 
-def router_trace():
-    """Report what an absent Shortcut Input actually normalises to, on device.
-
-    Placed at the head of the MANUAL arm so ONE round-trip measures two things: what
-    Input Key is on a manual tap, and — if the OPEN automation still misroutes — what
-    Input Key is on the automation path, which is the single most valuable unknown left.
-
-    Deliberately contains NO control flow. An earlier draft tested "Input Key has any
-    value" here to report the cond-100 verdict; that conditional was byte-identical to the
-    router gate this build removes, so both find_absence_gate() and verify_router_shape()
-    matched it and the pass stopped being idempotent. The verdict is not needed anyway:
-    cycle 2 already established on device that cond 100 passes on a manual tap, because the
-    unrecognised-input alert is unreachable otherwise. What remains unknown is the VALUE,
-    and a printed empty-string reference on the adjacent line discriminates it: if the two
-    bracket pairs render identically the value is present but non-printing.
-    """
-    return [comment(TRACE_MARKER + """
-
-- Debug scaffolding only; it reads nothing, writes nothing, and branches nowhere.
-- It shows the normalised Input Key in brackets beside an empty-string reference.
-- Identical-looking brackets mean Input Key holds a non-printing character, since cycle 2 already proved on device that it is non-empty here.
-- Remove by setting ROUTER_TRACE = False in tools/build_state_engine.py and rebuilding."""),
-            alert("PROSOCHĒ " + BUILD_STAMP,
-                  text_token([("MANUAL arm reached.\n\nInput Key: [", "Input Key"),
-                              ("]\nEmpty ref: []\n\nIf those two lines look the same, Input Key is a "
-                               "non-printing character rather than visible text.", None)])),
-            comment(TRACE_END_MARKER)]
-
-
 def restructure_router(actions):
     """Route on positive identification (OPEN / CLOSE / else MANUAL), not on absence.
 
@@ -1514,7 +1416,7 @@ def manual_emergency_restore():
     group = uid()
     choices = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore"]
     a = [comment(MANUAL_MARKER + "\n\n- Manual control is the only path that refreshes the Control Room or reads its proforma.\n- OPEN and CLOSE never enter this menu or parse the Note.\n- Test Circle copies recorded values into test variables and never writes Pressure.\n- CYCLE 14 (checkpoint decision): Status and Open Control Room are read-only. Neither sets Manual Refresh Requested; only explicit state-changing choices (Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Reset Today, Emergency Restore) append to the Note."),
-         menu(group, 0, prompt=f"PROSOCHĒ · {BUILD_STAMP}", items=choices)]
+         menu(group, 0, prompt="PROSOCHĒ", items=choices)]
     # CYCLE 14 -- checkpoint decision: "Open Control Room" is decoupled from the
     # refresh-append mechanism entirely (read-only; the common tail below still finds
     # or creates the note and shows it via shownote, but never appends a snapshot).
@@ -2926,10 +2828,6 @@ def main():
     # Runs last of the structural passes: it moves the whole MANUAL arm, so every
     # marker-addressed replacement above should already have landed.
     restructure_router(actions)
-    remove_marker_block(actions, TRACE_MARKER, TRACE_END_MARKER)
-    if ROUTER_TRACE:
-        fallback = comment_index(actions, ROUTE_FALLBACK_MARKER)
-        actions[fallback + 1:fallback + 1] = router_trace()
     normalize_setters(actions)
     normalize_open_apps(actions)
     seed_settings_snapshot(actions)
