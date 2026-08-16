@@ -1566,7 +1566,16 @@ def manual_emergency_restore():
     group = uid()
     choices = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore", "Setup Check"]
     a = [comment(MANUAL_MARKER + "\n\n- Manual control is the only path that refreshes the Control Room or reads its proforma.\n- OPEN and CLOSE never enter this menu or parse the Note.\n- Test Circle copies recorded values into test variables and never writes Pressure.\n- CYCLE 14 (checkpoint decision): Status and Open Control Room are read-only. Neither sets Manual Refresh Requested; only explicit state-changing choices (Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Reset Today, Emergency Restore) append to the Note."),
-         menu(group, 0, prompt="PROSOCHĒ", items=choices)]
+         # PHASE 10 (10-02): the prompt was the bare product name, which told a user who
+         # arrived here unintentionally nothing at all.  A plain str is correct for
+         # WFMenuPrompt when nothing is interpolated -- the "Choose profile" and "Choose
+         # sequence" submenus below use the same form.  It names the fall-through case
+         # explicitly: this menu is where a run lands when the Shortcut is run by hand AND
+         # when an automation passed anything other than the two recognised inputs (the
+         # router's CLOSE Otherwise branch).  That is a deliberate routing tradeoff, not a
+         # defect, so the honest fix is to say so rather than to restructure the router --
+         # verify_router_shape() hard-fails the build on any such restructuring.
+         menu(group, 0, prompt="This is PROSOCHĒ's manual control menu. You are here because the Shortcut was run by hand, or because an automation passed it something other than OPEN or CLOSE. If you did not mean to be here, choose Open Control Room — that Note has the setup instructions.", items=choices)]
     # CYCLE 14 -- checkpoint decision: "Open Control Room" is decoupled from the
     # refresh-append mechanism entirely (read-only; the common tail below still finds
     # or creates the note, but never appends a snapshot).
@@ -1633,7 +1642,7 @@ def manual_note_refresh():
     a += read_value("last_close_at", variable("State"), "Setup Last Close")
     refresh_g, refresh_if = if_block("Manual Refresh Requested", 2, number=0)
     snapshot_id = uid()
-    snapshot = text_token([("\n\n## CURRENT SETTINGS\n- Fork: ", "Snapshot Fork"), ("\n- Profile: ", "Snapshot Profile"), ("\n- Sequence: ", "Snapshot Sequence"), ("\n- Voice: ", "Snapshot Voice"), ("\n- AI: not used by this fork\n- Enabled exits: ", "Snapshot Exits"), ("\n\n## CURRENT STATE\n- Circle: ", "Snapshot Circle"), ("\n- Pressure: ", "Snapshot Pressure"), ("\n- Cool-down until: ", "Snapshot Cooldown"), ("\n\n## ATTENTION LEDGER\n- Manual Control Room refresh at ", "Now Epoch")])
+    snapshot = text_token([("\n\n## CURRENT SETTINGS\n- Fork: ", "Snapshot Fork"), ("\n- Profile: ", "Snapshot Profile"), ("\n- Sequence: ", "Snapshot Sequence"), ("\n- Voice: ", "Snapshot Voice"), ("\n- AI: not used by this fork\n- Enabled exits: ", "Snapshot Exits"), ("\n\n## CURRENT STATE\n- Circle (0 means the silent band: PROSOCHĒ recorded the open and showed nothing) — ", "Snapshot Circle"), ("\n- Pressure: ", "Snapshot Pressure"), ("\n- Cool-down until: ", "Snapshot Cooldown"), ("\n\n## ATTENTION LEDGER\n- Manual Control Room refresh at ", "Now Epoch")])
     a += [refresh_if, action("is.workflow.actions.gettext", UUID=snapshot_id, WFTextActionText=snapshot), action("is.workflow.actions.appendnote", operation="append", entity=variable("Control Room Note"), text=output(snapshot_id, "Text")), otherwise(refresh_g), action("is.workflow.actions.nothing"), end_if(refresh_g)]
     # CYCLE 14 -- checkpoint decision: Status gets its own read-only display branch.
     # It reuses the SAME Snapshot* variables read unconditionally above (no new
@@ -1642,7 +1651,7 @@ def manual_note_refresh():
     # appendnote -- Status never writes to the Note.
     status_g, status_if = if_block("Manual Status Requested", 2, number=0)
     a += [status_if, comment("Status is read-only:\n- Displays the current snapshot directly, via an alert.\n- Never appends to or otherwise writes the Note."),
-          alert("Status", text_token([("Fork: ", "Snapshot Fork"), ("\nProfile: ", "Snapshot Profile"), ("\nSequence: ", "Snapshot Sequence"), ("\nVoice: ", "Snapshot Voice"), ("\nCircle: ", "Snapshot Circle"), ("\nPressure: ", "Snapshot Pressure"), ("\nCool-down until: ", "Snapshot Cooldown")])),
+          alert("Status", text_token([("Fork: ", "Snapshot Fork"), ("\nProfile: ", "Snapshot Profile"), ("\nSequence: ", "Snapshot Sequence"), ("\nVoice: ", "Snapshot Voice"), ("\nCircle (0 means the silent band: recorded, nothing shown): ", "Snapshot Circle"), ("\nPressure: ", "Snapshot Pressure"), ("\nCool-down until: ", "Snapshot Cooldown")])),
           otherwise(status_g), action("is.workflow.actions.nothing"), end_if(status_g)]
     # PHASE 10 (10-02) -- Setup Check: did the two Personal Automations the user built by
     # hand actually fire?  Derived, not stored: no new state key, no bootstrap-template

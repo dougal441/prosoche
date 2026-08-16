@@ -114,7 +114,7 @@ The canonical strategy forbids fabricating an action because the strategy asks f
 - [x] **ROOM-07**: The Note shows current settings — fork, profile, sequence, voice, AI, enabled exits
 - [x] **ROOM-08**: The Note shows a human-readable current-state snapshot refreshed on manual run
 - [x] **ROOM-09**: The Attention Ledger records meaningful events only — Circle changes, contracts, redirects, rapid-return clusters, cool-downs, profile changes — not every internal calculation
-- [x] **ROOM-10**: The manual menu offers Status, Open Control Room, Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Test a Circle, Reset Today, and Emergency Restore
+- [x] **ROOM-10**: The manual menu offers Status, Open Control Room, Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Test a Circle, Reset Today, Emergency Restore, and Setup Check — where Setup Check reports whether each Personal Automation has ever been recorded firing
 - [x] **ROOM-11**: Sync My Profile extracts the human proforma from the Note into state, and the OPEN path never parses the Note
 - [x] **ROOM-12**: Test a Circle runs any chosen Circle's behaviour without altering real Pressure
 

@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src/PROSOCHE-Dumb.xml"
 BUILDER = ROOT / "tools/build_state_engine.py"
-MENU = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore"]
+MENU = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore", "Setup Check"]
 
 
 def require(value: bool, message: str) -> None:
@@ -28,7 +28,28 @@ def main() -> None:
     actions = plistlib.loads(SOURCE.read_bytes())["WFWorkflowActions"]
     params = [item.get("WFWorkflowActionParameters", {}) for item in actions]
     menus = [value["WFMenuItems"] for value in params if value.get("WFMenuItems") == MENU]
-    require(len(menus) == 1, "manual menu is not the exact nine required items")
+    require(len(menus) == 1, "manual menu is not the exact ten required items")
+    # PHASE 10 (10-02) -- the Control Room Note must open only on request.  Before the
+    # gate, the single shownote sat at depth 0 in the MANUAL arm, so all nine menu items
+    # ended by launching the Notes app.  Pin the gate structurally, not by action index.
+    shownote = [index for index, item in enumerate(actions)
+                if item["WFWorkflowActionIdentifier"] == "is.workflow.actions.shownote"]
+    require(len(shownote) == 1, "expected exactly one Show Note action")
+    gate = actions[shownote[0] - 1]
+    gate_params = gate.get("WFWorkflowActionParameters", {})
+    require(gate["WFWorkflowActionIdentifier"] == "is.workflow.actions.conditional"
+            and gate_params.get("WFControlFlowMode") == 0
+            and gate_params.get("WFCondition") == 2
+            and gate_params.get("WFInput", {}).get("Variable", {}).get("Value", {}).get("VariableName")
+            == "Manual Show Note Requested",
+            "Show Note is not gated on a 'Manual Show Note Requested > 0' conditional")
+    # PHASE 10 (10-02) -- Setup Check reads two FLAT epoch keys and nothing else.
+    # Some dictionary keys are text tokens (dicts), not literals; only literals matter here.
+    setup_keys = {value["WFDictionaryKey"] for value in params
+                  if isinstance(value.get("WFDictionaryKey"), str)}
+    require({"last_open_at", "last_close_at"} <= setup_keys, "Setup Check state reads missing")
+    require(any(value.get("WFVariableName") == "Manual Setup Check Requested" for value in params),
+            "Setup Check request flag missing")
     comments = "\n".join(value.get("WFCommentActionText", "") for value in params)
     require("PHASE 7 MANUAL CONTROL ROOM REFRESH" in comments, "manual Note refresh missing")
     require("Test Circle uses a copied Circle value" in comments, "Test Circle safety statement missing")

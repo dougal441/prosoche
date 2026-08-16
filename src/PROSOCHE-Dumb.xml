@@ -28734,7 +28734,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFMenuPrompt</key>
-				<string>PROSOCHĒ</string>
+				<string>This is PROSOCHĒ's manual control menu. You are here because the Shortcut was run by hand, or because an automation passed it something other than OPEN or CLOSE. If you did not mean to be here, choose Open Control Room — that Note has the setup instructions.</string>
 				<key>WFMenuItems</key>
 				<array>
 					<string>Status</string>
@@ -80235,7 +80235,7 @@ Reserved. Nothing is asked for here yet.</string>
 - Enabled exits: ￼
 
 ## CURRENT STATE
-- Circle: ￼
+- Circle (0 means the silent band: PROSOCHĒ recorded the open and showed nothing) — ￼
 - Pressure: ￼
 - Cool-down until: ￼
 
@@ -80278,28 +80278,28 @@ Reserved. Nothing is asked for here yet.</string>
 								<key>VariableName</key>
 								<string>Snapshot Exits</string>
 							</dict>
-							<key>{145, 1}</key>
+							<key>{219, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
 								<key>VariableName</key>
 								<string>Snapshot Circle</string>
 							</dict>
-							<key>{159, 1}</key>
+							<key>{233, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
 								<key>VariableName</key>
 								<string>Snapshot Pressure</string>
 							</dict>
-							<key>{180, 1}</key>
+							<key>{254, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
 								<key>VariableName</key>
 								<string>Snapshot Cooldown</string>
 							</dict>
-							<key>{236, 1}</key>
+							<key>{310, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
@@ -80455,7 +80455,7 @@ Reserved. Nothing is asked for here yet.</string>
 Profile: ￼
 Sequence: ￼
 Voice: ￼
-Circle: ￼
+Circle (0 means the silent band: recorded, nothing shown): ￼
 Pressure: ￼
 Cool-down until: ￼</string>
 						<key>attachmentsByRange</key>
@@ -80488,21 +80488,21 @@ Cool-down until: ￼</string>
 								<key>VariableName</key>
 								<string>Snapshot Voice</string>
 							</dict>
-							<key>{48, 1}</key>
+							<key>{99, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
 								<key>VariableName</key>
 								<string>Snapshot Circle</string>
 							</dict>
-							<key>{60, 1}</key>
+							<key>{111, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
 								<key>VariableName</key>
 								<string>Snapshot Pressure</string>
 							</dict>
-							<key>{79, 1}</key>
+							<key>{130, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
