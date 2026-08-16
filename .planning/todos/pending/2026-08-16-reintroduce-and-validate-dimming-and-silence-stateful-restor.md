@@ -73,6 +73,19 @@ at all.** A dim that never restores is a worse product than no dim.
    environmental friction work safely on iOS 26 Shortcuts?" — a clear yes with evidence, or
    a clear no that retires the idea.
 
+## Addendum 2 (2026-08-16, Phase 9 research)
+
+The "18 uncoerced sites" figure (this doc's Problem section, and `docs/BUILD-NOTES.md`
+§8 originally) is stale: it's **28** (`setbrightness.WFBrightness` × 14 +
+`setvolume.WFVolume` × 14), confirmed by direct plist inspection of the current build.
+The extra 10 come from a `for test_circle in range(1, 10):` unroll in
+`manual_emergency_restore()`'s "Test a Circle" menu, added after the cycle-14 snapshot in
+`.planning/debug/HANDOFF.md` §8 was written. See `09-RESEARCH.md` "Site count correction."
+Also: Donor 10 (requested for this phase) does not contain a variable-fed
+`WFBrightness`/`WFVolume` example, so the `CoercionItemClass` for this exact parameter
+position is still unverified by donor evidence — an on-device visual check or a fresh
+donor request is required before shipping the fix, not analogy alone.
+
 ## Addendum (2026-08-16, same day)
 
 Point 5's "never zero brightness (~10–15% prototype dim)" is corrected: user-reported

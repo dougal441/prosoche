@@ -242,10 +242,15 @@ this phase does not reverse that cut, which proceeds independently on main.
 **Depends on:** Phase 7 (branches from the device-confirmed Dumb build/freeze lineage)
 **Success Criteria** (what must be TRUE):
 
-  1. All 18 deferred `setbrightness.WFBrightness` (14) / `setvolume.WFVolume` (4) sites
-     carry the correct coercion aggrandizement, with `CoercionItemClass` established from
-     donor or corpus evidence (Donor 10, `.planning/debug/Donor 10.shortcut`) — never
-     guessed — and the numeric-audit build guard no longer exempts them.
+  1. All 28 deferred `setbrightness.WFBrightness` (14) / `setvolume.WFVolume` (14) sites
+     — corrected 2026-08-16 from the stale "18" figure in `docs/BUILD-NOTES.md` §8; the
+     Test-a-Circle 9-way menu unroll added 10 more call sites after that table was written,
+     see `09-RESEARCH.md` "Site count correction" — carry the correct coercion
+     aggrandizement, with `CoercionItemClass` established from donor or corpus evidence
+     (Donor 10 confirms the action/parameter identifiers but not a variable-fed coercion
+     shape at this exact parameter position — an on-device visual check or fresh donor is
+     required, not assumed by analogy) — never guessed — and the numeric-audit build guard
+     (`verify_numeric_operands()`) no longer exempts them.
   2. On device: reading current brightness/volume via `Get Device Details` returns a real,
      non-empty, correctly-typed value; the has-any-value guard correctly skips the change
      when the read returns nothing.
