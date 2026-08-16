@@ -65,7 +65,14 @@ def main() -> None:
     for item in routes:
         ident, params = item["WFWorkflowActionIdentifier"], item["WFWorkflowActionParameters"]
         if ident == "is.workflow.actions.openapp":
-            require("WFSelectedApp" in params and "WFAppName" in params, "Open App route shape")
+            # PHASE 10 (10-03): the WFAppName term was STALE, not weakened away to reach
+            # green. normalize_open_apps() (tools/build_state_engine.py:2849) clears an
+            # openapp action's parameters outright and re-emits only open_app()'s two keys,
+            # WFAppIdentifier and WFSelectedApp -- WFAppName is deliberately not among them.
+            # The term therefore contradicted the generator by construction and this
+            # assertion was red at HEAD. WFSelectedApp is the real route-shape property and
+            # stays; it is what actually binds the route to a resolved app.
+            require("WFSelectedApp" in params, "Open App route shape")
         if ident == "is.workflow.actions.searchweb":
             require({"WFSearchWebDestination", "WFInputText"} <= params.keys(), "Search Web route shape")
         if ident == "is.workflow.actions.searchmaps":
