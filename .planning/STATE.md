@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 10
-current_phase_name: Ship-readiness remainder and UX-lite pass
-status: executing
-stopped_at: 10-05 checkpoint (human-verify) — resolved 'blocked' on DIST-03; 10-UAT.md authored and unrun
+current_phase: 11
+current_phase_name: Build Addendum 01 — Dante Circle names and the ten-primitive roster
+status: ready-to-plan
+stopped_at: Phase 10 executed (10-05 parked at human-verify on DIST-03); phases 11-20 scoped and queued, none planned yet
 last_updated: "2026-08-16T15:53:05.428Z"
 last_activity: 2026-08-17
-last_activity_desc: Phase 10 Plan 01 complete (Circle 0 silent band, raised thresholds, OPEN notification deleted, canonical strategy §10.6)
+last_activity_desc: Phase 10 executed end to end; todos #2/#5/#12/#13 closed; phases 11-20 scoped from the remaining todo queue
 progress:
-  total_phases: 10
+  total_phases: 20
   completed_phases: 8
   total_plans: 27
   completed_plans: 27
@@ -23,14 +23,39 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 10 — Ship-readiness remainder and UX-lite pass
+**Current focus:** Phase 11 — Build Addendum 01 (scoped, not yet planned)
 
 ## Current Position
 
-Phase: 10 (Ship-readiness remainder and UX-lite pass) — IN PROGRESS
-Plan: 5 of 5 (10-01 complete; 10-02 through 10-05 outstanding)
-Status: 10-01 landed Circle 0, the silent band — a low-Pressure OPEN now shows nothing at all while still accumulating and persisting state, enforced by `verify_circle_zero_silence()` with both negative controls demonstrated. Brightness/volume cut remains CANCELLED; all 28 sites and the 20 device-detail reads are untouched. Outstanding from earlier phases: Phase 9 device-proving (`09-UAT.md`, 12 tests, only test 1 passed — see `docs/BUILD-NOTES.md` §18); Phase 8 awaiting real-iPhone import / Manual UAT; Phase 4 UAT tests 1, 3-6 reopened. Phase 10 adds one on-device observation: a first open of a cold day must produce no visible reaction while `state.json` still shows heat 1, pressure 1, circle 0.
-Last activity: 2026-08-17 — Phase 10 Plan 01 complete (Circle 0 silent band, raised thresholds, OPEN notification deleted, canonical strategy §10.6)
+Phase: 11 (Build Addendum 01 — Dante Circle names and the ten-primitive roster) — SCOPED, NOT PLANNED
+Plan: none yet — run `/gsd-plan-phase 11`
+
+**Phase 10 is executed.** Waves 1-4 landed; 10-05 is parked at its `checkpoint:human-verify`
+resolved to the `blocked` branch (DIST-03, no connected iPhone). `10-UAT.md` is authored and
+cold-runnable: 10 tests, 0 passed, 10 blocked — nothing was inferred from non-device evidence.
+All eleven `docs/*.py` structural checks exit 0; both forks are rebuilt, signed under exact
+display names, and decrypt-verified 9/9.
+
+**Everything Phase 10 shipped is structurally proven and behaviourally unproven.** The
+MANIFEST carries three stacked warnings saying so.
+
+**Phases 11-20 are scoped and queued but none is planned.** They correspond 1:1 to the
+remaining pending todos, in the agreed execution order: 11 Addendum 01 / 12 sentinel gaps /
+13 red operators / 14 Ash grayscale / 15 Voice / 16 Dimming+Silence device proof / 17 Exile
+split / 18 locked-screen CLOSE / 19 device UAT / 20 heavy UX. Each ROADMAP goal is written to
+be plannable cold, without the session that produced it.
+
+**Two hard prerequisites inside that order:** Phase 12 (`exit_events`) gates Phase 17, and
+Phase 13 (blank Lists, red operators) should land before Phase 19 so a blank Circle in device
+testing is a real finding rather than a known artifact.
+
+**Standing device backlog**, all blocked on DIST-03 and best run in one session:
+`10-UAT.md` (10 tests), `09-UAT.md` tests 2-12 (dimming/silence restore — the highest-risk
+untested path in the product), Phase 4 UAT tests 1 and 3-6, Phase 8's real-iPhone import, and
+Phase 19's full nine-Circle sweep. Report the opens-to-first-interruption count from
+`10-UAT.md` Test 2 — it decides whether Phase 10's raised entry thresholds need tuning.
+
+Last activity: 2026-08-17 — Phase 10 executed; todos #2/#5/#12/#13 closed; phases 11-20 scoped
 
 Progress: [██████████] 100%
 
@@ -94,6 +119,10 @@ Progress: [██████████] 100%
 
 - Phase 10 added: Ship-readiness remainder and UX-lite pass. **The brightness/volume MVP cut is cancelled and is NOT part of this phase** — Dimming and Silence stay, each as its own distinct Circle, with working brightness and volume capture-and-restore (user decision 2026-08-16, reaffirmed 2026-08-17). Consequences: the SAFE-05 conflict resolves rather than deferring to milestone close, and DEV-06 is live again rather than moot. Research (`10-RESEARCH.md`, 925 lines) was salvaged from an abandoned branch and moved into the phase directory rather than regenerated; its Finding 2 and Pitfalls 2–3 cover the cancelled cut and are superseded, the rest stands.
 - [Phase 10]: Circle 8 dispatching nothing (the `"Voice"` sequence entry matching no branch under condition-99 "contains") is a known open defect deliberately left for a later phase. Any sequence/dispatch checker added here must record the orphan rather than fail on it, and must not hard-code condition 99 or substring matching — BD-06 moves dispatch to condition 4 exact matching and abolishes combined entries.
+
+- Phases 11-20 added 2026-08-17, scoped 1:1 from the remaining pending todos in the agreed execution order. Each goal is written to be plannable without this session's context. Order and prerequisites: 11 Addendum 01 (applies BD-06) → 12 sentinel gaps (**gates 17**) → 13 red operators + List wrapper (**should precede 19**) → 14 Ash grayscale → 15 Voice → 16 Dimming/Silence device proof → 17 Exile split → 18 locked-screen CLOSE → 19 device UAT → 20 heavy UX.
+- [Phase 11+]: BD-06 (`docs/CAPABILITY-DECISIONS.md`) settles Circle naming, the ten-primitive roster and slot allocation, and is BINDING on phases 11, 14, 15, 16 and 17 — none of them re-cuts the table. Dante names are positional (Circle 1 = Limbo … 9 = Treachery); ten primitives fill nine slots per sequence; combined entries are abolished so dispatch moves to condition 4 exact matching; the routed Exile lands the user directly.
+- [Todos]: #2 (iOS 26 automation onboarding), #5 (ship-readiness, absorbed by Phase 10), #12 (Use Model literal, closed as bookkeeping), #13 (dimming/silence experimental fork, absorbed) are closed. Ten remain pending, each now owned by a phase.
 
 ### Decisions
 

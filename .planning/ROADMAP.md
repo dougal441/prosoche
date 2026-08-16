@@ -29,6 +29,18 @@ side by side, which is this project's definition of done.
 - [ ] **Phase 6: Exits, Exit Learning & Contracts** - Six exits are reachable and learned from; contracts are honoured and feed back into Heat
 - [ ] **Phase 7: Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze** - Dumb implementation, validation, and signing are complete; real-iPhone first-run UAT remains pending
 - [ ] **Phase 8: Sentient Fork & Dual Distribution** - On-Device AI wraps the untouched deterministic engine; both forks ship as signed, importable `.shortcut` files
+- [x] **Phase 9: Dimming/Silence Stateful Restore** - Numeric-coercion fix merged for all 28 sites; device proof outstanding, carried by Phase 16
+- [x] **Phase 10: Ship-readiness remainder and UX-lite pass** - Circle 0 silent band, OPEN notification removed, Control Room quieted, five new structural guards; device UAT deferred to Phase 19
+- [ ] **Phase 11: Build Addendum 01 — Dante Circle names and the ten-primitive roster** - The rename lands once against BD-06's settled roster, with the dispatch-coverage guard written alongside it
+- [ ] **Phase 12: State-shape sentinel gaps — exit_events and active_session** - The last two dotted-read crash risks are seeded and gated on leaf value; prerequisite for Phase 17
+- [ ] **Phase 13: Red-operator conditionals and the WFItems List wrapper** - Donor 5 decrypted at last; the 14 red-operator sites and 2 blank-List sites fixed by class, with recurrence guards
+- [ ] **Phase 14: Ash as real Color Filters grayscale** - The highest-evidence primitive stops being an alert box; restore leg is the deliverable
+- [ ] **Phase 15: Circle 8 — the Voice primitive** - The product stops shipping eight working Circles out of nine
+- [ ] **Phase 16: Dimming and Silence as distinct device-proven Circles** - Capture-and-restore proven as a closed loop under every ugly failure mode, or retired
+- [ ] **Phase 17: Exile split and exit-route deepening** - Eject and Redirect become distinct Circles; the six exits stop being "open an app"
+- [ ] **Phase 18: Persist state when CLOSE fires from a locked screen** - A locked-screen CLOSE stops stranding sessions and unrestored environmental changes
+- [ ] **Phase 19: Device UAT — nine Circles and sequence switching** - The intervention layer converts from structurally-proven to actually-working on real hardware
+- [ ] **Phase 20: UX optimisation — onboarding and in-run interaction cost** - The heavy UX round: funnel instrumentation, nine-Circle interaction cost, §29 voice, Note restructure
 
 ## Phase Details
 
@@ -399,3 +411,482 @@ Plans:
 - `src/PROSOCHE-Dumb.xml` is both input and output of `tools/build_state_engine.py`, so every plan that runs a builder mutates it. That makes it a phase-wide mutex and is why the five plans are strictly sequential rather than parallelised.
 - Two positions in this phase's brief were measured false at `HEAD` and are corrected in 10-04: the self-check baseline is one-of-seven red (only `phase6_self_check.py`), not three-of-six; and `sentient_core_check.py` passes at `HEAD` because `c6d8737` regenerated both forks, so it is kept green by rebuilding Sentient rather than left red.
 - Strand A items 2 and 3 needed no work at planning time: `.gitignore` already covers `.DS_Store`, `__pycache__/` and `*.pyc`, and all six MANIFEST rows matched their artifacts exactly. The MANIFEST is refreshed in 10-04 only because this phase rebuilds.
+
+### Phase 11: Build Addendum 01 — Dante Circle names and the ten-primitive roster
+
+**Goal:** Apply `PROSOCHE_Build_Addendum_01.md` in full, once, against the roster settled in
+**BD-06** (`docs/CAPABILITY-DECISIONS.md`) — so the rename lands a single time rather than
+being re-cut after each of the four in-flight Circle phases.
+
+**BD-06 is already decided and is binding. Do not re-litigate it.** Its five load-bearing
+decisions: Dante names are **positional** (Circle 1 = Limbo … Circle 9 = Treachery),
+because three sequences order the interventions differently at the same Circle numbers, so
+a name can only attach to the number; canonical Dante order is kept; the roster grows to
+**ten primitives for nine slots** and each sequence picks nine; combined sequence entries
+are abolished so dispatch moves from condition 99 ("contains") to **condition 4 (exact)**;
+and the routed Exile lands the user directly rather than offering a menu.
+
+**Deliverables.** Rename the interventions per Addendum §5 (Knock→Pause, Ash→Black and
+White, Confession→Intention, Dimming→Dim, Voice→Loud Mirror, Ice→Frozen; Silence and Mirror
+unchanged; Exile splits into **Eject** straight and **Redirect** routed). Apply BD-06
+Decision 4's slot table to all three sequences. Rename the Apple Note from
+`PROSOCHĒ — Control Room` to `PROSOCHĒ` — three string occurrences in the XML — while
+keeping "Control Room" as the internal name (settled in `e84ee77`). Rename the variants
+Dumb→**Core** and Sentient→**Aware**. Make Panic Escape deliberately removable per
+Addendum §3: the removal path requires manually editing the setting in the Note plus
+explicit confirmation. **Panic Escape is the `Leaving` option** in `universal_leaving()` —
+the easy behavioural bypass offered before every primitive — **not** Emergency Restore,
+which is a safety mechanism and must stay unconditionally available. Add the optional
+hardening note at the end of the Note explaining a user may add Shortcuts.app itself to
+their target list.
+
+**Write the dispatch-coverage build guard as part of this phase, not after it** — every
+distinct primitive name in any `sequences` array must have exactly one dispatch branch, and
+every branch must be named by at least one sequence. A mass rename across three sequence
+arrays and ten dispatch branches is precisely the operation that guard exists to catch, and
+this defect class is invisible to the validator, the ToolKit catalog and the signed-artifact
+decrypt.
+
+**Intermediate state to respect.** `Redirect` has no implementation until Phase 17, so all
+three sequences hold `Eject` at Circle 6 until then; Phase 17 flips Classic's and Ambient's
+cells. Circle 8 gets a real branch here (interim: the Mirror) so the guard can be a hard
+gate immediately; Phase 15 replaces it with the designed Voice.
+
+**Severity:** major
+**Requirements**: AUDIT-02, CIRC-02, CIRC-06, CIRC-08, ROOM-01, ROOM-02, DIST-01, DIST-02
+**Depends on:** Phase 10
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 11 to break down)
+
+### Phase 12: State-shape sentinel gaps — exit_events and active_session
+
+**Goal:** Close the two remaining STATE-SHAPE + GATE-SEMANTICS gaps — `exit_events` and
+`active_session` — using the container/leaf pattern already verified twice on
+`settings_snapshot` and `pending_exit`.
+
+**Why this is a live crash risk, not housekeeping.** Per the verified runtime semantics in
+`.claude/CLAUDE.md`, a **dotted read raises a hard error if any segment is absent**.
+`exit_events` is entirely missing from the bootstrap `state.json` template, and it sits on
+`record_exit_and_route()` — so the first real exit against clean state will very likely
+hard-error. `active_session` is the sole remaining entry in
+`KNOWN_SENTINEL_EXISTENCE_GATES`; it was confirmed inert only for one specific device run,
+which is a statement about what that run exercised, not a property of the defect. Both keys
+live on the same code path, so a genuine session-plus-exit sequence will reach both in one
+run.
+
+**Deliverables.** Seed a permanent container for each in the bootstrap template mirroring
+`seed_pending_exit()`. Add a `verify_*_seed()` build guard per key following
+`verify_pending_exit_seed()`. Audit **every** read/write/clear site for both keys by
+full-codebase sweep — `record_exit_and_route()`, `universal_leaving()`, and anything else
+grep finds — and ensure clearing gates test **leaf value** (condition 5 against
+`CLEARED_SENTINEL`) rather than **container existence** (condition 100). Remove both keys
+from `KNOWN_SENTINEL_EXISTENCE_GATES` so the registry honestly reads zero remaining gaps.
+
+**Fix whole classes, never site-by-site** — every defect in this project's debug history was
+systematic (147, 367, 25, 20 and 8 sites). A read-then-`has any value` gate on a dotted path
+is **unimplementable**: the read raises unless the key exists, and if it exists the gate is
+true. Gate on a numeric `> 0` test or restructure to a flat read.
+
+**Hard prerequisite for Phase 17**, whose Exile work sits directly on
+`record_exit_and_route()`. Device-test the exit-recording path specifically — a real "leave
+and confirm exit", not an OPEN. That path was never exercised by the closed OPEN-path debug
+session, so treat it as new-risk surface.
+
+**Severity:** major
+**Requirements**: SESS-07, STATE-12, EXIT-01, EXIT-02, SAFE-01
+**Depends on:** Phase 11
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 12 to break down)
+
+### Phase 13: Red-operator conditionals and the WFItems List wrapper
+
+**Goal:** Settle and fix two defect families carried unchanged through every cycle of the closed
+`open-routing-sequence-error` session because both sit past breadcrumb J. Both are now safe
+to pick up, and both are **device-visible defects that no file-level analysis can detect**.
+
+**1. The 14 `WFConditionalActionString` red-operator sites ("Donor 5" family).** A variable
+is placed directly into a conditional's TEXT-slot operand as a template. This is a
+structurally different slot from the already-fixed `WFInput.Variable` envelope defect, so
+that evidence does not transfer. Zero golden-corpus coverage, zero catalog coverage
+(`is.workflow.actions.conditional` is absent from the ToolKit catalog entirely), zero device
+coverage. **`.planning/debug/Donor 5.shortcut` was captured specifically to settle this and
+has never been analysed** — decrypt it first (`aea decrypt` + `aa extract`, recipe in
+`.claude/CLAUDE.md` §8) and read the real operand shape before touching any site. A concrete
+starting site: `if_block("Previous Respected", 4, ...)`, seen rendering fully RED including
+the operator picker in `.planning/debug/Screenshot 2026-08-14 at 11.55.12 pm.png`.
+
+**2. The `WFItems` List wrapper (2 confirmed instances).** iOS wraps a variable-bearing List
+row as `{"WFItemType": 0, "WFValue": <WFTextTokenString>}`; this artifact omits the wrapper,
+so rows render blank. The same screenshot shows a List action rendering nine consecutive
+rows as empty placeholders. The correct shape was already recovered from
+`.planning/debug/Donor 4.shortcut` and `Donor 4.1.shortcut` but never applied.
+
+**Deliverables.** Decrypt Donor 5, cross-check the recovered shape against the concrete site
+before generalising, then sweep all 14 by class. Apply the Donor-4 wrapper shape to both List
+sites, re-located by content. Add build-time recurrence guards for both, with sensitivity
+demonstrated against a synthetically reverted artifact. Fold both newly-confirmed axes into
+`.claude/CLAUDE.md`'s numbered axis list, together with the `read_value()`/`get_value()`
+distinction and the `pending_exit` container/leaf pattern — do all three doc updates in one
+pass.
+
+**Why this gates the device UAT.** Blank text and red operators are exactly the two failure
+modes Phase 19 is watching for. Fixing them first means a blank Circle in testing is a real
+finding rather than a known artifact.
+
+**Severity:** major
+**Requirements**: CIRC-04, CIRC-07, ROOM-03, DIST-01, DIST-02
+**Depends on:** Phase 12
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 13 to break down)
+
+### Phase 14: Ash as real Color Filters grayscale
+
+**Goal:** Build Ash as a **real Color Filters grayscale toggle**. It currently ships as an alert box
+— on device, Circle 2 is indistinguishable from Circle 1: two alerts with different words.
+
+**This is plausibly the highest-evidence primitive in the product.** Canonical strategy §6.5
+cites a preregistered randomised field experiment (112 participants) finding grayscale
+produced an immediate, significant, objectively-measured reduction in screen time — larger
+and faster than goal-setting. It is the only primitive still not implemented as designed.
+
+**The blocker that justified the cut is gone.** Spike 005
+(`.planning/spikes/005-ios-color-filters-identifier/`, VALIDATED, merged `4d80176`) settled
+it from decrypted device donors — tier-1 evidence. Identifier:
+`com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent` — an `AX*`
+intent, **not** the `UA*` macOS twin. `state` is a **bool-as-integer**: `1` = On, `0` = Off.
+`operation` is elided when Turn, so omit it. No `ShowWhenRun`. Both legs are donor-confirmed.
+Two corrections the spike paid for and this phase must not re-pay: Apple's own
+`.intentdefinition` declares `state` as Integer with `off` = case index **2**, and both are
+wrong as plist encodings — **shipping `state = 2` for Off would leave users stuck in
+grayscale**. An `.intentdefinition` describes the intent's type system, not the plist
+encoding, and never outranks a donor.
+
+**Expect the validator not to know the identifier** — it is absent from all three bundled
+ToolKit snapshots. Record the deviation rather than letting a validator complaint trigger a
+substitution back to `UA*`, which would ship a macOS action to an iPhone.
+
+**The restore leg is the deliverable, not the apply leg.** A grayscale that does not restore
+is strictly worse than no grayscale. Wire `state = 0` everywhere the other environmental
+primitives restore — CLOSE, Emergency Restore, Ice expiry, the live-Ice redirect — reusing
+`restore_managed_settings()`'s ownership pattern, and track it in `settings_snapshot`
+alongside brightness and volume so Emergency Restore has one uniform recovery surface.
+Routing it through the same path means one device pass can prove all three environmental
+primitives.
+
+**There is no read-back** — no `Get*`/`Query*` intent exists for any accessibility setting
+across all 35 intents in the framework — so §21's "do not clobber a pre-existing
+accessibility state" cannot be satisfied by detection. **User decision 2026-08-17: default
+ON, disclosed in onboarding.** Branch on `safety.ash_managed_color_filters` (already in
+Config, currently dead code): true → real toggle, false → BD-01's non-environmental pause.
+Onboarding must state plainly that PROSOCHĒ turns Color Filters on and off, so a user who
+needs their own filter setting for colour-blindness, migraine or low vision can turn the flag
+off.
+
+Also correct `src/CONFIG-BLOCK.md`'s BD-01-R note, which currently asserts Ash *is* already a
+real Color Filters change — make it true or make it honest, but do not leave both. Closes
+spike 005 step 5.
+
+**Severity:** major
+**Requirements**: CIRC-02, SAFE-01, SAFE-02, SAFE-05, AUDIT-02
+**Depends on:** Phase 11
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 14 to break down)
+
+### Phase 15: Circle 8 — the Voice primitive
+
+**Goal:** Build Circle 8. **The product ships eight working Circles, not nine** — at Circle 8 you get
+the menu, tap Continue, and nothing happens. The escalation ladder goes quiet at exactly the
+point before Ice, the second-strongest Circle in the design.
+
+`primitive_dispatch()` iterates the nine primitive names but explicitly `continue`s past
+`Voice`, and because the dispatch comparison is condition 99 ("contains"), the sequence entry
+`"Voice"` matches no emitted branch and fails **silently**. Confirmed against the shipped
+artifact, not inferred: every other primitive renders 10 dispatch branches; Voice renders 0.
+Found by static comparison, never by testing — Circles 2–9 have never run on hardware.
+
+**Decide the semantics first, and record the decision.** The likely intent, consistent with
+§11 Primitive H: **Mirror (Circle 7)** shows the text and speaks it only if `voice_enabled`;
+**Voice/Loud Mirror (Circle 8)** makes the spoken address *the* primitive — the escalation is
+that the phone talks to you. Whether `voice_enabled = 0` degrades Circle 8 to a
+Mirror-equivalent alert or skips it entirely is a real product decision, not an
+implementation detail.
+
+**Deliverables.** Emit a real Voice branch — either drop the `continue` and give
+`mirror_and_voice()` a mode parameter, or split it into `mirror()` and `voice()` sharing the
+template selector. **Watch the `Spoken This Run` guard**: if Circle 8 is reached in a run
+where Mirror already spoke, the guard currently suppresses the second utterance.
+
+**Sequencing note.** Phase 11 gives Circle 8 an interim branch (the Mirror) so the
+dispatch-coverage guard can be a hard gate from the start, and moves dispatch to condition 4
+(exact) per BD-06, which removes the "contains" fragility that hid this defect. This phase
+replaces that interim branch with the designed primitive. Phase 10 already added
+`docs/sequence_dispatch_check.py`, which currently **reports** the Voice orphan and exits 0;
+once Voice dispatches, remove its `KNOWN_ORPHAN_ENTRIES` exemption rather than merely
+satisfying it — after the rename the entry is `"Loud Mirror"`, so a stale exemption would
+whitelist anything named `"Voice"` forever.
+
+**Severity:** major
+**Requirements**: CIRC-08, CIRC-09, CIRC-14, DIST-01
+**Depends on:** Phase 11
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 15 to break down)
+
+### Phase 16: Dimming and Silence as distinct device-proven Circles
+
+**Goal:** Prove Dimming and Silence work as **distinct, device-verified Circles with reliable
+capture-and-restore** — the outstanding half of Phase 9, which merged its code untested.
+
+**Two things are true and the second is the risk.** They are built and merged: Phase 9
+landed the numeric-coercion fix for all 28 `setbrightness` (14) / `setvolume` (14) operand
+sites (`2e2261e`, artifacts in `c6d8737`), and Phase 10 pinned the whole surface with
+`docs/environmental_restore_check.py` so it cannot be removed by accident. **But they have
+never run on a phone, and the merge made them live** — before the coercion fix these actions
+silently no-opped; now they actually change brightness and volume, and the code that puts
+them back has never once executed on hardware. `09-UAT.md` has 12 tests; exactly one has
+passed — test 1, the static "coercion chip does not render red" gate.
+
+**The coercion shape itself is analogy-based, not donor-confirmed.**
+`WFCoercionVariableAggrandizement` / `CoercionItemClass: WFNumberContentItem` is confirmed
+for the Donor-4.1 *conditional operand* position; whether it is correct at a **direct
+Set-action parameter** position is genuinely unknown. `Donor 10.shortcut` contains no
+variable-fed `WFBrightness`/`WFVolume` example. If it proves wrong, follow `09-RESEARCH.md`'s
+fresh-donor protocol — build a donor on device with a variable-fed Set Brightness and decrypt
+it. **Do not guess a second `CoercionItemClass`.**
+
+**Deliverables.** Run `09-UAT.md` tests 2–12 on a real iPhone. The closed-loop proof is what
+matters: `Get Device Details` returns a real, correctly-typed value; the has-any-value guard
+correctly *skips* the change when the read returns nothing; CLOSE restores the original
+exactly. **Then the ugly cases** — app force-quit mid-session, device restart mid-session,
+CLOSE never firing, two overlapping sessions, screen locked mid-session. Each must restore or
+leave the user at a safe value. Never dark. Never silent forever. Never loud. Emergency
+Restore must recover from every failure mode found, and it has itself never been tapped on a
+device.
+
+**DEV-06 is live again** — `changed_at` / `changed_by_session_id` are written at 20 sites and
+read nowhere. That was recorded MOOT conditional on the cut proceeding; the cut is cancelled,
+so DEV-06 and the `Session ID` scope defect both return. `docs/BUILD-NOTES.md` §17 reserves
+the DEV-06 decision to the user — surface it, do not decide it unilaterally.
+
+**The brightness floor was corrected and needs a decision on main.** Phase 9 revised BD-02's
+"never zero, 10–15% band": the user's on-device observation is that iOS's practical minimum
+is dim, not black, so avoiding zero was never itself the safety property — capture-and-restore
+reliability is. That revision was scoped to the experimental fork; decide it for main here.
+
+Distinct-Circle allocation is already settled by **BD-06 Decision 4** — do not re-cut it.
+
+**Severity:** major
+**Requirements**: CIRC-03, CIRC-05, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-03
+**Depends on:** Phase 12
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 16 to break down)
+
+### Phase 17: Exile split and exit-route deepening
+
+**Goal:** Split Exile into two Circles and deepen the six exit routes so an involuntary ejection lands
+somewhere real.
+
+**User decision 2026-08-16, settled in BD-06.** **Eject** (straight) is the current
+behaviour: immediate, no menu, no question, Home Screen — its virtue is that it is instant
+and cannot be negotiated with. **Redirect** (routed) ejects *into* a deterministically
+selected destination, reusing `select_exit()` and `record_exit_and_route()` unchanged so the
+exit is recorded, the return-time sample captured, and the involuntary path feeds the same
+learning loop as the voluntary one. **User decision 2026-08-17: Redirect lands the user
+directly rather than offering the "Take suggested exit / Choose another" menu** — that is
+what makes it a Circle rather than a second Leaving menu.
+
+**Selection is settled — do not re-litigate.** Deterministic exit, or home. No
+`is.workflow.actions.number.random`, no shuffle, nowhere in the exit path. `select_exit()`
+already is the mechanism: rotate by a persisted counter under 10 observations, then exploit
+the lowest average return-time, with a Config-driven epsilon step that is itself a
+counter-modulo test.
+
+**Deepen the six routes — one design pass, then plan, then execute.** Every route is
+currently just "open an app", and none has ever run on a device. For each, answer: what does
+it open, what context crosses the boundary, and what does the user see one second after
+landing? Leads, all against verified actions: **Capture** — create the note/reminder rather
+than opening the app, seeded with the Intention text if one exists this session;
+**Coordinate** — same, via the Reminders schemas in `PARAMETER_TYPES.md`; **Create** —
+currently one saved URL for everyone, consider a small user-defined set; **Connect** —
+opening Contacts cold is weak, and the no-send constraint is deliberate and stays;
+**Consult** — already the strongest, it carries the query, use it as the model; **Close** —
+the honest null option, keep it, do not decorate it.
+
+**Hard prerequisite: Phase 12** (`exit_events` absent from the bootstrap template sits
+directly on `record_exit_and_route()`; any device test of either Exile Circle hits it).
+
+**Slot arithmetic is already resolved by BD-06** — ten primitives, nine slots per sequence,
+each sequence picking nine. This phase flips Classic's and Ambient's Circle 6 from `Eject` to
+`Redirect`; BlackMirror keeps `Eject` permanently. Do not re-open the roster question.
+
+Canonical §30 and §36 are the reason the bare version is not enough: ejecting someone to a
+Home Screen full of the same apps is a machine for changing *which* app consumes the time.
+
+**Severity:** major
+**Requirements**: EXIT-01, EXIT-02, EXIT-03, EXIT-04, CIRC-06, SESS-07
+**Depends on:** Phase 12
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 17 to break down)
+
+### Phase 18: Persist state when CLOSE fires from a locked screen
+
+**Goal:** Make state survive a CLOSE that fires while the screen is locked.
+
+Source: `.planning/todos/pending/2026-08-16-persist-state-when-close-fires-from-a-locked-screen.md`
+— read it first; it is the authority on the observed symptom and is not summarised in full
+here.
+
+**Why it matters.** CLOSE is where session duration comes from, and therefore where every
+restore-on-close behaviour is triggered: the contract outcome that feeds Heat, and the
+brightness/volume/Color-Filters restore that Phases 14 and 16 make load-bearing. A CLOSE
+that fires against a locked screen and fails to persist leaves an `active_session` no later
+run owns, an unrestored environmental change, and a Heat value that never receives its
+contract adjustment. This is the same failure family as the "screen locked mid-session" case
+in `09-UAT.md`'s ugly-cases block, and the two should be investigated together rather than
+twice.
+
+**Approach.** Establish first what actually happens on device — whether the automation fires
+at all, fires and cannot write, or fires and writes late — because the fix differs entirely
+per case and this project's own evidence hierarchy puts device observation above inference.
+Treat a file-level theory as a hypothesis to test, not a conclusion. `.planning/spikes/`
+already holds two adjacent spikes worth reading before designing anything:
+`001-device-is-locked-literal` and `002-close-automation-vs-screen-lock`.
+
+**Safety framing.** Whatever the mechanism, the acceptance bar is the §21 one: never leave
+the user dark, silent, or holding a session that cannot be closed. If persistence genuinely
+cannot be guaranteed from a locked screen, the correct outcome may be a recovery path on the
+next OPEN rather than a write at CLOSE time — an honest degradation beats a lost write.
+
+**Severity:** major
+**Requirements**: SESS-01, SESS-07, STATE-12, SAFE-01, SAFE-05
+**Depends on:** Phase 16
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 18 to break down)
+
+### Phase 19: Device UAT — nine Circles and sequence switching
+
+**Goal:** Prove all nine Circles fire on a real iPhone, in all three sequences. **This is the phase
+that converts the whole intervention layer from structurally-proven to actually-working.**
+
+**Exactly one Circle has ever executed on real hardware** — Circle 1, once, build
+`2026-08-15o`. Circles 2 through 9 have never run. No sequence other than the default has
+ever been selected. Every Phase 5 "passed" verdict is static analysis of the action graph,
+and graph well-formedness has repeatedly failed to predict device behaviour here: the seven
+parameter-defect axes in `.claude/CLAUDE.md` were each discovered by a device run after a
+clean validation, and **each was invisible to the sweep that caught the previous one**.
+
+The nine primitives are the most heterogeneous code in the product — an alert, an
+accessibility intent, two Get-Device-Details capture-and-restore loops, an Ask + Menu +
+persisted contract, a Home Screen call, a 30-template selector, a speech action, and a
+profile-aware cooldown writer. There is no reason Circle 1 working predicts anything about
+Circle 6.
+
+**Run in this order; each stage is a real gate.** (1) **Fix the instrument first** —
+`Test a Circle` is the harness everything depends on and was itself broken on device once.
+(2) Sweep all nine in Classic, recording per-Circle, not one verdict: does the intervention
+appear, is the copy correct and **non-empty**, is there a reachable dismiss path, does
+control return cleanly. (3) Switch sequence and re-sweep — BlackMirror and Ambient.
+(4) Prove the environmental primitives as closed loops (`09-UAT.md` tests 2–12, the highest
+risk in the matrix). (5) Give Ice its own scrutiny: it is the only Circle leaving a
+*persistent* state — confirm the cooldown deadline is written, a live cooldown short-circuits
+the next OPEN, **Emergency Restore works from inside Ice**, expiry applies Heat relief, and
+profile durations (60/180/300 s) are right. (6) **Then verify Pressure actually drives
+Circle** — `Test a Circle` bypasses the arithmetic, so the real question is whether repeated
+opens escalate as the thresholds say.
+
+**Also outstanding and to be run in the same sessions:** `10-UAT.md` (10 tests, all blocked
+on DIST-03), `09-UAT.md` tests 2–12, Phase 4 UAT tests 1 and 3–6, and Phase 8's real-iPhone
+import. Report the **opens-to-first-interruption count** from `10-UAT.md` Test 2 — that
+number decides whether Phase 10's raised entry thresholds need tuning.
+
+**Known defect to watch:** `open_pipeline()` has no `round_down()` on `Gravity Raw`, so
+escalation timing is currently off-spec — the 0.1667 in the one device reading is exactly
+1 ÷ 6 unfloored.
+
+**Device round trips are the scarce resource.** One class-wide fix per trip, never one site.
+Read the error text, not just the symptom.
+
+**Severity:** major
+**Requirements**: CIRC-01 through CIRC-14, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-03
+**Depends on:** Phase 18
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 19 to break down)
+
+### Phase 20: UX optimisation — onboarding and in-run interaction cost
+
+**Goal:** Optimise PROSOCHĒ as an *experience*. Everything shipped so far was authored to satisfy the
+canonical strategy and survive the seven parameter-defect axes — not to be pleasant, fast, or
+obvious to a first-time user.
+
+**This is the heavy UX round.** Phase 10 did the "lite" pass — the Circle 0 silent band, the
+OPEN notification removed, `Leaving / Continue` reworded, the `shownote` gated, a
+`Setup Check` menu item. Everything below was explicitly deferred to here.
+
+**1. Instrument the funnel before redesigning it.** Define the drop-off points explicitly
+(import → first manual run → Note read → Automation A created → Automation B created → first
+OPEN → first intervention completed) and decide what, if anything, `state.json` should record
+locally about how far setup got. This is the only honest way to know whether a change helped.
+Local-only per §27.
+
+**2. Full interaction-cost pass over all nine Circles.** For each: count taps, count actions
+on the path, measure perceived latency on device, and confirm the dismiss option is present,
+obvious, and one tap away wherever the design allows. §6.4's field study is explicit that the
+single strongest mechanism is **giving the user an easy way to dismiss the consumption
+attempt** — stronger than the deliberation message. The current design risks over-investing
+in message text and under-investing in choice architecture. §12's stated key failure is that
+the intervention becomes so annoying the user disables PROSOCHĒ — a product failure even if
+it blocks more opens.
+
+**3. Rewrite copy to §29's voice** — concrete behavioural facts, no slogans, no exclamation
+marks, no emoji. Retire or rewrite anything that reads as a lecture. Roll telemetry into
+interruptions that were already intended (the Intention header, the Mirror) rather than
+announcing numbers.
+
+**4. Restructure the Note around read-once vs. return-to.** Setup instructions collapse or
+move to the bottom once automations exist; settings and the ledger surface at the top. Defer
+the `MY PHONE, ON PURPOSE` proforma out of the critical path — it is not needed until the
+first Mirror/Contract Circle, and asking at minute one competes with automation setup. Shorten
+READ THIS FIRST to the two automations plus the safety warning.
+
+**Re-verify from a genuinely fresh import** — delete `state.json` and the Note first. A
+returning-user run does not test onboarding.
+
+**Runs last by design.** It depends on the renames (Phase 11), the nine Circles actually
+firing (Phase 19), and correct onboarding instructions (already fixed in quick task
+`260817-au7`), because copy authored against the old names or against Circles that do not
+fire would have to be written twice.
+
+**Severity:** major
+**Requirements**: ROOM-01 through ROOM-10, BOOT-01, BOOT-09, CIRC-01, DIST-04, DIST-05
+**Depends on:** Phase 19
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 20 to break down)
