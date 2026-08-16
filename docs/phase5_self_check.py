@@ -90,13 +90,12 @@ def main() -> None:
     )
     require(cooldown is not None, "named cooldown conditional missing")
     cooldown_group = cooldown["WFWorkflowActionParameters"]["GroupingIdentifier"]
-    input_present_group = next(
-        item["WFWorkflowActionParameters"]["GroupingIdentifier"] for item in actions
-        if item["WFWorkflowActionIdentifier"] == "is.workflow.actions.conditional"
-        and item["WFWorkflowActionParameters"].get("WFControlFlowMode") == 0
-        and item["WFWorkflowActionParameters"].get("WFCondition") == 100
-        and item["WFWorkflowActionParameters"].get("WFInput", {}).get("Variable", {}).get("Value", {})
-        .get("VariableName") == "Input Key")
+    # The router's earlier "Input Key has any value" gate (WFCondition 100) was removed by
+    # the resolved open-routing-sequence-error fix: ROUTER_OVERVIEW in
+    # tools/build_state_engine.py explains routing is now done by POSITIVE identification
+    # of Input Key (== "OPEN"/"CLOSE"), never by an absence/presence gate. The live-Ice and
+    # expiry markers are therefore nested two levels deep (open_group, cooldown_group), not
+    # three -- there is no more input_present_group to include in the ancestry chain.
     open_group = next(
         item["WFWorkflowActionParameters"]["GroupingIdentifier"] for item in actions
         if item["WFWorkflowActionIdentifier"] == "is.workflow.actions.conditional"
@@ -115,9 +114,9 @@ def main() -> None:
                         and item["WFWorkflowActionParameters"].get("WFControlFlowMode") == 2)
     live_index = marker_index(actions, "PHASE 5 LIVE ICE REDIRECT")
     expiry_index = marker_index(actions, "PHASE 5 ICE EXPIRY")
-    require(conditional_ancestry(actions, live_index) == [(input_present_group, 0), (open_group, 0), (cooldown_group, 0)],
+    require(conditional_ancestry(actions, live_index) == [(open_group, 0), (cooldown_group, 0)],
             "live-Ice marker is not exactly in the live-cooldown branch")
-    require(conditional_ancestry(actions, expiry_index) == [(input_present_group, 0), (open_group, 0), (cooldown_group, 1)],
+    require(conditional_ancestry(actions, expiry_index) == [(open_group, 0), (cooldown_group, 1)],
             "expiry marker is not exactly in the expired-cooldown branch")
     live_actions = actions[cooldown_index + 1:otherwise_index]
     require(any(item["WFWorkflowActionIdentifier"] == "is.workflow.actions.returntohomescreen" for item in live_actions),

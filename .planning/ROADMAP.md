@@ -233,3 +233,64 @@ Plans:
 - [ ] TBD (promote with /gsd-review-backlog when ready)
 
 Full context: `.planning/phases/999.3-grayscale-ash-capability-donor-test/2026-08-16-grayscale-ash-capability-donor-test.md`
+
+### Phase 9: Dimming/Silence Stateful Restore (Experimental Fork)
+
+**Goal:** On this experimental branch only, finish the stateful capture-and-restore design
+for Dimming (§11 Primitive E) and Silence (§11 Primitive C) — fix the 28 uncoerced
+`setbrightness`/`setvolume` sites left over from the cycle-14 type audit and the later
+Test-a-Circle menu unroll (corrected 2026-08-16 from the stale 18 figure — see criterion 1
+and `09-RESEARCH.md`), then prove
+capture → apply → restore as a closed loop on a real device, including force-quit,
+device-restart, CLOSE-never-fires, and overlapping-session failure modes. Deliver a
+verdict (works safely / does not) that the main-line cut in
+`.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md` can be judged against —
+this phase does not reverse that cut, which proceeds independently on main.
+**Requirements**: RESTORE-01, RESTORE-02, RESTORE-03, RESTORE-04, RESTORE-05, RESTORE-06, RESTORE-07 (proposed during `/gsd-plan-phase 9`, one per success criterion below; not part of the v1 REQUIREMENTS.md traceability set — this is an experimental fork phase)
+**Depends on:** Phase 7 (branches from the device-confirmed Dumb build/freeze lineage)
+**Success Criteria** (what must be TRUE):
+
+  1. All 28 deferred `setbrightness.WFBrightness` (14) / `setvolume.WFVolume` (14) sites
+     — corrected 2026-08-16 from the stale "18" figure in `docs/BUILD-NOTES.md` §8; the
+     Test-a-Circle 9-way menu unroll added 10 more call sites after that table was written,
+     see `09-RESEARCH.md` "Site count correction" — carry the correct coercion
+     aggrandizement, with `CoercionItemClass` established from donor or corpus evidence
+     (Donor 10 confirms the action/parameter identifiers but not a variable-fed coercion
+     shape at this exact parameter position — an on-device visual check or fresh donor is
+     required, not assumed by analogy) — never guessed — and the numeric-audit build guard
+     (`verify_numeric_operands()`) no longer exempts them.
+
+  2. On device: reading current brightness/volume via `Get Device Details` returns a real,
+     non-empty, correctly-typed value; the has-any-value guard correctly skips the change
+     when the read returns nothing.
+
+  3. On device: the original value is restored exactly on CLOSE.
+  4. Force-quit mid-session, device restart mid-session, CLOSE never firing, and two
+     overlapping sessions each either restore correctly or leave the user at a device-safe
+     state — never silent-forever, never loud, and never *stuck* at a changed brightness/
+     volume with no path back to the original value (§21, §32). Brightness may target the
+     device's true minimum, not an artificial 10–15% floor — corrected 2026-08-16 per
+     user on-device report that the practical minimum is dim, not a literal black/unusable
+     screen (see `docs/CAPABILITY-DECISIONS.md` BD-02 addendum); the safety mechanism is
+     capture-and-restore reliability (criteria 2–3, 5), not floor avoidance.
+
+  5. Emergency Restore recovers from every failure mode found above.
+  6. DEV-06 (restore-ownership check) is re-evaluated live on this fork now that the cut
+     it was conditioned on does not apply here.
+
+  7. A written verdict exists: either stateful environmental friction is demonstrated safe
+     with device evidence, or it is retired with the evidence that justifies the main-line
+     cut.
+
+**Plans:** 2/2 plans executed
+
+Plans:
+**Wave 1**
+
+- [x] 09-01-PLAN.md — Generator fix: two `NUMERIC_OPERAND_FIELDS` table entries, negative-control self-check, stale "18" doc correction (device-free, Wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 09-02-PLAN.md — Device-proving safety verdict: sign both forks, author and complete `09-UAT.md`, DEV-06 design write-up, written verdict (Wave 2, depends on 09-01)
+
+Full context: `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md`

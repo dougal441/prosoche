@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 8
-current_phase_name: Sentient Fork & Dual Distribution
+current_phase: 09
+current_phase_name: Dimming/Silence Stateful Restore (Experimental Fork)
 status: verifying
-stopped_at: Phase 08 Plan 03 awaiting real-iPhone DIST-03 UAT
-last_updated: "2026-08-13T08:58:14.171Z"
-last_activity: 2026-08-14
-last_activity_desc: "Completed quick task 260814-kut: disambiguated deviations and guarded rebuild provenance"
+stopped_at: "09-02 Task 1 complete; Tasks 2-3 blocked on device access (checkpoint:human-verify)"
+last_updated: "2026-08-16T10:09:29.989Z"
+last_activity: 2026-08-16
+last_activity_desc: Phase 09 execution started
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 6
-  total_plans: 18
-  completed_plans: 18
+  total_plans: 20
+  completed_plans: 20
 ---
 
 # Project State
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 8 — real-iPhone dual-fork UAT
+**Current focus:** Phase 09 — Dimming/Silence Stateful Restore (Experimental Fork)
 
 ## Current Position
 
-Phase: 8 of 8 (Sentient Fork & Dual Distribution)
-Plan: 3 of 3 complete
-Status: Automated verification passed; awaiting real-iPhone import / Manual UAT
-Last activity: 2026-08-16 — Completed quick task 260816-ukb: stripped OPEN_BISECT debug breadcrumbs (Phase 4 UAT unblock)
+Phase: 09 (Dimming/Silence Stateful Restore — Experimental Fork) — MERGED TO MAIN, DEVICE-PROVING OUTSTANDING
+Plan: 2 of 2 (09-01 complete; 09-02 Task 1 complete, Tasks 2-3 never run)
+Status: Coercion fix merged to main UNTESTED by explicit user decision 2026-08-16 — see `docs/BUILD-NOTES.md` §18. Dimming/Silence writes now execute where they previously no-opped, which makes `restore_managed_settings()` load-bearing on a path with zero device evidence. `09-UAT.md` (12 tests) is authored and ready; only test 1 (coercion chip not red) passed. Also outstanding: Phase 8 awaiting real-iPhone import / Manual UAT; Phase 4 UAT tests 1, 3-6 reopened.
+Last activity: 2026-08-16 — Phase 9 merged to main untested; prior: quick task 260816-ukb stripped OPEN_BISECT debug breadcrumbs (Phase 4 UAT unblock)
 
 Progress: [██████████] 100%
 
@@ -76,8 +76,16 @@ Progress: [██████████] 100%
 | Phase 08-sentient-fork-dual-distribution P01 | 20m | 2 tasks | 3 files |
 | Phase 08-sentient-fork-dual-distribution P02 | 12m | 2 tasks | 3 files |
 | Phase 08-sentient-fork-dual-distribution P03 | 10m | 1 tasks | 10 files |
+| Phase 09 P01 | 25min | 3 tasks | 7 files |
+| Phase 09 P02 | 7min | 1 tasks | 3 files |
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 9 added: Reintroduce and validate Dimming/Silence stateful restore on an experimental fork (this branch). Runs in parallel with, and does not reverse, the main-line brightness/volume cut in `.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md`. See `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md` for full context; `Donor 10.shortcut` (`.planning/debug/`) supplies the coercion-aggrandizement evidence needed to fix the 18 deferred sites.
+- [Phase 9]: Research corrected the site count from 18 to 28 (`setbrightness`=14, `setvolume`=14) — `docs/BUILD-NOTES.md`'s original citation of "§8" was itself wrong; the real table is `.planning/debug/HANDOFF.md` §8, now corrected there, in ROADMAP.md criterion 1, and in the todo. Donor 10 (decrypted) confirms the action/parameter identifiers but contains no variable-fed `WFBrightness`/`WFVolume` example, so the coercion shape for this exact parameter position remains analogy-only (`WFNumberContentItem`, unverified) pending an on-device visual check or fresh donor. See `09-RESEARCH.md`.
+- [Phase 9]: BD-02's "never zero, 10–15% band" brightness floor corrected — user-reported on-device observation is that iOS's practical brightness minimum is dim, not a literal black/unusable screen, so avoiding it was never itself the safety requirement. The safety mechanism is capture-and-restore reliability (Get Device Details → has-any-value guard → snapshot → restore on CLOSE/Emergency Restore), which BD-02 already specified and Phase 9 exists to prove under real failure modes. Scoped to this experimental fork only (`.claude/CLAUDE.md`, `docs/CAPABILITY-DECISIONS.md` BD-02 addendum, `.planning/ROADMAP.md` Phase 9 criterion 4) — main line's floor is untouched. Provisional until Phase 9's own on-device testing confirms it.
 
 ### Decisions
 
@@ -116,6 +124,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Exit selection remains deterministic and Config-driven without model, random, or network actions.
 - [Phase ?]: Sentient uses the device-evidenced Apple Intelligence on Device model literal; no OS-27-only keys.
 - [Phase ?]: Completed-slow, empty, or malformed audit output falls through to Dumb; hung model cancellation is unavailable at target 26.
+- [Phase ?]: Kept the numeric-coercion fix purely additive at the NUMERIC_OPERAND_FIELDS table per plan instruction; no other function edited.
+- [Phase ?]: Fixed two pre-existing, unrelated stale self-check assertions (docs/state_engine_self_check.py gettimebetweendates count; docs/phase5_self_check.py router-gate ancestry) because the plan's own required verify chain needed both scripts to pass (Rule 1/3 deviation).
+- [Phase ?]: [Phase 9]: 09-02 Task 1 complete (both forks re-signed with coercion fix, 09-UAT.md authored with 12 tests + DEV-06 first-principles write-up); Tasks 2-3 (device trials) blocked — zero iPhones connected, matching the open DIST-03 blocker. Did not auto-approve despite auto_advance=true, per do-not-fabricate rule.
 
 ### Pending Todos
 
@@ -164,6 +175,7 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 
 - [Phase 1]: Four capability blockers are unresolved pending live on-device verification — grayscale/Color Filters availability, brightness/volume read-back, the `Use Model` On-Device pinning literal, and Notes actions on iOS. All downstream phases assume these get resolved (favorably or via documented fallback) in Phase 1.
 - DIST-03 real-iPhone import and first Manual UAT blocked: xcrun devicectl reports no connected devices.
+- Phase 9 Plan 02 Tasks 2-3 blocked: 09-UAT.md's 12 device-proving tests (coercion-chip gate, capture/restore, failure-mode trials, DEV-06 verdict) require a real Apple-Intelligence-capable iPhone on iOS 26.x. xcrun devicectl reports zero connected devices — same underlying blocker as DIST-03. Both re-signed .shortcut artifacts and the fully-authored 09-UAT.md are ready; resume via /gsd-verify-work 9 once a device is available.
 
 ### Quick Tasks Completed
 
@@ -183,6 +195,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-08-13T08:58:14.160Z
-Stopped at: Phase 08 Plan 03 awaiting real-iPhone DIST-03 UAT
-Resume file: docs/device-evidence/Phase8-DIST-03-BLOCKED.md
+Last session: 2026-08-16T10:09:29.978Z
+Stopped at: 09-02 Task 1 complete; Tasks 2-3 blocked on device access (checkpoint:human-verify)
+Resume file: .planning/phases/09-reintroduce-and-validate-dimming-silence-stateful-restore-on/09-UAT.md

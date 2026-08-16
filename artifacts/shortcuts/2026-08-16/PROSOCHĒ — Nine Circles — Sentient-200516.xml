@@ -1935,6 +1935,19 @@ Guard against empty fields before reading anything nested inside them. Six field
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFAlertActionTitle</key>
+				<string>PROSOCHĒ OPEN TRACE</string>
+				<key>WFAlertActionMessage</key>
+				<string>A
+
+Report the LAST letter you see.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.getvalueforkey</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
@@ -3321,6 +3334,19 @@ Guard against empty fields before reading anything nested inside them. Six field
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFAlertActionTitle</key>
+				<string>PROSOCHĒ OPEN TRACE</string>
+				<key>WFAlertActionMessage</key>
+				<string>B
+
+Report the LAST letter you see.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.comment</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
@@ -3341,7 +3367,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>101</integer>
+				<integer>5</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -3359,6 +3385,8 @@ Guard against empty fields before reading anything nested inside them. Six field
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFConditionalActionString</key>
+				<string>￼</string>
 			</dict>
 		</dict>
 		<dict>
@@ -3579,25 +3607,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 					</dict>
 				</dict>
 				<key>WFConditionalActionString</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Behavioural Day</string>
-							</dict>
-						</dict>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
-				</dict>
+				<string>￼</string>
 			</dict>
 		</dict>
 		<dict>
@@ -3797,6 +3807,19 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<string>1B72C4C2-CEEC-5B4E-A3B0-820299E5F24E</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFAlertActionTitle</key>
+				<string>PROSOCHĒ OPEN TRACE</string>
+				<key>WFAlertActionMessage</key>
+				<string>C
+
+Report the LAST letter you see.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -6317,6 +6340,19 @@ Guard against empty fields before reading anything nested inside them. Six field
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFAlertActionTitle</key>
+				<string>PROSOCHĒ OPEN TRACE</string>
+				<key>WFAlertActionMessage</key>
+				<string>D
+
+Report the LAST letter you see.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.comment</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
@@ -6646,6 +6682,19 @@ Guard against empty fields before reading anything nested inside them. Six field
 				</dict>
 				<key>WFNumberValue</key>
 				<integer>0</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFAlertActionTitle</key>
+				<string>PROSOCHĒ OPEN TRACE</string>
+				<key>WFAlertActionMessage</key>
+				<string>E
+
+Report the LAST letter you see.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -9174,6 +9223,19 @@ Guard against empty fields before reading anything nested inside them. Six field
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFAlertActionTitle</key>
+				<string>PROSOCHĒ OPEN TRACE</string>
+				<key>WFAlertActionMessage</key>
+				<string>F
+
+Report the LAST letter you see.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.math</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
@@ -9434,6 +9496,19 @@ Guard against empty fields before reading anything nested inside them. Six field
 				</dict>
 				<key>WFVariableName</key>
 				<string>State</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFAlertActionTitle</key>
+				<string>PROSOCHĒ OPEN TRACE</string>
+				<key>WFAlertActionMessage</key>
+				<string>G
+
+Report the LAST letter you see.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -10339,6 +10414,19 @@ Guard against empty fields before reading anything nested inside them. Six field
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFAlertActionTitle</key>
+				<string>PROSOCHĒ OPEN TRACE</string>
+				<key>WFAlertActionMessage</key>
+				<string>H
+
+Report the LAST letter you see.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.number</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
@@ -10621,6 +10709,19 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<string>B40A8DDE-5F51-5DD5-981D-4154A58C84EF</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFAlertActionTitle</key>
+				<string>PROSOCHĒ OPEN TRACE</string>
+				<key>WFAlertActionMessage</key>
+				<string>I
+
+Report the LAST letter you see.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -11916,45 +12017,15 @@ Guard against empty fields before reading anything nested inside them. Six field
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.notification</string>
+			<string>is.workflow.actions.alert</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
-				<key>WFNotificationActionTitle</key>
-				<string>PROSOCHĒ</string>
-				<key>WFNotificationActionBody</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>string</key>
-						<string>Circle ￼ · pressure ￼ · heat ￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{7, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Circle Next</string>
-							</dict>
-							<key>{20, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Pressure Next</string>
-							</dict>
-							<key>{29, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Heat Final</string>
-							</dict>
-						</dict>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
-				</dict>
+				<key>WFAlertActionTitle</key>
+				<string>PROSOCHĒ OPEN TRACE</string>
+				<key>WFAlertActionMessage</key>
+				<string>J
+
+Report the LAST letter you see.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -12030,25 +12101,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFMenuPrompt</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>string</key>
-						<string>Circle ￼ opened. Leave now, or continue?</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{7, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Circle Next</string>
-							</dict>
-						</dict>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
-				</dict>
+				<string>PROSOCHĒ</string>
 				<key>WFMenuItems</key>
 				<array>
 					<string>Leaving</string>
@@ -12330,25 +12383,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 					</dict>
 				</dict>
 				<key>WFConditionalActionString</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Canonical Exit</string>
-							</dict>
-						</dict>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
-				</dict>
+				<string>￼</string>
 			</dict>
 		</dict>
 		<dict>
@@ -12525,7 +12560,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>101</integer>
+				<integer>5</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -12543,6 +12578,8 @@ Guard against empty fields before reading anything nested inside them. Six field
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFConditionalActionString</key>
+				<string>￼</string>
 			</dict>
 		</dict>
 		<dict>
@@ -14275,25 +14312,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 					</dict>
 				</dict>
 				<key>WFConditionalActionString</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Best Exit</string>
-							</dict>
-						</dict>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
-				</dict>
+				<string>￼</string>
 			</dict>
 		</dict>
 		<dict>
@@ -14426,7 +14445,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 					</dict>
 				</dict>
 				<key>WFConditionalActionString</key>
-				<string>0</string>
+				<string>￼</string>
 			</dict>
 		</dict>
 		<dict>
@@ -14659,7 +14678,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 					</dict>
 				</dict>
 				<key>WFConditionalActionString</key>
-				<string>0</string>
+				<string>￼</string>
 			</dict>
 		</dict>
 		<dict>
@@ -14703,25 +14722,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 					</dict>
 				</dict>
 				<key>WFConditionalActionString</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Best Exit</string>
-							</dict>
-						</dict>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
-				</dict>
+				<string>￼</string>
 			</dict>
 		</dict>
 		<dict>
@@ -15960,7 +15961,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>101</integer>
+				<integer>5</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -15978,6 +15979,8 @@ Guard against empty fields before reading anything nested inside them. Six field
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFConditionalActionString</key>
+				<string>￼</string>
 			</dict>
 		</dict>
 		<dict>
@@ -18950,7 +18953,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>101</integer>
+				<integer>5</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -18968,6 +18971,8 @@ Guard against empty fields before reading anything nested inside them. Six field
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFConditionalActionString</key>
+				<string>￼</string>
 			</dict>
 		</dict>
 		<dict>
@@ -27804,25 +27809,7 @@ Prior respected: ￼</string>
 					</dict>
 				</dict>
 				<key>WFConditionalActionString</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Captured Session ID</string>
-							</dict>
-						</dict>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
-				</dict>
+				<string>￼</string>
 			</dict>
 		</dict>
 		<dict>
@@ -29770,35 +29757,6 @@ Prior respected: ￼</string>
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.notification</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFNotificationActionTitle</key>
-				<string>PROSOCHĒ</string>
-				<key>WFNotificationActionBody</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>string</key>
-						<string>Session closed · ￼ sec</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{17, 1}</key>
-							<dict>
-								<key>Type</key>
-								<string>Variable</string>
-								<key>VariableName</key>
-								<string>Session Duration</string>
-							</dict>
-						</dict>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
 			<string>is.workflow.actions.setitemname</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
@@ -29989,7 +29947,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFMenuPrompt</key>
-				<string>PROSOCHĒ</string>
+				<string>PROSOCHĒ · build 2026-08-15o</string>
 				<key>WFMenuItems</key>
 				<array>
 					<string>Status</string>

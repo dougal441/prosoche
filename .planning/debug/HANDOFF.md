@@ -420,7 +420,18 @@ already-fixed conditional sites, caught and corrected before trusting the number
 | `setbrightness.WFBrightness` | 14 | 14 | deliberately deferred, MVP cut |
 | `setvolume.WFVolume` | 4 | 4 | deliberately deferred, MVP cut |
 
-Total: 227 numeric-field sites inspected → 85 offenders → 67 fixed, 18 deferred by
+**Correction (Phase 9 research, 2026-08-16):** this snapshot is stale. A later cycle added
+`silence()` to the Python `for test_circle in range(1, 10):` unroll inside
+`manual_emergency_restore()`'s "Test a Circle" menu (`tools/build_state_engine.py`), which added
+10 more `setvolume` call sites (and 10 more `setbrightness` sites, already counted in the 14
+above via the matching `dimming()` unroll). As of build `848d00e`, direct plist inspection of
+`src/PROSOCHE-Dumb.xml`/`src/PROSOCHE-Sentient.xml` shows **`setbrightness.WFBrightness` = 14,
+`setvolume.WFVolume` = 14 — 28 total, not 18.** See
+`.planning/phases/09-reintroduce-and-validate-dimming-silence-stateful-restore-on/09-RESEARCH.md`
+"Site count correction" for the full trace. Do not cite the "18" figure below as current.
+
+Total (as originally recorded, now stale by the correction above): 227 numeric-field sites
+inspected → 85 offenders → 67 fixed, 18 deferred by
 explicit decision, 0 unexplained. (This is a NUMERIC-operand audit, axis 6b — a
 different axis from cycle 15's STRUCTURED-value audit, axis 8, and from cycle 16's
 STATE-SHAPE/GATE-SEMANTICS pair on `pending_exit`, axes 6/7. See §2's table for the

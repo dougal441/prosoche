@@ -2343,6 +2343,8 @@ NUMERIC_BUILTIN_VARIABLES = {"Repeat Index"}
 NUMERIC_OPERAND_FIELDS = {
     "is.workflow.actions.math": ("WFInput", "WFMathOperand"),
     "is.workflow.actions.getitemfromlist": ("WFItemIndex",),
+    "is.workflow.actions.setbrightness": ("WFBrightness",),
+    "is.workflow.actions.setvolume": ("WFVolume",),
 }
 
 

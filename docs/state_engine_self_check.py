@@ -58,8 +58,10 @@ def structural_check():
     assert "is.workflow.actions.delay" in ids
     # CYCLE 14 replaced every downstream elapsed-time computation with plain numeric
     # subtraction (elapsed_since()); only the CLOCK block's own "Now Epoch" derivation
-    # still uses Get Time Between Dates (see elapsed_since()'s docstring). This count
-    # was stale from before that replacement.
+    # still uses Get Time Between Dates (see elapsed_since()'s docstring). That block's
+    # construct is Donor-7-confirmed and needs zero coercion. This count was stale from
+    # before the replacement; the exact value is deliberate, so a new call site has to be
+    # a conscious decision rather than silently passing a floor check.
     assert ids.count("is.workflow.actions.gettimebetweendates") == 1
     assert "is.workflow.actions.round" in ids
     assert "is.workflow.actions.number.random" in ids
