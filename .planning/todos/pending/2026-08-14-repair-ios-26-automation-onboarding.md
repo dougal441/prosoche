@@ -61,3 +61,16 @@ device-verified, see `.planning/debug/resolved/open-routing-sequence-error.md`) 
 about that closure changes this todo's own scope or status. Still unfixed; still the next
 concrete unblocked task in this project's queue if no higher-priority item is picked
 first.
+
+## Corroboration — added 2026-08-16
+
+Confirmed the same defect affects the **CLOSE** automation, not just OPEN. During Phase 4
+UAT (`.planning/phases/04-close-pipeline-session-race/04-UAT.md`, Tests 1/3/4/5/6), the
+user's OPEN automation fired correctly (Circle 1 notification observed), but closing the
+tracked app displayed the manual Control Room menu instead of running `close_pipeline()` —
+a dropped `state.json` confirmed `active_session` was never cleared and `recent_sessions`
+stayed empty. The user's CLOSE automation was a no-input automation, exactly the failure
+mode this todo describes. This blocks device re-verification of the already-landed
+G-04-1/G-04-3 CLOSE fixes (`04-02-SUMMARY.md`) until the CLOSE automation is rebuilt with
+the Text("CLOSE") → Run Shortcut wrapper. Raises this todo's practical priority — it is now
+blocking Phase 4 UAT completion, not just onboarding polish.
