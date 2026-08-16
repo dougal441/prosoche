@@ -137,3 +137,12 @@ None beyond the pre-existing, already-documented device-access blocker (`DIST-03
 ---
 *Phase: 09-reintroduce-and-validate-dimming-silence-stateful-restore-on*
 *Completed: 2026-08-16 (Task 1 only; Tasks 2-3 blocked)*
+
+## Self-Check: PASSED
+
+- FOUND: artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut
+- FOUND: artifacts/shortcuts/PROSOCHĒ — Nine Circles — Sentient.shortcut
+- FOUND: .planning/phases/09-reintroduce-and-validate-dimming-silence-stateful-restore-on/09-UAT.md
+- FOUND: .planning/phases/09-reintroduce-and-validate-dimming-silence-stateful-restore-on/09-02-SUMMARY.md
+- FOUND: 0f923f4 (Task 1 commit)
+- FOUND: 9cbce54 (SUMMARY.md commit)
