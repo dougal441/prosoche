@@ -59,6 +59,12 @@ now-archived debug file either.
    occupied) and once from `close_pipeline()`'s `owns_if` TRUE branch (session
    duration). Stripping the breadcrumb scaffolding is therefore safe to execute; it is
    still not executed by this note, and this todo's other four items remain open.
+
+   **DONE 2026-08-16** — BUILD_STAMP/ROUTER_TRACE/OPEN_BISECT and all ten breadcrumb
+   sites stripped from `tools/build_state_engine.py`; rebuilt, self-checked, validated,
+   signed; MANIFEST.md Dumb rows refreshed. On-device OPEN-path regression confirmation
+   remains blocked on DIST-03 (no connected iPhone via `xcrun devicectl`) — re-run once a
+   device is available.
 2. Add a `.gitignore` covering `.DS_Store`, `__pycache__/`, `*.pyc`, and any other
    build-local noise currently tracked by accident.
 3. Refresh `artifacts/shortcuts/MANIFEST.md` to include the 2026-08-14/15 archive
