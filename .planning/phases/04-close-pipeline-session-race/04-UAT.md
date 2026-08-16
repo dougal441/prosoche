@@ -1,14 +1,20 @@
 ---
-status: diagnosed
+status: testing
 phase: 04-close-pipeline-session-race
 source: [04-01-SUMMARY.md]
 started: 2026-08-16T00:10:00.000Z
-updated: 2026-08-16T09:45:00.000Z
+updated: 2026-08-16T21:00:00.000Z
 ---
 
 ## Current Test
+<!-- OVERWRITE each test - shows where we are -->
 
-[testing complete]
+number: 1
+name: Simple OPEN → wait → CLOSE records a plausible session
+expected: |
+  state.json's recent_sessions gets a new entry with a plausible duration after
+  open → wait → close.
+awaiting: user response
 
 ## Context
 
@@ -39,11 +45,11 @@ acceptance criteria).
 ### 1. Simple OPEN → wait → CLOSE records a plausible session
 expected: state.json's `recent_sessions` gets a new entry with a plausible duration after
 open → wait → close.
-result: issue
-reported: "i can now see a session id in the state.json but declared duration seconds is
-  :0 so maybe that didn't work, so valid session yes, but is going to have to be fixed
-  later down the line"
-severity: major
+result: pending
+note: "Re-opened for re-test — gap G-04-1 (duration always 0) was diagnosed and a fix
+  landed in 04-02-PLAN.md/04-02-SUMMARY.md (close_pipeline()'s ownership comparator now
+  wired to Captured Session ID). Prior finding: session ID recorded but duration_seconds
+  was 0."
 
 ### 2. CLOSE with no active session does not corrupt state or error
 expected: closing when nothing is open produces no error dialog and no state corruption.
@@ -54,53 +60,53 @@ expected: open A, open B, close A, close B (scripted deliberately, not left to c
 if the active session ID changed, the newer OPEN owns state and the older CLOSE aborts
 without mutating state. This is the single most important case and the hardest to trigger
 by hand.
-result: issue
-reported: "doesnt look like the session id has changed once. i switched a to b to a close.
-  open b to a to b. it kind of looks like it gets open, and gets close (because i get a
-  menu popup) and then it's not doing next open? but, it's also hard to tell because we
-  still have the test hardware pre-circles."
-severity: major
+result: pending
+note: "Re-opened for re-test — gap G-04-3 (session ownership check permanently unreachable)
+  was diagnosed and fixed in 04-02-PLAN.md/04-02-SUMMARY.md (same root cause as G-04-1).
+  Prior finding: session ID never appeared to rotate across rapid A/B switches. This build
+  also adds an unconditional OPEN/CLOSE Notification (04-03) so you can now tell OPEN and
+  CLOSE apart on-device without ambiguity — use it to pace the A/B/A/B sequence this time."
 
 ### 4. CLOSE after device lock / app switch away
 expected: this different trigger path also records correctly and does not corrupt state.
-result: skipped
-reason: "User: couldn't test — no reliable indicator of experiencing a Circle (which would
-  confirm OPEN or CLOSE ran). Blocked on Ship-readiness cleanup for PROSOCHĒ Dumb
-  (post-OPEN-path-closure, todo backlog item) to remove trace breadcrumbs first. While
-  investigating, user also hit a confusing 'Leaving / Continue' menu popup and was unsure
-  what it indicated — see Gaps G-04-4b."
+result: pending
+note: "Re-opened for re-test — gap G-04-4b (no reliable OPEN/CLOSE indicator) was diagnosed
+  and fixed in 04-03-PLAN.md/04-03-SUMMARY.md: OPEN and CLOSE each now fire an unconditional
+  on-device Notification, and the Leaving/Continue menu now states which Circle is active.
+  Prior blocker: no way to confirm OPEN/CLOSE fired without inspecting debug breadcrumbs."
 
 ### 5. Behavioural-day boundary (§10.1, 04:00 rollover) crossed mid-session
 expected: a session spanning the rollover is handled correctly, not double-counted or
 dropped.
-result: skipped
-reason: "Session paused (user + Claude decision): no reliable on-device indicator that a
-  Circle/OPEN/CLOSE actually fired (see G-04-4b). Deferred until Ship-readiness cleanup
-  restores observability."
+result: pending
+note: "Re-opened for re-test — same observability fix as Test 4 (G-04-4b, 04-03-SUMMARY.md)
+  removes the blocker that caused this to be skipped."
 
 ### 6. Verify the numbers in state.json, not just absence of errors
 expected: after each case above, `recent_sessions`, `last_close_at`, and the cleared
 `active_session` hold exactly what §20 says they should. "No error dialog" is not a pass —
 recompute by hand for at least two cases.
-result: skipped
-reason: "Session paused (user + Claude decision): same observability gap as Test 5 (see
-  G-04-4b) — cannot reliably verify individual case numbers without confirming OPEN/CLOSE
-  fired."
+result: pending
+note: "Re-opened for re-test — depends on Tests 1, 3, 4, 5 above; both the CLOSE-ownership
+  fix (G-04-1/G-04-3, 04-02-SUMMARY.md) and the observability fix (G-04-4b, 04-03-SUMMARY.md)
+  apply here."
 
 ## Summary
 
 total: 6
 passed: 1
-issues: 2
-pending: 0
-skipped: 3
+issues: 0
+pending: 5
+skipped: 0
 
 ## Gaps
 
 - gap_id: G-04-1
   truth: "state.json's recent_sessions gets a new entry with a plausible duration after
     open → wait → close."
-  status: failed
+  status: resolved
+  resolved_by: 04-02-PLAN.md
+  resolved_at: 2026-08-16
   reason: "User reported: session ID is recorded but declared duration_seconds is 0
     instead of a plausible elapsed duration."
   severity: major
@@ -140,7 +146,9 @@ skipped: 3
 - gap_id: G-04-3
   truth: "open A, open B, close A, close B — if the active session ID changed, the newer
     OPEN owns state and the older CLOSE aborts without mutating state."
-  status: failed
+  status: resolved
+  resolved_by: 04-02-PLAN.md
+  resolved_at: 2026-08-16
   reason: "User reported: session id does not appear to change across rapid A/B switches;
     behavior after the first open/close pair looks like it stops registering subsequent
     OPENs. Observation made on pre-Circles test hardware, so confidence is limited."
@@ -183,7 +191,9 @@ skipped: 3
 - gap_id: G-04-4b
   truth: "OPEN/CLOSE behaviour should be observable/confirmable during manual testing
     without ambiguity."
-  status: failed
+  status: resolved
+  resolved_by: 04-03-PLAN.md
+  resolved_at: 2026-08-16
   reason: "User reported: no reliable on-device indicator confirms a Circle actually
     fired (i.e. that OPEN or CLOSE ran) now that breadcrumbs are pending removal. During
     testing user encountered a 'Leaving / Continue' menu popup and could not tell what it
