@@ -79,14 +79,23 @@ now-archived debug file either.
    sites entirely (making `DEV-06`'s restore-ownership read-side moot, per
    `HANDOFF.md` §6 item 7).
 
-   **⚠️ CONFLICT — deliberate, user decision 2026-08-16.** A sibling todo,
-   `2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md`, does the
-   *opposite*: it finishes the coercion-aggrandizement fix for the same 18 sites and tests
-   stateful capture-and-restore properly. This is intentional and the two run in parallel —
-   **the cut proceeds here on main regardless**, while the reintroduction is validated on a
-   separate experimental fork and may be brought back into main later only if it proves
-   safe. Do not resolve this conflict by skipping either side, and do not treat the sibling
-   todo's existence as a reason to leave the code in place here.
+   **❌ SUPERSEDED — DO NOT EXECUTE. User decision, 2026-08-16: "They're both back now,
+   and working on main."** The cut is cancelled. Dimming and Silence stay, each as its own
+   distinct Circle, and the work moves to
+   `.planning/todos/pending/2026-08-16-dimming-and-silence-as-distinct-circles.md`.
+
+   The parallel experiment resolved in favour of keeping them: Phase 9 landed the
+   numeric-coercion fix for all 28 `setbrightness`/`setvolume` sites and merged to main
+   (`2e2261e`, artifacts regenerated in `c6d8737`). Consequence to carry forward — the
+   merge made these writes **live** where they previously no-opped, so
+   `restore_managed_settings()` is now load-bearing on a path with zero device evidence
+   (`docs/BUILD-NOTES.md` §18). DEV-06 (restore-ownership read side) is live again rather
+   than moot, since it was only ever moot conditional on this cut proceeding.
+
+   *Historical note — the original conflict framing:* a sibling todo,
+   `2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md`, ran the
+   opposite experiment on a separate fork. That fork won and merged; both todos are now
+   absorbed by the successor named above.
 
 ## Related
 

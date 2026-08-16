@@ -140,19 +140,27 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 - [major] Repair iOS 26 automation onboarding — `.planning/todos/pending/2026-08-14-repair-ios-26-automation-onboarding.md`
 - [major] Close the remaining state-shape sentinel gaps (exit_events, active_session) — `.planning/todos/pending/2026-08-15-close-state-shape-sentinel-gaps.md`
 - [major] Fix the WFConditionalActionString red-operator sites and the WFItems List wrapper — `.planning/todos/pending/2026-08-15-fix-red-operator-and-list-wrapper-defects.md`
-- [major] Ship-readiness cleanup for PROSOCHĒ Dumb — `.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md`
+- [major] Ship-readiness cleanup for PROSOCHĒ Dumb — `.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md` (item 1 done; **item 5 SUPERSEDED 2026-08-16 — the brightness/volume cut is cancelled**)
 - [major] Recover the Use Model On-Device literal (UA-02) — `.planning/todos/pending/2026-08-16-recover-the-use-model-on-device-literal.md`
 - [major] Optimise and streamline the UX — onboarding and in-run functionality — `.planning/todos/pending/2026-08-16-optimise-ux-onboarding-and-functionality.md`
-- [major] Reintroduce and validate Dimming/Silence stateful restore on an experimental fork — `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md` (⚠️ deliberately conflicts with ship-readiness item 5 — the cut proceeds on main in parallel)
+- [major] ~~Reintroduce and validate Dimming/Silence stateful restore on an experimental fork~~ — `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md` (**ABSORBED** — experiment ran as Phase 9 and merged to main; device proof moved to the successor below)
+
+**Circle build-out (captured 2026-08-16 — the intervention layer is thinner than the nine-Circle design):**
+
+- [major] Build Circle 8 — the Voice primitive dispatches nothing — `.planning/todos/pending/2026-08-16-build-circle-8-voice-primitive.md`
+- [major] Build Ash as real Color Filters grayscale — `.planning/todos/pending/2026-08-16-build-ash-as-real-color-filters-grayscale.md` (unblocked by spike 005: `AXToggleColorFiltersIntent`, both legs donor-confirmed)
+- [major] Dimming and Silence as distinct Circles, device-proven — `.planning/todos/pending/2026-08-16-dimming-and-silence-as-distinct-circles.md` (successor to the two entries above it; ⚠️ writes are live on main with zero device evidence)
+- [major] Split Exile into two Circles — straight-to-home and routed-exit — `.planning/todos/pending/2026-08-16-split-exile-into-two-circles.md` (**owns the nine-slots-vs-ten-primitives decision that gates the other three**)
 
 **Backlog (genuinely new work; see ROADMAP.md `## Backlog`):**
 
-- [minor] Phase 999.3 — Grayscale / Ash capability donor test — `.planning/phases/999.3-grayscale-ash-capability-donor-test/`
+- [minor] ~~Phase 999.3 — Grayscale / Ash capability donor test~~ — `.planning/phases/999.3-grayscale-ash-capability-donor-test/` (steps 1–4 resolved by spike 005; step 5 "rebuild Ash" promoted to the todo above)
 
 **Device UAT (verification of already-built phases, not new phases — reclassified 2026-08-16; run via `/gsd-verify-work {phase}`, rolled up by `/gsd-audit-uat`):**
 
 - [blocker] Phase 4 UAT — CLOSE pipeline and session race — `.planning/phases/04-close-pipeline-session-race/04-UAT.md`
-- [blocker] Phase 5 UAT — nine Circles, sequence switching, and Circle IX cooldown/route-out — `.planning/phases/05-nine-primitives-environmental-safety/05-UAT.md`
+- [blocker] Phase 5 UAT — nine Circles, sequence switching, and Circle IX cooldown/route-out — `.planning/phases/05-nine-primitives-environmental-safety/05-UAT.md` (rolled up by the **running** meta todo `.planning/todos/pending/2026-08-16-device-uat-nine-circles-and-sequence-switching.md` — keep the Circle matrix there current; 1 of 9 Circles has ever fired on device)
+- [blocker] Phase 9 UAT — Dimming/Silence stateful capture-and-restore — `.planning/phases/09-reintroduce-and-validate-dimming-silence-stateful-restore-on/09-UAT.md` (1 of 12 tests passed; the other 11 gate a path that is live on main)
 - [blocker] Phase 6 UAT — intention contracts, fidelity feedback, six exits, explore/exploit learning — `.planning/phases/06-exits-exit-learning-contracts/06-UAT.md`
 - [blocker] Phase 7 UAT — manual Control Room menu and safety recovery — `.planning/phases/07-control-room-dumb-freeze/07-UAT.md`
 

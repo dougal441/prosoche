@@ -8,7 +8,32 @@ files:
   - docs/BUILD-NOTES.md
 ---
 
-## Problem
+## Outcome — ABSORBED 2026-08-16
+
+**This experiment ran, and it won.** Phase 9
+(`.planning/phases/09-reintroduce-and-validate-dimming-silence-stateful-restore-on/`)
+executed steps 1–3: the numeric-coercion fix was applied to all 28 `setbrightness` (14) /
+`setvolume` (14) sites — note the count was corrected from the 18 asserted below — and
+merged to main (`2e2261e`), with both forks regenerated and re-signed (`c6d8737`).
+
+The user's decision, 2026-08-16: **"They're both back now, and working on main."** The
+opposing MVP cut in `2026-08-15-ship-readiness-cleanup.md` item 5 is cancelled, not
+executed.
+
+**What did not happen: steps 4–8, the device proof — the entire point of the experiment.**
+`09-UAT.md` has 12 tests; only test 1 (the static "coercion chip not red" gate) passed. The
+merge made Dimming/Silence writes live where they previously no-opped, so
+`restore_managed_settings()` is now load-bearing on a path with zero device evidence
+(`docs/BUILD-NOTES.md` §18).
+
+**Successor:** `2026-08-16-dimming-and-silence-as-distinct-circles.md` carries the
+outstanding device proof, the distinct-Circle sequence design, and the revived DEV-06.
+Work there, not here. The record below is retained for its §21 reasoning and the failure
+modes step 4 enumerates, which the successor's device testing still owes answers to.
+
+---
+
+## Problem *(historical — framing superseded above)*
 
 **⚠️ This todo deliberately conflicts with `2026-08-15-ship-readiness-cleanup.md`, and the
 conflict is intentional — user decision, 2026-08-16.**
