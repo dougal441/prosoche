@@ -77,6 +77,41 @@ capability could be auto-detected to drive the fork choice.
   file") on first write per installation — not previously documented. Single-tap, not a
   blocker, but a real-build onboarding UX consideration.
 
+### Ash / Color Filters capability on iOS (spike 005)
+
+Whether the Ash primitive (canonical strategy §11 Primitive B) — the single
+highest-research-support intervention in the product (§6.5: a preregistered 112-participant
+randomized field experiment) — can be built as designed on iOS 26, or must stay degraded to
+BD-01's non-environmental visual pause. The question had been answered twice from catalog
+data alone (BD-01 `NOT AVAILABLE`, then BD-01-R reversing it), never from a donor — despite
+an unanalysed `Set Colour Filters.shortcut` sitting in `.planning/debug/` the whole time.
+
+**From spike 005:**
+
+- **Color Filters is real on iOS 26**, confirmed at tier 1. But the identifier is
+  `com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent` — the
+  `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` that both prior
+  decisions argued over is the **macOS twin**. The iOS identifier is absent from all three
+  bundled ToolKit snapshots, so no catalog query could ever have found it.
+- **`state` is a bool-as-integer: `1` = On, `0` = Off.** `operation` is a string enum case id
+  (`toggle`) that is **elided when Turn** — so authoring omits it and never needs the `"turn"`
+  literal. No `ShowWhenRun` on the iOS intent. Both legs Ash writes are donor-confirmed
+  (On: `Set Colour Filters`; Off: `Donor 9.1`), so Phase 5's CIRC-02 has no remaining gate on
+  its write path.
+- **Apple's `.intentdefinition` does not describe the plist encoding.** This spike asserted
+  integer enum indices from it twice — `operation` as an integer, then `state = 2` for Off —
+  and both were wrong. `state = 2` would have shipped a restore leg that leaves users stuck in
+  grayscale; Donor 9.1 caught it. The intentdefinition is valuable for *what parameters exist*
+  and *what cases are called*, and for proving no read-back intent exists — but a precise-
+  looking new source does not outrank a donor.
+- **Still no read-back.** No `Get*`/`Query*` intent exists for any accessibility setting
+  across all 35 intents in the framework, so §21's opt-in remedy
+  (`safety.ash_managed_color_filters`) governs, unchanged. One untested lead: every
+  `Toggle*` intent declares a `state` *response* parameter.
+- **Apple's own `.intentdefinition` files are a first-class evidence source** on the build
+  Mac, sitting between donor ground truth and the ToolKit catalog. They gave exact parameter
+  types, enum cases, and integer indices for an action absent from every bundled snapshot.
+
 ## Spikes
 
 | # | Name | Type | Validates | Verdict | Tags |
@@ -85,6 +120,7 @@ capability could be auto-detected to drive the fork choice.
 | 002 | close-automation-vs-screen-lock | standard | Given a tracked app in foreground, when the user locks the screen (vs. switches app), then determine whether the "App Is Closed" Personal Automation fires the same `CLOSE` signal in both cases | VALIDATED — yes, screen lock fires CLOSE | session-model, close-pipeline, personal-automations |
 | 003 | device-model-literal | standard | Given a real iPhone, when Get Device Details queries "Device Model", then the exact literal string format (identifier vs marketing name) is known | INVALIDATED ✗ | shortcuts, device-detection |
 | 004 | capability-gate | standard | Given a single merged shortcut with a manual opt-in toggle, when the core deterministic escalation runs before the optional Sentient (Use Model) step, then a Use Model failure never prevents the core intervention from firing | VALIDATED ✓ | shortcuts, device-detection, state-machine |
+| 005 | ios-color-filters-identifier | standard | Given the donors `Set Colour Filters.shortcut` and `Donor 9.shortcut`, when decrypted, then the real iOS 26 Color Filters identifier and parameter serialization are established as device ground truth | VALIDATED ✓ — exists on iOS as `AX*`, not the `UA*` the audit trail recorded; apply leg confirmed, restore leg still schema-only | capability-audit, evidence-hierarchy, accessibility, ash, donor |
 
 ## Spun-Out Work
 

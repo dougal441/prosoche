@@ -188,3 +188,87 @@ These supersede the decisions above where they conflict. Two Phase 1 conclusions
 **Product copy consequence:** Sentient says it prefers Apple's on-device model and that the user selects the model source after import — not that on-device is enforced.
 
 **Requirement:** AUDIT-06
+
+## BD-01-R2 — Ash / Color Filters: SUPERSEDES BD-01-R's build recipe
+
+**Supersedes:** BD-01-R's **Action**, **Parameters**, and **Design** sections. BD-01-R's
+*conclusion* — that Ash is a real, restorable environmental primitive on iOS — is upheld
+and strengthened; only the identifier and parameter serialization it prescribed were wrong.
+
+**Verdict for CAP-20:** **VERIFIED — donor-confirmed on iOS 26.**
+
+**Evidence tier upgrade.** BD-01 reached `NOT AVAILABLE` from catalog data. BD-01-R
+reversed that from catalog *reasoning* (simulator-artefact argument) plus owner assertion.
+BD-01-R2 rests on tier-1 evidence: **three** donors exported from the owner's iPhone and
+decrypted via the AEA1 round-trip — `.planning/debug/Set Colour Filters.shortcut` (On),
+`.planning/debug/Donor 9.shortcut` (Toggle, plus an untouched instance), and
+`.planning/debug/Donor 9.1.shortcut` (Off) — which between them pin every value CIRC-02
+writes. Full workings: `.planning/spikes/005-ios-color-filters-identifier/README.md`.
+
+**Action (corrected):**
+`com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent`
+
+Not `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` — that is the
+**macOS twin**. iOS ships the private `AX*` variant under an `AXSettingsShortcuts` container
+mirroring the macOS `UASettingsShortcuts` one. The AX identifier is absent from all three
+bundled ToolKit snapshots (v63, v78, v78-ios27); this is a catalog gap, and the donor is the
+only local evidence of it. The Playground's own `APPINTENTS.md` line 116 already documents
+this `AX*` / `UA*` split for two sibling accessibility toggles.
+
+**Parameters (corrected) — `state` is a bool-as-integer; `operation` is a string that should be omitted:**
+
+| Key | Serialized as | Values | Donor evidence |
+|---|---|---|---|
+| `state` | integer, **boolean-valued** | **`1` = On, `0` = Off** | `1` — Set Colour Filters, Donor 9. `0` — Donor 9.1 |
+| `operation` | **string** (enum case id) | `toggle` when chosen; **elided when Turn** | `"toggle"` — Donor 9. Elided on both the On and Off donors |
+
+`.planning/debug/Set Colour Filters.shortcut` emits `state` `<integer>1</integer>` with no
+`operation`. `.planning/debug/Donor 9.shortcut` emits `operation` `<string>toggle</string>`
+alongside `state` `<integer>1</integer>`, plus a second fully parameter-less instance.
+`.planning/debug/Donor 9.1.shortcut` is that same instance (same UUID) configured **Off**, and
+emits `state` `<integer>0</integer>` with no `operation`. Archived at
+`.planning/spikes/005-ios-color-filters-identifier/`.
+
+**`off` is `0`, not `2`, and Apple's own schema is misleading here.** The
+`AccessibilityUtilities.framework` intentdefinition declares `state` as `Integer` with a
+`State` enum of `on`=1 / `off`=2. Shortcuts does not use those indices — it renders a
+`State`-typed enum as an On/Off switch and writes a plain boolean as an integer. The macOS
+ToolKit catalog, which typed `state` as `bool` with trueString `On` / falseString `Off`, was
+right all along. **Never take an `.intentdefinition`'s declared type or case indices as the
+plist encoding**; it describes the intent's type system, not what Shortcuts writes.
+
+**There is no `ShowWhenRun` parameter on the iOS intent.** BD-01-R's instruction to set it
+`Off` applies only to the macOS catalog row. Do not author it.
+
+**Design (Phase 5, CIRC-02) — final, every value donor-confirmed:**
+- Apply: `state = 1`. Omit `operation`.
+- Restore on CLOSE, Emergency Restore, and cooldown expiry: `state = 0`. Omit `operation`.
+- **Omit `operation` in both legs.** `turn` is its elided default — both the On and the Off
+  donors write no `operation` key at all — so PROSOCHĒ never needs the `"turn"` literal,
+  which is the one literal in this investigation no donor has ever emitted.
+- Never `operation = "toggle"`: it depends on unknown prior state and can strand the user
+  filtered. Unchanged from BD-01-R. (Donor 9 uses `toggle`; it is a probe, not a model.)
+
+**No gate remains on the write path.** Both legs are donor-confirmed, so Phase 5 can build
+and ship CIRC-02's apply and restore without further device evidence. The only outstanding
+Color Filters question is the optional read-back enhancement below.
+
+**Canonical §21 compliance — unchanged, with one new lead.** No `Get*`/`Query*` intent for
+any accessibility setting exists anywhere in the framework's 35 intents, so there is still
+no non-destructive pre-read of Color Filters state. BD-01-R's remedy therefore stands
+verbatim: Ash is opt-in via `safety.ash_managed_color_filters` (default `true`), the Control
+Room Note discloses that PROSOCHĒ manages Color Filters and leaves them off after an
+intervention, and a user who deliberately runs Color Filters sets the flag `false` to get
+BD-01's non-environmental visual pause instead.
+
+*New lead, not a capability:* all 24 `Toggle*` intents declare a `state` **response**
+parameter (Integer, enum `State`). If Shortcuts surfaces it as a consumable action output on
+iOS, a `toggle`-then-`turn` probe could read prior state back at the cost of one visible
+flicker. Unverified — it is a post-operation read, and whether the response is exposed at all
+is untested. Recorded as the next donor test in spike 005; **must not** be built against
+until a donor confirms it.
+
+**Consequence:** DEV-01 stays withdrawn (BD-01-R). Phase 5 builds CIRC-02 on the corrected
+identifier and integer parameters, with the opt-in guard and the BD-01 pause as fallback.
+
+**Requirement:** AUDIT-02

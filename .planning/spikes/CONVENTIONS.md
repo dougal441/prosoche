@@ -73,6 +73,41 @@ execute Shortcuts itself.
   file") on first write per installation. Expected UX, not a bug — but note it can also
   re-prompt on every automation run and cannot be granted while the screen is locked (see
   spike 002's spun-out todo).
+- **A catalog miss is not an absence — check the identifier *family* before concluding.**
+  iOS ships private `AX*Intent` twins of the public macOS `UA*Intent` accessibility actions,
+  under container `com.apple.AccessibilityUtilities.AXSettingsShortcuts` mirroring
+  `com.apple.UniversalAccess.UASettingsShortcuts`. The `AX*` identifiers are in **none** of
+  the three bundled ToolKit snapshots, so no catalog query over those files can find them at
+  any target setting. Spike 005 found this after two prior decisions had argued the
+  availability question using the macOS identifier without noticing iOS emits a different
+  one. When a capability "doesn't exist" but users demonstrably do it on their phones, the
+  identifier is the thing to doubt.
+- **Apple's own `.intentdefinition` files are a first-class evidence source on the build
+  Mac** — between donor ground truth and the ToolKit catalog in the hierarchy. For any
+  `com.apple.*` AppIntent action, look for
+  `/System/Library/PrivateFrameworks/<Framework>.framework/Versions/A/Resources/Base.lproj/Intents.intentdefinition`,
+  `plutil -convert xml1` it, and read `INIntents` / `INEnums` directly. It gives exact
+  parameter names, types, enum cases **and their integer indices**, and response parameters —
+  for actions absent from every bundled snapshot. This is how spike 005 turned "the donor
+  wrote `state = 1`, which probably means On" into a fact, and recovered `off = 2`.
+- **An `.intentdefinition` does not describe the plist encoding — only a donor does.** It
+  declares the intent's *type system*: parameter names, enum case ids, response parameters.
+  Shortcuts then serializes through its own UI rendering, and the two do not match. Spike 005
+  got this wrong twice in a row: it read the declared `Integer` storage type as the encoding
+  (wrong — `operation` writes a case-id **string**), then read the `State` enum's case indices
+  as the values (wrong — `on`=1/`off`=2 in the schema, but Shortcuts renders a `State` enum as
+  an On/Off switch and writes a plain **bool as `0`/`1`**). The second error would have
+  shipped a broken restore leg. **Use `.intentdefinition` to learn what parameters exist and
+  what a picker's cases are called; use a donor to learn what gets written.**
+- **A picker enum serializes its case-id string; an On/Off switch serializes `0`/`1`.** That
+  is the working rule for `AXToggle*`-family actions, established across three donors.
+- **Parameter absence often means "left at default" — and the default may be the value you
+  want.** Both the On and Off Color Filters donors omit `operation` entirely, because `turn`
+  is its default. Omitting a parameter is therefore sometimes *better* than authoring it: it
+  matches the device byte-for-byte and avoids committing to an unconfirmed literal. But
+  absence is not proof of a default value either — Donor 9 contains a fully parameter-less
+  instance of an action another donor writes with `state` set. Read absence across several
+  donors before concluding anything from it.
 - **Silent automation probes:** any shortcut wired into a Personal Automation must have
   zero UI (no Show Result/Show Alert) — an automation that displays something interrupts
   the user on every trigger. Log to a Note instead.
