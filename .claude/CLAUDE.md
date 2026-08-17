@@ -255,7 +255,7 @@ Which evidence channel to reach for when a runtime question is open, and which r
 
 | Tool | How it is reached | Availability |
 |---|---|---|
-| `/ponytail` | The `anthropic-skills` skill — laziest solution that actually works: YAGNI, standard library and native platform features before dependencies, minimal diffs | Sanctioned. Prefer the minimal change — but laziness never licenses skipping the seven parameter-defect axes under `## Conventions` or the do-not-fabricate protocol in `docs/BUILD-NOTES.md` §2. |
+| `/ponytail` | The `anthropic-skills` skill — laziest solution that actually works: YAGNI, standard library and native platform features before dependencies, minimal diffs | Sanctioned. Prefer the minimal change — but laziness never licenses skipping the nine parameter-defect axes under `## Conventions` or the do-not-fabricate protocol in `docs/BUILD-NOTES.md` §2. |
 | iOS Simulator | `mcp__Claude_Code_iOS_Simulator__control` (actions `attach`, `launch`, `screenshot`, `tap`, `swipe`, `text`, `button`, `open_url`, `detach`), plus `xcrun simctl` from Bash | Always available on this Mac. |
 | iPhone Mirroring | Real-device UAT on the owner's iPhone | Not always live; the user sets it up on request. |
 
@@ -350,7 +350,7 @@ A probe's result is **recorded, not consumed**: into `docs/BUILD-NOTES.md`'s dev
 
 ## Conventions
 
-### Generator authoring rules — the seven parameter-defect axes
+### Generator authoring rules — the nine parameter-defect axes
 
 Every rule below was established by on-device failure during the 2026-08-13/14 OPEN-path
 debug session and is asserted by a build guard in `tools/build_state_engine.py`. Each axis
@@ -389,6 +389,59 @@ misleading message attributed to the outermost caller.
    from donor or corpus evidence — never guess it.
 7. **State shape must exist before it is read.** See the runtime semantics below: a dotted
    read raises if any segment is absent, so bootstrap must seed the full subtree.
+
+   **The container/leaf refinement, `pending_exit` (cycle 16, generalised Phase 12–13).**
+   Seeding is only half the rule; the other half is never destroying what was seeded. Seed
+   the **container** as a **permanent invariant** at bootstrap, then write and clear only its
+   **leaves** — never the container itself. Replacing a container wholesale with a sentinel
+   string is what reintroduces this axis one run later: the next dotted read runs against a
+   string parent and hard-errors, presenting as a regression rather than as the same defect.
+   Gate on a string is-not-sentinel test (condition code 5) or on a numeric greater-than-zero
+   test; **never** on a condition-100 existence test over the container. A read-then-existence
+   gate on a dotted path is unimplementable — the read raises on any missing segment, so the
+   gate is either unreachable or trivially true. `seed_pending_exit()` establishes the
+   container and `clear_snapshot()`'s docstring states the same rule for
+   `settings_snapshot.<key>.original_value`, both in `tools/build_state_engine.py`.
+8. **A `WFItems` List row takes one of exactly two shapes, and the wrapper is the ROW's
+   framing rather than the value's envelope.** A **literal** row is emitted as a bare string
+   directly in the `WFItems` array. A **variable- or attachment-bearing** row is wrapped as
+   `{"WFItemType": 0, "WFValue": <the complete, unchanged WFTextTokenString>}`. A raw
+   `WFTextTokenString` placed directly into `WFItems` validates, signs and imports perfectly,
+   and then renders as an **empty row** on device — so a Get Item From List selection over
+   that array can land on a blank template.
+
+   **This is a CONTAINER defect and therefore a distinct axis, not an instance of axis 2.**
+   At a defective site the envelope inside `WFValue` is *already correct*; what is missing is
+   the row framing around it. A type-scoped sweep hunting a wrong or absent string envelope
+   cannot see this class at all, because there is no wrong envelope to find.
+
+   Evidence: `.planning/debug/Donor 4.shortcut` and `.planning/debug/Donor 4.1.shortcut` —
+   device-authored, decrypted in Phase 13, byte-identical on this action, and showing **both**
+   row kinds mixed in one array (`"Circle"`, a wrapped `Dictionary Value` token, `"follows"`).
+   Build guard: `verify_list_item_wrappers()` in `tools/build_state_engine.py`, armed on both
+   forks, asserting only that the `WFItemType` **key is present** and never which value it
+   holds. Wrap only rows that are already dicts — sweeping every row corrupts the legitimate
+   bare-string literals.
+
+   Boundary: only `WFItemType` `0`, a **text** row, is donor-observed. Neither donor exercises
+   a number, dictionary or file row, so any other value must be established from evidence and
+   must never be inferred from `0`.
+9. **A COMPOUND state value consumed as a List is read with `get_value()`; a SCALAR used in a
+   text or numeric comparison is read with `read_value()`.** `read_value()`'s extra Get Text
+   step is the correct coercion for a scalar headed into a comparison, and exactly wrong for a
+   compound value: the array collapses into one Text blob before any List consumer sees it, so
+   a Repeat With Each iterates wrong or not at all and a Get Item From List returns that blob
+   instead of a genuine Dictionary item. The downstream Get Dictionary Value then fails with
+   "couldn't convert from Text to Dictionary" — device-confirmed at cycle 15, breadcrumb E→F,
+   at `recent_sessions`.
+
+   `COMPOUND_STATE_KEYS` in `tools/build_state_engine.py` names the four literal members:
+   `recent_sessions`, `recent_contracts`, `exit_events` and `profile_snapshot.enabled_exits`.
+   A fifth instance, `exit_stats.<name>.samples`, is real but dynamically keyed, so it cannot
+   be matched by a literal-key scan and is recorded beside the frozenset rather than inside
+   it. Build guard: `verify_compound_value_reads()`, which deliberately does **not** flag a
+   compound value read only for text DISPLAY — the defect is the structural consumer
+   downstream, not the read alone.
 
 ### Verified iOS Shortcuts runtime semantics
 
