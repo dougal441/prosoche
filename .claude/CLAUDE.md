@@ -352,11 +352,25 @@ A probe's result is **recorded, not consumed**: into `docs/BUILD-NOTES.md`'s dev
 
 ### Generator authoring rules — the nine parameter-defect axes
 
-Every rule below was established by on-device failure during the 2026-08-13/14 OPEN-path
-debug session and is asserted by a build guard in `tools/build_state_engine.py`. Each axis
+Every rule below is asserted by a build guard in `tools/build_state_engine.py`, and each axis
 was invisible to the sweep that caught the previous one. **Violating any of these produces
 a plist that validates, signs, imports, and then fails at runtime** — usually with a
 misleading message attributed to the outermost caller.
+
+**Provenance differs per axis, and the difference is load-bearing.** Reading them all as
+on-device evidence promotes a file-level inference to a device observation, which is the exact
+inversion the evidence hierarchy exists to prevent:
+
+- **Axes 1–7** — established by **on-device failure** during the 2026-08-13/14 OPEN-path debug
+  session.
+- **Axis 9** (compound value) — established by **device error** at cycle 15 ("Get Dictionary
+  Value failed because Shortcuts couldn't convert Text to Dictionary").
+- **Axis 8** (`WFItems` row wrapper) — established by **device-authored donor decrypt** (Donors
+  4 and 4.1, 2026-08-17), which is rung 1 of the evidence ladder read against rung-4 artifacts.
+  It is **structurally proven and NOT yet device-observed in this project's own artifact**:
+  `13-UAT.md` is recorded `BLOCKED`, `MANIFEST.md` and `docs/BUILD-NOTES.md` §28 say the same,
+  and the visible symptom it predicts — a Mirror alert whose body is empty — has never been
+  looked at on a phone. Do not cite axis 8 as device evidence.
 
 1. **Parameter key names** must match the ToolKit catalog exactly.
    `setvalueforkey` takes `WFDictionaryValue`, not `WFInput`. A key the action does not
