@@ -113,6 +113,42 @@ Distinguishing 1 from 2 is one device run: create a note titled exactly `PROSOCH
 candidate 1 stands and `docs/note_identity_check.py`'s Operator-99 pin is verifying a predicate
 that is not being consulted.
 
+## THE EXPERIMENT WAS RUN — candidate 1 is REFUTED
+
+**Device, same session, 2026-08-17 11:27.** A note titled exactly `PROSOCHĒ` (U+0112 verified by
+zoom on the rendered title) was **created by hand** in Notes → iCloud. `Open Control Room` was
+then re-run.
+
+**Result: it found and opened the correct `PROSOCHĒ` note.**
+
+So `WFContentItemFilter` **is** consulted, the `Operator 99` / `Property Name` predicate **does**
+match correctly, and `fix_notes_filter_limit()` is **not** at fault. Candidate 1 is dead, and
+candidate 2 (diacritic-insensitivity) is untested but no longer needed to explain anything.
+
+⚠ **The `PROSOCHĒ` note now on the device is HAND-MADE, not product-created.** Nothing downstream
+may treat its existence as evidence that the create path works — it does not. Delete it before
+any future clean-install run.
+
+### Corrected root cause — narrower and still a blocker
+
+The defect is confined to the **zero-match / clean-install path**. When no `PROSOCHĒ` note
+exists, `filter.notes` correctly matches nothing, and then:
+
+- the **create-note branch does not run** (action 4192,
+  `com.apple.mobilenotes.SharingExtension`, `name = 'PROSOCHĒ'` — never fired across two clean
+  runs; `Notes — None Found` confirms no note was ever created), and
+- the empty result is **dereferenced anyway** — producing the iOS entity chooser on the `Status`
+  path and an arbitrary first-note binding on the `Open Control Room` path.
+
+This is the **axis-7 class** (`.claude/CLAUDE.md`, "State shape must exist before it is read")
+applied to the Note rather than to `state.json`, and it carries that axis's known trap: the
+found/not-found gate is an **existence test over a possibly-empty read**, which that same
+document records as unimplementable — the gate is either unreachable or trivially true. The fix
+therefore belongs with the container/leaf treatment used for `pending_exit`, not with the filter.
+
+**Still a blocker** for the reason already given: on a clean install an arbitrary personal note
+gets bound to `Control Room Note`, which all four `appendnote` sites write to.
+
 ## Solution
 
 TBD — needs a breadcrumb run to localise before any fix is written. Candidate directions, in the
