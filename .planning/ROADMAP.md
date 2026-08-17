@@ -455,11 +455,16 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 **Severity:** major
 **Requirements**: AUDIT-02, CIRC-02, CIRC-06, CIRC-08, ROOM-01, ROOM-02, DIST-01, DIST-02
 **Depends on:** Phase 10
-**Plans:** 0 plans
+**Plans:** 6 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 11 to break down)
+- [ ] 11-01-PLAN.md — Tracer: one primitive end to end, generator through plist to signed artifact; `tools/plist_text_edit.py` and `docs/note_identity_check.py` (wave 1)
+- [ ] 11-02-PLAN.md — Dispatch-coverage build guard, then BD-06's roster and exact-match dispatch in one commit (wave 2)
+- [ ] 11-03-PLAN.md — Note renamed to `PROSOCHĒ`, Dante's nine names surfaced positionally, optional hardening section (wave 3)
+- [ ] 11-04-PLAN.md — Blocking decision: `schema_version` disposition and old-signed-artifact disposition (wave 4, not autonomous)
+- [ ] 11-05-PLAN.md — Panic Escape made deliberately removable and restorable; Emergency Restore provably untouched (wave 5)
+- [ ] 11-06-PLAN.md — Dumb→Core / Sentient→Aware rename, Aware-side note divergence, ship and decrypt-verify (wave 6)
 
 ### Phase 12: State-shape sentinel gaps — exit_events and active_session
 
