@@ -883,7 +883,16 @@ def route_exit(choice_name: str):
         a += [otherwise(group), action("is.workflow.actions.nothing"), end_if(group)]
     create_group, create = if_block(choice_name, 4, string="Create")
     a += [create] + read_value("profile_snapshot.create_target_url", variable("Reloaded State"), "Create Target URL")
-    target_group, target = if_block("Create Target URL", 100)
+    # PHASE 12 (12-04), Task 1 checkpoint option-a: this gate tests a STATE READ, whose
+    # unset representation is the CLEARED_SENTINEL (seed_create_target_url()) -- condition
+    # 100 ("has any value") reads TRUE for the sentinel, which would openurl the literal
+    # string "null" on a clean install's first Create exit. Condition 5 ("string is not"
+    # CLEARED_SENTINEL) is this project's standard set/unset gate for a sentinel-seeded
+    # leaf, the same idiom complete_pending_exit() uses for pending_exit.type. Do NOT
+    # "harmonise" this with the second gate below: that one tests the Ask action's
+    # Provided Input, a TRANSIENT USER INPUT whose unset representation is genuinely
+    # empty, so has-any-value (100) is the correct test there.
+    target_group, target = if_block("Create Target URL", 5, string=CLEARED_SENTINEL)
     a += [target, action("is.workflow.actions.openurl", WFInput=variable("Create Target URL")), otherwise(target_group)]
     ask_id = uid()
     a += [action("is.workflow.actions.ask", UUID=ask_id, WFAskActionPrompt="Where should Create open?", WFInputType="URL"),
@@ -2547,15 +2556,47 @@ def seed_settings_snapshot(actions):
     _replace_in_token(inner, SNAPSHOT_EMPTY, _snapshot_seed_text(indent))
 
 
-def verify_state_seed(actions):
-    """Fail the build if any settings_snapshot READ has no bootstrap counterpart.
+# PHASE 12 (12-04) -- the generalisation of verify_state_seed()'s read-side scan from
+# settings_snapshot-rooted keys to EVERY literal key read from State or Reloaded State.
+# The obvious framing -- "just delete the settings_snapshot root filter" -- is INCOMPLETE
+# and a literal deletion breaks the build: that filter was doing two jobs at once, scoping
+# to a key family AND, incidentally, scoping to reads of the state dictionary. Measured
+# against the current src/PROSOCHE-Dumb.xml, getvalueforkey actions read from FOUR
+# different source variables: State (141 literal, 6 composite), Reloaded State (44
+# literal), Config (30 literal, 23 composite) and Previous Session (3 literal). Config and
+# Previous Session are DIFFERENT DICTIONARIES -- their keys were never expected to resolve
+# against the bootstrap state.json seed -- so the exclusion below is by DICTIONARY
+# IDENTITY, not by convenience: a bare deletion of the old filter would test all 74 of
+# those foreign-dictionary keys against the seed and fail the build on every one.
+STATE_READ_SOURCE_VARIABLES = ("State", "Reloaded State")
+# Widening the composite-key branch (below): today it raises for ANY composite read of
+# State/Reloaded State that cannot be resolved statically, EXCEPT the six legitimate
+# exit_stats.<type>.<field> composites complete_pending_exit() and select_exit() build with
+# text_token() -- one .samples, three .count, two .sum_return_seconds. Every possible value
+# of the runtime-resolved middle segment (Capture, Coordinate, Create, Connect, Consult,
+# Close) IS seeded under exit_stats in the bootstrap template, which is what makes the
+# composite provably safe despite being unresolvable by this static scan.
+STATE_SEED_COMPOSITE_PREFIXES = ("exit_stats.",)
 
-    Reads are the authority: a key that restore_managed_settings() reads must resolve in
-    the seeded template, at the full depth it is read at, or the read is a hard runtime
-    error on any path that reaches it before a write created the key.  This is the
-    invariant that seed_settings_snapshot() establishes, asserted separately so the two
-    cannot drift -- the same discipline as the five axes before it (KEY NAME, VALUE
+
+def verify_state_seed(actions):
+    """Fail the build if any State/Reloaded State READ has no bootstrap counterpart.
+
+    Reads are the authority: a key that any generator function reads from State or
+    Reloaded State must resolve in the seeded template, at the full depth it is read at,
+    or the read is a hard runtime error on any path that reaches it before a write created
+    the key.  This is the invariant that seed_settings_snapshot(), seed_pending_exit(),
+    seed_exit_events(), seed_active_session() and seed_create_target_url() each establish
+    for their own subtree, asserted here in one place so no future seeder needs its own
+    read-side guard -- the same discipline as the five axes before it (KEY NAME, VALUE
     ENVELOPE, PICKER LITERAL, VARIABLE SLOT, OPERAND TYPE; this is STATE SHAPE).
+
+    PHASE 12 (12-04) GENERALISATION.  Originally scoped to settings_snapshot-rooted keys
+    only, via a `key.split(".")[0] == "settings_snapshot"` filter -- which is why
+    verify_panic_escape_seed()'s docstring used to record that this scan did NOT cover
+    panic_escape_enabled.  That note is now historical: the scope is by SOURCE VARIABLE
+    IDENTITY (STATE_READ_SOURCE_VARIABLES), not by key root, so every literal key read from
+    State or Reloaded State is covered, permanently, for every future field.
     """
     _, inner = _state_template(actions)
     # The template is a text template, so it is not valid JSON as written: quoted
@@ -2571,13 +2612,25 @@ def verify_state_seed(actions):
     for item in actions:
         if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.getvalueforkey":
             continue
-        key = item.get("WFWorkflowActionParameters", {}).get("WFDictionaryKey")
-        # Composite keys are built from a token and cannot be resolved statically; none
-        # of them is rooted at settings_snapshot, and that is asserted rather than assumed.
-        if isinstance(key, str) and key.split(".")[0] == "settings_snapshot":
+        parameters = item.get("WFWorkflowActionParameters", {})
+        # The source dictionary a getvalueforkey action reads from -- measured accessor
+        # path for every getvalueforkey in the artifact -- filters by DICTIONARY IDENTITY,
+        # never by key root (see STATE_READ_SOURCE_VARIABLES above).
+        source_variable = (parameters.get("WFInput") or {}).get("Value", {}).get("VariableName")
+        if source_variable not in STATE_READ_SOURCE_VARIABLES:
+            continue
+        key = parameters.get("WFDictionaryKey")
+        if isinstance(key, str):
             read_keys.add(key)
-        elif not isinstance(key, str) and "settings_snapshot" in str(key):
-            raise SystemExit("a settings_snapshot read uses a composite key and cannot be verified")
+            continue
+        # Composite keys are built from a token and cannot be resolved statically, EXCEPT
+        # the named exit_stats composites, which are provably safe -- see
+        # STATE_SEED_COMPOSITE_PREFIXES above.
+        composite = _dictionary_key_string(parameters)
+        if not any(composite.startswith(prefix) for prefix in STATE_SEED_COMPOSITE_PREFIXES):
+            raise SystemExit(
+                "a State/Reloaded State read uses a composite key that cannot be resolved "
+                f"statically and is not a recognised exit_stats composite: {composite!r}")
     missing = []
     for key in sorted(read_keys) + wanted:
         node = seed
@@ -2588,7 +2641,7 @@ def verify_state_seed(actions):
             node = node[part]
     if missing:
         raise SystemExit(
-            "bootstrap state.json does not establish every settings_snapshot key that is "
+            "bootstrap state.json does not establish every state key that is "
             "read (Get Dictionary Value on a missing key is a HARD RUNTIME ERROR, so a "
             "condition-100 guard cannot protect the read): "
             + ", ".join(sorted(set(missing))))
@@ -2737,9 +2790,16 @@ def verify_panic_escape_seed(actions):
           existence gate reads TRUE for the string "null" and for "", so it could not
           express "the user removed the bypass".
 
-    NOTE, measured 2026-08-17: verify_state_seed() does NOT cover this field.  Its read-side
-    scan is scoped to keys rooted at `settings_snapshot`, so it would not have noticed an
-    unseeded panic_escape_enabled.  This verifier is why the seed is guarded at all.
+    HISTORICAL NOTE.  Until Phase 12 (12-04), verify_state_seed()'s read-side scan was
+    scoped to keys rooted at `settings_snapshot`, so it would not have noticed an unseeded
+    panic_escape_enabled -- this verifier was why the seed was guarded at all. Phase 12
+    generalised verify_state_seed()'s scan to every literal key read from State or Reloaded
+    State (STATE_READ_SOURCE_VARIABLES, scoped by source-variable identity rather than key
+    root), so that gap no longer exists: a flat top-level read like panic_escape_enabled's
+    would now be caught there too. This verifier's other two assertions -- that no read of
+    the field is dotted, and that every gate over it is numeric -- remain load-bearing and
+    are not subsumed by verify_state_seed(), which only proves a key EXISTS in the seed,
+    not that it is read or gated correctly.
     """
     _, inner = _state_template(actions)
     document = inner["string"].replace('"￼"', '"x"').replace("￼", "0")
@@ -3021,6 +3081,62 @@ def verify_active_session_seed(actions):
             f"action(s) {offenders} -- now that the container is a permanent four-leaf "
             "shape, only the .id LEAF may be cleared with the sentinel (cycle-10 finding 5, "
             "the same rule clear_snapshot()'s docstring records)")
+
+
+# PHASE 12 (12-04) -- the third key nobody named. route_exit()'s Create branch reads
+# profile_snapshot.create_target_url as a DOTTED key from Reloaded State; profile_snapshot
+# itself is seeded (goal, phone_purpose, reclaim_for, deliberate_leisure_definition,
+# enabled_exits, synced_at, note_content_hash), but this one leaf was not, so a clean
+# install's first Create exit hard-errors at that read -- AFTER exit_events, both
+# pending_exit leaves and exit_selection_counter have already been written and
+# save_state("Reloaded State") has already run. Same defect class as pending_exit and
+# active_session (T-12-18).
+#
+# CHECKPOINT DECISION (Task 1, resolved option-a, recorded at
+# .planning/phases/12-state-shape-sentinel-gaps-exit-events-and-active-session/
+# .create-target-url-option): sentinel seed plus a condition-5 leaf gate. This is the only
+# option that introduces zero unsettled runtime semantics -- a dotted read of an existing
+# string leaf and a condition-5 ("string is not" CLEARED_SENTINEL) gate are both already
+# device-verified in this repository (pending_exit.type / complete_pending_exit()'s own
+# gate). Option B (JSON null, gate left at condition 100) would bet the Create route on an
+# untested claim -- that read_value() of a JSON-null leaf yields no-value under a
+# has-any-value test -- that nothing in this repository settles (T-12-19).
+CREATE_TARGET_URL_SEED = CLEARED_SENTINEL
+# The literal template line this seeder inserts BEFORE, not replaces: profile_snapshot's
+# final key, carrying no trailing comma. Inserting before it (rather than after) keeps
+# note_content_hash the trailing comma-less final key, so the object stays valid JSON
+# without a second edit to add or remove a comma.
+CREATE_TARGET_URL_ANCHOR = '"note_content_hash": null'
+
+
+def seed_create_target_url(actions):
+    """Establish profile_snapshot.create_target_url as a sentinel-seeded leaf in bootstrap.
+
+    MECHANISM: insert-before-anchor, seed_panic_escape()'s mechanics -- the template is
+    located by content (_state_template() anchors on '"schema_version"', never an index),
+    the idempotency guard is the collision-free token '"create_target_url"', indent is
+    derived from the anchor line rather than hard-coded, and the edit goes through
+    _replace_in_token(), never str.replace -- it shifts every attachmentsByRange offset
+    that sits after the edit and re-asserts each still lands on a U+FFFC placeholder
+    (.claude/CLAUDE.md §5: an out-of-bounds range can crash Shortcuts on import).
+
+    WHAT IT PREVENTS: route_exit()'s Create branch's dotted read of
+    profile_snapshot.create_target_url from Reloaded State hard-errors ("could not
+    evaluate the key path") on a clean install's first Create exit -- see the note above
+    this constant block for the full trace (T-12-18).
+
+    Idempotent: a second run finds '"create_target_url"' already in the template and
+    returns; Task 3's generalised verify_state_seed() re-proves the shape either way -- no
+    fourth verify_*_seed pair is written for this single key, which is precisely the
+    leverage the generalisation buys.
+    """
+    _, inner = _state_template(actions)
+    if '"create_target_url"' in inner["string"]:
+        return  # already seeded; verify_state_seed()'s generalised scan proves the shape
+    line = next(text for text in inner["string"].splitlines() if CREATE_TARGET_URL_ANCHOR in text)
+    indent = line[:len(line) - len(line.lstrip())]
+    _replace_in_token(inner, CREATE_TARGET_URL_ANCHOR,
+                      f'"create_target_url": "{CREATE_TARGET_URL_SEED}",\n{indent}{CREATE_TARGET_URL_ANCHOR}')
 
 
 # ---------------------------------------------------------------------------
@@ -4002,6 +4118,7 @@ def main():
     seed_panic_escape(actions)
     seed_exit_events(actions)
     seed_active_session(actions)
+    seed_create_target_url(actions)
     fix_state_rebind(actions)
     fix_date_format_key(actions)
     fix_shownote_key(actions)

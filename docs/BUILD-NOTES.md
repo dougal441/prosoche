@@ -2155,3 +2155,57 @@ steps, or re-pointed a Personal Automation from an old entry to a new one. That 
 breaking change is a **reasoned consequence** of the stripped-`WFWorkflowName` measurement, not
 an observation of a device failing. Structural proof is not behavioural proof, and nothing here
 is device-verified.
+
+## 26. Phase 12 — the third key nobody named: `profile_snapshot.create_target_url` (plan 12-04, 2026-08-17)
+
+`12-RESEARCH.md`'s full-codebase sweep generalised beyond the two chartered keys
+(`exit_events`, `active_session`) and found a third: `route_exit()`'s Create branch performs
+a **dotted** read of `profile_snapshot.create_target_url` from `Reloaded State`, and that leaf
+was not part of the bootstrap seed even though `profile_snapshot` itself is (`goal`,
+`phone_purpose`, `reclaim_for`, `deliberate_leisure_definition`, `enabled_exits`,
+`synced_at`, `note_content_hash`). Choosing Create on a clean install hard-errors at that
+read, **after** `exit_events`, both `pending_exit` leaves and `exit_selection_counter` have
+already been written and `save_state("Reloaded State")` has already run — the single most
+likely first-exit crash in the phase surface (`T-12-18`).
+
+**Decision, Task 1 checkpoint (`gate="blocking"`, resolved `option-a`):** sentinel seed
+(`CLEARED_SENTINEL`) plus a condition-5 leaf gate — the planner's own recommendation (PD-2).
+Recorded at
+`.planning/phases/12-state-shape-sentinel-gaps-exit-events-and-active-session/.create-target-url-option`.
+
+**Why option A, not B or C.** The Create branch's first gate is a has-any-value
+(condition-100) test over the value read from state. If the seed were a JSON `null` (option
+B) and `read_value()` — `getvalueforkey` followed by `gettext` — resolved that leaf to the
+text `"null"` rather than no-value, the gate would read TRUE and `openurl` the literal string
+`"null"` on every clean-install Create exit, silently, with no error message. Nothing in this
+repository settles whether a JSON-null leaf coerces to no-value or to the text `"null"` under
+a has-any-value test; `.claude/CLAUDE.md`'s verified runtime-semantics table documents
+`"null"` coerced to a **Number** as false, but says nothing about `null` coerced to **Text**
+under `has any value`. Settling it needs a rung-2+ probe this phase declined to spend.
+Option A avoids the bet entirely: every element it uses is already device-verified in this
+repository — a dotted read of an existing string leaf resolves to the string
+(`pending_exit.type` does exactly this on the OPEN critical path), and condition 5 ("string
+is not" `CLEARED_SENTINEL`) is this project's standard set/unset gate, demonstrated at
+`complete_pending_exit()`. Option C (defer under a named exemption) was rejected because it
+would leave a known dotted read of an unseeded leaf on the exact exit path this phase exists
+to make survivable, one plan after `KNOWN_SENTINEL_EXISTENCE_GATES` was emptied to zero.
+
+**Implementation.** `CREATE_TARGET_URL_SEED = CLEARED_SENTINEL`; `seed_create_target_url()`
+inserts `"create_target_url": "null",` immediately **before** the `"note_content_hash": null`
+line (`profile_snapshot`'s trailing, comma-less final key), so the object stays valid JSON
+without a second edit to add or remove a comma. Registered in `main()` before
+`fix_state_rebind()`, alongside `seed_exit_events()` and `seed_active_session()`.
+`route_exit()`'s **first** Create-branch gate (over the state read) converts from
+`if_block("Create Target URL", 100)` to `if_block("Create Target URL", 5,
+string=CLEARED_SENTINEL)`; the **second** gate (over the Ask action's `Provided Input`, a
+transient user input whose unset representation is genuinely empty) is left at condition 100,
+untouched, with an inline comment naming why the two gates in one branch now carry different
+condition codes. The `Create Owner ID` condition-4 ownership compare and its
+`WFConditionalActionString` idiom are unmodified.
+
+**Verified:** exactly 4 mode-0 conditionals test `Create Target URL` per fork (`route_exit()`
+renders twice, two gates per render) — 2 carry condition 5, 2 carry condition 100, resolved
+via `_tested_variable()`; the emitted `profile_snapshot.create_target_url` equals
+`CLEARED_SENTINEL` on both `src/PROSOCHE-Dumb.xml` and `src/PROSOCHE-Sentient.xml`;
+`docs/phase6_self_check.py` exits 0 (six exit routes survive, double build byte-idempotent);
+gate A (`--target-macos 26 --target-platform all`) prints `Validation passed.` on both forks.
