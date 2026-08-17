@@ -495,13 +495,13 @@ Plans:
 
 - [x] 11-06-PLAN.md — Dumb→Core / Sentient→Aware rename, Aware-side note divergence, ship and decrypt-verify (wave 6)
 
-**Wave 7** *(gap closure — blocked on Wave 6 completion and on Phase 12 not being mid-execution)*
+**Wave 7** *(gap closure — blocked on Wave 6, and on Phase 12 being quiescent: no `12-*-PLAN.md` without a matching `-SUMMARY.md`, and no `.claude/worktrees/agent-*` present. A clean `git status` is not sufficient — Phase 12 executes in worktrees and merges, so the main tree is clean between waves. Run `11-07` … `11-10` as a contiguous block, entirely before `12-04` or entirely after `12-05`.)*
 
 - [ ] 11-07-PLAN.md — GAP 2 tracer: the text-match output-name class fix, both sites plus the recurrence guard; consumption shape settled at rung 2 (wave 7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 11-08-PLAN.md — GAP 1: Dim and Silence re-gated on the captured-original leaf so their bodies are reachable; a reachability build guard armed in both builders; the false capability claim corrected in the MANIFEST, the ROADMAP and the deviation log (wave 8)
+- [ ] 11-08-PLAN.md — GAP 1: Dim and Silence re-gated on the captured-original leaf so their bodies are reachable; a reachability build guard armed in both builders; the false capability claim corrected in the MANIFEST, the ROADMAP and the deviation log (wave 8, **not autonomous** — one blocking checkpoint between the guard's proof and the gate fix)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
