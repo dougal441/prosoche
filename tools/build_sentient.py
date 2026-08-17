@@ -14,6 +14,7 @@ from build_state_engine import (
     normalise_numeric_operands,
     normalise_output_names,
     normalise_string_envelopes,
+    verify_active_session_seed,
     verify_compound_value_reads,
     verify_conditional_action_string,
     verify_conditional_inputs,
@@ -306,6 +307,14 @@ def main() -> None:
     # inferred from Dumb -- a fork that dropped the rolling window would leave STATE-12's
     # "bounded, versioned document" claim false on the Aware artifact with no error anywhere.
     verify_exit_events_seed(actions)
+    # PHASE 12 (12-02).  Sentient INHERITS the seeded bootstrap template from the built Dumb
+    # source rather than re-seeding it, so the assertion is the whole point here: it proves
+    # the permanent four-leaf active_session container survived the fork.  Asserted per
+    # fork, never inferred from Dumb -- restore_managed_settings("Reloaded State") sits
+    # inside three nested active_session-derived arms in close_pipeline(), so a fork that
+    # dropped a leaf would strand the Aware-fork user dimmed or silenced with no error
+    # anywhere else in the pipeline (SESS-07 / SAFE-01).
+    verify_active_session_seed(actions)
     # PHASE 12 (12-01, PD-3) -- four guards this fork inherited but never asserted.  Measured
     # before this phase: build_sentient.py imported 13 symbols and ran 13 guards, and none of
     # these four was among them -- so pending_exit, the very seed pattern 12-01 mirrors, was
