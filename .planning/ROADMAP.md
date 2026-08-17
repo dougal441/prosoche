@@ -522,12 +522,12 @@ session, so treat it as new-risk surface.
 **Severity:** major
 **Requirements**: SESS-07, STATE-12, EXIT-01, EXIT-02, SAFE-01
 **Depends on:** Phase 11
-**Plans:** 5 plans
+**Plans:** 1/5 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 12-01-PLAN.md — Tracer: seed `exit_events` + `exit_selection_counter`, guard them, bump schema 3→4, arm on both forks
+- [x] 12-01-PLAN.md — Tracer: seed `exit_events` + `exit_selection_counter`, guard them, bump schema 3→4, arm on both forks
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
