@@ -30,24 +30,52 @@ When sources disagree, prefer in this order:
 | Rung | Channel | Settles | Costs |
 |---|---|---|---|
 | 1 | File-level analysis — validator, catalog, golden corpus, decrypted plist | Structure, identifier presence, parameter shape | Nothing |
-| 2 | Simulator — build, sign, **validate** | That the file is well-formed and signable | Agent time |
-| 3 | Device probe over iPhone Mirroring | Runtime behaviour, operand types, control flow | One connected session |
+| 2 | Simulator — build, sign, **import, run and observe** | The file is well-formed and signable; import success; editor render; runtime control flow | Agent time |
+| 3 | Device probe over iPhone Mirroring | Real-hardware behaviour the simulator cannot reach | One connected session |
 | 4 | User-run probe or donor export | Anything mirroring cannot reach | The user's time — the scarcest input |
 
-**Rung 2 is narrower than `.claude/CLAUDE.md` §9 currently claims.** It lists "import
-success" as a rung-2 capability. Measured 2026-08-17 (iPhone 17 Pro, iOS 26.5, no iCloud
-account), **the booted simulator cannot import a signed `.shortcut` through any channel**:
+**Rung 2 reaches the editor and the runtime — measured by spike
+`010-coercion-at-a-direct-set-parameter`, 2026-08-18.** An earlier revision of this table
+said the opposite, on spike 007's evidence: *"the booted simulator cannot import a signed
+`.shortcut` through any channel… rung 2 tests the build, not the import."* **That claim is
+RETIRED.** `.claude/CLAUDE.md` §9's original rung-2 row was right all along.
 
-| channel | result |
-|---|---|
-| `shortcuts://import-shortcut?url=http://…` | "Import Failed — The shortcut URL provided was invalid." Requires an iCloud link. |
-| Safari → download the served file | Prompt appears and names the file correctly, but the Download button **ignores synthesized taps** (other taps in the same session worked). |
-| Files "On My iPhone" (`group.com.apple.FileProvider.LocalStorage`) | File lands on disk; Files **never surfaces the location**, even after seeding a subfolder and resspringing SpringBoard. |
-| iCloud Drive | Needs an Apple Account. |
-| `file://` URL | Blocked by the tool's scheme allowlist. |
+```bash
+open -a Simulator                                        # a simctl-booted sim has NO window until this
+xcrun simctl openurl <udid> "file:///abs/path.shortcut"  # → the Shortcuts import sheet
+# then ONE synthesized tap on "Add Shortcut" completes the import
+```
 
-So rung 2 tests the **build** — validator, signer, byte shape — not the **import**.
-Signing the simulator into an Apple Account would likely unlock it; that is a user decision.
+Spike 007 tried five channels and generalised from five failures. Its `file://` row —
+*"blocked by the tool's scheme allowlist"* — was measured against the **MCP simulator tool's**
+allowlist, **not** against `simctl`, which it never tried. The other four rows stand, and are
+worth keeping so nobody re-walks them:
+
+| channel | result | status |
+|---|---|---|
+| `xcrun simctl openurl "file:///…"` **+ one synthesized tap** | **Import sheet renders; the tap completes the import** | ✅ **the working channel** |
+| `shortcuts://import-shortcut?url=…` | "Import Failed — The shortcut URL provided was invalid." Requires an iCloud link; re-measured 2026-08-18 with a `file://` URL and `silent=true` — still rejected, because the URL is refused before the flag is consulted | ✗ still true |
+| Safari → download the served file | Prompt names the file correctly, but the Download button ignores synthesized taps | ✗ still true |
+| Files "On My iPhone" (`group.com.apple.FileProvider.LocalStorage`) | File lands on disk; Files never surfaces the location | ✗ still true |
+| iCloud Drive | Needs an Apple Account | ✗ still true |
+
+**Two mechanics that are invisible until you hit them.** Coordinates must be **fractions of the
+device screen mapped through the window rect measured at run time**, never pixels — the window
+moves. And **`Show Alert` modals accept neither a synthesized tap nor a hardware Return**: the
+run wedges permanently at the first one, while ordinary in-app UI (buttons, list scrolling) takes
+taps normally. **Build simulator-bound probes with no blocking UI** and let a clean completion or
+an error dialog be the signal. Instrument, with every dead end recorded:
+`.planning/spikes/010-coercion-at-a-direct-set-parameter/drafts/sim_input.py`.
+
+**What rung 2 still cannot close, sharpened by the same spike.** `Set Brightness` **cannot
+succeed on a simulator at all** ("There was a problem setting the brightness"), and
+`Get Device Details → Current Brightness` reads **`0`** there — so brightness/volume *consumption*
+stays device-gated however good the import channel is, and any such reading is **never promotable
+above `UNVERIFIED`**. Also measured: the **"coercion chip does not render red" gate does not work
+at a direct Set-action parameter** (no operator picker, so coerced and uncoerced render
+identically — it remains valid for conditionals only), and **`setbrightness.WFBrightness` is
+optional, defaulting to 50%**, so an unresolved operand fails *silently* rather than raising the
+unfilled-parameter error. Verify **the value applied**, never merely the absence of an error.
 
 Measured simulator inventory: one runtime, **iOS 26.5 (23F77)**, inside the project's
 declared iOS 26.x target. `com.apple.shortcuts` present, `com.apple.mobilenotes` **absent** —
