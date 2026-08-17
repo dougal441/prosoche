@@ -609,7 +609,7 @@ finding rather than a known artifact.
 **Severity:** major
 **Requirements**: CIRC-04, CIRC-07, ROOM-03, DIST-01, DIST-02
 **Depends on:** Phase 12
-**Plans:** 1/4 plans executed
+**Plans:** 2/4 plans executed
 
 Plans:
 **Wave 1**
@@ -618,7 +618,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 13-02-PLAN.md — Pin the Donor-5-confirmed conditional operand shape inside `verify_conditional_action_string()`, sweep nothing, and demonstrate both raises with the ordering mask recorded
+- [x] 13-02-PLAN.md — Pin the Donor-5-confirmed conditional operand shape inside `verify_conditional_action_string()`, sweep nothing, and demonstrate both raises with the ordering mask recorded
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
