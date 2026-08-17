@@ -632,7 +632,7 @@ finding rather than a known artifact.
 **Severity:** major
 **Requirements**: CIRC-04, CIRC-07, ROOM-03, DIST-01, DIST-02
 **Depends on:** Phase 12
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans executed
 
 Plans:
 **Wave 1**
@@ -649,7 +649,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 13-04-PLAN.md — Ship: rebuild, gate A, gate B advisory read, sign both forks under their live display names, decrypt-verify, refresh every MANIFEST row, and author `13-UAT.md`
+- [x] 13-04-PLAN.md — Ship: rebuild, gate A, gate B advisory read, sign both forks under their live display names, decrypt-verify, refresh every MANIFEST row, and author `13-UAT.md`
 
 ### Phase 14: Ash as real Color Filters grayscale
 
