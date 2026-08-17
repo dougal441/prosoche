@@ -29,12 +29,12 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Core source | `src/PROSOCHE-Dumb.xml` | 2,887,243 | `12bbfe310800097357b2e281f3d044f91fbc927dc54e748dd400e845c5c353fb` |
-| Core archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-121802.xml` | 2,887,243 | `12bbfe310800097357b2e281f3d044f91fbc927dc54e748dd400e845c5c353fb` |
-| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 234,370 | `b4ac6df424208d0d681724c9f9abcdae91be84a8eef7eec983b61415d74b3037` |
-| Aware source | `src/PROSOCHE-Sentient.xml` | 2,923,924 | `ef431b5d79ac2dc56e4ece8f647b5cfca418253e4fdc1c96e6dc4e7452470c5e` |
-| Aware archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Aware-121816.xml` | 2,923,924 | `ef431b5d79ac2dc56e4ece8f647b5cfca418253e4fdc1c96e6dc4e7452470c5e` |
-| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 238,668 | `5b98680dcc057dd647285d5e1e08fb24f2b8da44f81709f01cc0472992716c3a` |
+| Core source | `src/PROSOCHE-Dumb.xml` | 2831994 | `e0c151c14fd4bd56818d4822889e4a3f211bb8598ef0c5e308f301855512d48d` |
+| Core archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-161458.xml` | 2831994 | `e0c151c14fd4bd56818d4822889e4a3f211bb8598ef0c5e308f301855512d48d` |
+| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 229903 | `d1377102f6ad45a084a4467ae72d82d5dc27fbb1e1d31bda30d47bb124750a59` |
+| Aware source | `src/PROSOCHE-Sentient.xml` | 2868675 | `f33ca7a000ac0ab0f4cc9a74aa281396de0f415f4766b12a5add880b6b3dcf8a` |
+| Aware archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Aware-161508.xml` | 2868675 | `f33ca7a000ac0ab0f4cc9a74aa281396de0f415f4766b12a5add880b6b3dcf8a` |
+| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 234118 | `e2a56bf2b6bc76ef57aa7013d267b77e33172a65dae1d9eca2d20540b6618719` |
 
 **The two old-named signed artifacts were DELETED, not retained**, per
 `docs/CAPABILITY-DECISIONS.md` BD-06-A3 Decision 2. `artifacts/shortcuts/` now holds exactly
