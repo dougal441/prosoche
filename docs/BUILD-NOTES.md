@@ -1513,3 +1513,103 @@ here or anywhere else in this phase.
   dispatch-coverage guard and needs the orphan live to prove the guard has teeth.
 - **The condition-99 → condition-4 dispatch move did not happen here.** It is coupled to
   abolishing the three combined entries and belongs with the rest of the roster, in 11-02.
+
+---
+
+## 22. Validator invocation — measured evidence for the two-gate rule (quick task `260817-ewg`, 2026-08-17)
+
+Rung-1 file-level evidence per §9's escalation ladder, satisfying §3's binding citation rule.
+**This section records measurements only. The rule itself lives in `.claude/CLAUDE.md` §1 and
+is deliberately not restated here** — same one-home discipline §3 line 83 already applies to
+the §9 tooling inventory.
+
+Plugin under test: `~/.claude/plugins/cache/shortcuts-playground/shortcuts-playground/1.2.1`.
+Artifacts: `src/PROSOCHE-Dumb.xml`, `src/PROSOCHE-Sentient.xml` as shipped. Nothing was
+rebuilt or re-signed to produce any figure below.
+
+### 22.1 The mechanism, read from the validator source
+
+All citations are `skills/shortcuts-playground/scripts/validate_shortcut.py` in plugin 1.2.1:
+
+| Lines | Symbol | What it establishes |
+|---|---|---|
+| `:864-889` | `resolve_target_platform` | `all`/`any`/`latest` → Python `None`; `ios`/`ipados`/`iphone`/`ipad` → `"ios"`; everything else → `"macos"` |
+| `:892-1019` | snapshot loading | Snapshots filtered by **two independent gates** — a minimum target-macOS-major check and a platform-label check. `toolkit-v63` is macOS-labelled; `toolkit-v78-ios27` is a v78/27 capture. So `--target-macos 26 --target-platform ios` admits **no snapshot at all** |
+| `:265` | `TOOLKIT_PARAMETER_CATALOG_MIN_MACOS_MAJOR = 27` | Consumed at `:1086`, `:1162`, `:1223`. **Below target-macOS 27 the parameter-key and enum-case catalogs are not loaded at all**, on any platform setting |
+| `:1039-1046` | `_catalog_platforms_match_target` | Returns `True` immediately when the target platform is `None` (i.e. `all`) |
+| `:1048-1055` | `_catalog_platform_name_matches_target` | `ios` matches only platform names beginning `iOS`. Every catalog entry tagged `macOS 27`-only is therefore **excluded from parameter-key and enum-case checking** under `--target-platform ios` |
+| `:1144-1211` | `load_toolkit_parameter_enum_cases` | Applied at `:2311-2314` |
+
+### 22.2 The four invocations, measured
+
+| Invocation | Dumb | Sentient |
+|---|---|---|
+| `--target-macos 26 --target-platform all` | `Validation passed.` **exit 0** | `Validation passed.` **exit 0** |
+| `--target-macos 27 --target-platform all` | **exit 1**, exactly **1** error | **exit 1**, exactly **1** error |
+| `--target-macos 27 --target-platform ios` | **exit 1**, exactly **5** errors | **exit 1**, exactly **5** errors |
+| `--target-macos 26 --target-platform ios` | rejects essentially every action (empty allowlist) | not re-run |
+
+### 22.3 Enum-case coverage, measured directly from the loader
+
+`load_toolkit_parameter_enum_cases(skill_dir, macos_major, platform)` returns this many
+enum-checked identifiers:
+
+| target | identifiers |
+|---|---:|
+| macOS 26, any platform | **0** |
+| macOS 27, platform `all` (→ `None`) | **1105** |
+| macOS 27, platform `macos` | **886** |
+| macOS 27, platform `ios` | **455** |
+
+Of the picker parameters **the forks actually emit**, `27 all` enum-checks **14**
+`(identifier, key)` pairs and `27 ios` enum-checks **13** — `ios` loses
+`is.workflow.actions.appendnote` / `operation`, because that action's catalog entry is
+`macOS 27`-tagged. Both forks give identical sets.
+
+### 22.4 Synthetic-mutation control — proof the second gate has teeth
+
+A scratch copy of the Dumb fork with a single `is.workflow.actions.count` `WFCountType`
+changed from `Items` to `Bananas`:
+
+- `--target-macos 26 --target-platform all` → **`Validation passed.`** — blind to it.
+- `--target-macos 27 --target-platform all` → **caught it**:
+  `Invalid ToolKit enum value for is.workflow.actions.count.WFCountType at index 574: 'Bananas'. ToolKit v78 allows: 'Characters', 'Items', 'Lines', 'Sentences', 'Words'.`
+
+`src/` was never modified; the mutation lived only in the scratch directory.
+
+### 22.5 The waiver, index-normalised
+
+| Waived line (indices normalised to `N`) | Count per fork | Why waived |
+|---|---:|---|
+| `Unknown AppIntent parameter key(s) for com.apple.mobilenotes.SharingExtension at index N: WFCreateNoteInput. ToolKit v78 expects: OpenWhenRun, contents, folder, interpretAsMarkdown, name.` | 1 | Device-donor ground truth outranks the `macOS 27`-tagged catalog entry — §14; deliberately retained in `tools/build_state_engine.py` — enforced entry `STRING_ENVELOPE_PARAMS["com.apple.mobilenotes.SharingExtension"]`, donor-evidence comment in the CYCLE 4 block immediately above it. **Anchor on the symbol, not the line.** Measured 2026-08-17: comment `:1961-1966`, entry `:1982` |
+
+Real indices at the time of measurement: **Dumb `3619`, Sentient `3687`**. They shift on
+rebuild, which is why the waiver is recorded index-normalised.
+
+Normalisation command a future run diffs against:
+
+```bash
+"$PLUG/bin/validate-shortcut" "$f" --target-macos 27 --target-platform all 2>&1 \
+  | grep '^- ' \
+  | sed -E 's/ at index [0-9]+:/ at index N:/' \
+  | sort | uniq -c
+```
+
+### 22.6 The headline, stated plainly
+
+**The empirical check did not reveal a shipped defect.** Both forks pass the mandatory gate
+clean. The second gate surfaces exactly one line per fork, and that line is a known,
+already-adjudicated, deliberately-retained deviation (§14) — not a new finding.
+
+**Gate B added no new information about the current forks.** Its one line is pre-adjudicated.
+Its demonstrated value rests entirely on the synthetic-mutation control in §22.4 — a measured
+demonstration that it catches a class of defect gate A passes clean — and not on any discovery
+in these artifacts. Both things are true and neither should be inflated.
+
+### 22.7 Deliberately uncited concurrent work
+
+`.planning/spikes/006-picker-serialisation-taxonomy/`, `007-*` and `008-*` were untracked and
+being written by a concurrent session while this task ran. **Handling: reference without
+dependency.** No claim in this section rests on them — every figure above, including the
+enum-coverage counts in §22.3 that 006 would otherwise have been cited for, was measured
+directly here against the loader. They are noted as adjacent concurrent work, nothing more.

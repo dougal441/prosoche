@@ -80,9 +80,54 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → inte
 
 ### Exact validator invocation
 
+**This section is the single canonical home of the two-gate rule and the mechanism behind it.** Everything a reader needs to invoke the validator correctly is here; no other file needs to be opened. Measurements and reproduction commands live in `docs/BUILD-NOTES.md` §22 — that is the only other file involved, and it records evidence, never the rule.
+
+#### What each flag actually controls
+
 - The plugin's default (`auto`/`macos`) targets whatever macOS the *build machine* runs and the macOS action surface — wrong for an iPhone-only shortcut.
-- `--target-macos 26` (not `27`/`latest`) matters because the v78-first-party-parameter-keys catalog — which gates several Notes/Screen-Time/system-control actions to specific platforms — is **only loaded when targeting macOS/iOS 27+**. At target 26, those actions validate purely by identifier presence in the generic `toolkit-v63` allowlist, which is the more permissive and more accurate posture for an iOS 26 shortcut using long-standing actions. Do not use `--target-macos 27` for this project unless deliberately opting into an OS27-only action (there should be none — PROSOCHĒ must run on "iOS 26.x").
-- `--target-platform all` is the project rule, **corrected from an earlier `ios` per `docs/BUILD-NOTES.md` §13 DEV-01**: measured, the `ios` target rejects *every* action in the file — 3675 of 3675 — including `is.workflow.actions.comment` and `is.workflow.actions.nothing`, which are present in the very iOS snapshot the flag claims to consult, while `is.workflow.actions.conditional` is absent from both bundled snapshots. A check that fails 100% of its inputs carries zero signal, so nothing is waived by not running it. The original intent behind `ios` — allowing the handful of iOS-only rows (e.g. `com.apple.HearingApp.MuteVolumeIntent`-style Settings intents) and avoiding false negatives from macOS-only rows leaking in as "available" — is unachievable with the snapshots as bundled. Re-evaluate if a future plugin release ships a corrected iOS snapshot.
+- **`--target-platform` selects which bundled ToolKit snapshot the validator consults.** It changes nothing in the plist and nothing about where the shortcut runs. It is Playground tooling, not a device-target declaration. Internally `all`/`any`/`latest` all normalise to "no platform filter"; `ios`/`ipados`/`iphone`/`ipad` normalise to `ios`; anything else to `macos`.
+- **`--target-macos` is the controlling variable.** It gates two independent things: the snapshot minimum-version filter, and — separately — whether the v78 first-party **parameter-key** and **enum-case** catalogs load *at all*. Below target 27 neither catalog is loaded, on any platform setting. This is why the second gate exists.
+
+#### Gate A — mandatory, must pass clean
+
+```bash
+validate-shortcut <file.xml> --target-macos 26 --target-platform all
+```
+
+Expect `Validation passed.`, exit 0. This is the **identifier / availability baseline at the project's real target**. It is the gate every plan, todo and `docs/*.py` checker names, and it is unchanged. It performs **zero** parameter-key or picker-literal checks — measured, not inferred.
+
+#### Gate B — advisory, waivered, never blocking
+
+```bash
+validate-shortcut <file.xml> --target-macos 27 --target-platform all
+```
+
+Expect **exit 1** with **exactly one** error line per fork. This is the **parameter-key and picker-literal check** — the only mode that loads the v78 catalogs. The single permitted line, index-normalised so a future run can diff against it:
+
+| Waived line (indices normalised to `N`) | Count per fork | Why waived |
+|---|---:|---|
+| `Unknown AppIntent parameter key(s) for com.apple.mobilenotes.SharingExtension at index N: WFCreateNoteInput. ToolKit v78 expects: OpenWhenRun, contents, folder, interpretAsMarkdown, name.` | 1 | Device-donor ground truth outranks the `macOS 27`-tagged catalog entry — `docs/BUILD-NOTES.md` §14; deliberately retained in `tools/build_state_engine.py` — enforced entry `STRING_ENVELOPE_PARAMS["com.apple.mobilenotes.SharingExtension"]`, donor-evidence comment in the CYCLE 4 block immediately above it. **Anchor on the symbol, not the line: these shift on every edit.** Measured 2026-08-17: comment `:1961-1966`, entry `:1982`. |
+
+**Anything gate B reports outside that waiver is a real finding and must be investigated before the affected artifact ships.**
+
+**Gate B is advisory and must never be chained into a definition of done.** Because its waiver is permanent it can never exit 0, so it is structurally incapable of being an `&&`-linked build gate. A plan authored before 2026-08-17 that asserts `--target-macos 27` appears nowhere in the commands it runs **remains fully satisfied by gate A alone** — nothing about that plan is now wrong.
+
+**Gate B's own limit — why A stays mandatory.** At `--target-macos 27` the validator may *accept* an OS27-only parameter key that iOS 26 does not offer. Gate B can therefore produce false acceptances. It supplements gate A; it never replaces it.
+
+#### Why the earlier rule went wrong
+
+The failure was never "`ios` is wrong for an iPhone project." It was the **pairing** of the iOS platform flag with `--target-macos 26`: `toolkit-v63` is macOS-labelled and is filtered out by the platform gate, the only iOS snapshot is a v78/27 capture and is filtered out by the version gate, and the result is an **empty allowlist that rejects everything** — 3675 of 3675 actions, including `is.workflow.actions.comment` and `is.workflow.actions.nothing`. A check that fails 100% of its inputs carries zero signal. The controlling variable is `--target-macos`, not `--target-platform`.
+
+#### Why gate B does not use the iOS platform flag
+
+`--target-macos 27 --target-platform all` **strictly dominates** `--target-macos 27 --target-platform ios` on this project's artifacts, measured:
+
+- It enum-checks **1105** identifiers versus **455** — a superset, +659.
+- Of the picker parameters the forks actually emit, `all` checks **14** `(identifier, key)` pairs versus **13**: the `ios` setting drops `is.workflow.actions.appendnote` / `operation`.
+- The `ios` setting excludes **every `macOS 27`-tagged catalog entry**, which removes all four Notes actions (Create/Append/Find/Show) from parameter-key and enum-case checking entirely — the actions this project depends on most.
+- It produces **zero** of the five spurious identifier rejections the `ios` variant generates, because it never applies the platform-label filter that creates them.
+
+Measurements, the six `validate_shortcut.py` source citations, the four-invocation table, and the synthetic-mutation control that proves gate B has teeth: `docs/BUILD-NOTES.md` §22.
 
 ### Exact signing invocation
 
