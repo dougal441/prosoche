@@ -1458,7 +1458,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 						<key>string</key>
 						<string>{
   "schema_version": 3,
-  "fork": "Dumb",
+  "fork": "Core",
   "profile": "￼",
   "sequence": "Classic",
   "voice_enabled": ￼,
@@ -100544,6 +100544,8 @@ This Shortcut cannot create its own automations. Apple does not allow a shared s
 
 PROSOCHĒ is bypassable. You can dismiss any interruption it shows you, at any time, without consequence. You can turn either automation off, or delete both, in the Shortcuts app whenever you want. It is not trying to stop you, and it does not claim otherwise.
 
+This build renames the product. The two shortcuts are now called Core and Aware; earlier builds called them Dumb and Sentient. If you installed one of those, it is still in your library under its old name and both of your Personal Automations still point at it — nothing can move them across for you. Open each automation, tap its Run Shortcut action, choose the new name by hand, and then delete the old shortcut.
+
 If an earlier install left a note titled PROSOCHĒ — Control Room, delete it or rename it before you go on. PROSOCHĒ finds this note by name, and while the older one still exists PROSOCHĒ may bind to that one instead and write everything there, where you would not think to look.
 
 ### Automation A — OPEN
@@ -100561,7 +100563,7 @@ You need two automations in total, not two for every app. Put every app you want
 7. Choose Run Immediately, not Run After Confirmation.
 8. The next screen asks you to pick a shortcut. Do not pick one. Tap Create New Shortcut instead.
 9. Add a Text action and type OPEN into it. Type it exactly: four capital letters, nothing before it and nothing after it. OPENED, Open, or a stray space will not be recognised, and nothing on screen will tell you it went wrong.
-10. Below the Text action, add the Run Shortcut action, and for its shortcut choose the one named exactly PROSOCHĒ — Nine Circles — Dumb.
+10. Below the Text action, add the Run Shortcut action, and for its shortcut choose the one named exactly PROSOCHĒ — Nine Circles — Core.
 11. Expand the Run Shortcut action and check that its Input is the Text action directly above it. If Input is empty, tap Choose Variable and select Text.
 12. Save with the blue checkmark.
 
@@ -100578,7 +100580,7 @@ Build a second Personal Automation the same way as Automation A, with three diff
 7. Choose Run Immediately, not Run After Confirmation.
 8. The next screen asks you to pick a shortcut. Do not pick one. Tap Create New Shortcut instead.
 9. Add a Text action and type CLOSE into it. Type it exactly: five capital letters, nothing before it and nothing after it. CLOSED is the mistake most often made here, and it fails silently — PROSOCHĒ will simply never record the end of a session.
-10. Below the Text action, add the Run Shortcut action, and for its shortcut choose the one named exactly PROSOCHĒ — Nine Circles — Dumb.
+10. Below the Text action, add the Run Shortcut action, and for its shortcut choose the one named exactly PROSOCHĒ — Nine Circles — Core.
 11. Expand the Run Shortcut action and check that its Input is the Text action directly above it. If Input is empty, tap Choose Variable and select Text.
 12. Save with the blue checkmark.
 
@@ -100657,7 +100659,7 @@ PROSOCHĒ only reads this section when you explicitly ask it to, from the Contro
 
 ## CURRENT SETTINGS
 
-- Fork: Dumb
+- Fork: Core
 - Profile: ￼
 - Sequence: Classic
 - Voice: ￼
@@ -100681,14 +100683,14 @@ Reserved. Nothing is measured here yet.
 Reserved. Nothing is asked for here yet.</string>
 						<key>attachmentsByRange</key>
 						<dict>
-							<key>{8139, 1}</key>
+							<key>{8555, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
 								<key>VariableName</key>
 								<string>Import Descent</string>
 							</dict>
-							<key>{8170, 1}</key>
+							<key>{8586, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
@@ -104104,7 +104106,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 	<key>WFWorkflowMinimumClientVersionString</key>
 	<string>900</string>
 	<key>WFWorkflowName</key>
-	<string>PROSOCHĒ — Nine Circles — Dumb</string>
+	<string>PROSOCHĒ — Nine Circles — Core</string>
 	<key>WFWorkflowOutputContentItemClasses</key>
 	<array/>
 	<key>WFWorkflowTypes</key>

@@ -30,6 +30,13 @@ TARGET = Path("src/PROSOCHE-Sentient.xml")
 MODEL = "Apple Intelligence on Device"  # direct device-export evidence
 MARKER = "--- SENTIENT CONTRACT AUDIT ---"
 
+# The two canonical display names, phase 11 plan 06.  The source FILENAMES deliberately
+# still read `Dumb`/`Sentient`: renaming them is pure churn across ten code files and some
+# seventy planning documents, it breaks every historical plan's reproducibility, and the
+# addendum renames the PRODUCTS, not the sources.  `docs/BUILD-NOTES.md` §25 records that.
+CORE_NAME = "PROSOCHĒ — Nine Circles — Core"
+AWARE_NAME = "PROSOCHĒ — Nine Circles — Aware"
+
 
 def uid(name: str) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"prosoche/sentient/{name}")).upper()
@@ -179,7 +186,7 @@ def main() -> None:
     root["WFWorkflowImportQuestions"].append({"ActionIndex": 6, "Category": "Parameter", "DefaultValue": "yes",
                                                "ParameterKey": "WFTextActionText",
                                                "Text": "Use Apple's on-device intelligence contract audit when available? Answer yes or no."})
-    root["WFWorkflowName"] = "PROSOCHĒ — Nine Circles — Sentient"
+    root["WFWorkflowName"] = AWARE_NAME
     root["WFWorkflowIcon"] = {"WFWorkflowIconGlyphNumber": 59856, "WFWorkflowIconStartColor": 431817727}
     for index, item in enumerate(actions):
         value = item.get("WFWorkflowActionParameters", {}).get("WFCommentActionText", "")

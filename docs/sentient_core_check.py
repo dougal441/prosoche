@@ -6,7 +6,7 @@ from pathlib import Path
 DUMB = plistlib.loads(Path("src/PROSOCHE-Dumb.xml").read_bytes())
 SENTIENT = plistlib.loads(Path("src/PROSOCHE-Sentient.xml").read_bytes())
 da, sa = DUMB["WFWorkflowActions"], SENTIENT["WFWorkflowActions"]
-assert SENTIENT["WFWorkflowName"].endswith("Sentient")
+assert SENTIENT["WFWorkflowName"].endswith("Aware")
 models = [a for a in sa if a["WFWorkflowActionIdentifier"] == "is.workflow.actions.askllm"]
 assert len(models) == 1
 p = models[0]["WFWorkflowActionParameters"]
