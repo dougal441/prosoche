@@ -42,6 +42,25 @@ The other Circles were probed on the fresh install:
 fire. The unfilled parameter is on the **Mirror primitive specifically**. Circles 2, 4, 5, 6 and 8
 remain unprobed.
 
+### PROVEN: the defect follows the MIRROR PRIMITIVE, not the Circle index
+
+**Device, 2026-08-18 07:54–07:56.** `Change Sequence` was used to switch from `Classic` to
+`BlackMirror`, the sequence in which **Circle 4** — not Circle 7 — maps to Mirror. Then
+`Test a Circle → Circle 4 · Greed` was run.
+
+**It failed with the identical error.** So:
+
+| sequence | Circle mapped to Mirror | that Circle's result |
+|---|---|---|
+| `Classic` | 7 · Violence | **fails** |
+| `BlackMirror` | 4 · Greed | **fails** |
+
+The failure **moved with the primitive** when the mapping changed. Combined with Circles 1 and 9
+firing correctly under `Classic`, this rules out any index-based or per-Circle explanation and
+confirms the unfilled picker is inside the **Mirror primitive's own action span**. That is the
+tightest localisation available without a breadcrumb build, and it should be the starting point
+for one.
+
 ### What it is NOT — both known axis-4 instances were checked and cleared
 
 `.claude/CLAUDE.md` names `count.WFCountType` and `getitemfromlist.WFItemSpecifier` as the two

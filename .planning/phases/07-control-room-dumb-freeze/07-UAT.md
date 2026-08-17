@@ -150,11 +150,33 @@ result: pending
 ### 5. Change Sequence persists and changes Circle mapping
 expected: persists, and demonstrably changes which primitives fire per Circle
 (cross-check against Phase 5's UAT).
-result: pending
+result: pass
+note: "Device, 2026-08-18 07:54. The `Choose sequence` menu offers all three — Classic,
+  BlackMirror, Ambient. Selected BlackMirror; the change persisted through the run.
+  DEMONSTRABLY changed the mapping, and the proof is unusually clean because the Mirror defect
+  acted as the probe: under `Classic`, Circle 7 (Mirror) fails the axis-4 error and Circles 1
+  and 9 fire; after switching to `BlackMirror`, Circle 4 — the position BlackMirror maps to
+  Mirror — fails with the IDENTICAL error. The failure moved with the primitive when the
+  sequence changed, which is exactly the 'demonstrably changes which primitives fire per Circle'
+  assertion this test makes. Recorded as pass on that evidence."
 
 ### 6. Toggle Voice persists and gates The Voice
 expected: setting persists and actually gates whether The Voice primitive speaks.
-result: pending
+result: partial
+note: "Device, 2026-08-18 07:51-07:53. PERSISTENCE HALF PASSES: Toggle Voice was run twice; the
+  save-permission dialog rendered the outgoing state.json both times, showing `voice_enabled:0`
+  on the first and `voice_enabled:1` on the second, and a subsequent Status confirmed the value
+  had stuck. So the toggle writes and persists.
+  GATING HALF UNTESTED: whether it actually gates The Voice primitive speaking was not exercised
+  — the primitive that would speak was not reached.
+  DEFECT FOUND ON THIS PATH, recorded rather than deferred: Status now reads `Voice: 1` where the
+  clean bootstrap read `Voice: Yes`. Bootstrap writes `voice_enabled` as the JSON boolean `true`;
+  Toggle Voice rewrites the same key as the NUMBER 0/1. The Status renderer maps booleans to
+  Yes/No and passes numbers through raw, so the display silently degrades after the first toggle.
+  This is the axis-6 boolean-vs-number coercion hazard with a visible symptom, and `state.json`
+  shows the same inconsistency at bootstrap for `panic_escape_enabled` (number 1) alongside
+  `voice_enabled` (boolean true). Any downstream condition comparing these as booleans or strings
+  is a latent runtime failure."
 
 ### 7. Test a Circle — all nine selectable and firing
 expected: all nine fire on demand without altering real Pressure.

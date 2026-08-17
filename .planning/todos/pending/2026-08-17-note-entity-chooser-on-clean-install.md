@@ -236,15 +236,76 @@ question needing no device.
 note is offered as the first row, and cancelling aborts cleanly without writing. It is intrusive
 and confusing, not silently destructive.
 
+### Reproduction count now four paths, all state-changing
+
+Observed on `Status`, `Open Control Room`, `Toggle Voice` and `Change Sequence` — and NOT on a
+`Test a Circle` run that changed no state. Four for four on state-changing manual runs.
+
+**One probe result, recorded as a negative.** On the `Toggle Voice` run the text box was answered
+with the identifiable string `UAT-PROBE-TEXT-PARAM` and `Done` was pressed. The run completed
+normally, but a subsequent Notes search for `UAT-PROBE` returned **no note hit**. So the supplied
+text did not visibly land in the Control Room Note. That weakens — without killing — the reading
+that the box is `appendnote`'s `text`: the append may be discarded, may target a note other than
+the one chosen, or Spotlight may simply not have reindexed. Worth re-checking by reading the
+Note's tail directly rather than by search.
+
 ## Second, unrelated finding from the same session — the file-save permission prompt
 
 Every state-changing run raises the iOS prompt **"Allow 'PROSOCHĒ — Nine Circles — Core' to save
 1 dictionary to a file?"** with `Don't Allow` / `Allow Once` / `Always Allow`, and the prompt body
-renders the raw `state.json` to the user. Until `Always Allow` is chosen this recurs on **every**
-save, which on the OPEN path would mean a permission dialog in front of the very interruption the
-product exists to deliver. Worth an explicit onboarding step in the Control Room Note telling the
-user to choose `Always Allow` on first run — otherwise the automation path is unusable and the
-failure looks like PROSOCHĒ not firing.
+renders the raw `state.json` to the user.
+
+**`Always Allow` does NOT suppress it — device-confirmed.** `Always Allow` was chosen at **07:51**
+on the Toggle Voice run. At **07:54**, on the very next state-changing run (Change Sequence), the
+**identical prompt reappeared** for the same shortcut and the same operation. It was answered
+`Always Allow` a second time and the prompt has continued to appear on subsequent runs.
+
+This is worse than an onboarding wrinkle. If the grant genuinely cannot be made to stick, then on
+the **OPEN automation path there is a blocking permission dialog in front of every single
+interruption** — which both destroys the product's core interaction and presents to the user as
+"PROSOCHĒ didn't fire". It also means the automation can never run unattended.
+
+**The obvious explanation was checked and REFUTED.** The guess was that the save destination is
+recomputed per run, so iOS sees a new file each time. It is not. All **31**
+`is.workflow.actions.documentpicker.save` sites in the decrypted artifact are byte-identical in
+shape and fully static:
+
+```
+WFAskWhereToSave      = False
+WFFileDestinationPath = 'PROSOCHE/state.json'   # fixed literal, all 31 sites
+WFSaveFileOverwrite   = True
+WFInput               = ActionOutput of a setitemname whose WFName = 'state.json'
+```
+
+Nothing about the path is dynamic. The destination is stable, overwrite is on, and the user is
+never asked where to save.
+
+**Better hypothesis, and it fits the observations exactly:** iOS scopes the grant **per action
+instance**, not per shortcut-plus-path. There are **31 distinct Save File actions**, one per code
+path, each with its own UUID. Granting `Always Allow` on the action reached by *Toggle Voice*
+therefore says nothing about the different action reached by *Change Sequence* — which is precisely
+the pair that re-prompted, three minutes apart. It predicts the prompt recurs once per distinct
+code path and then stops for that path, rather than recurring forever on the same path.
+
+**Tested on device, and the per-action hypothesis is CONFIRMED.** `Toggle Voice` — the path granted
+`Always Allow` at 07:51 — was re-run at 07:58. **No permission prompt appeared**; the run proceeded
+straight through. Meanwhile `Change Sequence`, a different code path with a different Save File
+action, had prompted at 07:54 despite that earlier grant.
+
+So the grant **does** persist, but it is scoped to the **individual Save File action instance**,
+not to the shortcut or to the destination path. With **31** distinct `documentpicker.save` actions
+— all writing the same fixed `PROSOCHE/state.json` with overwrite — a user faces **up to 31
+separate permission prompts**, one the first time each code path is exercised.
+
+**This downgrades the severity and sharpens the fix.** It is not "the automation can never run
+unattended forever"; it is "each code path prompts once". But the OPEN and CLOSE paths still each
+carry their own first-run prompt, sitting in front of the product's core interaction, and a user
+who taps `Don't Allow` once has silently disabled state persistence on that path.
+
+**Fix:** funnel every state write through a **single shared Save File action** rather than 31
+inlined copies. One grant then covers the whole product, the prompt happens once, and the action
+graph gets materially smaller. This is a generator-level change in `save_state()`, needs no device
+to implement, and is independently worth doing for graph size.
 
 ## Solution
 
