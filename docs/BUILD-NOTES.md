@@ -125,10 +125,16 @@ This is exactly the reasoning chain that produced CAP-20's *original* Verdict (`
 
 ### Validator and signer invocations (recorded here for all later phases)
 
-Validate:
+Validate — **gate A, mandatory** (`Validation passed.`, exit 0):
 
 ```bash
-validate-shortcut <file.xml> --target-macos 26 --target-platform ios
+validate-shortcut <file.xml> --target-macos 26 --target-platform all
+```
+
+Validate — **gate B, advisory** (exit 1 with exactly one waived line per fork):
+
+```bash
+validate-shortcut <file.xml> --target-macos 27 --target-platform all
 ```
 
 Sign:
@@ -137,7 +143,9 @@ Sign:
 sign-shortcut <file.xml> --name "<name>"
 ```
 
-**Why target 26, not 27:** the v78-first-party-parameter-keys catalog — which gates several Notes/Screen-Time/system-control actions to specific platforms, including CAP-20's `UAToggleColorFiltersIntent` — is only loaded by the validator when targeting macOS/iOS 27+. At target 26, actions validate purely by identifier presence in the generic `toolkit-v63` allowlist, which is the more permissive and more accurate posture for an iOS 26 shortcut (per D-01, PROSOCHĒ targets iOS 26.x) built from long-standing actions. `--target-platform ios` is required to admit iOS-only rows and reject macOS-only rows that would otherwise leak in as falsely "available."
+**The rule is not restated here.** The two-gate rule, the waiver, gate B's advisory status and its false-acceptance limit are stated once, in `.claude/CLAUDE.md` §1 `### Exact validator invocation`. Measurements are in §22 below.
+
+**Amended 2026-08-17 (quick task `260817-ewg`).** The paragraph this replaced closed with the claim that `--target-platform ios` is required to admit iOS-only rows and reject macOS-only rows that would otherwise leak in as falsely "available." **That premise is retired: it does not hold.** Measured, the `ios` setting excludes every `macOS 27`-tagged catalog entry — dropping all four Notes actions out of parameter-key and enum-case checking — and, paired with `--target-macos 26`, admits no snapshot at all. The controlling variable is `--target-macos`, not `--target-platform`. See §22.
 
 **A validator pass is necessary but not sufficient.** The validator checks structural/plist correctness only — it cannot execute a Shortcut, so it cannot catch runtime-only failures (silent UUID/wiring breaks, `WFTextTokenAttachment` vs `WFTextTokenString` display bugs, `GroupingIdentifier` mismatches). On-device manual verification remains required wherever this document records a fact as needing device confirmation.
 
@@ -253,6 +261,7 @@ Numbered entries `DEV-01`, `DEV-02`, ... Each entry carries exactly five labelle
 - **Verified:** Plan 02-01 re-ran the recorded invocation against a freshly-authored, otherwise-plausible shortcut and it failed with 118 spurious `requires macOS 27+` errors on long-standing, VERIFIED actions. Root-caused by reading `load_packaged_toolkit_ids` in `skills/shortcuts-playground/scripts/validate_shortcut.py` (re-confirmed directly against the installed plugin copy, not merely cited secondhand): it filters the bundled ToolKit snapshots by two independent gates — `_toolkit_snapshot_min_macos_major` (a minimum target-macOS-major check) and `_snapshot_matches_target_platform` (a platform-label check). `toolkit-v63-tool-ids.json` — the generic, non-platform-segmented snapshot that most of this project's long-standing, pre-OS27 actions are evidenced against in §4 — carries a `macOS` platform label internally, so `--target-platform ios` excludes it entirely. `toolkit-v78-ios27-tool-ids.json` — the one genuinely iOS-labelled snapshot — is itself excluded by `--target-macos 26`, since it is a ToolKit v78/iOS 27 capture. The two flags together therefore admit **no snapshot at all**, leaving only the validator's hardcoded control-flow and HealthKit exception sets to validate against — which is why nearly every ordinary action reads as unavailable. Measured, same file, same validator, only the platform flag differing: `--target-macos 26 --target-platform ios` → 118 `requires macOS 27+` errors; `--target-macos 26 --target-platform all` → 0; `--target-macos 26 --target-platform macos` → 0. (Full derivation and the SKELETON.md §4 table this summarises: `.planning/phases/02-routing-bootstrap-control-room/SKELETON.md` §4.)
 - **Substituted:** The operative invocation for every Phase 2+ authoring gate is `validate-shortcut <file.xml> --target-macos 26 --target-platform all`. `--target-macos 26` is unchanged from §3 and remains load-bearing for the reason §3 originally recorded it: it is what keeps the OS27 first-party parameter catalog — and its OS27-gated keys — out of the allowlist at this project's actual iOS 26.x target (D-01). Only the platform flag changes, from `ios` to `all`.
 - **Runnability:** This is a build-tooling correction, not a product-behaviour change — no action, parameter, or state-document field is affected. Every plan from 02-01 onward runs the corrected invocation directly; §3's original text is left in place per this document's append-only rule, and this entry supersedes it for invocation purposes.
+- **Amended 2026-08-17 (quick task `260817-ewg`).** The measurement above stands entirely — the 118-error result, the `load_packaged_toolkit_ids` two-gate root cause, and the substituted invocation, which is now **gate A** and unchanged. What is amended is the same generalisation amended in §13 DEV-01: the controlling variable is `--target-macos`, not `--target-platform`. DEV-04's own final sentence — "Only the platform flag changes, from `ios` to `all`" — is why the second, catalog-loading gate went unnoticed for so long: at target 26 no platform setting loads the parameter-key or enum-case catalogs, so no amount of platform-flag tuning could have surfaced them. **Gate B** (`--target-macos 27 --target-platform all`) is adopted as advisory. See §13 DEV-01's amendment and §22.
 
 ## 6. User action items
 
@@ -573,6 +582,8 @@ The shipped Phase 5 graph uses a validator-clean Ash fallback: a self-contained 
 
 `python3 docs/phase5_self_check.py` verifies semantic markers, the nine configuration entries, snapshot/restore safety, control-flow balance, pinned imports, unsupported-action exclusion, and two identical builder hashes. The project-wide validator command is `--target-macos 26 --target-platform all`: it passes. The plan's literal `--target-platform ios` command is retained as device-target evidence but presently reports every pre-existing core action from index 0 as a macOS-27 catalog false negative; it is not used to waive a Phase 5 action.
 
+> **Amended 2026-08-17 (quick task `260817-ewg`).** The false-negative observation above was of the `--target-macos 26` **plus** `--target-platform ios` *pairing*, and remains correct as such. §12's operative command is gate A, `--target-macos 26 --target-platform all`, **unchanged** — nothing in Phase 5 moves. What §22 supersedes is the generalisation that the iOS platform flag as such is what produced the false negatives: it was the pairing with target 26, which admits no snapshot at all.
+
 ---
 
 ## 13. Recorded deviations — 2026-08-14 (debug cycle 3, session `open-routing-sequence-error`)
@@ -584,6 +595,26 @@ The shipped Phase 5 graph uses a validator-clean Ash fallback: a self-contained 
 Measurement: at `--target-platform ios` the validator rejects **every action in the file** — 3675 of 3675 on the pre-cycle-3 Dumb build — including `is.workflow.actions.comment` and `is.workflow.actions.nothing`, both of which are *present* in the bundled iOS-27 snapshot the flag claims to consult. Rejection is therefore not driven by identifier presence. The snapshots are independently demonstrably incomplete: `is.workflow.actions.conditional` is absent from **both** the iOS-27 and v63 snapshots.
 
 Consequence: the flag carries zero signal. A check that fails 100% of its inputs cannot conceal a real failure among them, so nothing is being waived by not running it. `--target-platform all` passes cleanly for both forks and is the invocation of record. Re-evaluate if a future plugin release ships a corrected iOS snapshot.
+
+#### DEV-01 amendment — 2026-08-17 (quick task `260817-ewg`)
+
+DEV-01's original text above is preserved verbatim. This amendment separates what held from what did not, measured against Playground 1.2.1 and recorded in §22.
+
+**Holds, unchanged:**
+
+- The `--target-macos 26` **plus** `--target-platform ios` pairing is vacuous. Its 3675-of-3675 measurement is correct and is reproduced by §22's mechanism reading: `toolkit-v63` is macOS-labelled and filtered out by the platform gate, the only iOS snapshot is a v78/27 capture and filtered out by the version gate, leaving an empty allowlist.
+- Building on `--target-macos 26 --target-platform all` was the right call. It is now gate A, mandatory and unchanged.
+
+**Does not hold:**
+
+- **The generalisation that the iOS platform flag *as such* carries zero signal.** The controlling variable is `--target-macos`, not `--target-platform`. Below target 27 the validator loads neither the parameter-key catalog nor the enum-case catalog, on *any* platform setting — so gate A's blindness to parameter keys and picker literals was never attributable to the platform flag at all.
+- **The closing expectation that this becomes re-evaluable only when a future plugin release ships a corrected iOS snapshot.** No new plugin was needed. Only a corrected pairing: raising the macOS target to 27 while keeping `--target-platform all`.
+
+**Adopted:** `--target-macos 27 --target-platform all` as **gate B — advisory, waivered, never blocking**. Defined in `.claude/CLAUDE.md` §1; measured in §22.
+
+**What gate B found in the shipped forks: no defect.** It reports exactly one line per fork, the `WFCreateNoteInput` parameter-key divergence, which is device-donor ground truth (§14) deliberately retained by the builder — a pre-adjudicated deviation, not a new finding. Gate B's value therefore does not rest on a discovery here; it rests on §22.4's synthetic-mutation control, which demonstrates it catches an invalid picker literal that gate A passes clean.
+
+**Cross-reference: §5 `DEV-04`** recorded the same measurement from the Phase 2 side and is amended by identical reasoning — the measurement stands, the generalisation about the platform flag does not.
 
 ### DEV-02 — router no longer distinguishes "no input" from "unrecognised input"
 

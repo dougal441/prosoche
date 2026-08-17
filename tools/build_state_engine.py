@@ -1890,7 +1890,18 @@ def normalize_setters(actions):
 # catalog (data/toolkit-v78-first-party-parameter-keys.json), each confirmed present
 # on "iOS 27 Simulator".  The bundled validator cannot catch parameter-key drift at
 # --target-macos 26 because it never loads that catalog, so this build-time guard is
-# the only gate standing between a renamed key and a runtime "No value provided".
+# the only MANDATORY gate standing between a renamed key and a runtime
+# "No value provided".
+#
+# 2026-08-17 (quick task 260817-ewg) -- corrected.  The first half above still holds:
+# gate A (--target-macos 26 --target-platform all) genuinely loads no parameter-key or
+# enum-case catalog.  The "only gate" claim did not: gate B
+# (--target-macos 27 --target-platform all) DOES load that catalog, and measured, it is
+# precisely what surfaced the com.apple.mobilenotes.SharingExtension WFCreateNoteInput
+# divergence this file deliberately retains on donor evidence.  Gate B is a second,
+# ADVISORY gate -- it carries a permanent waiver, can never exit 0, and must never be
+# chained into a definition of done.  Two-gate rule: .claude/CLAUDE.md §1
+# "Exact validator invocation"; measurements: docs/BUILD-NOTES.md §22.
 VERIFIED_PARAMETER_KEYS = {
     "is.workflow.actions.setvalueforkey": {"WFDictionaryKey", "WFDictionaryValue", "WFDictionary"},
     "is.workflow.actions.getvalueforkey": {"WFGetDictionaryValueType", "WFDictionaryKey", "WFInput"},
