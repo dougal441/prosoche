@@ -558,18 +558,23 @@ def confession():
 
 
 def persist_contract():
-    """Write Confession only when this primitive still owns the open session."""
+    """Write Confession only when this primitive still owns the open session.
+
+    PHASE 12 (12-03): the flat container read/existence-gate that used to sit above the
+    ownership compare is gone. active_session is now a permanent seeded invariant
+    (seed_active_session()), so the existence test was dead code, and the condition-4
+    compare against the Session ID token already reads false for the CLEARED_SENTINEL
+    leaf -- a real session ID can never equal the literal "null". One read, one
+    conditional; complete_pending_exit() is the analog idiom.
+    """
     a = [comment("Reload before writing a contract. A superseded session has a Nothing-only path.")]
-    a += reload_state() + read_value("active_session", variable("Reloaded State"), "Contract Active Session")
-    active_group, active = if_block("Contract Active Session", 100)
-    a += [active] + read_value("active_session.id", variable("Reloaded State"), "Contract Owner ID")
+    a += reload_state() + read_value("active_session.id", variable("Reloaded State"), "Contract Owner ID")
     owns_group, owns = if_block("Contract Owner ID", 4, string="captured-session-placeholder")
     owns["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
     owns["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Session ID")
     a += [owns, set_value("active_session.intention", variable("Confession Intention"), "Reloaded State"),
           set_value("active_session.declared_duration_seconds", variable("Declared Duration Seconds"), "Reloaded State")]
-    a += save_state("Reloaded State") + [otherwise(owns_group), action("is.workflow.actions.nothing"), end_if(owns_group),
-                                            otherwise(active_group), action("is.workflow.actions.nothing"), end_if(active_group)]
+    a += save_state("Reloaded State") + [otherwise(owns_group), action("is.workflow.actions.nothing"), end_if(owns_group)]
     return a
 
 
@@ -895,11 +900,15 @@ def route_exit(choice_name: str):
 
 
 def record_exit_and_route(choice_name: str):
-    """Reload, own, write one bounded event, then route from the fresh full State."""
+    """Reload, own, write one bounded event, then route from the fresh full State.
+
+    PHASE 12 (12-03): identical conversion to persist_contract()'s -- the flat container
+    read and its condition-100 existence gate are gone; active_session is a permanent
+    seeded invariant, so the read of .id doubles as the gate and the condition-4
+    ownership compare below is unchanged.
+    """
     a = [comment("Record an exit only after reloading and proving the captured OPEN still owns State.")]
-    a += reload_state() + read_value("active_session", variable("Reloaded State"), "Exit Active Session")
-    active_group, active = if_block("Exit Active Session", 100)
-    a += [active] + read_value("active_session.id", variable("Reloaded State"), "Exit Owner ID")
+    a += reload_state() + read_value("active_session.id", variable("Reloaded State"), "Exit Owner ID")
     owner_group, owner = if_block("Exit Owner ID", 4, string="captured-session-placeholder")
     owner["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Session ID")
     a += read_value("last_app", variable("Reloaded State"), "Triggering App")
@@ -943,7 +952,7 @@ def record_exit_and_route(choice_name: str):
     a += [counter] + number(0, "Reloaded Exit Counter") + [otherwise(missing_counter), action("is.workflow.actions.nothing"), end_if(missing_counter)]
     a += math("Reloaded Exit Counter", 1, "Exit Counter Next", "+") + [set_value("exit_selection_counter", variable("Exit Counter Next"), "Reloaded State")]
     a += save_state("Reloaded State") + route_exit(choice_name)
-    a += [otherwise(owner_group), action("is.workflow.actions.nothing"), end_if(owner_group), otherwise(active_group), action("is.workflow.actions.nothing"), end_if(active_group)]
+    a += [otherwise(owner_group), action("is.workflow.actions.nothing"), end_if(owner_group)]
     return a
 
 
@@ -1181,12 +1190,22 @@ def open_pipeline():
           action("is.workflow.actions.gettext", UUID=session_id,
                  WFTextActionText=text_token([("session-", "Now Epoch"), ("-", None), ("", "Random Suffix")])),
           set_var("Session ID", output(session_id, "Text"))]
-    session_text = text_token([('{"id":"', "Session ID"), ('","started_at":', "Now Epoch"), (',"declared_duration_seconds":0}', None)])
-    session_json = uid()
-    a += [action("is.workflow.actions.gettext", UUID=session_json, WFTextActionText=session_text),
-          action("is.workflow.actions.detect.dictionary", UUID=uid(), WFInput=output(session_json, "Text"))]
-    # Detect Dictionary output cannot safely be re-derived from action position: name it immediately.
-    a += [set_var("Active Session Next", output(a[-1]["WFWorkflowActionParameters"]["UUID"], "Dictionary")), set_value("active_session", variable("Active Session Next"))]
+    # PHASE 12 (12-03): four leaf writes replace the former wholesale container write
+    # (session_text -> gettext -> detect.dictionary -> "Active Session Next" ->
+    # set_value("active_session", ...)) -- a net reduction of three actions, no new
+    # identifier, no new parameter key. .declared_duration_seconds is written as a
+    # NUMBER, bound through the number() helper select_exit() already uses for exactly
+    # this, because today's emitted session JSON serialises it unquoted
+    # ("declared_duration_seconds":0). .intention is cleared here too: the former
+    # wholesale write destroyed any prior .intention on every OPEN, and after the split
+    # it would otherwise survive stale into the next session -- read nowhere today, so no
+    # behaviour is observably different, but reproducing the old semantics exactly
+    # removes the drift this phase exists to close.
+    a += number(0, "Session Declared Duration")
+    a += [set_value("active_session.id", variable("Session ID")),
+          set_value("active_session.started_at", variable("Now Epoch")),
+          set_value("active_session.declared_duration_seconds", variable("Session Declared Duration")),
+          set_value("active_session.intention", cleared_value())]
     # Gravity = floor(opens / config divisor), bounded by config cap. The Math division yields the documented integer conversion.
     a += math("Opens Today Next", variable("Opens Per Gravity"), "Gravity Raw", "÷")
     gravity_g, gravity_if = if_block("Gravity Raw", 2, number=variable("Gravity Cap"))
@@ -1234,11 +1253,17 @@ def close_pipeline():
 - Capture the active session from the entry State, wait briefly, then reload the file.
 - A newer OPEN wins by session ID and takes a genuine no-write path.
 - Only the matching owner appends a bounded record, clears the session, restores settings, and saves once.""")]
-    a += read_value("active_session", variable("State"), "Entry Active Session")
-    has_g, has_if = if_block("Entry Active Session", 100)
+    # PHASE 12 (12-03): this site has NO ownership compare beneath it -- it captures the
+    # session at CLOSE start, before the wait -- so the existence gate is REPLACED, not
+    # merely deleted, unlike the four sites that already carried one. The read of .id
+    # doubles as the leaf gate, the complete_pending_exit() idiom: condition 5 ("string is
+    # not" the cleared sentinel) is a valid set/unset test only because
+    # seed_active_session() guarantees the leaf is never empty.
+    a += read_value("active_session.id", variable("State"), "Captured Session ID")
+    has_g, has_if = if_block("Captured Session ID", 5, string=CLEARED_SENTINEL)
     a += [has_if]
-    # Nested reads happen only after the parent exists.
-    a += read_value("active_session.id", variable("State"), "Captured Session ID") + read_value("active_session.started_at", variable("State"), "Captured Start")
+    # .started_at is read only after the leaf gate proves a genuine session is captured.
+    a += read_value("active_session.started_at", variable("State"), "Captured Start")
     a += [comment("""Let an interleaved OPEN claim state before ownership is checked:
 - The captured ID and start remain the entry snapshot.
 - State is read fresh from disk after the brief wait.
@@ -1247,9 +1272,11 @@ def close_pipeline():
     a += [action("is.workflow.actions.documentpicker.open", UUID=re_file, WFFileErrorIfNotFound=False, WFGetFilePath="PROSOCHE/state.json", WFShowFilePicker=False),
           action("is.workflow.actions.detect.dictionary", UUID=re_dict, WFInput=output(re_file, "File")),
           set_var("Reloaded State", output(re_dict, "Dictionary"))]
-    a += read_value("active_session", variable("Reloaded State"), "Reloaded Active Session")
-    reload_g, reload_if = if_block("Reloaded Active Session", 100)
-    a += [reload_if] + read_value("active_session.id", variable("Reloaded State"), "Reloaded Session ID")
+    # PHASE 12 (12-03): the flat container read and its condition-100 existence gate are
+    # gone -- active_session is a permanent seeded invariant, so the read of .id doubles
+    # as the gate and the condition-4 ownership compare below (the V3 control that stops
+    # a superseded CLOSE writing state) is unchanged.
+    a += read_value("active_session.id", variable("Reloaded State"), "Reloaded Session ID")
     owns_g, owns_if = if_block("Reloaded Session ID", 4, string="captured-session-placeholder")
     owns_if["WFWorkflowActionParameters"]["WFConditionalActionString"] = "\ufffc"
     owns_if["WFWorkflowActionParameters"]["WFConditionalActionString"] = token("Captured Session ID")
@@ -1299,7 +1326,12 @@ def close_pipeline():
           action("is.workflow.actions.repeat.each", UUID=uid(), GroupingIdentifier=window, WFControlFlowMode=2)]
     a += [set_value("recent_sessions", variable("Recent Sessions Next"), "Reloaded State"),
           set_value("last_close_at", variable("Now Epoch"), "Reloaded State"),
-          set_value("active_session", cleared_value(), "Reloaded State")]
+          # Clear the LEAF, never the container -- clear_snapshot()'s own established
+          # rule. .started_at, .declared_duration_seconds and .intention are deliberately
+          # left stale: none is read outside a branch that this very clear makes
+          # unreachable on the next OPEN, and open_pipeline() rewrites all four on the
+          # next genuine session anyway.
+          set_value("active_session.id", cleared_value(), "Reloaded State")]
     display_contract_g, display_contract = if_block("Declared Duration", 2, number=0)
     a += [comment("Contract result display:\n- Only sessions with a declared boundary show contract feedback.\n- Sessions without one make no overrun claim."), display_contract,
           alert("Contract", text_token([("Overrun seconds: ", "Overrun Seconds")])), otherwise(display_contract_g), action("is.workflow.actions.nothing"), end_if(display_contract_g)]
@@ -1309,7 +1341,7 @@ def close_pipeline():
     # the session, independent of whether a contract was declared (unlike the
     # "Contract" alert above, which only fires when Declared Duration > 0). G-04-4b.
     a += [notification("PROSOCHĒ", text_token([("Session closed · ", "Session Duration"), (" sec", None)]))]
-    a += save_state("Reloaded State") + [otherwise(owns_g), action("is.workflow.actions.nothing"), end_if(owns_g), otherwise(reload_g), action("is.workflow.actions.nothing"), end_if(reload_g), otherwise(has_g), action("is.workflow.actions.nothing"), end_if(has_g)]
+    a += save_state("Reloaded State") + [otherwise(owns_g), action("is.workflow.actions.nothing"), end_if(owns_g), otherwise(has_g), action("is.workflow.actions.nothing"), end_if(has_g)]
     return a
 
 
@@ -1810,7 +1842,10 @@ def live_ice_redirect():
          menu(group, 1, title="Emergency Restore")]
     a += restore_managed_settings("State")
     a += [set_value("cooldown_until", text_token([("null", None)])),
-          set_value("active_session", cleared_value()),
+          # Clear the LEAF, never the container -- clear_snapshot()'s own established
+          # rule. The other three leaves are deliberately left stale: open_pipeline()
+          # rewrites all four on the next genuine session.
+          set_value("active_session.id", cleared_value()),
           menu(group, 2), comment("--- PHASE 5 LIVE ICE REDIRECT END ---")]
     return a
 
@@ -1891,7 +1926,10 @@ def manual_emergency_restore():
     a += [menu(test_menu, 2), menu(group, 1, title="Reset Today"), *number(0, "Manual Zero"), set_value("opens_today", variable("Manual Zero")), set_value("gravity", variable("Manual Zero")), *number(1, "Manual Refresh Requested"), *save_state(), menu(group, 1, title="Emergency Restore")]
     a += restore_managed_settings("State")
     a += [set_value("cooldown_until", text_token([("null", None)])),
-          set_value("active_session", cleared_value()), *number(1, "Manual Refresh Requested")]
+          # Clear the LEAF, never the container -- clear_snapshot()'s own established
+          # rule. The other three leaves are deliberately left stale: open_pipeline()
+          # rewrites all four on the next genuine session.
+          set_value("active_session.id", cleared_value()), *number(1, "Manual Refresh Requested")]
     a += save_state()
     # PHASE 10 (10-02): the tenth item.  Emitted last so the case order matches the
     # choices order element for element -- a choosefrommenu whose case titles drift from
