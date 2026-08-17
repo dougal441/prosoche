@@ -455,7 +455,7 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 **Severity:** major
 **Requirements**: AUDIT-02, CIRC-02, CIRC-06, CIRC-08, ROOM-01, ROOM-02, DIST-01, DIST-02
 **Depends on:** Phase 10
-**Plans:** 2/6 plans executed
+**Plans:** 3/6 plans executed
 
 Plans:
 **Wave 1**
@@ -468,7 +468,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 11-03-PLAN.md — Note renamed to `PROSOCHĒ`, Dante's nine names surfaced positionally, optional hardening section (wave 3)
+- [x] 11-03-PLAN.md — Note renamed to `PROSOCHĒ`, Dante's nine names surfaced positionally, optional hardening section (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
