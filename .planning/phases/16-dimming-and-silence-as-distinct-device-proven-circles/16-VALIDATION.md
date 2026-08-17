@@ -29,8 +29,24 @@ created: 2026-08-17
 Full suite:
 
 ```bash
-python3 tools/build_state_engine.py && python3 tools/build_sentient.py && python3 docs/state_engine_self_check.py && python3 docs/phase9_self_check.py && python3 docs/environmental_restore_check.py && python3 docs/manifest_check.py && validate-shortcut src/PROSOCHE-Dumb.xml --target-macos 26 --target-platform all && validate-shortcut src/PROSOCHE-Sentient.xml --target-macos 26 --target-platform all
+python3 tools/build_state_engine.py && python3 tools/build_sentient.py && python3 docs/state_engine_self_check.py && python3 docs/phase9_self_check.py && python3 docs/environmental_restore_check.py && python3 docs/retired_clause_check.py && python3 docs/manifest_check.py && validate-shortcut src/PROSOCHE-Dumb.xml --target-macos 26 --target-platform all && validate-shortcut src/PROSOCHE-Sentient.xml --target-macos 26 --target-platform all
 ```
+
+**Two members of this chain are deliberately not green for part of the phase. Both are expected,
+and neither is a number to adjust.**
+
+- `docs/retired_clause_check.py` **does not exist until plan 16-05 creates it** (wave 4). Before
+  that wave the command fails at that link with a missing-file error; drop that one term when
+  running the suite mid-phase. It is listed here from now because from wave 4 onward it gates
+  the retired-clause class on every future run — a checker that ran only in the plan that wrote
+  it is a sweep, not a gate. It carries two invariants: no live file still asserts the retired
+  brightness-floor clause, and `src/CONFIG-BLOCK.md`'s fenced Config JSON agrees with both built
+  forks' Config literal on `brightness_floor` and `dim_target`. It also states, in its own source,
+  that it **cannot** see non-lexical encodings — `docs/phase5_self_check.py:117` was one — so a
+  green result is never proof the class is empty.
+- `docs/manifest_check.py` is **deliberately RED** from plan 16-01's first rebuild until plan
+  16-06 re-signs and refreshes the rows (constraint D-MANIFEST). Do not fix it by editing MANIFEST
+  rows without re-signing.
 
 **Gate B is advisory and must never be chained into a definition of done.** Run
 `validate-shortcut <fork> --target-macos 27 --target-platform all` separately; expect exit 1

@@ -83,46 +83,100 @@ fork — that is now stale and must be corrected too.
 The safety property is unchanged and is the whole point: **capture-and-restore reliability**,
 not floor avoidance. Which makes D-02 and the persistence defect the real safety work here.
 
-#### CORRECTION to D-01's site list — re-measured 2026-08-17 during plan revision
+#### D-01 site list — SUPERSEDED IN PLACE by the 2026-08-18 revision below
 
-**The site list above is incomplete. The measured count is NINE, not six.** The decision itself
-is unchanged and remains LOCKED; only its blast radius was under-counted. Recorded here because
-this file is what the executor reads, and an incomplete list here is the root cause of a class
-that was twice under-fixed: the original enumeration found six, a review pass found two more, and
-re-measuring during revision found a ninth.
+An earlier revision of this file asserted **"the measured count is NINE, not six"** and carried a
+nine-row table. **That claim is retired.** It was the third of four successive counts, each of
+which claimed completeness and each of which was wrong: six, then eight, then nine, then thirteen
+or more. The table is not reproduced here, because reproducing a list that was presented as
+complete and was not is exactly how the next reader repeats the mistake. Read the block below
+instead; it is the current record.
 
-The counting unit is **a distinct assertion of the retired clause that must be independently
-corrected.** An assertion's own failure message and adjacent narrative comment belong to that
-assertion. A *separate summary of what an assertion asserts* counts on its own — because relaxing
-the assertion makes the summary false, and a summary that outlives its assertion is a live false
-statement. Two of the nine are exactly that shape, and both were missed by earlier counts.
+Two findings from that earlier pass survive because they were measured and are still true, and
+they are restated in the plans that own them:
 
-| # | Site (anchors measured 2026-08-17; locate by content, they shift) | Note |
-|---|---|---|
-| 1 | `docs/environmental_restore_check.py` — the dim-target strictness assertion and its failure message, `:257-258`, with the narrative comment above at `:246-251` | the site D-01 names |
-| 2 | `docs/environmental_restore_check.py` — the **module docstring** at `:17`, which summarises what the checker asserts and names a strictly-positive dim target | **missed by both prior counts** |
-| 3 | `docs/phase5_self_check.py:117` — the per-action brightness-parameter assertion | currently inert decoration |
-| 4 | `.planning/REQUIREMENTS.md:123` — SAFE-01's statement | |
-| 5 | `.planning/REQUIREMENTS.md:66` — CIRC-05's statement clause | |
-| 6 | `.planning/REQUIREMENTS.md:66` — CIRC-05's **trailing parenthetical** describing what the checker guards; same line as site 5, separate assertion | **missed by the original six**; an amendment scoped to the clause leaves it standing and false |
-| 7 | `docs/CAPABILITY-DECISIONS.md` BD-02 — the band-and-floor text at `:44`, `:54`, `:58`, plus the Phase 9 addendum's provisional framing at `:60` | |
-| 8 | `.claude/CLAUDE.md:23` — the `## Constraints` Safety bullet | |
-| 9 | `tools/build_state_engine.py:597-600` — `dimming()`'s emitted Shortcuts `comment()` action | **missed by the original six**; see below |
+- **`dimming()`'s emitted Shortcuts `comment()` ships.** `dimming()` has **no Python docstring**,
+  so any instruction phrased as "update the function docstrings" does not reach it. Its first
+  emitted action is a `comment()` whose middle bullet asserts a lower bound on the brightness
+  write, and `primitive_dispatch()` renders that comment **eleven times per fork**. Measured
+  2026-08-17: 11 occurrences in `src/PROSOCHE-Dumb.xml` and 11 in `src/PROSOCHE-Sentient.xml`.
+  Without the fix both signed forks ship 22 user-visible comment actions asserting a bound the
+  same build sets to zero — a false safety claim inside the product, not merely in its records.
+  Plan 16-03 asserts a count of zero against the **rebuilt** artifact, and additionally asserts
+  that the replacement states the property rather than a softer bound.
+- **`silence()`'s parallel comment must NOT be edited.** Measured and confirmed:
+  `tools/build_state_engine.py:618-621` states Media-only volume scoping and never-increase, which
+  is SAFE-02 and remains true under D-01. The structural symmetry of `dimming()` and `silence()`
+  is not a reason to change both; editing it would weaken a live safety statement that D-01 does
+  not touch.
 
-**Site 9 is not documentation — it ships.** `dimming()` has **no Python docstring**, so any
-instruction phrased as "update the function docstrings" does not reach it. Its first emitted
-action is a Shortcuts `comment()` whose middle bullet forbids a zero brightness write, and
-`primitive_dispatch()` renders that comment **eleven times per fork**. Measured 2026-08-17: 11
-occurrences in `src/PROSOCHE-Dumb.xml` and 11 in `src/PROSOCHE-Sentient.xml`. Without this fix
-both signed forks ship 22 user-visible comment actions asserting a floor the same build sets to
-zero — a false safety claim inside the product, not merely in its records. Plan 16-03 asserts a
-count of zero against the **rebuilt** artifact.
+#### D-01 — the 2026-08-18 revision. This block is the current record.
 
-**`silence()`'s parallel comment must NOT be edited.** Measured and confirmed during revision:
-`tools/build_state_engine.py:618-621` states Media-only volume scoping and never-increase, which
-is SAFE-02 and remains true under D-01. The structural symmetry of `dimming()` and `silence()` is
-not a reason to change both; editing it would weaken a live safety statement that D-01 does not
-touch.
+The decision itself is **unchanged and remains LOCKED.** Only its blast radius, and how the work
+is organised, changed. Four things were decided:
+
+**1. The canonical strategy is FROZEN. It is out of scope and no task may edit it.**
+`PROSOCHE_Nine_Circles_Canonical_Strategy.md` is a **historical design input, not a living spec.**
+Its §21 floor clause stays exactly as written. Instead, `docs/CAPABILITY-DECISIONS.md` BD-02
+records the supersession **explicitly**: that §21's floor clause is superseded on the main line by
+D-01, that the canon is retained unmodified as the original design input, and that **BD-02 is the
+authority where the two disagree.** This note is load-bearing rather than decorative — three of
+the amended sites cite §21 as their authority, so without it the amended record does not cohere.
+It is a named acceptance criterion of plan 16-05.
+
+The same freeze applies to every other historical record. They are records of what was true then,
+and rewriting them destroys the audit trail this project depends on. **Out of scope, do not edit:**
+all closed prior-phase directories (`.planning/phases/01|05|09|10|11|12-*/`),
+`.planning/debug/resolved/`, `.planning/todos/completed/`, `.planning/research/`, and `artifacts/`
+(archived and signed; rewriting it would additionally invalidate the manifest digests).
+
+**2. The work is SPLIT into a code plan and a record plan.**
+
+- **`16-03` keeps the CODE change** (wave 2, unchanged): the two Config literal values, the two
+  `docs/environmental_restore_check.py` assertion-side edits plus its narrative comment and its
+  module docstring, `docs/phase5_self_check.py`'s per-action brightness assertion, and
+  `dimming()`'s emitted `comment()` in `tools/build_state_engine.py`. Six CODE sites.
+- **`16-05` is a NEW plan carrying the RECORD change** (wave 4): every documentation, requirement,
+  roadmap and decision carrier, plus the repo-scoped gate. Twenty-one measured sites across nine
+  files.
+- The rebuild / re-sign / manifest / UAT / device-checkpoint plan was renumbered `16-05 → 16-06`
+  and **remains the last wave**, because it closes D-MANIFEST and pins build identity.
+
+The rationale the user endorsed: **the safety-critical code fix must not be held hostage to a
+documentation sweep that has already failed four times.**
+
+**3. Why enumeration kept failing, and what ends it. The class is not purely lexical.**
+
+Proved directly:
+
+```
+grep -niE "never zero|strictly positive|10-15%|brightness_floor|dim_target" docs/phase5_self_check.py
+  → ZERO matches
+```
+
+…yet `docs/phase5_self_check.py:117` is a confirmed site — it encodes the retired rule as a
+**value check with none of the vocabulary**. So **no grep gate, however well written, can be the
+complete answer, and no single enumeration pass has proven trustworthy.**
+
+The plans therefore combine two instruments and present **neither alone as complete**:
+
+- a **mechanical gate** for the lexical majority — a new standalone `docs/*.py` checker (plan
+  16-05, task 3) that greps live files, fails listing every survivor with file and line, carries
+  its exclusions as an **explicit commented allowlist** so a reader can see what was deliberately
+  spared and why, and carries a comment stating plainly that it **cannot catch non-lexical
+  encodings**, citing `docs/phase5_self_check.py:117` as the known instance so nobody later
+  mistakes a green gate for proof the class is empty. It also carries the positive cross-check
+  that `src/CONFIG-BLOCK.md`'s fenced JSON and the built forks' Config literal agree on both keys
+  — the assertion that would have caught the `CONFIG-BLOCK.md` miss mechanically. It is registered
+  in `16-VALIDATION.md`'s full-suite command and in plan 16-06's verify chain.
+- an **explicit human-reasoned list** for the non-lexical residue, carried in plan 16-05's
+  `<measured_site_list>` section.
+
+**4. The site list is MEASURED, not proven exhaustive — and the plans say so in their own text.**
+Re-measuring during this revision found **four sites appearing in no prior enumeration**: a
+*second* site in `.planning/PROJECT.md` (a file whose first site was already listed), two more in
+`.planning/ROADMAP.md`, and one in `.planning/STATE.md`. That is the fifth undercount, caught
+before execution rather than after. The gate is what makes a sixth **visible** rather than silent.
 
 **D-02 — DEV-06: remove `changed_at` and `changed_by_session_id` entirely.** Decided by the
 user via `ponytail`, on the standard "if the functionality doesn't need it, get rid of it".
@@ -182,10 +236,24 @@ Any executor re-measuring this must branch on `tunnelState` from the JSON output
 `State` column (which reads `available (paired)` even with the tunnel down), and must record the
 output verbatim.
 
-### Hard environmental constraint at plan time
+### Hard environmental constraint at plan time — ⚠ SUPERSEDED IN PLACE 2026-08-18
 
-`xcrun devicectl list devices` reports **No devices found** (checked 2026-08-17, this run).
-The same DIST-03 blocker recorded against Phases 4, 9, 10 and 12 is still in force. The
+**Read the CORRECTION block immediately above this one; it is the authority. This block's first
+sentence is FALSE and is retained only so the correction has something to point at.**
+
+The `No devices found` claim below was true at the start of the 2026-08-17 session and was
+already false by the time the correction above was measured. It survived here, *after* its own
+correction, which meant an executor reading this file top-to-bottom met the retired claim
+**second** and could reasonably have taken it as the later word. Marked superseded rather than
+deleted, per this project's standing rule that a record of what was believed is worth more than
+the space it costs — but **the corrected reason is "paired device present, `tunnelState:
+disconnected`; no live session to drive", not "no device exists".**
+
+Points 1, 2 and 3 at the end of this block are unaffected by the correction and remain in force.
+
+~~`xcrun devicectl list devices` reports **No devices found** (checked 2026-08-17, this run).~~
+The same DIST-03 blocker recorded against Phases 4, 9, 10 and 12 is still in force — **for the
+corrected reason above.** The
 device-proving half of this phase (09-UAT tests 2–12, the five failure-mode trials, the
 Emergency Restore tap) **cannot be executed by an autonomous run**. Plans must:
 

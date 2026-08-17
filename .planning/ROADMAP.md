@@ -806,15 +806,23 @@ finding); its single recorded pass does not carry forward. Two user decisions lo
 **Severity:** major
 **Requirements**: CIRC-03, CIRC-05, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-03
 **Depends on:** Phase 12
-**Plans:** 5 plans
+**Plans:** 6 plans
 
 Plans:
 
 - [ ] 16-01-PLAN.md — TRACER: persist the captured original before the device is changed; build guard + negative control (wave 1)
 - [ ] 16-02-PLAN.md — Aimed rung-2 coercion probe at a direct Set parameter; disposition the 11 uncoerced volume sites (wave 1)
-- [ ] 16-03-PLAN.md — D-01: floor and dim target to zero; retire the never-zero clause from all six sites (wave 2)
+- [ ] 16-03-PLAN.md — D-01 code half: floor and dim target to zero; six measured code sites, incl. the 11×/fork emitted comment (wave 2)
 - [ ] 16-04-PLAN.md — D-02: remove the two dead snapshot leaves as one coordinated change; no-reader guard (wave 3)
-- [ ] 16-05-PLAN.md — Rebuild, re-sign, refresh manifest, author 16-UAT.md; device session BLOCKED-or-proceed (wave 4)
+- [ ] 16-05-PLAN.md — D-01 record half: 21 measured record sites, the BD-02 §21 supersession note, and the repo-scoped gate (wave 4)
+- [ ] 16-06-PLAN.md — Rebuild, re-sign, refresh manifest, author 16-UAT.md; device session BLOCKED-or-proceed (wave 5)
+
+**Split 2026-08-18, user decision.** D-01's blast radius was under-counted four times (6 → 8 → 9 →
+13+), so the record sweep was split out of 16-03 into its own plan: the safety-critical code fix
+does not wait on it. The canonical strategy is **frozen** — BD-02 records the supersession instead.
+The class is not purely lexical (`docs/phase5_self_check.py:117` encodes it as a value check with
+none of the vocabulary), so 16-05 pairs a repo-scoped gate with an explicit human-reasoned list and
+presents neither alone as complete.
 
 ### Phase 17: Exile split and exit-route deepening
 
