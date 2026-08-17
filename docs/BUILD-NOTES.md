@@ -2771,7 +2771,8 @@ that actually ships, with no work invented for either.
 
 **Device verdict — BLOCKED, and recorded as observed.** `xcrun devicectl list devices` reported
 `No devices found.` on 2026-08-17, so nothing in this subsection is device evidence and
-**DIST-03 remains open**, unchanged since Phase 10. No simulator run, no decrypted-artifact
+**DIST-03 remains open**, unchanged since Phase 10. `13-UAT.md` is authored cold-runnable with
+six tests and every outcome left **blank** and marked `BLOCKED`. No simulator run, no decrypted-artifact
 inference and no plausible-looking pass was substituted for a device observation. The booted
 simulator could not settle these questions in any case — it lacks `com.apple.mobilenotes` and
 cannot import a signed `.shortcut` at all — and the plist is already proven correct at file
