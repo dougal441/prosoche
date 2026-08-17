@@ -820,7 +820,7 @@ finding); its single recorded pass does not carry forward. Two user decisions lo
 **Severity:** major
 **Requirements**: CIRC-03, CIRC-05, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-03
 **Depends on:** Phase 12
-**Plans:** 4/6 plans executed
+**Plans:** 5/6 plans executed
 
 Plans:
 **Wave 1**
@@ -838,7 +838,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 16-05-PLAN.md — D-01 record half: 21 measured record sites, the BD-02 §21 supersession note, and the repo-scoped gate (wave 4)
+- [x] 16-05-PLAN.md — D-01 record half: 21 measured record sites, the BD-02 §21 supersession note, and the repo-scoped gate (wave 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
