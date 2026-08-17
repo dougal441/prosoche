@@ -609,12 +609,12 @@ finding rather than a known artifact.
 **Severity:** major
 **Requirements**: CIRC-04, CIRC-07, ROOM-03, DIST-01, DIST-02
 **Depends on:** Phase 12
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 13-01-PLAN.md — Tracer: wrap all 660 variable-bearing `WFItems` rows via `_list_row()`, add `verify_list_item_wrappers()`, arm it on both forks, rebuild to gate A, and demonstrate the guard is sensitive
+- [x] 13-01-PLAN.md — Tracer: wrap all 660 variable-bearing `WFItems` rows via `_list_row()`, add `verify_list_item_wrappers()`, arm it on both forks, rebuild to gate A, and demonstrate the guard is sensitive
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
