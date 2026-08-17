@@ -78,10 +78,32 @@ Phase 13 (blank Lists, red operators) should land before Phase 19 so a blank Cir
 testing is a real finding rather than a known artifact.
 
 **Standing device backlog**, all blocked on DIST-03 and best run in one session:
-`10-UAT.md` (10 tests), `09-UAT.md` tests 2-12 (dimming/silence restore — the highest-risk
-untested path in the product), Phase 4 UAT tests 1 and 3-6, Phase 8's real-iPhone import, and
-Phase 19's full nine-Circle sweep. Report the opens-to-first-interruption count from
-`10-UAT.md` Test 2 — it decides whether Phase 10's raised entry thresholds need tuning.
+`16-UAT.md` (12 tests — dimming/silence capture-and-restore, **the highest-risk untested path
+in the product**, and the instrument that **supersedes `09-UAT.md`**; its single recorded pass
+does not carry forward, because plan 16-02 showed the coercion-chip gate carries no information
+at a direct Set-action parameter), `12-UAT.md` Test 3 (the same brightness/volume restore
+observation read from the SESS-07 side — run it once, record it in both files), `13-UAT.md`
+(6 tests), `10-UAT.md` (10 tests), Phase 4 UAT tests 1 and 3-6, Phase 8's real-iPhone import,
+Phase 18's locked-screen CLOSE investigation (which **owns** the screen-locked case; `16-UAT.md`
+hands it over by reference rather than duplicating it), and Phase 19's full nine-Circle sweep.
+Report the opens-to-first-interruption count from `10-UAT.md` Test 2 — it decides whether Phase
+10's raised entry thresholds need tuning. `16-UAT.md`'s header carries the batching table.
+
+**DIST-03's blocked REASON, re-measured 2026-08-18 (plan 16-06):** ~~`xcrun devicectl list
+devices` reports no connected devices~~ — that wording is **retired**, struck rather than
+deleted so the correction has something to point at. Measured at execution time: a **paired**
+iPhone 15 Pro (`iPhone16,1`) on **iOS 26.6**, `pairingState: paired`, **`tunnelState:
+unavailable`**, `transportType: none`; the `State` column reads `unavailable`. So a device is
+known but **there is no live tunnel and no active transport — no session to drive**, which is a
+different fact from "no device exists" and is recorded as the different fact it is. The reason
+has now moved twice: 2026-08-17 measured `tunnelState: disconnected` with `transport: wired`.
+**Always branch on `tunnelState` read from `--json-output`, never on the `State` column** —
+on 2026-08-17 the column read `available (paired)` while the tunnel was down. Two consequences
+worth carrying: `iPhone16,1` is **Apple-Intelligence-capable**, so this hardware can exercise
+the **Aware** fork when a session is arranged; and **iOS 26.6 is inside the declared `iOS 26.x`
+target**, so an observation on it is same-major-version evidence rather than an extrapolation.
+Personal Automations are user-created on the device regardless, so DIST-03 would gate this work
+even with a live tunnel.
 
 Last activity: 2026-08-18 — Phase 16 execution started
 
@@ -262,9 +284,10 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 ### Blockers/Concerns
 
 - [Phase 1]: Four capability blockers are unresolved pending live on-device verification — grayscale/Color Filters availability, brightness/volume read-back, the `Use Model` On-Device pinning literal, and Notes actions on iOS. All downstream phases assume these get resolved (favorably or via documented fallback) in Phase 1.
-- DIST-03 real-iPhone import and first Manual UAT blocked: xcrun devicectl reports no connected devices.
-- Phase 9 Plan 02 Tasks 2-3 blocked: 09-UAT.md's 12 device-proving tests (coercion-chip gate, capture/restore, failure-mode trials, DEV-06 verdict) require a real Apple-Intelligence-capable iPhone on iOS 26.x. xcrun devicectl reports zero connected devices — same underlying blocker as DIST-03. Both re-signed .shortcut artifacts and the fully-authored 09-UAT.md are ready; resume via /gsd-verify-work 9 once a device is available.
-- DIST-03 — no iPhone connected. All ten Phase 10 device tests (.planning/phases/10-ship-readiness-remainder-and-ux-lite-pass/10-UAT.md) are outstanding with blank outcomes, as are Phase 9's UAT tests 2-12 and Phase 4's UAT tests 1 and 3-6. Everything Phase 10 shipped is structurally proven and behaviourally unproven.
+- **[Phase 16, 2026-08-18] DIST-03 — THE CURRENT RECORD. This entry supersedes the reason given in the three entries below it, which are retained as the record of what was measured when they were written.** Re-measured at plan 16-06 execution time: a **paired** iPhone 15 Pro (`iPhone16,1`) on **iOS 26.6**, `pairingState: paired`, **`tunnelState: unavailable`**, `transportType: none`, `State` column `unavailable`. **The blocker is real but its reason has changed: it is not that no device is known, it is that the known device has no live tunnel and no active transport — no session to drive.** The reason has moved twice now (2026-08-17 measured `tunnelState: disconnected`, `transport: wired`), which is why any executor must **branch on `tunnelState` read from `xcrun devicectl list devices --json-output`, never on the `State` column** — the column read `available (paired)` on 2026-08-17 while the tunnel was down. Recording "no devices found" today would be recording something false, which this project forbids exactly as firmly as a false pass. Outstanding and blocked on this: `16-UAT.md` (12 tests, all blank), `13-UAT.md` (6), `12-UAT.md` (incl. Test 3), `10-UAT.md` (10), Phase 4 tests 1 and 3-6, Phase 8's real-iPhone import, Phase 18's locked-screen investigation, Phase 19's nine-Circle sweep. **Everything Phase 16 shipped is structurally proven and behaviourally unproven** — the capture-and-restore loop has still never executed on hardware, and Emergency Restore has still never been tapped on a device.
+- ~~DIST-03 real-iPhone import and first Manual UAT blocked: xcrun devicectl reports no connected devices.~~ **[reason superseded 2026-08-18 — see the Phase 16 entry above; the import and first Manual UAT are still outstanding]**
+- Phase 9 Plan 02 Tasks 2-3 blocked: 09-UAT.md's 12 device-proving tests (coercion-chip gate, capture/restore, failure-mode trials, DEV-06 verdict) require a real Apple-Intelligence-capable iPhone on iOS 26.x. ~~xcrun devicectl reports zero connected devices~~ — **[reason superseded 2026-08-18, see above]**. Both re-signed .shortcut artifacts and the fully-authored 09-UAT.md are ready; resume via /gsd-verify-work 9 once a device is available. **[SUPERSEDED 2026-08-18 by Phase 16: `09-UAT.md` is superseded by `16-UAT.md`, which carries a build-identity header it lacks; its one recorded pass (the coercion-chip gate) does NOT carry forward, because plan 16-02 measured that the chip cannot discriminate at a direct Set-action parameter at all.]**
+- ~~DIST-03 — no iPhone connected.~~ **[reason superseded 2026-08-18, see above]** All ten Phase 10 device tests (.planning/phases/10-ship-readiness-remainder-and-ux-lite-pass/10-UAT.md) are outstanding with blank outcomes, as are Phase 9's UAT tests 2-12 (now carried by `16-UAT.md`) and Phase 4's UAT tests 1 and 3-6. Everything Phase 10 shipped is structurally proven and behaviourally unproven.
 - The repaired iOS 26 automation onboarding (quick task 260817-au7, docs/BUILD-NOTES.md §20) is correct as written but device-unproven end to end in this form. The INPUT PROBE proved the Text → Run Shortcut handoff mechanism, not these rendered steps; confirming them belongs with the outstanding device UAT.
 
 ### Quick Tasks Completed

@@ -28,8 +28,36 @@ decisions.
 
 ### Hard environmental constraint at plan time (from CONTEXT.md, re-verified this run)
 
-`xcrun devicectl list devices` reports **No devices found** (checked 2026-08-17, this run). The
-same DIST-03 blocker recorded against Phases 4, 9, 10 and 12 is still in force. The device-proving
+> ## ⚠ THE REASON BELOW IS RETIRED — re-measured 2026-08-18 at plan 16-06 execution time
+>
+> **The original assertion is struck rather than deleted, so the correction has something to
+> point at, and so the record of what was believed survives.** It was true at the start of the
+> 2026-08-17 session; it was already false by the time `16-CONTEXT.md`'s own CORRECTION block
+> was measured later that same day, and it is false now.
+>
+> **Measured 2026-08-18, verbatim:** the `State` column reads `unavailable` for a
+> `dougal` / `8E45671C-9E4D-54C9-AC19-2EB65747337E` / iPhone 15 Pro (`iPhone16,1`), and from
+> `--json-output`: **`tunnelState: unavailable`**, `pairingState: paired`,
+> `transportType: none`, `osVersionNumber: 26.6`, `productType: iPhone16,1`.
+>
+> **The corrected reason is "paired device present, `tunnelState: unavailable`,
+> `transportType: none`; no live session to drive" — NOT "no device exists".** It has moved
+> twice: 2026-08-17's correction measured `tunnelState: disconnected` with `transport: wired`.
+>
+> **Branch on `tunnelState` read from the JSON, never on the `State` column**, which read
+> `available (paired)` on 2026-08-17 while the tunnel was down. Two facts worth carrying:
+> `iPhone16,1` is Apple-Intelligence-capable, so this hardware can exercise the Aware fork when a
+> session is arranged; and iOS 26.6 is inside the declared `iOS 26.x` target, so an observation
+> on it is same-major-version evidence rather than an extrapolation.
+>
+> **Points 1, 2 and 3 below are unaffected by the correction and remain in force.** The three
+> other occurrences of the retired wording in this file (in the Confidence line at the top, in
+> the evidence-channel table, and in the closing measurements block) are retired by this same
+> note; they are left in place as that session's record.
+
+~~`xcrun devicectl list devices` reports **No devices found** (checked 2026-08-17, this run).~~ The
+same DIST-03 blocker recorded against Phases 4, 9, 10 and 12 is still in force — **for the
+corrected reason above.** The device-proving
 half of this phase **cannot be executed by an autonomous run.** Plans must:
 
 1. Do all non-device work in full — static/structural proof, checker coverage, the UAT instrument

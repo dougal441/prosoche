@@ -6,6 +6,67 @@ started: 2026-08-16T10:05:40.000Z
 updated: 2026-08-16T10:05:40.000Z
 ---
 
+> # ⚠ SUPERSEDED — 2026-08-18, by Phase 16
+>
+> **This file is superseded by
+> `.planning/phases/16-dimming-and-silence-as-distinct-device-proven-circles/16-UAT.md`.**
+> Run that instrument instead. Nothing below is edited: the tests, the `result:` fields and the
+> DEV-06 write-up are preserved exactly as they stood, because a record of what was believed and
+> attempted is worth more than the space it costs. **Supersede, do not edit** — that is the only
+> change made to this file.
+>
+> ## Why it is superseded — three reasons, none of them cosmetic
+>
+> 1. **It carries no build-identity header.** There is no commit, no byte count and no SHA-256
+>    anywhere in it, so there is no way to know which artifact it was written against or to prove
+>    a later run is testing the same one. `16-UAT.md` pins both forks by commit, display name,
+>    byte count and full SHA-256, each matched into `artifacts/shortcuts/MANIFEST.md`.
+> 2. **It names the pre-rename forks.** The artifacts it describes were `Dumb` and `Sentient`.
+>    They now ship as **`Core`** and **`Aware`** (phase 11 plan 06). A signed `.shortcut` carries
+>    no display name inside it — the signer strips `WFWorkflowName` — so the filename is the sole
+>    carrier, and the entries this file's instructions would have a tester look for no longer
+>    exist in the library.
+> 3. **Its test list predates the persistence finding.** Phase 16 found that the captured
+>    original was written into a dictionary that is never saved, so it never reached
+>    `state.json`: CLOSE and Emergency Restore reloaded the file, found the cleared sentinel,
+>    failed the numeric `> 0` gate and skipped. **The screen dimmed and nothing in the product
+>    un-dimmed it.** No test in this file looks at `state.json` for a capture, so running these
+>    twelve tests as written would have found that defect only as a cascade of unexplained
+>    restore failures. `16-UAT.md`'s Test 2 is the direct test for it and is the one that would
+>    have caught it.
+>
+> Beyond those three, the artifact this file describes has since been renamed, gained an
+> **eleventh** `primitive_dispatch()` rendering (phase 11), been re-signed several times, had
+> its brightness floor and dim target moved to `0` (decision D-01), and had two dead snapshot
+> leaves removed (decision D-02). It describes a build that no longer exists.
+>
+> ## ⚠ The single recorded pass does NOT carry forward
+>
+> **Test 1 below is recorded `result: pass`. That pass is NOT carried forward, and it is not
+> weak evidence — it is no evidence.**
+>
+> Test 1 asked whether the coercion chip renders red at a `Set Brightness` / `Set Volume`
+> parameter, and treated a non-red chip as a hard gate cleared. Plan **16-02** established at
+> rung 2, with a deliberately-uncoerced control leg, that **the coerced and uncoerced legs render
+> identically**. A conditional's operator picker is populated from the operand's static type, so
+> a mismatch renders red there; **`Set Brightness` has no operator picker**, so there is nothing
+> for a type mismatch to break. The instrument cannot discriminate at this position at all.
+>
+> Without that control leg, "the chip was not red" would have been recorded as a pass — and the
+> pass would have been vacuous. It is exactly what happened here.
+>
+> The question was therefore **sharpened rather than answered**: from *"does the chip go red"* to
+> *"what value was actually applied"* — which is the only form a device can settle, and the only
+> form worth asking, because **CAP-08** measured `setbrightness.WFBrightness` to be **OPTIONAL
+> with a 50% default**, so an unresolved operand fails silently rather than erroring.
+> `16-UAT.md` Test 1 carries the replacement.
+>
+> **Everything else in this file remains `pending` and is inherited, re-scoped, by `16-UAT.md`.**
+> The DEV-06 first-principles write-up in `## Context` below is still sound as *reasoning* and is
+> carried forward as the prediction that `16-UAT.md` Test 9 exists to test — but decision **D-02**
+> has since removed `changed_at` and `changed_by_session_id` outright, so the ownership-check
+> question that write-up frames is now closed by removal rather than open by deferral.
+
 ## Current Test
 <!-- OVERWRITE each test - shows where we are -->
 
