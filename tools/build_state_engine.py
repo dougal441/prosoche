@@ -486,10 +486,14 @@ def knock():
 
 
 def ash():
-    return [comment("""Ash is the validator-clean visual-pause fallback:
+    # Renders the primitive BD-06 ships as "Black and White"; the Python name is deliberately
+    # unchanged (see the dispatch tuple in primitive_dispatch()).
+    return [comment("""Black and White is the validator-clean visual-pause fallback:
 - It changes no accessibility setting.
 - Color Filters is deliberately excluded because the iOS action is not validator-supported."""),
-            alert("Ash", "Pause. Put the phone down for one breath.")]
+            # The body must not open with another primitive's shipped name: "Pause" is now
+            # Circle 1's intervention, and this alert read as if that one had fired.
+            alert("Black and White", "One breath away from the screen before you go on.")]
 
 
 def confession():
@@ -551,7 +555,7 @@ def dimming():
     already_dim_g, already_dim_if = if_block("Captured Brightness", 1, number=variable("Dim Target"))
     a += [already_dim_if, action("is.workflow.actions.nothing"), otherwise(already_dim_g),
           set_brightness(variable("Dim Target")), end_if(already_dim_g), otherwise(capture_g),
-          alert("Dimming", "Brightness could not be captured, so nothing was changed."), end_if(capture_g),
+          alert("Dim", "Brightness could not be captured, so nothing was changed."), end_if(capture_g),
           end_if(snapshot_g)]
     return a
 
@@ -644,7 +648,7 @@ def ice_start():
 
 
 def primitive_dispatch(circle_name: str | None = None):
-    a = [comment(DISPATCH_MARKER + "\n\n- Select exactly one configured sequence entry for Circle after Leaving is offered.\n- Combined entries call only their named primitives.")]
+    a = [comment(DISPATCH_MARKER + "\n\n- Select exactly one configured sequence entry for Circle after Leaving is offered.\n- The entry must name its primitive exactly; every entry names exactly one.")]
     a += read_value("sequence", variable("State"), "Sequence")
     if circle_name is None:
         a += read_value("circle", variable("State"), "Dispatch Circle")
@@ -657,17 +661,27 @@ def primitive_dispatch(circle_name: str | None = None):
           action("is.workflow.actions.gettext", UUID=entry_text_id,
                  WFTextActionText=output(entry_id, "Dictionary Value")),
           set_var("Selected Primitive", output(entry_text_id, "Text"))]
-    # The tuple carries the SHIPPED name, the function carries the INTERNAL name: BD-06 renames
-    # Knock -> Pause, but knock() keeps its Python identifier because
-    # docs/environmental_restore_check.py:55-56 imports generator functions BY NAME.
-    for name, implementation in (("Pause", knock), ("Ash", ash), ("Silence", silence),
-                                 ("Confession", confession), ("Dimming", dimming), ("Exile", exile),
-                                 ("Mirror", mirror_and_voice), ("Voice", mirror_and_voice), ("Ice", ice_start)):
-        # Mirror is rendered once for a combined Silence+Mirror entry; Voice is a separate sequence name.
-        if name == "Voice":
-            continue
-        group, check = if_block("Selected Primitive", 99, string=name)
-        a += [comment(f"Dispatch {name} only when the selected Config entry names it:\n- Input uses Selected Primitive from the sequence lookup.\n- The otherwise path leaves State unchanged."), check]
+    # The tuple carries the SHIPPED name, the function carries the INTERNAL name.  BD-06
+    # Decision 3 renames the roster, but knock(), ash(), confession(), dimming(), exile(),
+    # mirror_and_voice() and ice_start() all keep their Python identifiers because
+    # docs/environmental_restore_check.py:49-60 imports generator functions BY NAME.
+    #
+    # "Loud Mirror" (Circle 8 in all three sequences) reuses mirror_and_voice() as a
+    # DELIBERATE INTERIM, not as the designed behaviour.  It is here so the dispatch-coverage
+    # guard can be a hard gate from this commit onwards rather than waiting on a primitive
+    # that does not exist yet: mirror_and_voice() already carries the once-per-run and
+    # voice-enabled gates CIRC-08 requires.  PHASE 15 replaces it with the designed Voice
+    # primitive; until then Circle 8 is a real dispatch, not the designed one.
+    for name, implementation in (("Pause", knock), ("Black and White", ash), ("Silence", silence),
+                                 ("Intention", confession), ("Dim", dimming), ("Eject", exile),
+                                 ("Mirror", mirror_and_voice), ("Loud Mirror", mirror_and_voice),
+                                 ("Frozen", ice_start)):
+        # Condition 4 ("string is"), never 99 ("contains").  BD-06 Decision 5 abolished the
+        # combined entries that were 99's only reason to exist, and under 99 the entry
+        # "Loud Mirror" would ALSO fire the "Mirror" branch -- a silent double dispatch that
+        # no validator, catalog lookup or decrypt can see.
+        group, check = if_block("Selected Primitive", 4, string=name)
+        a += [comment(f"Dispatch {name} only when the selected Config entry names it exactly:\n- Input uses Selected Primitive from the sequence lookup.\n- The otherwise path leaves State unchanged."), check]
         a += implementation() + [otherwise(group), action("is.workflow.actions.nothing"), end_if(group)]
     a += [comment("--- PHASE 5 PRIMITIVE DISPATCH END ---")]
     return a
@@ -1698,7 +1712,10 @@ def install_cooldown_branches(actions):
 def live_ice_redirect():
     group = uid()
     a = [comment(LIVE_ICE_MARKER + "\n\n- A live cooldown routes away before OPEN arithmetic.\n- Emergency Restore is available even during Ice.\n- This branch uses the existing single Save File below."),
-         menu(group, 0, prompt="Ice is active", items=["Return Home", "Emergency Restore"]),
+         # User-visible prompt only.  LIVE_ICE_MARKER and every "Ice ..." variable name around
+         # it are structural anchors and stay as they are; BD-06 renames the shipped primitive
+         # to "Frozen", not the generator's internals.
+         menu(group, 0, prompt="Frozen is active", items=["Return Home", "Emergency Restore"]),
          menu(group, 1, title="Return Home"), action("is.workflow.actions.returntohomescreen"),
          menu(group, 1, title="Emergency Restore")]
     a += restore_managed_settings("State")
@@ -3301,6 +3318,7 @@ def main():
     verify_compound_value_reads(actions)
     verify_router_shape(actions)
     verify_circle_zero_silence(actions)
+    verify_dispatch_coverage(actions)
     # Declare that this shortcut consumes Shortcut Input.  The routing block reads the
     # ExtensionInput token, and PLIST_FORMAT.md defines this root key as "True if
     # shortcut uses input variables"; every modern golden shortcut that references

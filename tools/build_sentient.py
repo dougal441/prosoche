@@ -14,6 +14,7 @@ from build_state_engine import (
     normalise_output_names,
     normalise_string_envelopes,
     verify_conditional_inputs,
+    verify_dispatch_coverage,
     verify_numeric_operands,
     verify_output_names,
     verify_required_pickers,
@@ -219,6 +220,11 @@ def main() -> None:
     # too: an inserted Sentient block must never land between the OPEN/CLOSE tests and the
     # MANUAL arm, and the absence gate must not reappear through a stale fork.
     verify_router_shape(actions)
+    # BD-06 Decision 5's eighth class, enforced PER FORK rather than inferred for Sentient
+    # from Dumb.  Sentient inherits both halves of the dispatch surface -- the Config literal
+    # and the branches -- from the built Dumb source, so a fork that dropped or rewrote
+    # either would produce a Circle that dispatches nothing, with no error anywhere.
+    verify_dispatch_coverage(actions)
     payload = plistlib.dumps(root, fmt=plistlib.FMT_XML, sort_keys=False)
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=TARGET.parent, delete=False) as tmp:

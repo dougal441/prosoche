@@ -23,7 +23,14 @@ It is authored **once** and copied verbatim into both the Dumb and Sentient fork
 
 ## Config JSON literal
 
-This is the complete literal: nine sibling top-level keys, transcribed once from canonical strategy and never restated elsewhere in this file. `sequences` below was carried over byte-identical from plan 01-01 until phase 11 plan 01, which renamed exactly one entry — `Knock` → `Pause` (BD-06), in `Classic[0]`, `BlackMirror[0]` and `Ambient[3]`. The ordering is otherwise unchanged and unreordered.
+This is the complete literal: nine sibling top-level keys, transcribed once from canonical strategy and never restated elsewhere in this file. `sequences` below now carries **BD-06 Decision 4's slot table** in full, applied by phase 11 plan 02: all nine shipped primitive names are live, the three combined entries (`Ash+Confession`, `Silence+Mirror`, `Dimming+Mirror`) are abolished, and every entry names exactly one primitive. `thresholds` carries the Phase 10 raised curve.
+
+**Two entries here are deliberately INTERIM and are not BD-06's final table:**
+
+- **Circle 6 holds `Eject` in all three sequences.** BD-06 gives Circle 6 to `Redirect` in `Classic` and `Ambient`, and to `Eject` only in `BlackMirror`. `Redirect` — the *routed* Exile, which lands the user in a deterministically selected exit — has no implementation until **Phase 17**, and `tools/build_state_engine.py`'s `verify_dispatch_coverage()` fails the build on any dispatch branch that no sequence names, so a `Redirect` branch cannot be emitted before a sequence can name it. **Phase 17 flips exactly two cells:** `Classic[5]` and `Ambient[5]`, `Eject` → `Redirect`.
+- **Circle 8's `Loud Mirror` dispatches `mirror_and_voice()`,** the same implementation as Circle 7's `Mirror`. This is what closes the *dispatch* half of CIRC-08 — Circle 8 reached no branch at all for four phases — using an implementation that already carries the once-per-run and voice-enabled gates. **Phase 15** replaces it with the designed Voice primitive.
+
+Neither is a settled decision. Both are recorded here so a later reader cannot mistake an interim stand-in for the designed behaviour.
 
 ```json
 {
@@ -33,9 +40,9 @@ This is the complete literal: nine sibling top-level keys, transcribed once from
     "key_format": "yyyy-MM-dd"
   },
   "thresholds": {
-    "Paradise": [1, 4, 7, 10, 13, 16, 19, 22, 25],
-    "Limbo": [1, 3, 5, 7, 9, 11, 14, 17, 20],
-    "Inferno": [1, 2, 4, 6, 8, 10, 12, 14, 16]
+    "Paradise": [4, 7, 10, 13, 16, 19, 22, 25, 28],
+    "Limbo": [3, 5, 7, 9, 11, 13, 16, 19, 22],
+    "Inferno": [2, 3, 5, 7, 9, 11, 13, 15, 17]
   },
   "cooldown_seconds": {
     "Paradise": 60,
@@ -43,9 +50,9 @@ This is the complete literal: nine sibling top-level keys, transcribed once from
     "Inferno": 300
   },
   "sequences": {
-    "Classic": ["Pause", "Ash", "Silence", "Confession", "Dimming", "Exile", "Mirror", "Voice", "Ice"],
-    "BlackMirror": ["Pause", "Confession", "Ash+Confession", "Mirror", "Silence+Mirror", "Dimming+Mirror", "Exile", "Voice", "Ice"],
-    "Ambient": ["Ash", "Silence", "Dimming", "Pause", "Confession", "Exile", "Mirror", "Voice", "Ice"]
+    "Classic": ["Pause", "Black and White", "Silence", "Intention", "Dim", "Eject", "Mirror", "Loud Mirror", "Frozen"],
+    "BlackMirror": ["Pause", "Intention", "Black and White", "Mirror", "Silence", "Eject", "Dim", "Loud Mirror", "Frozen"],
+    "Ambient": ["Black and White", "Silence", "Dim", "Pause", "Intention", "Eject", "Mirror", "Loud Mirror", "Frozen"]
   },
   "heat": {
     "open_base": 1,
@@ -79,11 +86,13 @@ This is the complete literal: nine sibling top-level keys, transcribed once from
 }
 ```
 
-Transcribed verbatim from canonical strategy: `behavioural_day.offset_seconds` from §10.1; `thresholds.*` from §10.5 (the default `profile` is `Limbo`, and the default `sequence` is `Classic`, per `state.json`'s own defaults in ARCHITECTURE.md §2 — this Config literal does not itself pick a default, `state.json` does); `cooldown_seconds.*` from §22; `sequences.*` from §12 — `Classic` from §12.1, `BlackMirror` from §12.2, `Ambient` from §12.3, with the one BD-06 rename noted above; `heat.*` from §10.2's suggested initial rule; `gravity.*` from §10.3.
+Transcribed from canonical strategy: `behavioural_day.offset_seconds` from §10.1; `thresholds.*` from §10.5, **raised in Phase 10** (this mirror was missed at the time and was corrected by plan 11-02 — `docs/state_engine_self_check.py:10-17` carries the same table and must change in the same commit as the literal); `cooldown_seconds.*` from §22; `sequences.*` from §12 — `Classic` from §12.1, `BlackMirror` from §12.2, `Ambient` from §12.3, with **BD-06 Decision 4's naming and slot table applied over all three**, subject to the two interim entries noted above; `heat.*` from §10.2's suggested initial rule; `gravity.*` from §10.3.
+
+**Note — the primitive named `Ash` in the two notes below now ships as `Black and White`.** BD-06 Decision 3 renamed it; plan 11-02 applied the rename to the sequence arrays and to the dispatch surface and changed **nothing** about its behaviour. `ash()` keeps its Python identifier, its alert-only fallback is verbatim, and `docs/phase5_self_check.py`'s assertion that no Color Filters intent is emitted stays green. The `safety.ash_managed_color_filters` key keeps its name because it is a `state.json`-adjacent Config key, not a display name.
 
 **Note — SUPERSEDED by BD-01-R (2026-08-13).** Ash *is* a real system Color Filters change on iOS: `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` with `operation = turn` and an explicit `state`, applied On and restored Off. `safety.ash_managed_color_filters` (default `true`) is the canonical-§21 opt-in — when `false`, Ash falls back to BD-01's non-environmental visual pause. Phase 5 reads this flag and branches. The paragraph below is retained for history; its claim that Ash is non-environmental no longer holds.
 
-**Note — binding (historical, superseded above):** BD-01 (see `docs/CAPABILITY-DECISIONS.md`) redefines what the **Ash** primitive *does* on the iOS build (a non-environmental, self-contained low-salience visual pause rather than a system Color Filters toggle) — it does **not** delete Ash from these sequence orderings. All three arrays above keep their nine entries and keep `Ash` and the combined `Ash+Confession` entry exactly where canonical strategy §12 places them (`Classic` position 2, `BlackMirror` position 3 as `Ash+Confession`, `Ambient` position 1). This keeps the sequence table the single source of truth for which primitives fire at each Circle, and localises the grayscale deviation to one decision record (BD-01) instead of touching this file's structure.
+**Note — binding (historical, superseded above):** BD-01 (see `docs/CAPABILITY-DECISIONS.md`) redefines what the **Ash** primitive *does* on the iOS build (a non-environmental, self-contained low-salience visual pause rather than a system Color Filters toggle) — it does **not** delete Ash from these sequence orderings. All three arrays above keep their nine entries and keep the primitive where canonical strategy §12 places it (`Classic` position 2, `BlackMirror` position 3, `Ambient` position 1). The combined `Ash+Confession` entry this note originally described was abolished by BD-06 Decision 5 in plan 11-02: `BlackMirror` position 3 now names `Black and White` alone, and `Intention` — the renamed Confession — moved to position 2. This keeps the sequence table the single source of truth for which primitive fires at each Circle, and localises the grayscale deviation to one decision record (BD-01) instead of touching this file's structure.
 
 **Note — `heat.reopen_bonus_mode` is a labelled prototype interpretation, not a canonical value.** Canonical strategy §10.2 states a reopen under 2 minutes earns an additional `+2` and a reopen under 10 minutes earns an additional `+1`, but it does not settle what happens at a reopen that satisfies both bands simultaneously — for example, a reopen at 90 seconds, which is both "under 2 minutes" and "under 10 minutes." The value `exclusive` means only the tightest matching band applies: a 90-second reopen earns `+2` only, never `+3`. This is a prototype interpretation chosen here, not a canonical value. The alternative value is `cumulative` (both bands would stack, so the same 90-second reopen would earn `+2` plus `+1` = `+3`). Phase 3 owns implementing STATE-04 (the rapid-reopen Heat bonus) against whichever value this key holds at build time — it must read `reopen_bonus_mode` and branch, not hardcode either behavior.
 
@@ -98,15 +107,15 @@ Transcribed verbatim from canonical strategy: `behavioural_day.offset_seconds` f
 | `config_version` | `1` | Schema version of this Config literal, bumped whenever a key is added, renamed, or removed | PROTOTYPE DEFAULT | Integer, increment by 1 per breaking change; never decrease |
 | `behavioural_day.offset_seconds` | `-14400` | Behavioural Day = Current Date minus 4 hours, so the day rolls over at 04:00 not midnight | §10.1 | Must stay negative and between roughly `-3600` (1h) and `-21600` (6h) or the "close the midnight loophole" purpose is defeated |
 | `behavioural_day.key_format` | `"yyyy-MM-dd"` | UTS#35 date-format pattern string consumed by the `Format Date → Custom` action to render the adjusted date as a comparable, sortable day key | §10.1 ("format as date key"), pattern is a UTS#35 format string | Must remain a format that sorts and compares correctly as a string (ISO-8601-style); do not switch to a locale-dependent pattern |
-| `thresholds.Paradise` | `[1, 4, 7, 10, 13, 16, 19, 22, 25]` | Pressure thresholds for the slow-descent profile, index 1-9 | §10.5 | Must stay strictly ascending; must stay below `heat.cap` + `gravity.cap` (35) at index 9 or Circle 9 becomes unreachable |
-| `thresholds.Limbo` | `[1, 3, 5, 7, 9, 11, 14, 17, 20]` | Pressure thresholds for the balanced (default) profile | §10.5 | Same as `thresholds.Paradise` |
-| `thresholds.Inferno` | `[1, 2, 4, 6, 8, 10, 12, 14, 16]` | Pressure thresholds for the fast-descent profile | §10.5 | Same as `thresholds.Paradise`; keep the most aggressive of the three so `heat.cap` must stay above this array's highest value or the top Circles become unreachable in every profile |
+| `thresholds.Paradise` | `[4, 7, 10, 13, 16, 19, 22, 25, 28]` | Pressure thresholds for the slow-descent profile, index 1-9 | §10.5, raised in Phase 10 | Must stay strictly ascending; must stay below `heat.cap` + `gravity.cap` (35) at index 9 or Circle 9 becomes unreachable |
+| `thresholds.Limbo` | `[3, 5, 7, 9, 11, 13, 16, 19, 22]` | Pressure thresholds for the balanced (default) profile | §10.5, raised in Phase 10 | Same as `thresholds.Paradise` |
+| `thresholds.Inferno` | `[2, 3, 5, 7, 9, 11, 13, 15, 17]` | Pressure thresholds for the fast-descent profile | §10.5, raised in Phase 10 | Same as `thresholds.Paradise`; keep the most aggressive of the three so `heat.cap` must stay above this array's highest value or the top Circles become unreachable in every profile |
 | `cooldown_seconds.Paradise` | `60` | Ice (Circle IX) cooldown duration for the Paradise profile | §22 | Positive integer seconds; the strategy calls this "~60 sec," so treat single-digit-second changes as within the intended tolerance |
 | `cooldown_seconds.Limbo` | `180` | Ice cooldown duration for the Limbo profile | §22 | Positive integer seconds, "~3 min" |
 | `cooldown_seconds.Inferno` | `300` | Ice cooldown duration for the Inferno profile | §22 | Positive integer seconds, "~5 min" |
-| `sequences.Classic` | 9-entry array, `Pause`…`Ice` | Primitive combination fired at each Circle 1-9 under the Classic ordering | §12.1 | Must stay exactly 9 entries; reordering changes which primitives fire at which Circle — a deliberate tuning act, not a casual edit |
-| `sequences.BlackMirror` | 9-entry array, `Pause`…`Ice` | Primitive combination fired at each Circle 1-9 under the Black Mirror ordering | §12.2 | Same as `sequences.Classic` |
-| `sequences.Ambient` | 9-entry array, `Ash`…`Ice` | Primitive combination fired at each Circle 1-9 under the Ambient ordering | §12.3 | Same as `sequences.Classic` |
+| `sequences.Classic` | 9-entry array, `Pause`…`Frozen` | The single primitive fired at each Circle 1-9 under the Classic ordering | §12.1, BD-06 Decision 4 | Must stay exactly 9 entries, each naming exactly one primitive with no `+`; every entry must exactly equal an emitted dispatch branch name, which `verify_dispatch_coverage()` fails the build over. Reordering changes which primitive fires at which Circle — a deliberate tuning act, not a casual edit |
+| `sequences.BlackMirror` | 9-entry array, `Pause`…`Frozen` | The single primitive fired at each Circle 1-9 under the Black Mirror ordering | §12.2, BD-06 Decision 4 | Same as `sequences.Classic` |
+| `sequences.Ambient` | 9-entry array, `Black and White`…`Frozen` | The single primitive fired at each Circle 1-9 under the Ambient ordering | §12.3, BD-06 Decision 4 | Same as `sequences.Classic` |
 | `heat.open_base` | `1` | Heat added for every genuine new OPEN | §10.2 | Small positive integer; this is the baseline unit the other Heat deltas are scaled against |
 | `heat.reopen_under_120s_bonus` | `2` | Additional Heat when the reopen happens under 2 minutes since the last close | §10.2 | Positive integer, should stay ≥ `heat.reopen_under_600s_bonus` since it is the tighter, more compulsive band |
 | `heat.reopen_under_600s_bonus` | `1` | Additional Heat when the reopen happens under 10 minutes since the last close | §10.2 | Positive integer, should stay ≤ `heat.reopen_under_120s_bonus` |
@@ -119,7 +128,7 @@ Transcribed verbatim from canonical strategy: `behavioural_day.offset_seconds` f
 | `heat.decay_interval_seconds` | `600` | Elapsed-time unit (10 minutes) that `decay_amount` applies per | §10.2 | Positive integer seconds ("~10 minutes" in the strategy text) |
 | `heat.ice_expiry_relief` | `-1` | Heat relief applied when Ice (Circle IX) cooldown naturally expires, per §22's "provide Heat relief" instruction | PROTOTYPE DEFAULT | Negative integer; the strategy requires *some* relief on Ice expiry but states no number — must be large enough that expiring Ice visibly lowers Pressure, not a token `-1`-and-forget value if testing shows it re-triggers Ice immediately |
 | `heat.floor` | `0` | Minimum Heat value after all deltas are applied | §10.2 | Fixed at `0`; Heat is explicitly never negative |
-| `heat.cap` | `30` | Maximum Heat value after all deltas are applied | §10.2 | Must stay above the highest threshold in the most aggressive profile (`thresholds.Inferno[8]` = 16) plus `gravity.cap` (5), or the top Circles become unreachable even at max Heat |
+| `heat.cap` | `30` | Maximum Heat value after all deltas are applied | §10.2 | Must stay above the highest threshold in the most aggressive profile (`thresholds.Inferno[8]` = 17) plus `gravity.cap` (5), or the top Circles become unreachable even at max Heat |
 | `gravity.opens_per_point` | `6` | Divisor in `gravity = floor(opens_today / opens_per_point)` | §10.3 | Positive integer; smaller values make Gravity accumulate faster across a day |
 | `gravity.cap` | `5` | Maximum Gravity value | §10.3 | Fixed at `5` per the strategy's own suggested rule |
 | `exits.exploration_rate` | `0.2` | Epsilon in the epsilon-greedy exit-learning policy — the fraction of exit selections that explore a non-preferred enabled exit rather than exploit the historically strongest one | PROTOTYPE DEFAULT | Decimal between 0 and 1; §9.3 requires this be configuration, not a hardcoded constant, but states no number |
@@ -151,5 +160,6 @@ These values are computed at runtime, never stored directly as leaf keys above. 
 
 ## Change log
 
+- **2026-08-17** — Phase 11 plan 02. **BD-06 Decision 4's whole slot table applied in one commit.** All three `sequences` arrays rewritten to the nine shipped names (`Pause`, `Black and White`, `Silence`, `Intention`, `Dim`, `Eject`, `Mirror`, `Loud Mirror`, `Frozen`); the three combined entries `Ash+Confession`, `Silence+Mirror` and `Dimming+Mirror` abolished per BD-06 Decision 5; `primitive_dispatch()` moved from condition code 99 ("contains") to 4 ("string is") across all ninety `Selected Primitive` conditionals, without which `Loud Mirror` would also fire the `Mirror` branch. `Redirect` deliberately appears nowhere — Phase 17 flips `Classic[5]` and `Ambient[5]` from `Eject` to `Redirect` once it exists. `tools/build_state_engine.py`'s new `verify_dispatch_coverage()` is armed in both builders and makes any future disagreement between this table and the dispatch surface a build failure. Also fixed in the same pass: the pre-existing `thresholds` drift, where this mirror still showed the pre-Phase-10 curve while the live literal and `docs/state_engine_self_check.py:10-17` both carried the raised one. The live literal in `src/PROSOCHE-Dumb.xml` was edited through `tools/plist_text_edit.py`'s guarded round trip; this file is its mirror, not its source.
 - **2026-08-17** — Phase 11 plan 01 (tracer). The BD-06 primitive rename `Knock` → `Pause`, applied to the three `sequences` cells that named it (`Classic[0]`, `BlackMirror[0]`, `Ambient[3]`) and to the two `Field reference` rows that spelled the array bounds. One name only: the remaining BD-06 renames move in plan 11-02, together with the abolition of the three combined entries and the condition-99 → condition-4 dispatch move. The live literal in `src/PROSOCHE-Dumb.xml` action 7 was edited in the same commit through `tools/plist_text_edit.py`'s guarded round trip; this file is its mirror, not its source.
 - **2026-08-13** — File created by plan 01-01 (`## How to use this file` skeleton and the `sequences` object). Completed by plan 01-03 (`config_version`, `behavioural_day`, `thresholds`, `cooldown_seconds`, `heat`, `gravity`, `exits`, `safety`; the field reference, derived-value rules, and transcription recipe). Any later edit to this file adds a new dated line here.
