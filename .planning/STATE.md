@@ -259,6 +259,20 @@ Items acknowledged and carried forward from previous milestone close:
 |----------|------|--------|-------------|
 | v2 | CTX-01..04 (contextual exit learning), VAL-01..04 (value measurement), OPT-01..02 (Sentient precomputed Mirror), PAY-01..02 (pay-after-value support) | Deferred to v2 | Requirements definition |
 
+## Deferred Verification
+
+| Phase | State | Resume |
+|-------|-------|--------|
+| 12 | verification_deferred_human | /gsd-verify-work 12 |
+
+Phase 12's verifier returned `human_needed`: 7 device-only exit-recording tests (already recorded
+BLOCKED in `12-UAT.md` — `xcrun devicectl list devices` genuinely reported no connected iPhone, not a
+fabricated result) plus two `verification: backstop` truths (A1's `repeat.each`-over-empty-array
+assumption, and the JSON-null-leaf coercion assumption the option-a design choice structurally avoids
+but doesn't device-confirm). All 27 other must-haves verified; all 12 checkers + gate A×2 pass at HEAD.
+This mirrors Phase 10's precedent (DIST-03) — deferred, not treated as a gap, because no device is
+available to an autonomous run. Resume with `/gsd-verify-work 12` once an iPhone is connected.
+
 ## Session Continuity
 
 Last session: 2026-08-16T15:53:05.418Z
