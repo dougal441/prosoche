@@ -19,24 +19,34 @@ created: 2026-08-17
 
 | Property | Value |
 |----------|-------|
-| **Framework** | **No test framework.** Eleven bespoke structural checkers in `docs/*.py`, each a standalone `python3` script that raises `AssertionError`/`SystemExit` and prints a one-line pass message |
+| **Framework** | **No test framework.** Bespoke structural checkers in `docs/*.py`, each a standalone `python3` script that raises `AssertionError`/`SystemExit` and prints a one-line pass message. **Eleven at the phase baseline; twelve from plan `11-01` Task 2 onward**, which adds `docs/note_identity_check.py` |
 | **Config file** | none — by design |
 | **Quick run command** | `python3 docs/sequence_dispatch_check.py && python3 docs/state_engine_self_check.py` |
-| **Full suite command** | `for f in state_engine_self_check phase5_self_check phase6_self_check phase7_self_check phase9_self_check sentient_audit_check sentient_core_check environmental_restore_check router_ui_census sequence_dispatch_check manifest_check; do python3 docs/$f.py \|\| echo "FAIL $f"; done` |
+| **Full suite command (twelve — use from `11-01` Task 2 onward)** | `for f in state_engine_self_check phase5_self_check phase6_self_check phase7_self_check phase9_self_check sentient_audit_check sentient_core_check environmental_restore_check router_ui_census sequence_dispatch_check note_identity_check manifest_check; do python3 docs/$f.py \|\| echo "FAIL $f"; done` |
+| **Full suite command (eleven — `11-01` Task 1 only)** | the same loop with `note_identity_check` omitted; that checker does not exist until Task 2 creates it |
 | **Estimated runtime** | ~2 s quick / ~30 s full |
 
 **Baseline measured at `ae0226c`: all eleven exit 0**, and `git status --short` is empty after a full
 rebuild (the builders are idempotent). **Any redness during this phase is a regression this phase
-caused.**
+caused.** The count moves from eleven to twelve exactly once, in `11-01` Task 2; every plan from
+`11-02` onward runs twelve.
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** `python3 tools/build_state_engine.py && python3 docs/sequence_dispatch_check.py && python3 docs/phase5_self_check.py` (~10 s)
-- **After every plan wave:** all eleven checks + both validator invocations
-- **Before `/gsd-verify-work`:** all eleven green + both validators + both forks signed + both decrypt-verified + `MANIFEST.md` refreshed + `manifest_check` green
-- **Max feedback latency:** 10 seconds
+Two tiers, with two different latencies. Quoting a single number conflates them.
+
+- **Tier 1 — after every task commit (fast loop, ~10 s):**
+  `python3 tools/build_state_engine.py && python3 docs/sequence_dispatch_check.py && python3 docs/phase5_self_check.py`
+  **Max feedback latency: 10 seconds.** This is the loop the Nyquist requirement applies to.
+- **Tier 2 — after every plan wave (gate, ~2–4 min):** both builders + all twelve checks + both
+  validator invocations + `sign-shortcut` on both forks + AEA1 decrypt (`aea decrypt`,
+  `aa extract`) + `plutil -lint` on both recovered plists + `MANIFEST.md` refresh +
+  `manifest_check`. This deliberately exceeds the tier-1 latency: it is the project's definition
+  of done and cannot be reduced to a 10-second loop, because signing and decryption are external
+  processes. It is a gate, not a sampling loop.
+- **Before `/gsd-verify-work`:** the full tier-2 gate, green.
 
 ---
 
@@ -70,13 +80,14 @@ caused.**
 
 ## Wave 0 Requirements
 
-- [ ] `verify_dispatch_coverage(actions)` in `tools/build_state_engine.py`, called from `main()` and from `build_sentient.py`'s verify chain — covers CIRC-08 and CIRC-06
-- [ ] Promote `docs/sequence_dispatch_check.py` to a hard gate: empty `KNOWN_ORPHANS`, non-zero exit on orphan/unreachable/unknown, rewrite the docstring (which currently states it is deliberately not a gate)
-- [ ] Rewrite `docs/phase5_self_check.py:66-68`'s name list; add negative assertions for the six retired names
-- [ ] Update `docs/manifest_check.py:DISPLAY_NAMES` and `docs/sentient_core_check.py:9` for the Core/Aware rename
-- [ ] Update `docs/environmental_restore_check.py:78` and `docs/phase9_self_check.py:97-104` **only if** the Panic Escape mechanism adds an eleventh `primitive_dispatch()` rendering
-- [ ] A note-identity check (three title sites + attachment-offset equality in both forks)
-- [ ] Update `docs/phase7_self_check.py:15`'s `MENU` list **only if** a Panic Escape menu item is added
+- [ ] `tools/plist_text_edit.py` — the guarded `plistlib` round-trip helper that recomputes `attachmentsByRange`; owned by `11-01` T1, consumed by every later plist edit in the phase
+- [ ] `docs/note_identity_check.py` — the twelfth checker: three Note-identity sites plus attachment-offset equality across every token string in both forks; owned by `11-01` T2, green at the current title so `11-03` moves one constant
+- [ ] `verify_dispatch_coverage(actions)` in `tools/build_state_engine.py`, called from `main()` and from `build_sentient.py`'s verify chain — covers CIRC-08 and CIRC-06; owned by `11-02` T1 (authored inert and proven to raise on the live orphan) and armed by `11-02` T2
+- [ ] Promote `docs/sequence_dispatch_check.py` to a hard gate: empty `KNOWN_ORPHANS`, non-zero exit on orphan/unreachable/unknown/duplicate, rewrite the docstring (which currently states it is deliberately not a gate); owned by `11-02` T3
+- [ ] Rewrite `docs/phase5_self_check.py:65-67`'s name list; add negative assertions **structurally, over the parsed Config literal's sequences** rather than as file-wide text greps — several retired words legitimately survive as internal variable names and structural markers, so a text grep for them is both wrong and unsatisfiable. Owned by `11-02` T2
+- [ ] Update `docs/manifest_check.py:DISPLAY_NAMES` and `docs/sentient_core_check.py:9` for the Core/Aware rename, plus `:20`'s whole-list equality, which a Sentient-side note divergence breaks; owned by `11-06` T1 and T2
+- [ ] Update `docs/environmental_restore_check.py:78` and `docs/phase9_self_check.py:97-106` — **required**, because Panic Escape Mechanism A adds an eleventh `primitive_dispatch()` rendering. The ninth *dispatch branch* added by `11-02` does **not** move them (measured: `mirror_and_voice()` emits no `setbrightness`/`setvolume`/`getdevicedetails`). Values must be **measured after the rebuild, not transcribed**. Owned by `11-05` T1
+- [ ] Update `docs/phase7_self_check.py:15`'s order-sensitive `MENU` list — **required**, because `11-05` T2 adds a Panic Escape menu item
 
 ---
 
