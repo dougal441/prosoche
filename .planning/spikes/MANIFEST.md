@@ -65,11 +65,20 @@ capability could be auto-detected to drive the fork choice.
   just a UX default.
 - The toggle cannot verify hardware eligibility. Safety is achieved by **ordering**, not
   detection: the core deterministic escalation must run before any Sentient-branch logic,
-  so a Use Model halt on ineligible hardware costs only the bonus mirror text, never the
-  core intervention. **Confirmed on real hardware** (iPhone 15 Pro + iPhone SE): on
-  ineligible hardware, Use Model fails with a graceful native error ("support for selected
-  model is downloading") rather than corrupting state or crashing, and the core escalation
-  step, placed first, had already completed by the time of that failure.
+  so a Use Model halt costs only the bonus mirror text, never the core intervention.
+  **The ordering property held under one real observed failure** (iPhone SE): the core
+  escalation step, placed first, had already completed by the time Use Model failed.
+  **Corrected 2026-08-17 — this is NOT "confirmed on ineligible hardware."** The spike's
+  `askllm` omitted `WFLLMModel` entirely, so both runs used the undocumented default model
+  source rather than the pinned `"Apple Intelligence on Device"` that Sentient ships; and
+  the observed error ("support for selected model is downloading") is a provisioning-state
+  message that does not distinguish ineligible hardware from a capable device whose ~7 GB
+  models have not landed. See spike 004's **Reassessment (2026-08-17)**.
+- **The failure window is wider than "ineligible hardware."** Apple Intelligence is on by
+  default on capable devices (since iOS 18.3) but its models are a large download requiring
+  Wi-Fi and power, and the user can switch it off. A merged product therefore exposes the
+  failure path to new users on *capable* hardware during first run — the opposite of the
+  narrow risk the merge was scoped against. Untested in either direction.
 - `WFFileErrorIfNotFound = false` (Get File) is the real answer to "no file-exists check"
   — cleaner than the attempt-and-treat-as-absent fallback CLAUDE.md currently documents.
   Worth folding into CLAUDE.md §3 item 2.
@@ -165,7 +174,7 @@ types), but PROSOCHĒ's 51-action surface touches none of it.
 | 001 | device-is-locked-literal | standard | Given Donor 10's decrypted plist, when inspected for `WFDeviceDetail`, then the literal `"Device Is Locked"` is present as donor-confirmed ground truth | VALIDATED | device-details, capability-audit, evidence-hierarchy |
 | 002 | close-automation-vs-screen-lock | standard | Given a tracked app in foreground, when the user locks the screen (vs. switches app), then determine whether the "App Is Closed" Personal Automation fires the same `CLOSE` signal in both cases | VALIDATED — yes, screen lock fires CLOSE | session-model, close-pipeline, personal-automations |
 | 003 | device-model-literal | standard | Given a real iPhone, when Get Device Details queries "Device Model", then the exact literal string format (identifier vs marketing name) is known | INVALIDATED ✗ | shortcuts, device-detection |
-| 004 | capability-gate | standard | Given a single merged shortcut with a manual opt-in toggle, when the core deterministic escalation runs before the optional Sentient (Use Model) step, then a Use Model failure never prevents the core intervention from firing | VALIDATED ✓ | shortcuts, device-detection, state-machine |
+| 004 | capability-gate | standard | Given a single merged shortcut with a manual opt-in toggle, when the core deterministic escalation runs before the optional Sentient (Use Model) step, then a Use Model failure never prevents the core intervention from firing | **PARTIAL ⚠** — downgraded 2026-08-17 from VALIDATED. Toggle + ordering hold; the "confirmed on ineligible hardware" claim does not (no `WFLLMModel` pinned, failure class unidentified) | shortcuts, device-detection, state-machine |
 | 005 | ios-color-filters-identifier | standard | Given the donors `Set Colour Filters.shortcut` and `Donor 9.shortcut`, when decrypted, then the real iOS 26 Color Filters identifier and parameter serialization are established as device ground truth | VALIDATED ✓ — exists on iOS as `AX*`, not the `UA*` the audit trail recorded; apply leg confirmed, restore leg still schema-only | capability-audit, evidence-hierarchy, accessibility, ash, donor |
 | 006 | picker-serialisation-taxonomy | standard | Given all 16 donors + the 19-shortcut golden corpus, when every parameter that could carry a device-minted value is classified, then each falls into synthesizable / runtime-derivable / hand-selection-only, with a rule predicting the class from the catalog alone | VALIDATED ✓ — 3 classes, zero opaque blobs anywhere; 14 queryable entity families | capability-audit, evidence-hierarchy, entity-references, pickers, donor, blocker-analysis |
 | 007 | unresolvable-picker-failure-mode | standard | Given a shortcut authored offline whose picker value we cannot know, when imported and run, then determine whether it fails at import, at run, or renders empty | PARTIAL ⚠ — question moot (PROSOCHĒ opens only 6 first-party apps); simulator cannot import a signed `.shortcut`, probe preserved for a device run | capability-audit, pickers, openapp, simulator, rung-2, probe |

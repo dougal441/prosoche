@@ -3,10 +3,16 @@ spike: 004
 name: capability-gate
 type: standard
 validates: "Given a single merged shortcut with a manual opt-in toggle, when the core deterministic escalation runs before the optional Sentient (Use Model) step, then a Use Model failure on ineligible hardware never prevents the core intervention from firing"
-verdict: VALIDATED
-related: ["003"]
+verdict: PARTIAL
+related: ["003", "008"]
 tags: [shortcuts, device-detection, state-machine]
 ---
+
+> **⚠ VERDICT DOWNGRADED 2026-08-17: VALIDATED → PARTIAL.** The toggle and the ordering
+> discipline still hold. The claim that they were *"confirmed on real ineligible hardware"*
+> does not — the run never used the configuration Sentient ships, and the failure it
+> observed was never identified. See **Reassessment (2026-08-17)** at the end of this file
+> before citing anything here.
 
 # Spike 004: Capability Gate (toggle-only, ordering-based fail-safe)
 
@@ -227,3 +233,103 @@ eventually resolve on that device (the message's wording suggests Apple attempts
 provision model support even on some borderline/ineligible hardware, which the project's
 capability audit did not anticipate) — not chased further, since the ordering fail-safe
 already answers what this spike set out to prove regardless of which case it is.
+
+---
+
+## Reassessment (2026-08-17) — verdict downgraded to PARTIAL
+
+Prompted by new device evidence from the project owner: **an iPhone 16e, with the Apple
+Intelligence models downloaded, ran this same Capability Gate shortcut and returned the
+Sentient result successfully.** That datapoint does not contradict anything above — the
+16e is Apple-Intelligence-capable (A18, 8 GB) so success is the expected outcome — but it
+forces the paragraph above to be taken seriously rather than waved off, and reviewing the
+spike in that light surfaced a second, larger problem the original write-up missed.
+
+### Problem 1 — the run never used the configuration Sentient ships
+
+Verified directly from the artifacts:
+
+```
+spike 004 draft XML : askllm has WFGenerativeResultType, WFLLMPrompt, UUID — no WFLLMModel
+src/PROSOCHE-Sentient.xml : askllm has WFLLMModel = "Apple Intelligence on Device"
+```
+
+The spike deliberately omitted `WFLLMModel` (recorded above under "Guessed / deviating"
+item 3) because spike 008 had not yet recovered the literal. So **both device runs
+exercised whatever the default model source is, not the pinned On-Device path.** The
+default is undocumented — MacStories' Use Model write-up explicitly has no information on
+which source is selected when none is chosen, and Apple's own Shortcuts documentation does
+not say either. If the default resolves to Private Cloud Compute, or auto-selects, then the
+SE's failure and the 15 Pro's success are both observations about a code path PROSOCHĒ does
+not ship.
+
+The spike's own words — *"this shortcut does not yet prove on-device pinning, only that the
+action is reached and gated correctly"* — were correct and should have capped the verdict.
+
+### Problem 2 — the observed failure was never identified, and now probably isn't the one claimed
+
+The SE returned *"Support for selected model is downloading."* That is a **provisioning-state**
+message, not an eligibility rejection. The 16e evidence shows the message tracks download
+state: models present → success. So the SE observation is equally consistent with
+
+- **(a)** genuinely ineligible hardware, Shortcuts emitting a generic message, or
+- **(b)** a device that simply had not finished (or begun) provisioning models.
+
+Nothing in the run distinguishes them, and **which one it was decides whether the finding
+generalises at all.** The spike's own record does not even note which iPhone SE generation
+was used — that must be recorded before any re-run.
+
+### Problem 3 — the failure class is wider than "ineligible hardware", which changes the merge risk
+
+This is the consequential part. If the message is about provisioning rather than
+eligibility, then **capable devices fail too**, in an ordinary and common state:
+
+- Apple Intelligence has been on by default on compatible devices since iOS 18.3, but the
+  models are a **~7 GB download** requiring Wi-Fi and power, and are not present on a fresh
+  or freshly-reset device.
+- The user can also simply turn Apple Intelligence off in Settings → Apple Intelligence & Siri.
+
+Under **two forks**, that failure window can only be entered by someone who deliberately
+downloaded Aware. Under **one merged product**, it is entered by a new user on perfectly
+capable hardware, during first-run — which is precisely PROSOCHĒ's most fragile moment and
+the one Phase 20 exists to protect. The merge risk was scoped as "users who answer the
+toggle wrongly on old hardware"; it is actually "any user whose models haven't landed yet."
+
+### What still stands
+
+Unaffected by all of the above, and still device-confirmed:
+
+- The `WFWorkflowImportQuestions` toggle gates the branch correctly in **both** directions.
+- **The ordering discipline held under a real failure**: on the SE the core escalation at
+  action index 3 had already completed before the halt. That is a structural property — core
+  runs first, so *any* downstream halt is contained — and it is now backed by one real
+  observation.
+- `WFFileErrorIfNotFound = false` as the file-existence answer.
+- Save File's one-time OS permission prompt on first write.
+- **No try/catch exists**, now confirmed by an Apple DTS engineer directly:
+  *"there is currently no way to detect an error from an action."* Spike 003's conclusion is
+  reinforced, not weakened.
+
+### What is now unproven, and what would close it
+
+| Open question | Evidence needed |
+|---|---|
+| Does the **On-Device-pinned** `askllm` behave like the unpinned one? | Re-run the gate with `WFLLMModel = "Apple Intelligence on Device"` — the shipped config |
+| Is a genuinely-ineligible-hardware failure a graceful **halt**, or a hang / partial write? | A run on a *known* ineligible device, with the generation recorded, AI state recorded |
+| What happens on **capable hardware with models not yet downloaded**? | A capable device with Apple Intelligence freshly toggled on, run before provisioning completes |
+| What happens with **Apple Intelligence switched off** on capable hardware? | Same device, AI toggled off in Settings |
+
+The last two are the ones that actually matter for the merge, and neither has ever been
+tested. A re-run should also record, for every device: model, iOS version, whether
+Apple Intelligence is enabled, and whether model download had completed.
+
+### Sources consulted for this reassessment
+
+- [Apple Developer Forums — "Use Model" error handling](https://developer.apple.com/forums/thread/813757)
+  (Apple DTS: no way to detect an action error)
+- [MacStories — Apple's updated Foundation Models and the Use Model action](https://www.macstories.net/notes/i-have-many-questions-about-apples-updated-foundation-models-and-the-great-use-model-action-in-shortcuts/)
+  (three model sources; no documented default)
+- [Apple Support — How to get Apple Intelligence](https://support.apple.com/en-us/121115)
+- [The Register — Apple Intelligence on by default from iOS 18.3](https://www.theregister.com/2025/01/22/apple_intelligence_enabled/)
+- [MacRumors — iPhone 16e, A18, Apple Intelligence](https://www.macrumors.com/2025/02/19/apple-announces-iphone-16e/) and
+  [GSMArena — iPhone 16e 8 GB RAM](https://m.gsmarena.com/iphone_16e_appears_on_geekbench_with_8gb_ram_-news-66653.php)

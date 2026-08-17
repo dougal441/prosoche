@@ -927,11 +927,16 @@ generator design bear on it directly:
   no other `WFDeviceDetail` case (all 12 confirmed) disambiguates hardware. Apple's real
   check (`SystemLanguageModel.default.availability`) is a Swift API, unreachable without a
   companion app. Shortcuts has no try/catch, so "attempt and recover" is also closed.
-- **Spike 004 (VALIDATED, on real hardware)** — the merge is safe by **ordering**, not
-  detection. Tested on an iPhone 15 Pro *and* an iPhone SE: with the toggle on ineligible
-  hardware, `Use Model` fails with a graceful native OS error and the core deterministic
-  escalation, ordered first, had already completed. A single artifact with an opt-in
-  import question is buildable.
+- **Spike 004 (PARTIAL — downgraded 2026-08-17, was VALIDATED)** — a single artifact with
+  an opt-in import question **is buildable**, and the toggle gates the branch correctly in
+  both directions on real hardware. But the safety claim is **not** established. The spike's
+  `askllm` omitted `WFLLMModel`, so neither device run exercised the pinned
+  `"Apple Intelligence on Device"` path Sentient actually ships; and the failure it observed
+  ("support for selected model is downloading") is a **provisioning-state** message that
+  cannot distinguish ineligible hardware from a capable device whose ~7 GB of models have
+  not downloaded yet. Owner's iPhone 16e — capable, models present — ran the same shortcut
+  successfully, which is what forced the re-read. What survives: **the ordering property
+  held under one real failure** (core completed before the halt).
 - **Spike 008 (VALIDATED, donor ground truth)** — `WFLLMModel = "Apple Intelligence on
   Device"`. SEED-006's blocker #2 ("the On-Device literal is unrecovered, and in a merged
   world it blocks everyone") is closed.
@@ -951,23 +956,47 @@ generator design bear on it directly:
    artifact both paths live in one graph, which makes the "additive, non-mutating wrap"
    claim harder to assert. `docs/sentient_core_check.py` and the shared build guards are
    the existing lever; decide what replaces the fork-skew check when there is no fork.
-3. **Audit the Aware block's ordering against spike 004's fail-safe.** The audit block is
-   inserted immediately *before* `persist_contract()`'s reload-and-save, so a `Use Model`
-   halt there costs the contract write. The core arithmetic save
-   (`build_state_engine.py:1116`) happens earlier in `open_pipeline()`, so the core loop
-   looks protected — **confirm this on device before merging**, because under two forks
-   only opt-in capable users could ever reach that halt, and under one product any user who
-   answers the toggle wrongly can.
-4. **If the answer is TWO products: make the choice trivial.** The user's own framing —
-   *a list of iPhone models, classified by a rule.* The rule from spike 003's research:
-   **A17 Pro or A18-class chip and ≥8 GB RAM** → iPhone 15 Pro, 15 Pro Max, and the entire
-   iPhone 16 and later family. Note the trap that makes a bare rule insufficient: the plain
-   **iPhone 15 / 15 Plus do NOT qualify** (A16, 6 GB) despite the shared generation and
-   identical iOS. So the deliverable is an explicit **model list**, not a chip rule the user
-   has to apply. Include the one-tap self-check the user *can* perform (Settings → Apple
-   Intelligence & Siri present, or `Use Model` greyed out in the Shortcuts editor per
-   Apple's support docs).
-5. **If the answer is ONE product:** SEED-005 (re-fork/rebuild Aware) is a hard prerequisite
+3. **Re-run the capability gate properly — this is the phase's gating experiment.** Spike
+   004's downgrade leaves the merge's entire safety argument untested. Rebuild the gate with
+   `WFLLMModel = "Apple Intelligence on Device"` (the shipped config, which spike 004 never
+   used) and run it across four states, recording device model, iOS version, whether Apple
+   Intelligence is enabled, and whether model download has completed:
+
+   | State | Device | Why it matters |
+   |---|---|---|
+   | Capable, models downloaded | iPhone 16e / 15 Pro | Known-good baseline |
+   | Capable, **models still downloading** | freshly-enabled capable device | **The merge's real risk** — new user at first run |
+   | Capable, **Apple Intelligence switched off** | same device, toggled off | Ordinary user state, never tested |
+   | Genuinely ineligible | a *recorded* SE / pre-15-Pro model | The case spike 004 claimed but did not establish |
+
+   The question in every case is the same: is the failure a **graceful halt** (contained by
+   ordering) or a hang / partial write? If any state hangs or writes partial state, the
+   merge is off on safety grounds alone.
+
+4. **Audit the Aware block's ordering against the fail-safe.** The audit block is inserted
+   immediately *before* `persist_contract()`'s reload-and-save, so a `Use Model` halt there
+   costs the contract write. The core arithmetic save (`build_state_engine.py:1116`) happens
+   earlier in `open_pipeline()`, so the core loop looks protected — confirm on device. Note
+   the reframed exposure: under two forks only a deliberate Aware downloader reaches that
+   halt; under one product **a new user on fully capable hardware reaches it whenever the
+   models haven't landed yet.**
+
+5. **If the answer is TWO products: make the choice trivial.** The user's own framing —
+   *a list of iPhone models, classified by a rule.* The rule: **A17 Pro or A18-class chip
+   and ≥8 GB RAM** → iPhone 15 Pro, 15 Pro Max, the iPhone 16 family **including the 16e**
+   (A18, 8 GB — owner-confirmed working), and everything since. The trap that makes a bare
+   rule insufficient: the plain **iPhone 15 / 15 Plus do NOT qualify** (A16, 6 GB) despite
+   the shared generation and identical iOS. So the deliverable is an explicit **model list**,
+   not a chip rule the user has to apply — verified against Apple's own current support page
+   at the time of writing, not against this roadmap entry.
+
+   **Better than a model list: the self-check the user can actually perform.** The 16e
+   evidence shows `Use Model` success tracks whether the models are *present*, not merely
+   whether the chip qualifies. So the honest instruction is a state check, not a hardware
+   lookup: *open Settings → Apple Intelligence & Siri; if it exists and has finished setting
+   up, choose Aware.* That covers the ineligible-hardware case and the
+   capable-but-not-provisioned case with one instruction, which a model list cannot do.
+6. **If the answer is ONE product:** SEED-005 (re-fork/rebuild Aware) is a hard prerequisite
    — merging a stale Aware would fold known-broken code into the artifact everyone gets.
    Then: onboarding import-question wording, fork-aware build-guard rework, and a **full
    re-run of the device-UAT set in both AI-on and AI-off modes** — a merged build inherits
