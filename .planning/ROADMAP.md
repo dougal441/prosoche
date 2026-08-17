@@ -458,7 +458,7 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 **Severity:** major
 **Requirements**: AUDIT-02, CIRC-02, CIRC-06, CIRC-08, ROOM-01, ROOM-02, DIST-01, DIST-02
 **Depends on:** Phase 10
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans executed
 
 Plans:
 **Wave 1**
@@ -483,7 +483,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 11-06-PLAN.md — Dumb→Core / Sentient→Aware rename, Aware-side note divergence, ship and decrypt-verify (wave 6)
+- [x] 11-06-PLAN.md — Dumb→Core / Sentient→Aware rename, Aware-side note divergence, ship and decrypt-verify (wave 6)
 
 ### Phase 12: State-shape sentinel gaps — exit_events and active_session
 
@@ -1058,10 +1058,12 @@ are already load-bearing and easy to get wrong:
   Counting silent-band opens as interruptions would inflate the headline number and turn
   the receipt into the self-congratulatory telemetry §29's voice forbids. Define it against
   what the user actually saw.
+
 - **"Most effective exit"** needs an effectiveness definition and a confidence floor.
   `select_exit()` already exploits lowest average return-time and already refuses to exploit
   below `exits.exploit_min_observations` (10). Reuse that threshold: do not name a winner
   from two samples.
+
 - **"Contracts kept"** already exists as contract outcome feeding Heat — confirm it is
   recorded losslessly enough to report as a ratio, not just as a Heat delta.
 
