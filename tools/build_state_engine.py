@@ -883,7 +883,16 @@ def route_exit(choice_name: str):
         a += [otherwise(group), action("is.workflow.actions.nothing"), end_if(group)]
     create_group, create = if_block(choice_name, 4, string="Create")
     a += [create] + read_value("profile_snapshot.create_target_url", variable("Reloaded State"), "Create Target URL")
-    target_group, target = if_block("Create Target URL", 100)
+    # PHASE 12 (12-04), Task 1 checkpoint option-a: this gate tests a STATE READ, whose
+    # unset representation is the CLEARED_SENTINEL (seed_create_target_url()) -- condition
+    # 100 ("has any value") reads TRUE for the sentinel, which would openurl the literal
+    # string "null" on a clean install's first Create exit. Condition 5 ("string is not"
+    # CLEARED_SENTINEL) is this project's standard set/unset gate for a sentinel-seeded
+    # leaf, the same idiom complete_pending_exit() uses for pending_exit.type. Do NOT
+    # "harmonise" this with the second gate below: that one tests the Ask action's
+    # Provided Input, a TRANSIENT USER INPUT whose unset representation is genuinely
+    # empty, so has-any-value (100) is the correct test there.
+    target_group, target = if_block("Create Target URL", 5, string=CLEARED_SENTINEL)
     a += [target, action("is.workflow.actions.openurl", WFInput=variable("Create Target URL")), otherwise(target_group)]
     ask_id = uid()
     a += [action("is.workflow.actions.ask", UUID=ask_id, WFAskActionPrompt="Where should Create open?", WFInputType="URL"),
@@ -3023,6 +3032,62 @@ def verify_active_session_seed(actions):
             "the same rule clear_snapshot()'s docstring records)")
 
 
+# PHASE 12 (12-04) -- the third key nobody named. route_exit()'s Create branch reads
+# profile_snapshot.create_target_url as a DOTTED key from Reloaded State; profile_snapshot
+# itself is seeded (goal, phone_purpose, reclaim_for, deliberate_leisure_definition,
+# enabled_exits, synced_at, note_content_hash), but this one leaf was not, so a clean
+# install's first Create exit hard-errors at that read -- AFTER exit_events, both
+# pending_exit leaves and exit_selection_counter have already been written and
+# save_state("Reloaded State") has already run. Same defect class as pending_exit and
+# active_session (T-12-18).
+#
+# CHECKPOINT DECISION (Task 1, resolved option-a, recorded at
+# .planning/phases/12-state-shape-sentinel-gaps-exit-events-and-active-session/
+# .create-target-url-option): sentinel seed plus a condition-5 leaf gate. This is the only
+# option that introduces zero unsettled runtime semantics -- a dotted read of an existing
+# string leaf and a condition-5 ("string is not" CLEARED_SENTINEL) gate are both already
+# device-verified in this repository (pending_exit.type / complete_pending_exit()'s own
+# gate). Option B (JSON null, gate left at condition 100) would bet the Create route on an
+# untested claim -- that read_value() of a JSON-null leaf yields no-value under a
+# has-any-value test -- that nothing in this repository settles (T-12-19).
+CREATE_TARGET_URL_SEED = CLEARED_SENTINEL
+# The literal template line this seeder inserts BEFORE, not replaces: profile_snapshot's
+# final key, carrying no trailing comma. Inserting before it (rather than after) keeps
+# note_content_hash the trailing comma-less final key, so the object stays valid JSON
+# without a second edit to add or remove a comma.
+CREATE_TARGET_URL_ANCHOR = '"note_content_hash": null'
+
+
+def seed_create_target_url(actions):
+    """Establish profile_snapshot.create_target_url as a sentinel-seeded leaf in bootstrap.
+
+    MECHANISM: insert-before-anchor, seed_panic_escape()'s mechanics -- the template is
+    located by content (_state_template() anchors on '"schema_version"', never an index),
+    the idempotency guard is the collision-free token '"create_target_url"', indent is
+    derived from the anchor line rather than hard-coded, and the edit goes through
+    _replace_in_token(), never str.replace -- it shifts every attachmentsByRange offset
+    that sits after the edit and re-asserts each still lands on a U+FFFC placeholder
+    (.claude/CLAUDE.md §5: an out-of-bounds range can crash Shortcuts on import).
+
+    WHAT IT PREVENTS: route_exit()'s Create branch's dotted read of
+    profile_snapshot.create_target_url from Reloaded State hard-errors ("could not
+    evaluate the key path") on a clean install's first Create exit -- see the note above
+    this constant block for the full trace (T-12-18).
+
+    Idempotent: a second run finds '"create_target_url"' already in the template and
+    returns; Task 3's generalised verify_state_seed() re-proves the shape either way -- no
+    fourth verify_*_seed pair is written for this single key, which is precisely the
+    leverage the generalisation buys.
+    """
+    _, inner = _state_template(actions)
+    if '"create_target_url"' in inner["string"]:
+        return  # already seeded; verify_state_seed()'s generalised scan proves the shape
+    line = next(text for text in inner["string"].splitlines() if CREATE_TARGET_URL_ANCHOR in text)
+    indent = line[:len(line) - len(line.lstrip())]
+    _replace_in_token(inner, CREATE_TARGET_URL_ANCHOR,
+                      f'"create_target_url": "{CREATE_TARGET_URL_SEED}",\n{indent}{CREATE_TARGET_URL_ANCHOR}')
+
+
 # ---------------------------------------------------------------------------
 # CYCLE 12 -- GATE SEMANTICS, the seventh axis.  Axis 6 (STATE SHAPE) asserted that every
 # key a read reaches EXISTS.  This asserts that the GATE standing over it can actually
@@ -4002,6 +4067,7 @@ def main():
     seed_panic_escape(actions)
     seed_exit_events(actions)
     seed_active_session(actions)
+    seed_create_target_url(actions)
     fix_state_rebind(actions)
     fix_date_format_key(actions)
     fix_shownote_key(actions)

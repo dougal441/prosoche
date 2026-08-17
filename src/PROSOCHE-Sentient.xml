@@ -1533,6 +1533,7 @@ Guard against empty fields before reading anything nested inside them. Six field
     "deliberate_leisure_definition": "",
     "enabled_exits": ["Capture", "Coordinate", "Create", "Connect", "Consult", "Close"],
     "synced_at": "￼",
+    "create_target_url": "null",
     "note_content_hash": null
   },
   "last_model_message": null
@@ -17095,7 +17096,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>5</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -17113,6 +17114,8 @@ Continue: you go into the app, after this Circle's intervention.</string>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFConditionalActionString</key>
+				<string>null</string>
 			</dict>
 		</dict>
 		<dict>
@@ -19938,7 +19941,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>5</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -19956,6 +19959,8 @@ Continue: you go into the app, after this Circle's intervention.</string>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFConditionalActionString</key>
+				<string>null</string>
 			</dict>
 		</dict>
 		<dict>
