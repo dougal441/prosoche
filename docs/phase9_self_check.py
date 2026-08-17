@@ -33,6 +33,33 @@ Dim Target is read_value()-sourced (Text) so every one of the 15 is coerced,
 while Silence Target is number()-sourced (already Number-typed) so all 11 stay
 deliberately uncoerced and the coerced volume count remains 4, not 5.
 Both numbers here were MEASURED against the rebuilt forks, not projected.
+
+PHASE 16 (plan 16-01) added capture_persistence_negative_control(), which proves
+bse.verify_capture_persistence() load-bearing.  That guard closes the phase's P0:
+dimming()/silence() captured the device's current brightness/volume into the
+`State` dictionary and then changed the device, but `State` is never saved again
+after the OPEN arm, so the capture never reached state.json -- every restore gate
+read the cleared sentinel and skipped, and nothing in the product un-dimmed the
+screen.  The fix puts one save_state() inside each APPLYING arm, before the write.
+
+THE NEW CONTROL'S POLARITY IS INVERTED RELATIVE TO negative_control() ABOVE, and
+that is deliberate rather than a copy that drifted.  negative_control() removes a
+TABLE ENTRY, so its pre-fix phase asserts the guard must NOT raise (the site was
+invisible).  capture_persistence_negative_control() removes an ACTION PAIR from
+the emitted artifact, so its pre-fix phase asserts the guard MUST raise (the
+defect is present and visible).  Read the phase comments, not the shape.
+
+THE SITE COUNTS DID NOT MOVE, and a reader who expected them to needs the reason.
+The persistence fix adds only is.workflow.actions.setitemname and
+is.workflow.actions.documentpicker.save actions -- 22 of each pair per fork, one
+per applying arm across 11 dimming() and 11 silence() renderings, so +44 actions
+per fork (Dumb 4346 -> 4390, Sentient 4414 -> 4458).  It adds no setbrightness,
+no setvolume and no getdevicedetails action, and it changes no operand's source
+or coercion.  So site_audit()'s expected_counts (15/15) and expected_coerced
+(15/4) are unchanged, and so is environmental_restore_check.py's EXPECTED_SITES.
+That non-movement was MEASURED against the rebuilt forks after the fix, not
+assumed: a move in any of those numbers would have been a regression introduced
+by this phase, not a table that needed updating.
 """
 from __future__ import annotations
 
@@ -108,6 +135,80 @@ def negative_control() -> None:
     print("negative_control: passed")
 
 
+def _strip_persisting_save(actions):
+    """A deep copy of `actions` with the PHASE 16 persisting save pair removed.
+
+    Located BY CONTENT, never by index: the pair is the setitemname whose WFName is the
+    state filename immediately followed by the documentpicker.save that consumes it, sitting
+    immediately before a setbrightness/setvolume.  Every action index recorded in this
+    phase's research is a measurement, and the fix that this control exists to test moved
+    all of them -- an index-keyed fixture would silently stop reproducing the defect.
+
+    Returns (pre_fix_actions, removed_pair_count).  A zero count means the fixture did not
+    reproduce anything and the caller must treat that as a failure, not as a pass.
+    """
+    pre_fix = copy.deepcopy(actions)
+    removed = 0
+    for index in range(len(pre_fix) - 1, -1, -1):
+        item = pre_fix[index]
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.documentpicker.save":
+            continue
+        if index + 1 >= len(pre_fix) or index == 0:
+            continue
+        applies = pre_fix[index + 1].get("WFWorkflowActionIdentifier") in {
+            "is.workflow.actions.setbrightness", "is.workflow.actions.setvolume"}
+        namer = pre_fix[index - 1]
+        names_state = (namer.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setitemname"
+                       and namer.get("WFWorkflowActionParameters", {}).get("WFName") == "state.json")
+        if applies and names_state:
+            del pre_fix[index - 1:index + 1]
+            removed += 1
+    return pre_fix, removed
+
+
+def capture_persistence_negative_control() -> None:
+    """Prove bse.verify_capture_persistence() raises when the persisting save is removed.
+
+    Built from the REAL generator helpers -- bse.dimming() and bse.silence() are called
+    directly and their output IS the post-fix fixture, so this control can never drift from
+    what the generator actually emits.  It calls the REAL production guard; a
+    re-implementation here would prove only that this file agrees with itself.
+
+    POLARITY: inverted relative to negative_control() above.  See the module docstring --
+    that control removes a table entry and asserts the guard stays silent; this one removes
+    the emitted save pair, which is the defect itself, and asserts the guard fires.
+    """
+    for name, primitive in (("dimming", bse.dimming), ("silence", bse.silence)):
+        post_fix = primitive()
+        pre_fix, removed = _strip_persisting_save(post_fix)
+        assert removed == 1, (
+            f"{name}(): expected to strip exactly one state.json save immediately preceding "
+            f"a brightness/volume apply, stripped {removed} -- the fixture no longer "
+            f"reproduces the pre-fix defect, so it cannot prove the guard is load-bearing")
+
+        # Pre-fix state: the capture is written and the device is changed with nothing
+        # persisted in between. The guard MUST raise.
+        raised = False
+        try:
+            bse.verify_capture_persistence(pre_fix)
+        except SystemExit:
+            raised = True
+        assert raised, (
+            f"verify_capture_persistence() did NOT raise against {name}() with the "
+            f"persisting save removed -- the negative control does not reproduce the P0 "
+            f"(a capture written only into the State variable, then an apply), so it "
+            f"cannot prove the guard is load-bearing")
+
+        # Post-fix state: the real generator output. The same guard must stay silent.
+        try:
+            bse.verify_capture_persistence(copy.deepcopy(post_fix))
+        except SystemExit as failure:
+            raise AssertionError(
+                f"verify_capture_persistence() raised against the REAL {name}() output -- "
+                f"the fix and the guard disagree about where the save belongs: {failure}")
+    print("capture_persistence_negative_control: passed")
+
+
 def site_audit() -> None:
     # Derivation, measured after PHASE 11's eleventh primitive_dispatch() rendering
     # (see this module's docstring for why there are eleven):
@@ -153,6 +254,7 @@ def site_audit() -> None:
 
 def main() -> None:
     negative_control()
+    capture_persistence_negative_control()
     site_audit()
     print("phase9 self-check: passed")
 
