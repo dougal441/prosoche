@@ -49,8 +49,8 @@ MANIFEST = ROOT / "artifacts/shortcuts/MANIFEST.md"
 # The two canonical display names, from which the only two acceptable signed basenames
 # follow.  DIST-04: the signed filename must equal the intended library name exactly.
 DISPLAY_NAMES = [
-    "PROSOCHĒ — Nine Circles — Dumb",
-    "PROSOCHĒ — Nine Circles — Sentient",
+    "PROSOCHĒ — Nine Circles — Core",
+    "PROSOCHĒ — Nine Circles — Aware",
 ]
 SIGNED_BASENAMES = {f"{name}.shortcut" for name in DISPLAY_NAMES}
 

@@ -9,6 +9,7 @@ import tempfile
 import uuid
 from pathlib import Path
 
+from plist_text_edit import find_action, replace_in_token
 from build_state_engine import (
     normalise_numeric_operands,
     normalise_output_names,
@@ -29,6 +30,13 @@ SOURCE = Path("src/PROSOCHE-Dumb.xml")
 TARGET = Path("src/PROSOCHE-Sentient.xml")
 MODEL = "Apple Intelligence on Device"  # direct device-export evidence
 MARKER = "--- SENTIENT CONTRACT AUDIT ---"
+
+# The two canonical display names, phase 11 plan 06.  The source FILENAMES deliberately
+# still read `Dumb`/`Sentient`: renaming them is pure churn across ten code files and some
+# seventy planning documents, it breaks every historical plan's reproducibility, and the
+# addendum renames the PRODUCTS, not the sources.  `docs/BUILD-NOTES.md` §25 records that.
+CORE_NAME = "PROSOCHĒ — Nine Circles — Core"
+AWARE_NAME = "PROSOCHĒ — Nine Circles — Aware"
 
 
 def uid(name: str) -> str:
@@ -166,6 +174,79 @@ def audit_block():
     ]
 
 
+def token_string(item):
+    """The `{string, attachmentsByRange}` body of a `WFTextActionText` token, or None.
+
+    The bootstrap seed and the Note body are both `WFTextTokenString` DICTS, not plain
+    `str` -- the opposite envelope from the Config literal, which is a bare string with no
+    placeholders at all.  A plain-`str` filter here would silently match neither.
+    """
+    value = item.get("WFWorkflowActionParameters", {}).get("WFTextActionText")
+    if isinstance(value, dict):
+        body = value.get("Value", value)
+        if isinstance(body, dict) and isinstance(body.get("string"), str):
+            return body
+    return None
+
+
+def fix_fork_strings(actions) -> None:
+    """The FIRST deliberate content divergence between the two forks (phase 11 plan 06).
+
+    Until this function existed, `build_sentient.py` made exactly three kinds of change to
+    the forked source -- icon and import question, `WFWorkflowName`, and the audit-block
+    insertion -- and touched neither the Note body nor the `"fork"` seed.  The measured
+    consequence: the Aware fork's Control Room Note instructed its users to select the
+    OTHER fork's shortcut, in BOTH automation steps, and reported the other fork's label in
+    its settings block.  A signed `.shortcut` carries no display name inside it, so the
+    filename is the library entry's name and the user's two Personal Automations reference
+    it by that name -- an Aware build whose Note names the Core shortcut is a SILENTLY DEAD
+    INSTALL for every Aware user.  Fixing it therefore cannot be deferred to copy review.
+
+    Three sites, each with an expected occurrence count, because a partial rename validates,
+    signs and imports cleanly and is still wrong:
+
+      * the Note body's two Run Shortcut targets (Automation A step 10, Automation B step 10);
+      * the Note's settings-block fork label;
+      * the `"fork"` value in the bootstrap `state.json` template.
+
+    The Note TITLE is deliberately NOT touched: both forks create a Note with the same title
+    on purpose, which is pre-existing and outside this plan.  It is out of reach by
+    construction -- this function only ever edits `WFTextActionText` token strings, and the
+    title lives in the Create Note action's `name` parameter.
+
+    Every edit goes through `tools/plist_text_edit.py`'s offset-recomputing replacement
+    rather than a second hand-rolled substitution.  `Core` -> `Aware` is one character
+    LONGER and sits upstream of every attachment in both edited strings, so all of their
+    `attachmentsByRange` offsets move; an out-of-bounds range can crash Shortcuts on import.
+
+    Runs BEFORE the `normalise_*` / `verify_*` chain so the rewritten token strings pass
+    through the same envelope, output-name and offset guards as everything else.
+    """
+    note = find_action(
+        actions,
+        lambda a: (b := token_string(a)) is not None and "## READ THIS FIRST" in b["string"])
+    seed = find_action(
+        actions,
+        lambda a: (b := token_string(a)) is not None and '"schema_version"' in b["string"])
+    edits = (
+        (token_string(note), CORE_NAME, AWARE_NAME, 2, "the Note's two Run Shortcut targets"),
+        (token_string(note), "- Fork: Core", "- Fork: Aware", 1, "the Note's settings-block fork label"),
+        (token_string(seed), '"fork": "Core"', '"fork": "Aware"', 1, "the bootstrap state.json fork seed"),
+    )
+    for body, old, new, expected, description in edits:
+        try:
+            replace_in_token(body, old, new, expected_count=expected)
+        except SystemExit as failure:
+            raise SystemExit(
+                f"fix_fork_strings could not rewrite {description}: {failure}\n"
+                f"CONSEQUENCE: this Aware build would ship a Control Room Note naming the "
+                f"Core shortcut. The signed filename is the only carrier of a shortcut's "
+                f"display name, so a user following that Note builds two Personal "
+                f"Automations pointing at a shortcut that does not exist under these names "
+                f"-- a silently dead install for every Aware user, with no error on device "
+                f"and nothing any structural check downstream of here can see.") from failure
+
+
 def main() -> None:
     original = SOURCE.read_bytes()
     root = plistlib.loads(original)
@@ -179,7 +260,7 @@ def main() -> None:
     root["WFWorkflowImportQuestions"].append({"ActionIndex": 6, "Category": "Parameter", "DefaultValue": "yes",
                                                "ParameterKey": "WFTextActionText",
                                                "Text": "Use Apple's on-device intelligence contract audit when available? Answer yes or no."})
-    root["WFWorkflowName"] = "PROSOCHĒ — Nine Circles — Sentient"
+    root["WFWorkflowName"] = AWARE_NAME
     root["WFWorkflowIcon"] = {"WFWorkflowIconGlyphNumber": 59856, "WFWorkflowIconStartColor": 431817727}
     for index, item in enumerate(actions):
         value = item.get("WFWorkflowActionParameters", {}).get("WFCommentActionText", "")
@@ -188,6 +269,11 @@ def main() -> None:
             break
     else:
         raise SystemExit("semantic Confession contract marker not found")
+    # Phase 11 plan 06.  The fork's own name, in its own Note and its own state seed.  This
+    # runs BEFORE the normalise/verify chain so the rewritten token strings are guarded like
+    # every other string in the file, and it mutates the forked COPY only -- the frozen-source
+    # assertion at the end of main() proves src/PROSOCHE-Dumb.xml was not touched.
+    fix_fork_strings(actions)
     # Sentient-only actions are inserted after the Dumb generator has already run, so
     # they never passed its string-envelope pass.  Reuse the same rule and the same
     # build guard rather than duplicating the allowlist: a string-typed parameter
