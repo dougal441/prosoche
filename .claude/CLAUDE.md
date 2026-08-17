@@ -348,8 +348,6 @@ A probe's result is **recorded, not consumed**: into `docs/BUILD-NOTES.md`'s dev
 
 <!-- GSD:stack-end -->
 
-<!-- GSD:conventions-start source:CONVENTIONS.md -->
-
 ## Conventions
 
 ### Generator authoring rules — the seven parameter-defect axes
@@ -465,7 +463,6 @@ verify what actually shipped rather than trusting the unsigned source plus a fil
 - **Fix whole classes, never site-by-site.** Bisection only ever reveals the earliest
   remaining site, so incremental fixing costs one device round trip per site. Every defect
   found this session was systematic: 147, 367, 25, 20 and 8 sites respectively.
-<!-- GSD:conventions-end -->
 
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
 
