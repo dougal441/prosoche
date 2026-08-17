@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 13
-current_phase_name: Red-operator conditionals and the WFItems List wrapper
+current_phase: 16
+current_phase_name: Dimming and Silence as distinct device-proven Circles
 status: verification-deferred
 stopped_at: Phase 13 executed + code-reviewed + gap-closed; verification human_needed (25/27, 0 failed) — deferred to /gsd-verify-work 13, device-blocked (DIST-03). Phase 12 likewise deferred.
-last_updated: "2026-08-17T08:08:52.852Z"
-last_activity: 2026-08-17
-last_activity_desc: Phase 13 complete pending device UAT — code review found and fixed CR-01; both verification gaps closed
+last_updated: "2026-08-17T22:15:05.986Z"
+last_activity: 2026-08-18
+last_activity_desc: Phase 16 execution started
 progress:
   total_phases: 24
-  completed_phases: 9
-  total_plans: 46
-  completed_plans: 38
+  completed_phases: 10
+  total_plans: 52
+  completed_plans: 42
 ---
 
 # Project State
@@ -23,11 +23,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 13 — Red-operator conditionals and the WFItems List wrapper
+**Current focus:** Phase 16 — Dimming and Silence as distinct device-proven Circles
 
 ## Current Position
 
-Phase: 13 (Red-operator conditionals and the WFItems List wrapper) — VERIFICATION DEFERRED (device-blocked)
+Phase: 16 (Dimming and Silence as distinct device-proven Circles) — EXECUTING
 Plans: 4/4 complete; verifier 25/27, 0 failed; the 2 outstanding are device-gated and abstained
 
 **Phase 13 research rewrote the phase.** Donor 5 was decrypted for the first time and
@@ -83,7 +83,7 @@ untested path in the product), Phase 4 UAT tests 1 and 3-6, Phase 8's real-iPhon
 Phase 19's full nine-Circle sweep. Report the opens-to-first-interruption count from
 `10-UAT.md` Test 2 — it decides whether Phase 10's raised entry thresholds need tuning.
 
-Last activity: 2026-08-17 — Phase 13 executed, code-reviewed, gap-closed; awaiting device UAT
+Last activity: 2026-08-18 — Phase 16 execution started
 
 Progress: [██████████] 100%
 
