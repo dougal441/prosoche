@@ -522,11 +522,15 @@ session, so treat it as new-risk surface.
 **Severity:** major
 **Requirements**: SESS-07, STATE-12, EXIT-01, EXIT-02, SAFE-01
 **Depends on:** Phase 11
-**Plans:** 0 plans
+**Plans:** 5 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 12 to break down)
+- [ ] 12-01-PLAN.md — Tracer: seed `exit_events` + `exit_selection_counter`, guard them, bump schema 3→4, arm on both forks
+- [ ] 12-02-PLAN.md — Seed `active_session` as a permanent four-leaf container and guard it
+- [ ] 12-03-PLAN.md — Convert every `active_session` gate/write/clear to leaf semantics; empty `KNOWN_SENTINEL_EXISTENCE_GATES`
+- [ ] 12-04-PLAN.md — Decide and close `profile_snapshot.create_target_url`; generalise `verify_state_seed()` to every state read
+- [ ] 12-05-PLAN.md — Sign both forks, refresh MANIFEST, gate B advisory read, `12-UAT.md` device exit-path test
 
 ### Phase 13: Red-operator conditionals and the WFItems List wrapper
 
