@@ -98,7 +98,44 @@ note: "Device, 2026-08-17 11:16-11:28, Core b07497ba, clean install (iCloud Shor
   OPEN QUESTION, and the thing to test next: does is.workflow.actions.filter.notes match notes
   in Recently Deleted? If yes, any user who deletes the Note without purging lands in the broken
   state. Full analysis and the experiment that settles it:
-  .planning/todos/pending/2026-08-17-note-entity-chooser-on-clean-install.md"
+  .planning/todos/pending/2026-08-17-note-entity-chooser-on-clean-install.md
+  SECOND CORRECTION (2026-08-18, fresh install, everything wiped, Recently Deleted purged):
+  `Open Control Room` was chosen as the VERY FIRST action, before Status or anything else. The
+  PROSOCHĒ Note WAS created and fully populated (READ THIS FIRST + setup instructions) — AND the
+  stray Note chooser appeared ANYWAY, this time with PROSOCHĒ itself as the first row. So BOTH
+  standing hypotheses are refuted: it is not caused by choosing Status first (the user's
+  hypothesis), and it is not caused by the Note being absent (mine). Selecting PROSOCHĒ from the
+  chooser let the run finish and the Note opened correctly.
+  On the NEXT run of the same build, no chooser appeared at all. Intermittent, and the ordering
+  (create -> chooser) points at a RACE: a freshly created Note is not yet returned by
+  filter.notes, so a same-run re-resolve finds nothing and iOS falls back to asking. That is the
+  hypothesis to test next, and it is testable without a device by inspecting whether the created
+  note's output is reused or re-queried.
+  Test 2 therefore remains FAIL — a stray picker over every user note does appear — but the
+  trigger is narrower and more intermittent than first recorded."
+
+### 2b. NEW FINDING — an Ask for Input with no prompt text
+expected: not covered by any existing test; recorded here because it was observed on the
+  Open Control Room path.
+result: fail
+severity: minor
+note: "Device, 2026-08-18, fresh install. Immediately after selecting the Note from the stray
+  chooser, a text-entry sheet appeared with Cancel/Done and a bare placeholder reading `Text`,
+  and NO prompt text above it. A user has no way to know what is being asked for. Zoomed and
+  confirmed the prompt area is genuinely empty rather than merely truncated. Cancelled rather
+  than submitting arbitrary text; the run still completed and the Note opened correctly.
+  NOT an axis-2 Ask defect — that first reading was checked and REFUTED. All 26
+  is.workflow.actions.ask sites in the decrypted artifact carry a non-empty WFAskActionPrompt
+  ('Where should Create open?', 'What are you trying to find?', 'What are you reaching for?
+  (optional)', 'How many minutes?'). None is blank, so this sheet is not an Ask action.
+  BETTER EXPLANATION, and it unifies this with Test 2's chooser: both are iOS AppIntent
+  PARAMETER-RESOLUTION prompts against the same unresolved `appendnote`. iOS asks the user to
+  supply whatever an AppIntent parameter could not resolve — first the `entity` (presented as the
+  'Note' chooser), then the `text` (presented as a bare box whose placeholder is literally the
+  parameter's name, 'Text'). One root cause, two prompts, in parameter order.
+  That reading also explains why the sheet was tinted like Notes and why it appeared immediately
+  after the chooser was answered. Records this as ONE defect with two surfaces rather than two
+  independent ones — which matters, because fixing the note resolution should remove both."
 
 ### 3. Sync My Profile extracts correctly and stays scoped
 expected: extracts the `MY PHONE, ON PURPOSE` section and mirrors it into state.json
@@ -147,9 +184,32 @@ note: "Device, 2026-08-17 11:30 and again 11:33, Core b07497ba. SELECTABLE: yes 
   Circles fail identically is untested and is the first thing to establish on the next run,
   because it separates 'one primitive is broken' from 'the shared dispatch preamble is broken'."
 
-### 7b. NOT covered by this run
-note: "Circles 1-6, 8 and 9 were never exercised. Test 7 above is recorded fail on the strength
-  of Circle 7 alone; it is not evidence about the other eight."
+### 7b. SCOPE — established on a second, fresh install (2026-08-18)
+note: "The device was wiped, the Core artifact re-airdropped and reinstalled, and both
+  automations rebuilt. Circle 7 FAILED AGAIN, identically — third reproduction, and the first
+  two were on a different install. That settles it: the defect is in the SHIPPED ARTIFACT, not
+  an artefact of any editor interaction.
+  Then the other Circles were probed, which is the discriminator Test 7 needed:
+    - Circle 1 · Limbo  -> WORKS. Alert titled `PROSOCHĒ`, body `Circle 1 · pressure 0 · heat 0`
+      — non-empty, with both numeric facts correctly substituted and matching clean state.
+    - Circle 3 · Gluttony -> ran to completion with NO visible alert and no error. Unclassified:
+      consistent with a deliberately silent primitive (Dimming/Silence change no UI) but equally
+      consistent with a silent no-op. Not called either way here.
+    - Circle 7 · Violence -> FAILS, 'Please choose a value for each parameter in this action.'
+    - Circle 9 · Treachery -> WORKS. The device was ejected to the Home Screen, which is the
+      expected Exile/Ice-shaped behaviour (note `is.workflow.actions.lockscreen` appears 0 times
+      in the decrypted artifact, so Home-Screen ejection rather than Lock Screen is what this
+      build actually implements).
+  CONCLUSION, and it is the useful one: the shared dispatch preamble is NOT broken — if it were,
+  Circle 1 and Circle 9 could not fire. The unfilled picker is on the MIRROR primitive
+  specifically, which on the `Classic` sequence is Circle 7. That is a much tighter search area
+  than 'somewhere in 4346 actions'.
+  Still not covered: Circles 2, 4, 5, 6, 8."
+
+### 7c. Consequence for Phase 13
+note: "Because Mirror is precisely the primitive that fails, 13-UAT.md Tests 1 and 2 cannot be
+  answered at all on this build — the alert never renders, so there is no body to judge empty or
+  populated. The WFItems wrapper question is gated behind this axis-4 fix, not refuted by it."
 
 ### 8. Reset Today resets counters without destroying history
 expected: behavioural day's counters reset; historical data (contracts, sessions, etc.) is
