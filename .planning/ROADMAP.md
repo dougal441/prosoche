@@ -548,7 +548,7 @@ session, so treat it as new-risk surface.
 **Severity:** major
 **Requirements**: SESS-07, STATE-12, EXIT-01, EXIT-02, SAFE-01
 **Depends on:** Phase 11
-**Plans:** 2/5 plans executed
+**Plans:** 3/5 plans executed
 
 Plans:
 **Wave 1**
@@ -561,7 +561,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 12-03-PLAN.md — Convert every `active_session` gate/write/clear to leaf semantics; empty `KNOWN_SENTINEL_EXISTENCE_GATES`
+- [x] 12-03-PLAN.md — Convert every `active_session` gate/write/clear to leaf semantics; empty `KNOWN_SENTINEL_EXISTENCE_GATES`
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
