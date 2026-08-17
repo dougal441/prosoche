@@ -66,8 +66,15 @@ decisions.
 - **Build provenance guard:** `git merge-base --is-ancestor 7ca8ebbf... HEAD` must hold before
   running `tools/build_state_engine.py` or `tools/build_sentient.py`.
 - **Definition of done includes signing.** A valid XML draft without a signed `.shortcut` is
-  not a stopping point; signed filenames must equal the exact display names
-  (`PROSOCHĒ — Nine Circles — Dumb.shortcut`, `… — Sentient.shortcut`).
+  not a stopping point; signed filenames must equal the exact display names.
+  **Corrected 2026-08-17 (research finding):** the canonical display names are
+  `PROSOCHĒ — Nine Circles — Core.shortcut` and `PROSOCHĒ — Nine Circles — Aware.shortcut`.
+  Phase 11 renamed the forks from Dumb/Sentient; `.claude/CLAUDE.md` §8 still carries the old
+  names and is stale on this point. Verified at HEAD: `artifacts/shortcuts/` holds exactly
+  `PROSOCHĒ — Nine Circles — Core.shortcut` and `PROSOCHĒ — Nine Circles — Aware.shortcut`,
+  and `docs/manifest_check.py` asserts the canonical names as DIST-04. Signing to
+  Dumb/Sentient would fail that check. Fork *internals* are still built by
+  `tools/build_state_engine.py` (Core) and `tools/build_sentient.py` (Aware).
 - **Fix whole classes, never site-by-site** (`.claude/CLAUDE.md` § Debugging technique).
 - **Guards must be sensitivity-demonstrated** against a synthetically reverted artifact — a
   guard that cannot fail proves nothing.
@@ -91,6 +98,29 @@ Codebase context will be gathered during plan-phase research. Known anchors:
 ## Specific Ideas
 
 No additional requirements beyond the ROADMAP phase description — discuss phase skipped.
+
+**Scope correction (2026-08-17, from `13-RESEARCH.md` — authoritative over the ROADMAP prose
+above, which was written before the donors were decrypted):**
+
+- **Family 1 is refuted, not fixed.** Donor 5 was decrypted for the first time and shows iOS
+  itself authoring exactly the construct the ROADMAP suspected — a variable in a conditional's
+  TEXT slot as a `WFTextTokenString` template, with `WFInput` alongside taking the opposite
+  `WFTextTokenAttachment` envelope. `token()` emits a key-for-key identical shape, so the
+  variable-bearing conditional sites are already correct. The deliverable becomes: record the
+  refutation and add a *pinning* guard so a later pass cannot "fix" a device-confirmed shape.
+  Do not sweep them.
+- **Family 2 is real and far larger than recorded.** Not 2 instances — 66 defective List
+  actions carrying 660 unwrapped rows per fork, all from one function, `mirror_text()`. Only
+  variable-bearing rows take the wrapper; literal rows stay bare strings, so a blanket sweep
+  would corrupt `list_items(EXIT_NAMES, …)`.
+- **Every count in the ROADMAP prose is wrong** (14 conditional sites → 0 defective; 2 List
+  sites → 66). Plan against the measured numbers in RESEARCH.md.
+- **The named concrete site is not a member of the family.** `if_block("Previous Respected", 4, …)`
+  passes a raw literal, never a `token()`.
+- **The cited screenshot does not exist** anywhere in the worktree, the main checkout, or git
+  history. No task may depend on reading it.
+- The ROADMAP phase section should be corrected to match these measurements as part of this
+  phase, so the record does not keep asserting refuted counts.
 
 </specifics>
 
