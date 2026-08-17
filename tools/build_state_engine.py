@@ -685,9 +685,19 @@ def dimming():
     (capture_g) are UNTOUCHED by this change and must stay so -- they are this project's
     input validation over an absent or untrusted Get Device Details reading (T-16-03).
     """
+    # PHASE 16 (16-03): this comment SHIPS.  primitive_dispatch() renders it eleven times
+    # per fork, so its middle bullet was eleven user-visible assertions of a lower limit on
+    # the brightness write -- a limit the same build no longer sets.  D-01 (LOCKED, see
+    # .planning/phases/16-*/16-CONTEXT.md) retires that clause on the main line, superseding
+    # BD-02's original Decision paragraph and the canonical strategy's §21 wording, which are
+    # both retained unmodified as the historical design input.  The bullet now states the
+    # PROPERTY the build actually guarantees -- capture-and-restore -- rather than a softer
+    # limit, because a relocated limit is a safety claim the build still does not make.
+    # The FIRST line is the stable anchor: comment_index() locates comments by prefix and
+    # 16-03's verify anchors on it.  Do not edit it.
     a = [comment("""Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.""")]
     a += read_value("settings_snapshot.brightness", variable("State"), "Brightness Snapshot")
     snapshot_g, snapshot_if = if_block("Brightness Snapshot", 100)
