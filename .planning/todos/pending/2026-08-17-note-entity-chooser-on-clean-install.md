@@ -2,7 +2,7 @@
 created: 2026-08-17T13:25:00.000Z
 title: Manual run on a clean install summons the iOS Note chooser — cycle-16 filter fix shipped but does not hold
 area: general
-severity: major
+severity: blocker
 files:
   - tools/build_state_engine.py:2073
   - tools/build_state_engine.py:4144
@@ -66,6 +66,52 @@ ordering/gating relative to the dereference has not been traced.
 
 The `PROSOCHĒ` note is created only when the user chooses **`Open Control Room`**. So on a clean
 install every other menu item runs against a Note that does not exist yet.
+
+## SEVERITY UPGRADED TO BLOCKER — second observation, same run
+
+Continuing the same clean-install session, **`Open Control Room` was chosen**. Three facts,
+all device-observed:
+
+1. **It opened the WRONG note.** The Notes app opened the user's own note titled
+   `/gsd-phase "Build v2 stakeholder addendum"` — an unrelated personal note. This was the
+   **first row** of the chooser seen minutes earlier on the `Status` path.
+2. **No Control Room Note was created.** Searching all of Notes for `PROSOCH` returns
+   `Notes — None Found` (the single "Top Hit" is that same `/gsd-phase` note, matching on its
+   *body* text `@PROSOCHE_Build_Addendum_01.md`, not on its title). So after explicitly choosing
+   `Open Control Room` — the one menu item the user confirms is responsible for creating it —
+   **no note titled `PROSOCHĒ` exists.**
+3. **The predicate itself is well-formed.** Dumped from the decrypted artifact, the
+   `WFContentItemFilter` is `Operator: 99` (contains), `Property: Name`,
+   `WFActionParameterFilterPrefix: 1` (All), value `WFTextTokenString` `"PROSOCHĒ"` with the
+   correct U+0112 `Ē` and an empty `attachmentsByRange`. Nothing about the filter is malformed.
+
+**Why this is a blocker, not a major.** `filter.notes` returns a note that does not match its
+own predicate, the found-branch is therefore taken, the create-note branch
+(action 4192, `name = 'PROSOCHĒ'`) is **skipped**, and an arbitrary personal note is bound to the
+variable `Control Room Note`. The four `appendnote` sites write to exactly that variable — so any
+state-changing manual run is positioned to **append PROSOCHĒ's state block into a personal
+note**. That is silent user-data corruption, and the user cannot tell it happened.
+
+It also means the entire Control Room surface (§17, §18) does not function on a clean install.
+
+### Revised root-cause candidates, best-supported first
+
+1. **The `AppIntentDescriptor` added by `fix_notes_filter_limit()` re-routes the action through
+   the AppIntent `NoteEntity` query, which ignores the legacy `WFContentItemFilter`.**
+   `WFContentItemLimitNumber = 1.0` then truncates an unfiltered result set to its first row.
+   This predicts precisely what was seen: one note, wrong note, no chooser on that path. It also
+   means **cycle 16 traded a visible chooser for a silently wrong answer** — strictly worse,
+   and exactly the kind of regression a file-level check cannot see.
+2. **Diacritic-insensitive matching.** iOS string comparison is commonly diacritic- and
+   case-insensitive, so `contains "PROSOCHĒ"` may match `PROSOCHE`. Does **not** explain this
+   observation on its own — the matched note's *title* contains neither spelling; only its body
+   does — but it is a real hazard for the `Name` predicate once a `PROSOCHĒ` note does exist,
+   and would make the note identity ambiguous against any note mentioning the project.
+
+Distinguishing 1 from 2 is one device run: create a note titled exactly `PROSOCHĒ` by hand, re-run
+`Open Control Room`, and see whether it is found. If an unrelated note is still returned,
+candidate 1 stands and `docs/note_identity_check.py`'s Operator-99 pin is verifying a predicate
+that is not being consulted.
 
 ## Solution
 
