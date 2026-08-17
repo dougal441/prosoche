@@ -797,9 +797,13 @@ device (Phase 19 owns UAT, and `DIST-03` is already the project's one open Pendi
 | A3 | Bare-string rows remain valid when mixed with wrapped rows in the same array | Pattern 1 | Low — Donor 4/4.1 show exactly this mix in one device-authored array. This is close to VERIFIED; listed here only because our fix produces arrays that are *all* wrapped, a configuration no donor shows. |
 | A4 | Wrapping rows does not change Mirror selection semantics (`getitemfromlist` "Item At Index" over the List output) | Architecture | Medium — if iOS treats a wrapped row differently on extraction, the Mirror text could change shape. Phase 19 UAT must specifically exercise a Mirror. Note `WFItemSpecifier`/`WFItemIndex` are untouched. |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+All three are dispositioned below and carried forward as named flagged assumptions (A1–A4) with
+owners in `13-01`/`13-04` `must_haves`, `13-UAT.md`, and Phase 19. None is silently dropped.
 
 1. **Does wrapping change what `getitemfromlist` returns?**
+   **RESOLVED: proceed now, confirm on device in Phase 19 UAT.**
    - What we know: Donor 4/4.1 show iOS itself producing wrapped rows, so a wrapped List is
      the native shape; `mirror_text()`'s `getitemfromlist` reads `Item At Index` off the List
      output.
@@ -808,6 +812,7 @@ device (Phase 19 owns UAT, and `DIST-03` is already the project's one open Pendi
      one — and add "Mirror renders non-empty text" as an explicit Phase 19 UAT assertion.
 
 2. **What actually caused the 2026-08-14 red operator?**
+   **RESOLVED: closed by refutation — no phase budget spent; Phase 19 UAT observes the live artifact.**
    - What we know: not reproducible at HEAD; the site uses a raw literal with a Text left
      operand and condition 4, which is a valid pairing; no dangling variable reference.
    - What's unclear: whether it was a since-fixed binding, a different site, or a stale
@@ -819,6 +824,7 @@ device (Phase 19 owns UAT, and `DIST-03` is already the project's one open Pendi
      rather than a known artifact") is asking for.
 
 3. **Should the 172/175 raw-literal `WFConditionalActionString` values be `WFTextTokenString`?**
+   **RESOLVED: left unaudited by decision — device-proven working, out of scope, evidence named.**
    - What we know: Donor 5 covers only the *variable-bearing* case. No donor shows a pure
      literal comparison target.
    - What's unclear: whether iOS writes a literal as a bare string or as a

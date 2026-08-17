@@ -45,7 +45,12 @@ must exit 0 before either generator runs.
 ## Sampling Rate
 
 - **After every task commit:** `python3 tools/build_state_engine.py && python3 tools/build_sentient.py`
-- **After every plan wave:** full 12-checker sweep + gate A on both forks
+- **After every plan wave:** full 12-checker sweep + gate A on both forks.
+  **One deliberate exception:** `docs/manifest_check.py` is expected RED in waves 1–3, because
+  rebuilding the forks stales the MANIFEST and the artifacts are only re-signed in 13-04. This is
+  stated as constraint D-04 in every affected plan objective. Do **not** close it by editing
+  MANIFEST rows without re-signing — 13-04 closes it properly. All other 11 checkers must stay
+  green in every wave.
 - **Before `/gsd-verify-work`:** full suite green, gate B showing exactly one waived line per
   fork, signed artifacts regenerated under the canonical display names, MANIFEST refreshed
 - **Max feedback latency:** ~60 seconds
@@ -54,16 +59,24 @@ must exit 0 before either generator runs.
 
 ## Per-Task Verification Map
 
+> Refreshed 2026-08-17 against the four final plans. Plan/wave/requirement columns now match the
+> plans' own frontmatter: 13-01 wave 1 (CIRC-07, CIRC-04, ROOM-03, DIST-01) · 13-02 wave 2
+> (CIRC-07, DIST-01) · 13-03 wave 3 (CIRC-07, CIRC-04, ROOM-03) · 13-04 wave 4 (DIST-01, DIST-02,
+> CIRC-04, ROOM-03). CIRC-04 and ROOM-03 carry **regression-protection** duty in this phase, not
+> new implementation work — neither has a defect site in either family.
+
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 13-01-* | 01 | 1 | CIRC-07 | — | Guard raises `SystemExit` with an actionable message before any write (V7) | structural guard | `python3 tools/build_state_engine.py` (new `verify_list_item_wrappers`) | ❌ W0 | ⬜ pending |
-| 13-01-* | 01 | 1 | CIRC-07 | — | N/A | checker | `python3 docs/sequence_dispatch_check.py` | ✅ | ⬜ pending |
-| 13-02-* | 02 | 1 | CIRC-04 | — | N/A | checker | `python3 docs/phase5_self_check.py` | ✅ | ⬜ pending |
-| 13-02-* | 02 | 1 | ROOM-03 | — | N/A | checker | `python3 docs/note_identity_check.py` | ✅ | ⬜ pending |
-| 13-0*-* | * | 2 | DIST-01 | — | N/A | validator | `validate-shortcut src/PROSOCHE-{Dumb,Sentient}.xml --target-macos 26 --target-platform all` | ✅ | ⬜ pending |
-| 13-0*-* | * | 2 | DIST-02 | — | Canonical signed basenames, no `_signed` suffix | checker | `python3 docs/manifest_check.py` | ✅ | ⬜ pending |
-| 13-0*-* | * | 1 | — (regression) | — | N/A | checker | `python3 docs/phase6_self_check.py` (byte-idempotent rebuild) | ✅ | ⬜ pending |
-| 13-0*-* | * | 1 | — (family 1 pin) | — | N/A | structural guard | extended `verify_conditional_action_string` (positive Donor-5 assertion) | ❌ W0 | ⬜ pending |
+| 13-01-01 | 01 | 1 | CIRC-07 | T-13-* | Guard raises `SystemExit` with an actionable message before any write (V7) | structural guard | `python3 tools/build_state_engine.py` (new `verify_list_item_wrappers`) | ❌ W0 | ⬜ pending |
+| 13-01-02 | 01 | 1 | CIRC-07 | T-13-* | Revert/restore leaves a byte-identical digest (V12) | sensitivity demo | direct-call + full-build revert on both generators, `git checkout --` restore | ❌ W0 | ⬜ pending |
+| 13-01-* | 01 | 1 | CIRC-04, ROOM-03 (regression) | — | N/A | checker | `python3 docs/phase5_self_check.py`; `python3 docs/note_identity_check.py` | ✅ | ⬜ pending |
+| 13-01-* | 01 | 1 | DIST-01 | — | N/A | validator | gate A on both source XMLs | ✅ | ⬜ pending |
+| 13-02-01 | 02 | 2 | CIRC-07 | T-13-08 | N/A | source assertion | AST byte-equality of `token()` / `if_block()` bodies vs the phase-start blob | ✅ | ⬜ pending |
+| 13-02-02 | 02 | 2 | CIRC-07, DIST-01 | — | Both raises reachable; ordering mask demonstrated, not assumed (V7) | structural guard | extended `verify_conditional_action_string` (positive Donor-5 pin) | ❌ W0 | ⬜ pending |
+| 13-03-* | 03 | 3 | CIRC-07, CIRC-04, ROOM-03 | T-13-15 | N/A | source assertion | refuted counts absent from the whole of ROADMAP.md and HANDOFF.md; axis list updated | ✅ | ⬜ pending |
+| 13-04-01 | 04 | 4 | DIST-01, DIST-02 | — | Canonical signed basenames, no `_signed` suffix (V12) | checker | `python3 docs/manifest_check.py` + AEA1 decrypt-verify of 660 wrapped rows | ✅ | ⬜ pending |
+| 13-04-02 | 04 | 4 | CIRC-04, ROOM-03 | — | N/A | human-check + UAT | `13-UAT.md`, cold-runnable, explicit BLOCKED branch under DIST-03 | ❌ W0 | ⬜ pending |
+| 13-0*-* | * | 1–4 | — (regression) | — | N/A | checker | `python3 docs/phase6_self_check.py` (byte-idempotent rebuild) | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
