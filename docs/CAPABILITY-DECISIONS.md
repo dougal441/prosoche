@@ -964,8 +964,8 @@ catalog can see it — the catalog has no entry for `WFItems` row shape at all.
 **Measured defect inventory at the phase-start artifact, per fork (Core / Aware):** 67 / 67
 `is.workflow.actions.list` actions, of which **1 / 1** were correct (bare-string rows only) and
 **66 / 66** were defective, carrying **660 / 660** unwrapped variable-bearing rows and 6 / 6
-correct bare-string rows, with 0 / 0 already wrapped. The recorded "2 confirmed instances"
-under-counted actions by 33× and rows by 330×.
+correct bare-string rows, with 0 / 0 already wrapped. The recorded "2 confirmed instances" is
+therefore **REFUTED**: it under-counted actions by 33× and rows by 330×.
 
 **Fix and guard.** All 66 defective actions originate from **one** emitter, `mirror_text()` in
 `tools/build_state_engine.py`; the fix is a per-row type branch (`_list_row()`: a bare `str`
