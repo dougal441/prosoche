@@ -458,7 +458,17 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 **Severity:** major
 **Requirements**: AUDIT-02, CIRC-02, CIRC-06, CIRC-08, ROOM-01, ROOM-02, DIST-01, DIST-02
 **Depends on:** Phase 10
-**Plans:** 6/6 plans executed
+**Plans:** 6/6 plans executed; 4 gap-closure plans added after verification returned `gaps_found`
+
+**Gap closure (waves 7–10).** `11-VERIFICATION.md` scored 13/18 with three failed truths and two
+partials. Plans `11-07` … `11-10` close all five and are strictly sequential, because every one of
+them rebuilds and re-signs both forks. Two scope judgments were made explicitly rather than left to
+drift: GAP 1 (`dimming()` / `silence()` bodies unreachable) is **closed here**, with the device
+proof of the capture-and-restore loop deferred to **Phase 16 / DIST-03 / `09-UAT.md` tests 2–12` —
+the reasoning is in `11-08-PLAN.md`'s `<scope_judgment>`; and GAP 3 (the Aware fork's Use Model
+audit on one rendering of two) is resolved by **auditing every OPEN-arm rendering**, with the
+"deliberate product decision" alternative rejected and the rejection recorded in
+`11-09-PLAN.md`'s `<gap3_resolution>`.
 
 Plans:
 **Wave 1**
@@ -484,6 +494,22 @@ Plans:
 **Wave 6** *(blocked on Wave 5 completion)*
 
 - [x] 11-06-PLAN.md — Dumb→Core / Sentient→Aware rename, Aware-side note divergence, ship and decrypt-verify (wave 6)
+
+**Wave 7** *(gap closure — blocked on Wave 6 completion and on Phase 12 not being mid-execution)*
+
+- [ ] 11-07-PLAN.md — GAP 2 tracer: the text-match output-name class fix, both sites plus the recurrence guard; consumption shape settled at rung 2 (wave 7)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 11-08-PLAN.md — GAP 1: Dim and Silence re-gated on the captured-original leaf so their bodies are reachable; a reachability build guard armed in both builders; the false capability claim corrected in the MANIFEST, the ROADMAP and the deviation log (wave 8)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+
+- [ ] 11-09-PLAN.md — GAP 3: the Aware fork's Use Model audit on every OPEN-arm rendering, with per-rendering identifiers and two checkers that derive rather than pin (wave 9)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+
+- [ ] 11-10-PLAN.md — GAP 4 + GAP 5: the Panic Escape gate guard resolved by provenance; two decorative floors moved to measured values; both interim stand-ins recorded where the prohibition requires (wave 10)
 
 ### Phase 12: State-shape sentinel gaps — exit_events and active_session
 
