@@ -23,7 +23,7 @@ It is authored **once** and copied verbatim into both the Dumb and Sentient fork
 
 ## Config JSON literal
 
-This is the complete literal: nine sibling top-level keys, transcribed once from canonical strategy and never restated elsewhere in this file. `sequences` below is carried over byte-identical from plan 01-01 — unchanged, unreordered.
+This is the complete literal: nine sibling top-level keys, transcribed once from canonical strategy and never restated elsewhere in this file. `sequences` below was carried over byte-identical from plan 01-01 until phase 11 plan 01, which renamed exactly one entry — `Knock` → `Pause` (BD-06), in `Classic[0]`, `BlackMirror[0]` and `Ambient[3]`. The ordering is otherwise unchanged and unreordered.
 
 ```json
 {
@@ -43,9 +43,9 @@ This is the complete literal: nine sibling top-level keys, transcribed once from
     "Inferno": 300
   },
   "sequences": {
-    "Classic": ["Knock", "Ash", "Silence", "Confession", "Dimming", "Exile", "Mirror", "Voice", "Ice"],
-    "BlackMirror": ["Knock", "Confession", "Ash+Confession", "Mirror", "Silence+Mirror", "Dimming+Mirror", "Exile", "Voice", "Ice"],
-    "Ambient": ["Ash", "Silence", "Dimming", "Knock", "Confession", "Exile", "Mirror", "Voice", "Ice"]
+    "Classic": ["Pause", "Ash", "Silence", "Confession", "Dimming", "Exile", "Mirror", "Voice", "Ice"],
+    "BlackMirror": ["Pause", "Confession", "Ash+Confession", "Mirror", "Silence+Mirror", "Dimming+Mirror", "Exile", "Voice", "Ice"],
+    "Ambient": ["Ash", "Silence", "Dimming", "Pause", "Confession", "Exile", "Mirror", "Voice", "Ice"]
   },
   "heat": {
     "open_base": 1,
@@ -79,7 +79,7 @@ This is the complete literal: nine sibling top-level keys, transcribed once from
 }
 ```
 
-Transcribed verbatim from canonical strategy: `behavioural_day.offset_seconds` from §10.1; `thresholds.*` from §10.5 (the default `profile` is `Limbo`, and the default `sequence` is `Classic`, per `state.json`'s own defaults in ARCHITECTURE.md §2 — this Config literal does not itself pick a default, `state.json` does); `cooldown_seconds.*` from §22; `sequences.*` from §12, unchanged from plan 01-01 — `Classic` from §12.1, `BlackMirror` from §12.2, `Ambient` from §12.3; `heat.*` from §10.2's suggested initial rule; `gravity.*` from §10.3.
+Transcribed verbatim from canonical strategy: `behavioural_day.offset_seconds` from §10.1; `thresholds.*` from §10.5 (the default `profile` is `Limbo`, and the default `sequence` is `Classic`, per `state.json`'s own defaults in ARCHITECTURE.md §2 — this Config literal does not itself pick a default, `state.json` does); `cooldown_seconds.*` from §22; `sequences.*` from §12 — `Classic` from §12.1, `BlackMirror` from §12.2, `Ambient` from §12.3, with the one BD-06 rename noted above; `heat.*` from §10.2's suggested initial rule; `gravity.*` from §10.3.
 
 **Note — SUPERSEDED by BD-01-R (2026-08-13).** Ash *is* a real system Color Filters change on iOS: `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` with `operation = turn` and an explicit `state`, applied On and restored Off. `safety.ash_managed_color_filters` (default `true`) is the canonical-§21 opt-in — when `false`, Ash falls back to BD-01's non-environmental visual pause. Phase 5 reads this flag and branches. The paragraph below is retained for history; its claim that Ash is non-environmental no longer holds.
 
@@ -104,8 +104,8 @@ Transcribed verbatim from canonical strategy: `behavioural_day.offset_seconds` f
 | `cooldown_seconds.Paradise` | `60` | Ice (Circle IX) cooldown duration for the Paradise profile | §22 | Positive integer seconds; the strategy calls this "~60 sec," so treat single-digit-second changes as within the intended tolerance |
 | `cooldown_seconds.Limbo` | `180` | Ice cooldown duration for the Limbo profile | §22 | Positive integer seconds, "~3 min" |
 | `cooldown_seconds.Inferno` | `300` | Ice cooldown duration for the Inferno profile | §22 | Positive integer seconds, "~5 min" |
-| `sequences.Classic` | 9-entry array, `Knock`…`Ice` | Primitive combination fired at each Circle 1-9 under the Classic ordering | §12.1 | Must stay exactly 9 entries; reordering changes which primitives fire at which Circle — a deliberate tuning act, not a casual edit |
-| `sequences.BlackMirror` | 9-entry array, `Knock`…`Ice` | Primitive combination fired at each Circle 1-9 under the Black Mirror ordering | §12.2 | Same as `sequences.Classic` |
+| `sequences.Classic` | 9-entry array, `Pause`…`Ice` | Primitive combination fired at each Circle 1-9 under the Classic ordering | §12.1 | Must stay exactly 9 entries; reordering changes which primitives fire at which Circle — a deliberate tuning act, not a casual edit |
+| `sequences.BlackMirror` | 9-entry array, `Pause`…`Ice` | Primitive combination fired at each Circle 1-9 under the Black Mirror ordering | §12.2 | Same as `sequences.Classic` |
 | `sequences.Ambient` | 9-entry array, `Ash`…`Ice` | Primitive combination fired at each Circle 1-9 under the Ambient ordering | §12.3 | Same as `sequences.Classic` |
 | `heat.open_base` | `1` | Heat added for every genuine new OPEN | §10.2 | Small positive integer; this is the baseline unit the other Heat deltas are scaled against |
 | `heat.reopen_under_120s_bonus` | `2` | Additional Heat when the reopen happens under 2 minutes since the last close | §10.2 | Positive integer, should stay ≥ `heat.reopen_under_600s_bonus` since it is the tighter, more compulsive band |
@@ -151,4 +151,5 @@ These values are computed at runtime, never stored directly as leaf keys above. 
 
 ## Change log
 
+- **2026-08-17** — Phase 11 plan 01 (tracer). The BD-06 primitive rename `Knock` → `Pause`, applied to the three `sequences` cells that named it (`Classic[0]`, `BlackMirror[0]`, `Ambient[3]`) and to the two `Field reference` rows that spelled the array bounds. One name only: the remaining BD-06 renames move in plan 11-02, together with the abolition of the three combined entries and the condition-99 → condition-4 dispatch move. The live literal in `src/PROSOCHE-Dumb.xml` action 7 was edited in the same commit through `tools/plist_text_edit.py`'s guarded round trip; this file is its mirror, not its source.
 - **2026-08-13** — File created by plan 01-01 (`## How to use this file` skeleton and the `sequences` object). Completed by plan 01-03 (`config_version`, `behavioural_day`, `thresholds`, `cooldown_seconds`, `heat`, `gravity`, `exits`, `safety`; the field reference, derived-value rules, and transcription recipe). Any later edit to this file adds a new dated line here.

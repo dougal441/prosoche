@@ -475,7 +475,9 @@ def restore_managed_settings(dictionary_name="State"):
 
 
 def knock():
-    return [comment("""Knock is a brief factual interruption:
+    # Renders the primitive BD-06 ships as "Pause"; the Python name is deliberately unchanged
+    # (see the dispatch tuple in primitive_dispatch()).
+    return [comment("""Pause is a brief factual interruption:
 - Circle, Pressure, and Heat come from this OPEN run.
 - It does not infer intent or alter State."""),
             alert("PROSOCHĒ", text_token([("Circle ", "Circle Next"),
@@ -655,7 +657,10 @@ def primitive_dispatch(circle_name: str | None = None):
           action("is.workflow.actions.gettext", UUID=entry_text_id,
                  WFTextActionText=output(entry_id, "Dictionary Value")),
           set_var("Selected Primitive", output(entry_text_id, "Text"))]
-    for name, implementation in (("Knock", knock), ("Ash", ash), ("Silence", silence),
+    # The tuple carries the SHIPPED name, the function carries the INTERNAL name: BD-06 renames
+    # Knock -> Pause, but knock() keeps its Python identifier because
+    # docs/environmental_restore_check.py:55-56 imports generator functions BY NAME.
+    for name, implementation in (("Pause", knock), ("Ash", ash), ("Silence", silence),
                                  ("Confession", confession), ("Dimming", dimming), ("Exile", exile),
                                  ("Mirror", mirror_and_voice), ("Voice", mirror_and_voice), ("Ice", ice_start)):
         # Mirror is rendered once for a combined Silence+Mirror entry; Voice is a separate sequence name.
