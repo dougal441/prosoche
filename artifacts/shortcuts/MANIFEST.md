@@ -35,6 +35,16 @@ to 90. Both forks passed the validator and all eleven prior static checks plus
 `docs/note_identity_check.py` in a single run at this commit, and `manifest_check` as the
 twelfth once this table was refreshed.
 
+Two of those checks changed status in this rebuild. `docs/sequence_dispatch_check.py` is no
+longer a reporter: it now exits non-zero on any orphaned sequence entry, any unreachable
+dispatch branch, any branch of unknown matching semantics, and any entry matched by more
+than one distinct branch name, and its `KNOWN_ORPHANS` escape hatch is empty. It was proven
+to fail before it was trusted to pass — a copy of the Dumb source with one sequence cell
+replaced by a name no branch emits makes it exit 1. `tools/build_state_engine.py` gained
+`verify_dispatch_coverage()`, armed in both builders, which enforces the same invariant
+before any write. Neither instrument existed for the four phases during which Circle 8
+dispatched nothing.
+
 Both signed containers were decrypted via the AEA1 recipe and asserted against the roster
 move: `plutil -lint OK` on both recovered plists; the retired names `Knock`,
 `Ash+Confession`, `Silence+Mirror` and `Dimming+Mirror` appear on **zero** lines of either
