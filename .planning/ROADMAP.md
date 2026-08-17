@@ -632,7 +632,7 @@ finding rather than a known artifact.
 **Severity:** major
 **Requirements**: CIRC-04, CIRC-07, ROOM-03, DIST-01, DIST-02
 **Depends on:** Phase 12
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 **Wave 1**
@@ -645,7 +645,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 13-03-PLAN.md — The single-pass doc update: axis list to nine, `BD-07`/`BD-08`, the Phase 13 BUILD-NOTES record, the corrected ROADMAP prose, and the todo closed with a tombstone
+- [x] 13-03-PLAN.md — The single-pass doc update: axis list to nine, `BD-07`/`BD-08`, the Phase 13 BUILD-NOTES record, the corrected ROADMAP prose, and the todo closed with a tombstone
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
