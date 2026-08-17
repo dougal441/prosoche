@@ -149,6 +149,50 @@ therefore belongs with the container/leaf treatment used for `pending_exit`, not
 **Still a blocker** for the reason already given: on a clean install an arbitrary personal note
 gets bound to `Control Room Note`, which all four `appendnote` sites write to.
 
+## ⚠ CORRECTION — the "create branch never fires" root cause is REFUTED
+
+**User-run observation, 2026-08-17 ~11:39, same session.** The user deleted the hand-made
+`PROSOCHĒ` note **and then emptied it from Recently Deleted** — explicitly flagging that second
+step as important — and re-ran `Open Control Room`. **It created the Control Room Note correctly**,
+titled `PROSOCHĒ` and fully populated (`READ THIS FIRST`, the automation-setup instructions, the
+Core/Aware rename paragraph). Verified on device: a single `PROSOCHĒ` note, modified 11:39.
+
+So **the create branch does fire and does work** when nothing matches. The root cause recorded
+above — "the create-note branch never runs" — is **wrong and must not be carried forward.**
+
+### What survives, and what is now open
+
+**Still true (device-observed, unchanged):**
+
+- On the first clean run, choosing `Status` raised a full iOS Note chooser over every user note.
+- On the second run, `Open Control Room` opened an **unrelated personal note**
+  (`/gsd-phase "Build v2 stakeholder addendum"`) and did not create a Control Room Note.
+- The `filter.notes` predicate is well-formed, and the cycle-16 limit fix did ship.
+
+**Now the leading candidate — Recently Deleted.** The state I tested was NOT as clean as it
+looked. A Notes *search* for `PROSOCH` returned `Notes — None Found`, but **Notes search does not
+cover the Recently Deleted folder**, and this device has been through many prior test cycles in
+which a `PROSOCHĒ` note would have been created and deleted. If `is.workflow.actions.filter.notes`
+matches notes sitting in **Recently Deleted**, then on my run it found a *deleted* note, took the
+found-branch, skipped creation, and produced an unresolvable entity — which is precisely the
+chooser and the wrong-note binding that were seen. The user's emphasis on purging Recently
+Deleted is independent support for this reading.
+
+**This is now the question to settle, and it is a genuinely new one:** does `filter.notes` match
+notes in Recently Deleted? If it does, every user who has ever deleted their Control Room Note
+without purging is in the broken state, and the fix is a predicate or branch that excludes
+deleted notes — not anything to do with creation.
+
+**Experiment.** Create a `PROSOCHĒ` note, delete it but leave it in Recently Deleted, then run
+`Open Control Room` and observe whether it is found, a chooser appears, or a fresh note is made.
+
+### Severity
+
+Downgraded in confidence, not yet re-tagged. The `blocker` tag is retained for now because the
+observed consequence — an arbitrary personal note bound to `Control Room Note`, which all four
+`appendnote` sites write to — is unchanged and is silent user-data corruption if it recurs. If the
+Recently Deleted hypothesis is confirmed and the trigger is that narrow, `major` is the fairer tag.
+
 ## Solution
 
 TBD — needs a breadcrumb run to localise before any fix is written. Candidate directions, in the

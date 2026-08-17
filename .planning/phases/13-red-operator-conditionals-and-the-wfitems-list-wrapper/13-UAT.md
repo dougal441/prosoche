@@ -1,11 +1,36 @@
 ---
-status: blocked
+status: testing
 phase: 13-red-operator-conditionals-and-the-wfitems-list-wrapper
 source: [13-01-SUMMARY.md, 13-02-SUMMARY.md, 13-03-SUMMARY.md, 13-04-PLAN.md]
-blocked_on: DIST-03
+blocked_on: upstream-defect (Circle dispatch errors before any Mirror renders)
 started: 2026-08-17
 updated: 2026-08-17
 ---
+
+> **2026-08-17 — a device became reachable and this file is no longer BLOCKED on hardware.**
+> The build under test was confirmed first: both artifacts were SHA-256'd against this file's
+> header and matched exactly (Core `b07497ba…`, Aware `212598cf…`), and only the Core entry was
+> installed, so there is no stale-duplicate ambiguity.
+>
+> **Tests 1 and 2 could still not be answered — for a new reason, upstream of this phase.**
+> `Test a Circle → Circle 7 · Violence` (the `Classic` sequence's Mirror position, confirmed via
+> `Status`) fails with **"Please choose a value for each parameter in this action."** and the
+> primitive never runs. No alert is ever presented, so there is **no Mirror body to inspect** —
+> neither empty nor populated. Recording this as "Mirror renders blank" would be wrong: the
+> wrapper hypothesis was never reached. See `07-UAT.md` Test 7 for the full analysis of that
+> defect; it is an axis-4 unfilled-picker error and a **third instance** beyond the two known
+> ones (all 69 `getitemfromlist` and the single `count` site were checked in the decrypted
+> artifact and are correctly filled).
+>
+> **One piece of genuine Phase-13 evidence did come out of the session, and it is only
+> suggestive.** While the Shortcuts editor was open it rendered the Mirror templates `List`
+> action with its rows populated — visible template sentences carrying blue variable chips
+> (`This is Circle ⟨Circle Next⟩…`, `The deterministic readi…`, `Recorded signals: Circl…`),
+> immediately followed by `Get Item at Index ⟨Circle Next⟩ from ⟨List⟩` → `Set variable
+> Mirror Text`. Wrapped rows therefore **do** materialise as populated rows in the editor.
+> That is an *editor-rendering* observation, which is a weaker claim than this file's actual
+> assertion: CIRC-07 is about what the **alert body** shows at runtime. It does not close
+> Test 1 and must not be recorded as doing so.
 
 # Phase 13 — Device UAT: does a wrapped `WFItems` row actually render?
 
@@ -137,7 +162,16 @@ not an inconclusive one — record it as such.
 **Failure evidence to capture.** A screenshot of the alert exactly as it appears, including the
 title bar, plus the `circle`, `pressure` and `heat` values from `state.json` at that moment.
 
-outcome:
+outcome: **NOT ANSWERED — blocked upstream, not failed.** Device, 2026-08-17 11:30 and 11:33,
+Core `b07497ba`, clean state (`state.json`: `circle: 1`, `pressure: 0`, `heat: 0`). Sequence
+confirmed `Classic` via `Status`, so Circle 7 is the Mirror position. `Test a Circle →
+Circle 7 · Violence` raised **"Please choose a value for each parameter in this action."** twice,
+deterministically. **No alert with a title or body was ever presented**, so the assertion this
+test makes — that the body contains real sentence text rather than being empty — has no
+observation attached to it in either direction. Explicitly NOT recorded as a failing Mirror:
+this test's own wording says an empty body "is a failing result, not an inconclusive one", and
+that clause is about an alert that *appears* and is empty. Nothing appeared. Re-run once the
+axis-4 defect in `07-UAT.md` Test 7 is fixed.
 
 ---
 

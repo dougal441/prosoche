@@ -104,7 +104,46 @@ error. Specifically:
 **Failure evidence to capture.** A screenshot of any alert text verbatim, plus the full
 `state.json` contents immediately after the open.
 
-outcome:
+outcome: **PARTIAL — the bootstrap/state-shape half is CONFIRMED PASSING; the OPEN half is not
+yet exercised.** Read this split literally; do not promote it to a full pass.
+
+Device, 2026-08-17 11:10–11:15, Core `b07497ba`. Precondition verified rather than assumed:
+Files → iCloud Drive → Shortcuts was observed **empty** (no `PROSOCHE` folder, no `state.json`)
+immediately before the run. A **manual** run then bootstrapped and reached the control menu.
+
+**CONFIRMED — every structural assertion this test makes about the written file.** The full
+`state.json` (2 KB) was read on device and holds:
+
+- `schema_version: 4` ✓
+- `exit_events: []` ✓ — the key `06-CONTEXT.md` recorded as "entirely absent from the bootstrap
+  template", the axis-7 gap this phase exists to close. It is present and seeded.
+- `exit_selection_counter: 0` ✓
+- `active_session` seeded as the **four-leaf sentinel container**
+  `{"id": "null", "started_at": "null", "declared_duration_seconds": "null", "intention": "null"}` ✓
+- `pending_exit` seeded as `{"type": "null", "timestamp": "null"}` ✓
+- `settings_snapshot.brightness` and `.volume` each seeded with all three leaves
+  (`original_value` / `changed_at` / `changed_by_session_id`, all `"null"`) ✓
+- `exit_stats` seeded for **all six** exits, each `{count: 0, sum_return_seconds: 0, samples: []}` ✓
+- `profile_snapshot.create_target_url: "null"` seeded ✓, `enabled_exits` holding all six ✓
+- **No** "no value was found for dictionary key" alert and **no** "could not evaluate the key
+  path" alert appeared ✓
+
+The container/leaf discipline is visible in the file and is exactly as
+`.claude/CLAUDE.md` axis 7 specifies: **container leaves carry the STRING sentinel `"null"`**
+(gatable by a condition-5 string-is-not test) while genuinely scalar top-level fields
+(`last_open_at`, `last_close_at`, `last_app`, `cooldown_until`, `note_content_hash`,
+`last_model_message`) carry **real JSON `null`**. That asymmetry is deliberate and correct here.
+
+**NOT CONFIRMED — the part of this test that needs a real OPEN.** The run was a *manual*
+invocation, not an App-Is-Opened automation, so no session was started. `active_session` is
+therefore still the four-leaf sentinel, which is the correct state for what was actually done
+but is **not** the "live object with a non-null `id`" this test asks for. That assertion stays
+open and needs a genuine OPEN through the Personal Automation.
+
+Recorded caveat: `panic_escape_enabled` serialises as the number `1` while `voice_enabled`
+serialises as the boolean `true`. Both are readable, so this is not a defect on its face, but
+the inconsistency is noted here because a boolean-vs-number coercion is exactly the sort of
+thing axis 6 turns into a runtime operand-type failure later.
 
 ---
 
