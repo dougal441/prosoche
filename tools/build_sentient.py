@@ -336,6 +336,22 @@ def main() -> None:
     #                                      directly at risk from this phase's exit_events work.
     #   verify_conditional_action_string -- the ownership-compare WFConditionalActionString
     #                                      shape that plan 12-03 must preserve at four sites.
+    #
+    # PHASE 13 (13-02).  verify_conditional_action_string now carries a SECOND, POSITIVE
+    # assertion, so this already-armed call asserts more than it did in Phase 12 -- and this
+    # plan adds NO new touch point here, which is a genuine exception to the two-touch-point
+    # rule and is recorded rather than left to inference: the guard was ALREADY in the
+    # `from build_state_engine import (...)` list above AND already invoked below, armed by
+    # Phase 12 (12-01, PD-3).  What it now also asserts on this fork: the Aware artifact's 20
+    # inherited variable-bearing comparison targets still carry the Donor-5 envelope after
+    # the fork -- a WFTextTokenString whose Value.string holds a "￼" and whose
+    # Value.attachmentsByRange is non-empty.  Asserted per fork, never inferred from the Dumb
+    # run: Sentient forks the BUILT Dumb XML and re-serializes it, so a fork that flattened
+    # or re-enveloped one of those operands would ship an Aware conditional that can never
+    # match a real value -- the Mirror's fact gates would silently select the wrong template
+    # family (CIRC-07) with no error anywhere, and neither validator gate can see it.
+    # The 172/175 raw-literal targets stay unasserted on BOTH forks, for the reason the
+    # guard's own docstring records: no donor covers the pure-literal case.
     verify_pending_exit_seed(actions)
     verify_panic_escape_seed(actions)
     verify_compound_value_reads(actions)
