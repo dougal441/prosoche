@@ -25829,7 +25829,22 @@ Prior respected: ￼</string>
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -26182,7 +26197,22 @@ Prior respected: ￼</string>
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -27425,7 +27455,22 @@ Prior respected: ￼</string>
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -27778,7 +27823,22 @@ Prior respected: ￼</string>
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -32377,7 +32437,22 @@ Prior respected: ￼</string>
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -32730,7 +32805,22 @@ Prior respected: ￼</string>
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -33973,7 +34063,22 @@ Prior respected: ￼</string>
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -34326,7 +34431,22 @@ Prior respected: ￼</string>
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -43757,7 +43877,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -44110,7 +44245,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -45353,7 +45503,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -45706,7 +45871,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -50526,7 +50706,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -50879,7 +51074,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -52122,7 +52332,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -52475,7 +52700,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -57295,7 +57535,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -57648,7 +57903,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -58891,7 +59161,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -59244,7 +59529,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -64064,7 +64364,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -64417,7 +64732,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -65660,7 +65990,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -66013,7 +66358,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -70833,7 +71193,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -71186,7 +71561,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -72429,7 +72819,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -72782,7 +73187,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -77602,7 +78022,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -77955,7 +78390,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -79198,7 +79648,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -79551,7 +80016,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -84371,7 +84851,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -84724,7 +85219,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -85967,7 +86477,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -86320,7 +86845,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -91140,7 +91680,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -91493,7 +92048,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -92736,7 +93306,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -93089,7 +93674,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -97909,7 +98509,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -98262,7 +98877,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -99505,7 +100135,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>Success is recorded too: the prior boundary was respected.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>Success is recorded too: the prior boundary was respected.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>
@@ -99858,7 +100503,22 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<string>WFTextTokenString</string>
 						</dict>
 					</dict>
-					<string>The recorded lapse is a time overrun, not a judgment.</string>
+					<dict>
+						<key>WFItemType</key>
+						<integer>0</integer>
+						<key>WFValue</key>
+						<dict>
+							<key>Value</key>
+							<dict>
+								<key>string</key>
+								<string>The recorded lapse is a time overrun, not a judgment.</string>
+								<key>attachmentsByRange</key>
+								<dict/>
+							</dict>
+							<key>WFSerializationType</key>
+							<string>WFTextTokenString</string>
+						</dict>
+					</dict>
 					<dict>
 						<key>WFItemType</key>
 						<integer>0</integer>

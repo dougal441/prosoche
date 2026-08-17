@@ -645,10 +645,84 @@ def exile():
             action("is.workflow.actions.returntohomescreen")]
 
 
+def _list_row(item):
+    """Frame one is.workflow.actions.list row the way iOS itself frames it.
+
+    THE TWO-KIND RULE.  A WFItems array mixes exactly two row kinds and never a third: a
+    LITERAL row is a bare string, and an ATTACHMENT-BEARING row is the wrapper dict
+    {"WFItemType": 0, "WFValue": <the WFTextTokenString, unchanged>}.  A raw
+    WFTextTokenString sitting directly in WFItems is neither, and is the defect this
+    function exists to make unrepresentable at the emitter.  WFValue NESTS the existing
+    envelope verbatim -- nothing here deep-copies, rebuilds or re-serializes it, which is
+    exactly what keeps every attachmentsByRange offset inside it valid.
+
+    EVIDENCE.  .planning/debug/Donor 4.shortcut and .planning/debug/Donor 4.1.shortcut --
+    two independent device-authored donors, decrypted in Phase 13 via the .claude/CLAUDE.md
+    section 8 recipe and byte-identical to each other on this action.  Both show one array
+    carrying bare <string> rows ("Circle", "follows") alongside a wrapped variable row.
+
+    RUNTIME CONSEQUENCE OF OMITTING THE WRAPPER.  An unwrapped row validates, signs and
+    imports perfectly, then renders as an EMPTY row on device -- so mirror_text()'s Item At
+    Index selection can land on a blank template and the Mirror shows nothing.  That is
+    precisely the failure CIRC-07 forbids ("a precise behavioural reflection built only from
+    recorded facts").
+
+    WFItemType VALUES OTHER THAN 0 ARE DELIBERATELY UNAUDITED.  Both donors exercise only
+    text rows, so 0 is the only value the evidence supports.  Number, dictionary, file and
+    entity row kinds are not emitted by this generator, and their type codes must NOT be
+    guessed here, in verify_list_item_wrappers(), or in any document -- a guess would enter
+    the project record as evidence (.claude/CLAUDE.md, do-not-fabricate).
+
+    THIS IS A NEW IDIOM, NOT A COPY OF A CODEBASE PRECEDENT.  There is no isinstance-based
+    literal/variable discriminator anywhere in the emitter-helper region (:134-660).
+    text_token()'s `if name:` branch is the nearest conceptual relative, but it
+    discriminates on a None field inside a parts tuple, not on a value's Python type.  The
+    shape below is fixed by donor evidence, not by an in-file analog.
+
+    THE FUNCTION IS TOTAL, AND THAT IS THE POINT (phase 13 code review, WR-03).  The original
+    `item if isinstance(item, str) else {...}` accepted ANYTHING as the else branch.  Probed:
+    `_list_row(5)` returned {"WFItemType": 0, "WFValue": 5} -- a fabricated row shape for a
+    value type this docstring explicitly says is unaudited, emitted with no error; and
+    `_list_row(already_wrapped)` silently DOUBLE-WRAPPED, which is exactly the "sweeping every
+    row corrupts the legitimate rows" hazard .claude/CLAUDE.md axis 8 warns about, with
+    nothing between it and a signed artifact.  The contract is therefore asserted at the
+    emitter, where the offending value is still in hand and can be named.
+
+    THE DISCRIMINATOR IS ATTACHMENT-BEARING-NESS, NOT PYTHON TYPE (phase 13 code review,
+    CR-01).  The first cut of this function branched on `isinstance(item, str)`, so EVERY
+    non-str got the wrapper -- including a WFTextTokenString that text_token() built from a
+    template carrying no "￼" placeholder at all and whose attachmentsByRange is therefore
+    EMPTY.  That is a literal row BY CONTENT wearing the variable row's framing: a shape no
+    donor exhibits, and the exact opposite of the rule stated two paragraphs up.  Measured in
+    both src/*.xml and in the decrypted payload of both shipped signed containers: 44 of 660
+    wrapped rows per fork.
+
+    The affected rows are not randomly placed.  mirror_text() selects with Item At Index on
+    Circle Next (1-based), and the two attachment-free templates are MIRROR_SUCCESSES[7] and
+    MIRROR_LAPSES[7] -- ROW 8.  So the unevidenced shape was the one selected at Circle VIII
+    on both the success and the lapse family, and if iOS mishandles it the symptom is a blank
+    Mirror at a high circle: indistinguishable from the defect this whole phase exists to fix.
+    Shipping a SECOND unevidenced row framing to close the first is precisely what the
+    do-not-fabricate rule forbids, so the test is now on the content, and an attachment-free
+    token goes out as the bare <string> both donors show.
+    """
+    if isinstance(item, str):
+        return item
+    if not (isinstance(item, dict) and item.get("WFSerializationType") == "WFTextTokenString"):
+        raise SystemExit("mirror_text() row is neither a literal str nor a WFTextTokenString "
+                         f"(a WFItems row has exactly those two kinds): {item!r}")
+    body = item.get("Value")
+    if (isinstance(body, dict) and isinstance(body.get("string"), str)
+            and not body.get("attachmentsByRange")):
+        return body["string"]
+    return {"WFItemType": 0, "WFValue": item}
+
+
 def mirror_text(items, name: str):
     """Select one non-empty template from a fact-gated list using Circle 1..9."""
     list_id, item_id = uid(), uid()
-    a = [action("is.workflow.actions.list", UUID=list_id, WFItems=list(items)),
+    a = [action("is.workflow.actions.list", UUID=list_id,
+                WFItems=[_list_row(item) for item in items]),
          action("is.workflow.actions.getitemfromlist", UUID=item_id,
                 WFItemSpecifier="Item At Index", WFItemIndex=variable("Circle Next"),
                 WFInput=output(list_id, "List")),
@@ -1673,8 +1747,12 @@ def verify_circle_zero_silence(actions):
 
 
 # ---------------------------------------------------------------------------
-# BD-06 Decision 5 -- the EIGHTH defect class, alongside the seven parameter-defect axes
-# recorded in .claude/CLAUDE.md.  Each of those seven is a parameter whose SHAPE is wrong.
+# BD-06 Decision 5 -- the TENTH defect class, alongside the NINE parameter-defect axes
+# recorded in .claude/CLAUDE.md.  (Renumbered by the phase 13 code review, WR-06: this was
+# written as "the EIGHTH ... alongside the seven" when .claude/CLAUDE.md carried seven axes.
+# It has since gained axis 8, the WFItems row wrapper, and axis 9, compound value.  Three
+# different things were briefly called "the eighth", so a debugger grepping "axis 8" landed
+# on the wrong defect class.)  Each of those nine is a parameter whose SHAPE is wrong.
 # This one is different in kind: two independently well-formed halves that no longer agree
 # with each other.  The name primitive_dispatch() writes into the Selected Primitive
 # variable, and the name it compares that variable against, are produced by two different
@@ -2410,6 +2488,14 @@ def verify_conditional_inputs(actions):
                          + f" ({len(offenders)} total)")
 
 
+# The MEASURED size of the Donor 5 family -- mode-0 conditionals whose
+# WFConditionalActionString is a variable-bearing WFTextTokenString.  20 on BOTH forks
+# (19 x WFCondition 4, 1 x WFCondition 99), measured by plistlib walk over the phase-13
+# artifacts and recorded in docs/BUILD-NOTES.md section 28 and BD-07.  The remaining
+# 172 (Core) / 175 (Aware) targets are raw literals and are deliberately NOT asserted.
+EXPECTED_VARIABLE_TARGETS = 20
+
+
 def verify_conditional_action_string(actions):
     """Fail the build if a conditional's comparison target is the abandoned bare placeholder.
 
@@ -2426,8 +2512,55 @@ def verify_conditional_action_string(actions):
     (WFInput side only) nor STRING_ENVELOPE_PARAMS (does not cover
     is.workflow.actions.conditional) catches this axis, so this is a dedicated guard against
     the exact same defect class shipping silently again.
+
+    PHASE 13 (13-02) -- SECOND, POSITIVE ASSERTION: PIN THE DONOR-5 ENVELOPE.
+
+    .planning/debug/Donor 5.shortcut was decrypted in Phase 13 (its first analysis ever) and
+    shows iOS ITSELF authoring the variable-bearing comparison target as a WFTextTokenString:
+    Value.string is a single "￼", Value.attachmentsByRange is keyed "{0, 1}" and holds a
+    BARE {Type: "Variable", VariableName: ...} dict (not re-wrapped in a
+    Value/WFSerializationType envelope), WFCondition is an <integer>, and WFInput sits
+    alongside it carrying the OPPOSITE WFTextTokenAttachment envelope -- with NO coercion
+    aggrandizement on either side.  token() at :145-148 emits a key-for-key identical shape.
+    A device-authored donor is the top of this project's evidence hierarchy, so that shape is
+    settled: the generator has been emitting the device-correct envelope all along.
+
+    THE "14 DEFECTIVE SITES" CLAIM IS REFUTED BY MEASUREMENT.  The ROADMAP, the pending todo
+    and .planning/debug/HANDOFF.md all assert this family is broken.  Measured by plistlib
+    walk over both phase-start artifacts: 192 (Core) / 195 (Aware) mode-0 conditionals carry
+    this slot, exactly 20 per fork are variable-bearing (19 at WFCondition 4, 1 at 99), ALL 20
+    match Donor 5, and 0 are defective.  The site the ROADMAP named as a starting point,
+    if_block("Previous Respected", 4, ...), is not even a member of the family -- it passes a
+    raw Python literal and never a token().
+
+    THIS ASSERTION THEREFORE PINS A CORRECT SHAPE RATHER THAN REPAIRING A BROKEN ONE.  Its
+    entire purpose is to stop a future pass -- acting on that stale prose -- from "fixing" 20
+    device-confirmed sites.  If it fires, the change that caused it is the defect.
+
+    THE RAW-LITERAL COMPARISON TARGETS (172 Core / 175 Aware) ARE DELIBERATELY NOT ASSERTED
+    HERE.  Donor 5 covers only the variable-bearing case; no donor shows a pure literal
+    comparison target, so whether iOS writes one as a bare string or as an attachment-free
+    WFTextTokenString is UNVERIFIED.  Those literals are device-proven working (the OPEN/CLOSE
+    router compares Input Key against raw "OPEN"/"CLOSE" and HANDOFF.md:126 records every
+    breadcrumb A-J firing on device), so inventing an assertion for them would encode a guess
+    as a build gate -- exactly what the project's do-not-fabricate rule forbids.  Settling it
+    needs a one-action donor with a literal comparison: a rung-4 request, not a rung-1
+    inference.
+
+    THE CENSUS IS PINNED TOO, BECAUSE THE SHAPE CHECK ALONE CANNOT SEE A FLATTENED SITE.
+    The pin above only runs `if isinstance(value, dict)`.  FLATTENING a variable-bearing
+    target -- replacing token("Circle Next") with the raw literal "Circle Next" -- produces a
+    plain str, so the pin skips it entirely, and the guard has no notion of WHICH sites are
+    supposed to be variable-bearing: a flattened site is indistinguishable from one of the
+    172/175 legitimate literals.  Probed: that mutation PASSED the shape check.  So the count
+    itself is asserted.  EXPECTED_VARIABLE_TARGETS is a MEASURED figure (20, identical on both
+    forks, 19 x code 4 + 1 x code 99), not a chosen one; if a future phase deliberately adds or
+    removes a variable-bearing comparison, update it in the same commit and say why -- an
+    unexplained edit to this constant is the same defect as the flatten it exists to catch.
     """
     offenders = []
+    unpinned = []
+    variable_bearing = 0
     for index, item in enumerate(actions):
         if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
             continue
@@ -2437,13 +2570,160 @@ def verify_conditional_action_string(actions):
             continue
         if "WFConditionalActionString" not in parameters:
             continue
-        if parameters["WFConditionalActionString"] == "￼":
+        value = parameters["WFConditionalActionString"]
+        if value == "￼":
             offenders.append(index)
+        # The two checks are DISJOINT BY PYTHON TYPE and share this one loop deliberately:
+        # the check above compares against the raw placeholder STRING, the pin below only
+        # ever runs on the DICT case.  Neither can see the other's subject.
+        if isinstance(value, dict):
+            variable_bearing += 1
+            # THE PIN FAILS CLOSED.  `Value` is a dict only while the envelope is intact.  A
+            # flatten-in-place regression that leaves `Value` a plain string used to kill this
+            # guard with `AttributeError: 'str' object has no attribute 'get'` -- a traceback
+            # naming the GUARD rather than the offending action index, and not the SystemExit
+            # this project's convention requires.  A non-string `string` raised TypeError the
+            # same way.  Both now fall through into `unpinned` and are REPORTED, because a
+            # malformed target is exactly what the pin exists to catch, not a reason it may
+            # stop working.
+            token_value = value.get("Value")
+            token_string = token_value.get("string") if isinstance(token_value, dict) else None
+            if (value.get("WFSerializationType") != "WFTextTokenString"
+                    or not isinstance(token_string, str)
+                    or "￼" not in token_string
+                    or not token_value.get("attachmentsByRange")):
+                unpinned.append(index)
     if offenders:
         raise SystemExit("conditional comparison targets hold the abandoned bare placeholder "
                          "character instead of a wired token() reference: actions "
                          + ", ".join(str(i) for i in offenders[:5])
                          + f" ({len(offenders)} total)")
+    if unpinned:
+        raise SystemExit("variable-bearing conditional comparison targets have LOST the "
+                         "device-confirmed Donor 5 WFTextTokenString envelope (a single "
+                         "￼ string plus a non-empty attachmentsByRange); this assertion "
+                         "PINS a shape iOS itself authors, so the change that tripped it is "
+                         "the defect, not the shape: actions "
+                         + ", ".join(str(i) for i in unpinned[:5])
+                         + f" ({len(unpinned)} total)")
+    # THIRD RAISE, APPENDED LAST DELIBERATELY.  docs/BUILD-NOTES.md section 28 records that
+    # the first raise MASKS the second; appending here adds no new mask over either and leaves
+    # the recorded ordering untouched, which this phase's prohibitions require.
+    if variable_bearing != EXPECTED_VARIABLE_TARGETS:
+        raise SystemExit("variable-bearing conditional comparison targets: expected "
+                         f"{EXPECTED_VARIABLE_TARGETS} (the measured Donor 5 family, BD-07), "
+                         f"found {variable_bearing} -- a target was FLATTENED to a raw literal, "
+                         "which the shape pin above cannot see because a flattened target is "
+                         "indistinguishable from one of the legitimate literals; or a new "
+                         "variable-bearing target appeared unreviewed")
+
+
+# The MEASURED WFItems census, post-CR-01, IDENTICAL on both forks -- Aware forks the BUILT
+# Core source, so it inherits the whole Mirror block unchanged.  616 wrapped rows are
+# attachment-bearing Mirror templates; the 50 bare rows are the six exit names plus the two
+# placeholder-free Mirror templates at 22 call sites each.
+EXPECTED_LIST_ACTIONS = 67
+EXPECTED_WRAPPED_ROWS = 616
+EXPECTED_BARE_ROWS = 50
+
+
+def verify_list_item_wrappers(actions):
+    """Fail the build if a variable-bearing List row omits the iOS row wrapper.
+
+    WFItems is is.workflow.actions.list's row array, and it is a TWO-KIND slot: a literal
+    row is a bare string, an attachment-bearing row is {"WFItemType": 0, "WFValue":
+    <WFTextTokenString>}.  A raw WFTextTokenString placed directly into the array is
+    neither.  It is structurally valid and silently wrong at run time -- it renders as an
+    EMPTY row on device, so mirror_text()'s Item At Index selection can return a blank
+    template and the Mirror shows nothing.  That is the exact failure CIRC-07 forbids.
+
+    Evidence: .planning/debug/Donor 4.shortcut and .planning/debug/Donor 4.1.shortcut,
+    device-authored, decrypted in Phase 13 and byte-identical on this action.  Measured over
+    the phase-start artifacts: 66 defective List actions carrying 660 unwrapped rows in each
+    fork, every one of them emitted by mirror_text().
+
+    NOTHING ELSE COVERS THIS AXIS.  STRING_ENVELOPE_PARAMS / verify_string_envelopes() reach
+    named string-typed PARAMETERS, never the rows nested inside a WFItems array.  The
+    ToolKit v78 catalog carries no entry for WFItems row shape at all, so neither validator
+    gate can see it -- validate-shortcut reports a structurally perfect plist, and
+    decrypting the signed artifact recovers that same perfect plist.  Nothing between this
+    generator and the user's iPhone can detect the defect, which is why it is a build-time
+    gate rather than a post-hoc report.
+
+    WFItemType values other than 0 are deliberately unaudited (no donor exercises a non-text
+    row), so this guard asserts only that the KEY is present and never which value it holds.
+    Offenders are collected as (action index, row position) tuples rather than the flat
+    action index every sibling guard uses: this defect is per row, and an action-level
+    message would hide ten rows behind one number.
+
+    PHASE 13 CODE REVIEW (WR-01 and CR-01) -- THE GUARD ASSERTS THE WHOLE CONTRACT NOW.
+    The first cut tested only `isinstance(row, dict) and "WFItemType" not in row`, which is
+    ONE regression direction.  Probed directly against the shipped module, every one of these
+    PASSED SILENTLY while tools/build_sentient.py's arming comment claimed the guard caught
+    them: all rows dropped (WFItems: []); a wrapped row FLATTENED to a bare string; a wrapper
+    whose WFValue is MISSING; WFValue holding a plain string; a List action with no WFItems
+    key at all; a row that is an int; and a DOUBLE-WRAPPED row.  Each is now reported.
+
+    The INVERSE assertion is CR-01's other half: a WRAPPED row must be attachment-bearing.
+    Wrapping an attachment-free token is a literal row wearing the variable row's framing --
+    a shape no donor exhibits -- and it shipped at 44 sites per fork before CR-01.  Without
+    this half, _list_row() could regress to a Python-type discriminator and the guard would
+    once again see a structurally perfect artifact.
+
+    THE CENSUS IS PINNED because no per-row shape test can see a row that is not there.  The
+    three constants below are MEASURED post-CR-01, identical on both forks (Aware inherits
+    the whole Mirror block from the built Core source): 67 List actions, 616 wrapped rows,
+    50 bare rows.  They are deliberately brittle -- editing the Mirror template roster or
+    adding a List action MUST come with a deliberate, explained update here in the same
+    commit.  An unexplained edit to these numbers is the same defect as the drop they exist
+    to catch.
+    """
+    offenders = []
+    wrapped = bare = lists = 0
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.list":
+            continue
+        lists += 1
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if "WFItems" not in parameters:
+            offenders.append((index, "no WFItems key at all"))
+            continue
+        for position, row in enumerate(parameters["WFItems"]):
+            # KIND ONE -- a literal row is a bare string and carries no framing.
+            if isinstance(row, str):
+                bare += 1
+                continue
+            # KIND TWO -- an attachment-bearing row is the wrapper dict, and nothing else is
+            # a row at all.  WFItemType's VALUE stays unasserted: unaudited beyond 0.
+            if not isinstance(row, dict) or "WFItemType" not in row:
+                offenders.append((index, f"row {position} is neither a bare string nor a "
+                                         f"{{WFItemType, WFValue}} wrapper: {type(row).__name__}"))
+                continue
+            wrapped += 1
+            body = row.get("WFValue")
+            if not isinstance(body, dict) or body.get("WFSerializationType") != "WFTextTokenString":
+                offenders.append((index, f"row {position} wrapper's WFValue is not a "
+                                         "WFTextTokenString envelope"))
+                continue
+            if not (isinstance(body.get("Value"), dict) and body["Value"].get("attachmentsByRange")):
+                offenders.append((index, f"row {position} is WRAPPED but ATTACHMENT-FREE -- a "
+                                         "literal row wearing the variable row's framing, a "
+                                         "shape no donor exhibits (CR-01)"))
+    if offenders:
+        raise SystemExit("List rows violate the donor-observed two-kind rule (a literal row is "
+                         "a bare string; an attachment-bearing row is {WFItemType, WFValue} "
+                         "around a WFTextTokenString) -- the wrong kind renders BLANK on "
+                         "device: "
+                         + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
+                         + f" ({len(offenders)} total)")
+    if (lists, wrapped, bare) != (EXPECTED_LIST_ACTIONS, EXPECTED_WRAPPED_ROWS, EXPECTED_BARE_ROWS):
+        raise SystemExit(
+            "List row census moved: expected "
+            f"{EXPECTED_LIST_ACTIONS} list actions / {EXPECTED_WRAPPED_ROWS} wrapped rows / "
+            f"{EXPECTED_BARE_ROWS} bare rows, found {lists} / {wrapped} / {bare} -- rows were "
+            "DROPPED, added or changed kind, which no per-row shape test can see. If a Mirror "
+            "template or a List action was changed on purpose, update these constants in the "
+            "same commit and say why.")
 
 
 # ---------------------------------------------------------------------------
@@ -3355,7 +3635,9 @@ def verify_sentinel_gates(actions):
 
 
 # ---------------------------------------------------------------------------
-# CYCLE 15 -- the eighth axis, STRUCTURED VALUE (compound state fields).  Confirmed by
+# CYCLE 15 -- axis 9, STRUCTURED VALUE (compound state fields).  (Renumbered by the phase 13
+# code review, WR-06: written as "the eighth axis" before .claude/CLAUDE.md gained axis 8, the
+# WFItems row wrapper.)  Confirmed by
 # device error: "Get Dictionary Value failed because Shortcuts couldn't convert Text to
 # Dictionary", traced to recent_sessions being read through read_value(), which
 # gettext-coerces every value it touches into a Text scalar.  That coercion is exactly
@@ -4163,6 +4445,7 @@ def main():
     verify_required_pickers(actions)
     verify_conditional_inputs(actions)
     verify_conditional_action_string(actions)
+    verify_list_item_wrappers(actions)
     verify_numeric_operands(actions)
     verify_state_seed(actions)
     verify_pending_exit_seed(actions)

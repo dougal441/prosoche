@@ -33,7 +33,7 @@ side by side, which is this project's definition of done.
 - [x] **Phase 10: Ship-readiness remainder and UX-lite pass** - Circle 0 silent band, OPEN notification removed, Control Room quieted, five new structural guards; device UAT deferred to Phase 19
 - [ ] **Phase 11: Build Addendum 01 — Dante Circle names and the ten-primitive roster** - The rename lands once against BD-06's settled roster, with the dispatch-coverage guard written alongside it
 - [ ] **Phase 12: State-shape sentinel gaps — exit_events and active_session** - The last two dotted-read crash risks are seeded and gated on leaf value; prerequisite for Phase 17
-- [ ] **Phase 13: Red-operator conditionals and the WFItems List wrapper** - Donor 5 decrypted at last; the 14 red-operator sites and 2 blank-List sites fixed by class, with recurrence guards
+- [ ] **Phase 13: Red-operator conditionals and the WFItems List wrapper** - Donor 5 decrypted at last: the conditional family measures as already correct and is pinned, while 66 List actions carrying 660 blank rows per fork are fixed by class, both with recurrence guards
 - [ ] **Phase 14: Ash as real Color Filters grayscale** - The highest-evidence primitive stops being an alert box; restore leg is the deliverable
 - [ ] **Phase 15: Circle 8 — the Voice primitive** - The product stops shipping eight working Circles out of nine
 - [ ] **Phase 16: Dimming and Silence as distinct device-proven Circles** - Capture-and-restore proven as a closed loop under every ugly failure mode, or retired
@@ -573,34 +573,57 @@ Plans:
 
 ### Phase 13: Red-operator conditionals and the WFItems List wrapper
 
-**Goal:** Settle and fix two defect families carried unchanged through every cycle of the closed
-`open-routing-sequence-error` session because both sit past breadcrumb J. Both are now safe
-to pick up, and both are **device-visible defects that no file-level analysis can detect**.
+> **Corrected 2026-08-17, on donor evidence — this section previously stated two counts that
+> measurement REFUTED.** `.planning/debug/Donor 5.shortcut`, `Donor 4.shortcut` and
+> `Donor 4.1.shortcut` were decrypted during this phase's research (Donor 5 for the first time
+> ever), and every count was re-measured with `plistlib` against the artifacts at HEAD. The
+> conditional family is **not** a defect and its site count is **zero**, not fourteen; the
+> `WFItems` family is real and **33× larger** in actions and 330× larger in rows than recorded.
+> The named "concrete starting site" was a **false lead** — it passes a raw literal and is not a
+> member of the family — and the screenshot both this section and the originating todo cited
+> **does not exist** in the worktree, the main checkout or git history. The full record, with
+> the original claims preserved beside their measured replacements, is `docs/BUILD-NOTES.md`
+> §28; the settled shapes are `docs/CAPABILITY-DECISIONS.md` `BD-07` and `BD-08`.
 
-**1. The 14 `WFConditionalActionString` red-operator sites ("Donor 5" family).** A variable
-is placed directly into a conditional's TEXT-slot operand as a template. This is a
-structurally different slot from the already-fixed `WFInput.Variable` envelope defect, so
-that evidence does not transfer. Zero golden-corpus coverage, zero catalog coverage
-(`is.workflow.actions.conditional` is absent from the ToolKit catalog entirely), zero device
-coverage. **`.planning/debug/Donor 5.shortcut` was captured specifically to settle this and
-has never been analysed** — decrypt it first (`aea decrypt` + `aa extract`, recipe in
-`.claude/CLAUDE.md` §8) and read the real operand shape before touching any site. A concrete
-starting site: `if_block("Previous Respected", 4, ...)`, seen rendering fully RED including
-the operator picker in `.planning/debug/Screenshot 2026-08-14 at 11.55.12 pm.png`.
+**Goal:** Settle two defect families carried unchanged through every cycle of the closed
+`open-routing-sequence-error` session because both sit past breadcrumb J — and fix the one that
+turned out to be real. Both are **device-visible defects that no file-level analysis can
+detect**, which is exactly why both had to be settled by decrypted device donors rather than by
+the validator or the ToolKit catalog.
 
-**2. The `WFItems` List wrapper (2 confirmed instances).** iOS wraps a variable-bearing List
-row as `{"WFItemType": 0, "WFValue": <WFTextTokenString>}`; this artifact omits the wrapper,
-so rows render blank. The same screenshot shows a List action rendering nine consecutive
-rows as empty placeholders. The correct shape was already recovered from
-`.planning/debug/Donor 4.shortcut` and `Donor 4.1.shortcut` but never applied.
+**1. The `WFConditionalActionString` operand family ("Donor 5") — measured as ALREADY CORRECT,
+zero defective sites.** Donor 5 shows iOS *itself* authoring the construct this phase suspected:
+a variable in a conditional's TEXT-slot operand as a `WFTextTokenString` (a single `￼` string
+plus an `attachmentsByRange` keyed `{0, 1}` holding a bare `{Type, VariableName}` dict),
+alongside a `WFInput` carrying the *opposite* `WFTextTokenAttachment` envelope, with no coercion
+aggrandizement on either side. `token()` emits a key-for-key identical shape. Measured per fork:
+192 (Core) / 195 (Aware) mode-0 conditionals carry the slot, of which **20 / 20** are
+variable-bearing (19 at condition 4, 1 at 99) and **all** match Donor 5, with 172 / 175 raw
+literals and **zero** offenders. Sweeping would have replaced a device-confirmed shape with a
+guess.
 
-**Deliverables.** Decrypt Donor 5, cross-check the recovered shape against the concrete site
-before generalising, then sweep all 14 by class. Apply the Donor-4 wrapper shape to both List
-sites, re-located by content. Add build-time recurrence guards for both, with sensitivity
-demonstrated against a synthetically reverted artifact. Fold both newly-confirmed axes into
-`.claude/CLAUDE.md`'s numbered axis list, together with the `read_value()`/`get_value()`
-distinction and the `pending_exit` container/leaf pattern — do all three doc updates in one
-pass.
+**2. The `WFItems` List wrapper — real, and 33× larger than recorded.** iOS wraps a
+variable-bearing List row as `{"WFItemType": 0, "WFValue": <WFTextTokenString>}` while leaving
+literal rows as bare strings; this artifact omitted the wrapper, so rows render blank on device
+and the Mirror can select an empty template. Measured per fork: **66 defective List actions
+carrying 660 unwrapped rows**, all originating from a single emitter, `mirror_text()`, unrolled
+across the Circle dispatch — plus 6 correct bare-string rows that a blanket sweep would have
+corrupted. The shape was recovered from `Donor 4.shortcut` and `Donor 4.1.shortcut` and applied
+here for the first time.
+
+**Deliverables.** For family 1: **pin, do not fix** — a positive build-time assertion inside
+`verify_conditional_action_string()` that a variable-bearing comparison target *is* the
+Donor-5 envelope, so a future pass cannot "repair" 20 correct sites, with the refutation carried
+in the guard's own docstring. For family 2: one emitter fix (`_list_row()`, branching per row on
+`isinstance(item, str)`) covering all 66 actions and 660 rows per fork, plus
+`verify_list_item_wrappers()` as the recurrence guard, armed on both forks at both touch points.
+Both guards sensitivity-demonstrated against a synthetically reverted artifact. Then the
+documentation pass in one go: `.claude/CLAUDE.md`'s numbered axis list extended from seven to
+nine (the `WFItems` row wrapper as a new **container** axis, and the
+`read_value()`/`get_value()` distinction), axis 7 extended with the `pending_exit` container/leaf
+pattern, `BD-07`/`BD-08` recorded, the Phase 13 `docs/BUILD-NOTES.md` section written, and the
+refuted counts closed as a class across every project record. Finally: rebuild, gate A, sign
+both forks, refresh MANIFEST, author the UAT.
 
 **Why this gates the device UAT.** Blank text and red operators are exactly the two failure
 modes Phase 19 is watching for. Fixing them first means a blank Circle in testing is a real
@@ -609,11 +632,24 @@ finding rather than a known artifact.
 **Severity:** major
 **Requirements**: CIRC-04, CIRC-07, ROOM-03, DIST-01, DIST-02
 **Depends on:** Phase 12
-**Plans:** 0 plans
+**Plans:** 4/4 plans executed
 
 Plans:
+**Wave 1**
 
-- [ ] TBD (run /gsd-plan-phase 13 to break down)
+- [x] 13-01-PLAN.md — Tracer: wrap all 660 variable-bearing `WFItems` rows via `_list_row()`, add `verify_list_item_wrappers()`, arm it on both forks, rebuild to gate A, and demonstrate the guard is sensitive
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 13-02-PLAN.md — Pin the Donor-5-confirmed conditional operand shape inside `verify_conditional_action_string()`, sweep nothing, and demonstrate both raises with the ordering mask recorded
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 13-03-PLAN.md — The single-pass doc update: axis list to nine, `BD-07`/`BD-08`, the Phase 13 BUILD-NOTES record, the corrected ROADMAP prose, and the todo closed with a tombstone
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 13-04-PLAN.md — Ship: rebuild, gate A, gate B advisory read, sign both forks under their live display names, decrypt-verify, refresh every MANIFEST row, and author `13-UAT.md`
 
 ### Phase 14: Ash as real Color Filters grayscale
 

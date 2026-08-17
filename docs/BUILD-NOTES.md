@@ -2361,3 +2361,515 @@ correct outcome here, not a speculative one: nothing about the exit-recording pa
 real-device behaviour is known beyond what Plan 12-05 Task 1's decrypted-artifact inspection
 proved structurally (schema_version 4, a four-leaf `active_session`, `exit_events == []` in
 both recovered bootstrap templates).
+
+## 28. Phase 13 — the recording duty: three decrypts, a refutation, and two guards (plan 13-03, 2026-08-17)
+
+The closing documentation plan of this phase. Everything below discharges
+`.claude/CLAUDE.md` §9's recording duty — "a probe's result is recorded, not consumed" — for
+the donor decrypts, the measured inventories, the refutation of two recorded counts, and both
+guards' verbatim sensitivity evidence produced across plans 13-01 and 13-02. Nothing here is
+re-derived: every figure and every quoted message is transcribed from `13-01-SUMMARY.md`,
+`13-02-SUMMARY.md` or `13-RESEARCH.md`'s measured tables.
+
+**Why this section exists at all.** This phase was blocked for three cycles, and the reason was
+not difficulty: the donor evidence was on disk the whole time and nobody ran the decrypt. Once
+it was run, the failure mode shifted from "nobody looked" to "somebody reads the stale record
+and re-litigates it". That is what this section, and the tombstones it points at, exist to
+prevent.
+
+### The decrypts
+
+All three donors were decrypted with the `.claude/CLAUDE.md` §8 recipe (`python3` auth-data
+extraction → `openssl x509` public key → `aea decrypt` → `aa extract` → `plutil -convert xml1`).
+**All three succeeded on the first attempt.**
+
+| Donor | Status before | Result | What it settles |
+|---|---|---|---|
+| `.planning/debug/Donor 5.shortcut` | on disk since cycle 14, **never analysed** | 196-line plist | The conditional TEXT-slot operand envelope — settles it as **already correct** |
+| `.planning/debug/Donor 4.shortcut` | shape "recovered" but never applied | 224-line plist | The `WFItems` row wrapper, the `WFItemType` integer, and the bare-string row case |
+| `.planning/debug/Donor 4.1.shortcut` | shape "recovered" but never applied | 235-line plist | The same wrapper, byte-identical on that action, plus the numeric-conditional RHS slot and the coercion aggrandizement |
+
+Both shapes are recorded as first-class decision records in `docs/CAPABILITY-DECISIONS.md` —
+`BD-07` (Donor 5) and `BD-08` (Donors 4 / 4.1) — so they are recoverable from `docs/` alone
+without this phase's planning directory.
+
+### The measured site inventory, per fork
+
+Every figure below was measured by loading `src/PROSOCHE-Dumb.xml` (Core) and
+`src/PROSOCHE-Sentient.xml` (Aware) with `plistlib` and walking the action array — first at the
+pinned phase-start SHA `698ab99`, then again after each fix.
+
+**Family 1 — `WFConditionalActionString` (the "Donor 5" family).** No site was changed by this
+phase; the pre- and post-fix columns are identical *by design*, and a difference in either
+would have been a failure of plan 13-02 rather than evidence of its success.
+
+| Measure | Core (pre → post) | Aware (pre → post) |
+|---|---|---|
+| Total actions in artifact | 4346 | 4414 |
+| Mode-0 conditionals carrying `WFConditionalActionString` | 192 → 192 | 195 → 195 |
+| …variable-bearing `WFTextTokenString` (the Donor 5 family) | **20 → 20** | **20 → 20** |
+| …condition-code split of those | 19 × code 4, 1 × code 99 | 19 × code 4, 1 × code 99 |
+| …raw-literal comparison targets | 172 → 172 | 175 → 175 |
+| Bare abandoned `"￼"` placeholders (the already-guarded defect) | 0 → 0 | 0 → 0 |
+| Sites failing the Donor-5 shape | **0 → 0** | **0 → 0** |
+
+**Family 2 — the `WFItems` List row wrapper.** One emitter changed; every figure below moved as
+a consequence of that single branch. The figures are identical on both forks at every stage,
+because Aware forks the *built* Core source and inherits the whole Mirror block unchanged.
+
+**Three stages, not two.** 13-01 fixed the missing wrapper; the phase code review (CR-01) then
+found that 13-01's `isinstance(item, str)` discriminator had over-wrapped in the other
+direction, and a third stage corrected it. Reporting only "pre → post" is what made CR-01
+invisible to a reader auditing the record rather than the artifact, so all three stages are
+carried here.
+
+| Measure | phase start | after 13-01 | after CR-01 (**what ships**) |
+|---|---|---|---|
+| `is.workflow.actions.list` actions | 67 | 67 | 67 |
+| `WFItems` rows, total | 666 | 666 | 666 |
+| …**raw `WFTextTokenString`** rows (no framing at all) | **660** | **0** | **0** |
+| …rows wrapped `{WFItemType: 0, WFValue: …}` | 0 | 660 | **616** |
+| …of those, **attachment-bearing** (correctly wrapped) | 0 | 616 | **616** |
+| …of those, **attachment-free** (wrongly wrapped, CR-01) | 0 | **44** | **0** |
+| …bare `<string>` literal rows | 6 | 6 | **50** |
+| Per-action row counts | `[6] + [10]*66` | unchanged | unchanged |
+
+**The 660 figure was described as "variable-bearing" and it was not.** 44 of the 660 rows 13-01
+wrapped carry an **empty** `attachmentsByRange` — they are literal rows by content, and Donors 4
+and 4.1 write a literal row as a bare `<string>`. The inventory was numerically right and
+semantically wrong. The correct statement of what 13-01 did is **"660 rows wrapped, of which 616
+were attachment-bearing and 44 were attachment-free literals"**; the correct statement of what
+ships is **"616 wrapped + 50 bare"**. The 44 all sat at row position 8 — the row
+`getitemfromlist` selects at **Circle VIII** on both the success and the lapse family.
+
+### The refutation, stated plainly
+
+Two figures carried in the project record are wrong. Both are **REFUTED** by direct measurement
+of the artifacts at HEAD, and this subsection is the durable record of that.
+
+| Family | The recorded claim | Measured | Verdict |
+|---|---|---|---|
+| 1 | 14 `WFConditionalActionString` sites are defective and need a by-class sweep | 192 / 195 slots, of which 20 / 20 are variable-bearing and **all** match Donor 5 | **REFUTED — zero defective sites.** The deliverable inverted from a sweep into a pin |
+| 2 | the `WFItems` wrapper affects "2 confirmed instances" | **66 defective actions carrying 660 unwrapped rows, per fork** | **REFUTED — under-counted actions by 33× and rows by 330×** |
+
+Two further corrections belong to the same refutation and must not be smoothed over:
+
+- **The site the ROADMAP named as a concrete starting point is not a member of the family.**
+  `if_block("Previous Respected", 4, ...)` passes a **raw Python literal** (`string="true"` /
+  `string="false"`), never a `token()`, so it has no variable in the text slot at all. Its left
+  operand is genuinely Text-typed (`getvalueforkey` → `gettext` → `setvariable`, which is
+  `read_value()`'s chain), and a Text left operand with condition 4 is the *valid* pairing per
+  `.claude/CLAUDE.md` § "Operator/operand type validity". Variable definedness was checked
+  too: `Previous Respected` is set at action index 368 and all 44 uses occur at index 375 or
+  later, so **zero** uses precede the set and there is no dangling reference to render red.
+  This is a **corrected attribution**, not a discovered second defect — the "concrete starting
+  site" was a false lead, and the todo's own hedge ("*very likely* one of the already-catalogued
+  sites") was a guess that measurement falsifies.
+- **The screenshot both records cite does not exist.** `.planning/debug/Screenshot 2026-08-14 at
+  11.55.12 pm.png` is absent from this worktree, absent from the main checkout, and absent from
+  git history (`git log --all -- '*.png'` returns only the initial refactor commit) — verified
+  three ways. Its recorded filename also contains a **U+2060 word joiner** between `11.55.12`
+  and `pm`, so this is not merely a path-quoting problem. **No task in this phase depended on
+  reading it.** Both defects it allegedly showed were established independently and more
+  precisely — family 2 by direct measurement, family 1 by donor refutation — so nothing is
+  lost. If the user still holds the image it is a rung-4 item worth requesting for the
+  historical record only, never as a gate.
+
+Every record that asserted either count has been corrected in place or annotated with a dated
+tombstone: the ROADMAP milestone checklist bullet and the Phase 13 section prose,
+`.planning/debug/HANDOFF.md` at five sites (originals preserved as history), and the pending
+todo, closed into `.planning/todos/completed/` carrying a standalone tombstone. The closure was
+proven by a whole-tree sweep over six literal phrasings across `.planning/` and `docs/`, not by
+an enumeration of remembered sites — a section-scoped edit measurably leaves sites uncorrected,
+which is precisely how a refuted count survives to be re-litigated.
+
+**Three exemptions, not two — and the third was found by the phase's own verifier, not by the
+sweep.** The declared exemptions are `.planning/todos/completed/` and `.planning/phases/13-*/`,
+where the historical wording must survive in order to *be* the tombstone. The verifier then found
+**nine** further assertions of the 14-site count in `.planning/debug/resolved/open-routing-sequence-error.md`
+— lines 810, 931, 1037, 1044, 1197, 1203, 1270, 1277, 4667 — phrased `THE 14 WFConditionalActionString
+SITES` and `at 14 sites`, which none of the six chosen literals matches. `.planning/debug/resolved/`
+is hereby the **third declared exemption**, on the same rationale as the first two: it holds closed,
+archived audit trails, and each of those nine lines is a per-cycle historical record of what was
+*believed at that cycle* ("carried forward unchanged from cycle 8"). Annotating them individually
+would rewrite the audit trail the refutation's credibility rests on. A single dated `REFUTED` banner
+has been added at the head of that file instead, so a cold reader meets the correction before the
+history.
+
+**The honest lesson, recorded because it cost nothing here and could cost a cycle later:** a
+literal-phrasing sweep closes only the phrasings it enumerates. Six literals left nine sites
+standing in a file the phase goal names by name. The sweep is a floor, not a proof of closure —
+which is exactly the failure mode it was built to prevent, reappearing one level up.
+
+### The two guards
+
+| Guard | File | Asserts | Registered | Armed on |
+|---|---|---|---|---|
+| `verify_list_item_wrappers()` | `tools/build_state_engine.py` | The **whole row contract**: no `WFItems` row is a dict lacking a `WFItemType` key (the **key's presence only**, never its value); `WFValue` is present and well-shaped; and a wrapped row's `WFValue.Value.attachmentsByRange` is **non-empty** — the inverse assertion added during the 13 code-review pass, which catches an attachment-free (literal-by-content) token wrongly encoded as a variable row. Census-pinned at `67` List actions / `616` wrapped / `50` bare per fork | `main()`'s verify chain, after `verify_conditional_action_string()` and before `verify_numeric_operands()`, strictly above the single `SOURCE.write_bytes()` — **anchor on the symbol, not the line**: the AST call-precedes-write relation is the invariant, and the specific line numbers move on every edit (measured `4448` < `4472` after the code-review fixes; an earlier revision of this table recorded `4248` < `4272` and went stale by 200 within the same phase) | **both forks** — new to this phase |
+| `verify_conditional_action_string()` | `tools/build_state_engine.py` | *(pre-existing)* no comparison target holds the abandoned bare `￼` placeholder; **and, new in 13-02,** every variable-bearing target positively *is* a `WFTextTokenString` with a `￼` in `Value.string` and a non-empty `Value.attachmentsByRange` | already in `main()`'s chain since Phase 12 | **both forks** — already armed |
+
+**The Aware fork needed two new touch points for the new guard and none for the extended one,**
+and both facts are recorded deliberately rather than left to inference. `tools/build_sentient.py`
+has *two* independent arming sites — the `from build_state_engine import (...)` list and a
+separate bare-call guard block — and Phase 12 regressed by editing only one. Plan 13-01 hit
+both for `verify_list_item_wrappers` (added in alphabetical position between
+`verify_exit_events_seed` and `verify_numeric_operands`). Plan 13-02 added **zero** new touch
+points, because `verify_conditional_action_string` was already imported and already invoked,
+armed by Phase 12's PD-3 sweep; only its per-fork justification comment changed. An unstated
+absence would read exactly like the two-touch-point regression Phase 12 actually committed —
+hence it is stated.
+
+Both armings were proven by **AST assertion**, not by `grep -c verify_`: the guard name must
+appear in the `ImportFrom` names for `build_state_engine` **and** as a bare
+`Expr(Call(Name(...)))` statement. A raw count is only a lower bound here, because the per-fork
+justification comments also match `verify_`.
+
+### Sensitivity demonstrations — the verbatim `SystemExit` texts
+
+A guard that cannot fail proves nothing. Every `SystemExit` message below is transcribed
+verbatim from the plan commit bodies; every demonstration mutation was temporary and restored
+via `git checkout --`, with the fork digests confirmed byte-identical afterwards. Both guards
+raise `SystemExit` and never `assert` — the project's convention, asserted by AST over each
+guard body (zero `ast.Assert` nodes; one raise in `verify_list_item_wrappers()`, exactly two in
+`verify_conditional_action_string()`).
+
+**Reference digests, both forks, unchanged across every demonstration in this phase:**
+
+| Fork | Source | SHA-256 before → after |
+|---|---|---|
+| Core | `src/PROSOCHE-Dumb.xml` | `99388cad597417685eb8624a0b4b34e18a6bd30805ac38beb2f3188026c3e679` → identical |
+| Aware | `src/PROSOCHE-Sentient.xml` | `d01154b3e1b5990e5d3bc6d92e8dd895b92d0448217356772d077022e5215666` → identical |
+
+The demonstration subject was a **pinned absolute SHA**, `698ab99`, never a relative ref, and
+its defectiveness (exactly 660 unwrapped rows) was asserted *before* it was used, so a
+demonstration could not silently succeed against the wrong artifact. Its pre-fix Core blob is
+2831992 bytes, `589ee121…`.
+
+**`verify_list_item_wrappers()` — three ways (plan 13-01).**
+
+Direct call against `698ab99:src/PROSOCHE-Dumb.xml`, raising `SystemExit`:
+
+```
+List rows carry a raw WFTextTokenString instead of the iOS {WFItemType, WFValue} wrapper
+(renders blank on device): action 1141 row 0, action 1141 row 1, action 1141 row 2,
+action 1141 row 3, action 1141 row 4 (660 total)
+```
+
+Full-build revert on **Core** — `mirror_text()`'s `WFItems` argument reverted to `list(items)`,
+then `python3 tools/build_state_engine.py` exited **1** with the byte-identical message, and
+`src/PROSOCHE-Dumb.xml`'s sha256 was **unchanged across the failed build** — the empirical proof
+the raise preceded `SOURCE.write_bytes()` rather than following it.
+
+Full-build revert on **Aware** — `src/PROSOCHE-Dumb.xml` overwritten in the working tree only
+with the pre-fix blob from `698ab99`, then `python3 tools/build_sentient.py` alone exited **1**
+with the same prose and the same `660 total`, at the Aware fork's **own** indices:
+
+```
+… action 1209 row 0, action 1209 row 1, action 1209 row 2, action 1209 row 3,
+action 1209 row 4 (660 total)
+```
+
+**The differing index is positive evidence, not a discrepancy.** Aware inserts its own actions
+ahead of the Mirror block, so `1209` is the Aware fork's own index for the same first offending
+List action; an inherited-from-Core failure would have carried Core's `1141`. That is exactly
+what a per-fork arming assertion has to prove. `src/PROSOCHE-Sentient.xml`'s sha256 was
+unchanged across that failed build too.
+
+**Non-vacuity:** in the same process that captured the failures, the same guard returned
+**without raising** on both post-fix forks.
+
+**`verify_conditional_action_string()` — four variants plus a full build (plan 13-02).**
+
+The pin isolated — one variable-bearing target replaced with the opposite
+`WFTextTokenAttachment` envelope:
+
+```
+variable-bearing conditional comparison targets have LOST the device-confirmed Donor 5
+WFTextTokenString envelope (a single ￼ string plus a non-empty attachmentsByRange); this
+assertion PINS a shape iOS itself authors, so the change that tripped it is the defect, not
+the shape: actions 158 (1 total)
+```
+
+The **pre-existing** assertion, proven still to have teeth after the extension — one target
+replaced with the bare `U+FFFC` string:
+
+```
+conditional comparison targets hold the abandoned bare placeholder character instead of a
+wired token() reference: actions 158 (1 total)
+```
+
+Full-build revert on Core — `token()` temporarily returned the `WFTextTokenAttachment`
+envelope, and `python3 tools/build_state_engine.py` exited **1** naming the whole
+variable-bearing family:
+
+```
+… actions 158, 546, 635, 660, 691 (20 total)
+```
+
+The **pin itself** was the guard that raised in that full build; no earlier guard in `main()`'s
+chain claimed the failure, so no fallback to the direct-call result was needed and the chain
+order was never touched. `src/PROSOCHE-Dumb.xml`'s sha256 was unchanged across the failed build.
+Non-vacuity: the same guard, same process, returned without raising on both shipped forks.
+
+### The ordering mask, recorded rather than engineered around
+
+`verify_conditional_action_string()` now carries **two** raises, and the first masks the second.
+Tripping both in one action list — action 158 mutated to the bare placeholder, action 159
+mutated to lose the envelope — produces **only the first raise's message**, byte-identical to
+the legacy text quoted above:
+
+```
+conditional comparison targets hold the abandoned bare placeholder character instead of a
+wired token() reference: actions 158 (1 total)
+```
+
+The pin's offender is **entirely invisible**, and the `(1 total)` is the *legacy* count, not a
+combined one. The two messages are textually distinct, which is what makes the mask
+diagnosable at all. **Neither `main()`'s verify chain order nor the order of the two raises
+inside the function was changed** — reordering either to make a demonstration convenient is the
+weakening this phase's prohibitions forbid. `verify_list_item_wrappers()` introduces **no**
+ordering mask of its own: it was the guard that raised in both of 13-01's full-build reverts,
+confirming empirically what its placement asserted.
+
+### Deviations and open assumptions
+
+No deviation rule was invoked in either implementation plan; no auto-fix was required. **Five**
+assumptions remain **open**, each with its risk — A1 through A4 from plan 13-03, and **A5 added
+by the phase code review (CR-02)**, which also **restates A3**:
+
+- **A1 — the cause of the 2026-08-14 red render.** `[ASSUMED]` that it was a then-current
+  binding since changed by cycles 14–16 and Phases 9–12. **Unprovable now:** the build is not
+  retained and the screenshot does not exist. Risk: **low** — the site is provably valid at
+  HEAD on every axis file-level analysis can reach, so no action is available regardless, and a
+  red chip at Phase 19 UAT would be a **new** finding with a live artifact to inspect.
+- **A2 — `WFItemType` values other than `0`.** Left **unaudited by choice**. Neither donor
+  exercises a number, dictionary or file row. Risk: **none for this phase** — only text rows
+  are emitted. The guard asserts only that the key is *present*, never that it equals `0`,
+  because asserting `== 0` would encode the same unaudited claim one level down. Do not infer
+  any other value from `0`.
+- **A3 — an all-wrapped array is a configuration no donor exhibits. RESTATED AND PARTLY CLOSED
+  by the phase code review (CR-01); the original wording is preserved below because it is the
+  reason the defect survived the plan.** As written in 13-03, A3 noticed the adjacent fact and
+  framed it as a *mix* question rated low risk: "Donors 4 and 4.1 show bare and wrapped rows
+  **mixed** in one device-authored array, which is close to VERIFIED for the mix; this phase's
+  fix nonetheless produces arrays that are entirely wrapped. Risk: **low**, listed only because
+  the exact configuration shipped is not the exact configuration observed."
+
+  **What that wording missed.** The arrays were not merely all-wrapped; **44 of the wrapped rows
+  were literal by content** — an empty `attachmentsByRange` — so the shipped encoding
+  contradicted axis 8's own stated rule rather than merely going beyond the donors' observed
+  configuration. A reader auditing the record could not have learned that from A3. This is a
+  *stronger* claim than "no donor exhibits it": a donor exhibits the **opposite**.
+
+  **Status now.** CR-01 moved those 44 rows to the bare `<string>` form both donors show, so the
+  two Mirror families (success and lapse) now ship **mixed** arrays — 9 wrapped rows and 1 bare
+  row each — which is exactly the donor-observed configuration. The 22 baseline arrays remain
+  entirely wrapped, because all ten baseline templates genuinely carry placeholders; that
+  residue is the only part of A3 still open, and it is open for the original, weaker reason
+  (an all-wrapped array is unobserved, not contradicted). Risk: **low**. Device-only, owned by
+  Phase 19 UAT alongside A4.
+- **A4 — wrapping does not change what `getitemfromlist` returns.** No donor chains a *wrapped*
+  List into `getitemfromlist`. The file-level half **is** verified: row count and ordering per
+  List action are unchanged (`[6] + [10]*66`), `WFItemSpecifier` and `WFItemIndex` are
+  untouched, and no arithmetic and no `uid()` call was introduced. Risk: **medium** — if iOS
+  treats a wrapped row differently on extraction, the Mirror text could change shape. **Device-
+  only; owned by Phase 19 UAT,** which must assert "Mirror renders non-empty text".
+
+- **A5 — the numeric conditional's right-hand slot, `WFNumberValue`. Added by the phase code
+  review (CR-02); BD-08 previously recorded this as CONFIRMED and that confirmation is
+  RETRACTED.** Two axes are `UNVERIFIED`, both re-measured independently. (i) **Encoding:**
+  `if_block()` assigns the raw Python value, so `plistlib` emits an `<integer>` at **90 (Core) /
+  97 (Aware)** sites; re-decrypting `.planning/debug/Donor 4.1.shortcut` reads
+  `<key>WFNumberValue</key>` → `<string>10</string>`. The generator diverges from the donor.
+  (ii) **A fourth, uncovered case:** **32** conditionals per fork hold a *dict* in
+  `WFNumberValue` — a bare `WFTextTokenAttachment` variable reference over eleven distinct
+  variables (`Best Average`, `Dim Target`, `Exploit Minimum`, `Exploration Threshold`, `Gravity
+  Cap`, `Heat Cap`, `Heat Floor`, `Now Epoch`, `Overrun Minimum`, `Silence Target`,
+  `Threshold`). **No donor covers a variable in `WFNumberValue` at all.** Risk: **medium** —
+  this project's recorded failure mode for a non-literal comparison slot is "Please choose a
+  value for each parameter in this action", which is a hard runtime stop, not a degradation.
+  **The artifact was deliberately NOT changed:** moving 90/97 live operands on a build no
+  device can run would settle nothing and would close at best half the finding, since the 32
+  dict sites stay unevidenced either way. **Device-only; owned by the outstanding device UAT,**
+  which must observe a numeric-gated Circle actually firing — the `> 0` panic-escape gate and
+  any Heat/Pressure threshold comparison are the cheapest witnesses. A donor exercising a
+  *variable* right-hand operand would settle (ii) at rung 4 without a full UAT.
+
+**Installed-base note for Phase 19.** A user who already imported the previous signed build
+keeps the blank-row Mirror until they **re-import**. That is inherent to Shortcuts distribution
+and needs no migration — but Phase 19 UAT must therefore test a **re-imported** build rather
+than a stale install, or it will observe the old defect and attribute it to a fix that did land.
+
+### Regression protection — CIRC-04 and ROOM-03
+
+**Neither requirement has a defect site in either family, and no work was invented to make them
+look addressed.** CIRC-04's time-boundary picker is a `choosefrommenu`, not an
+`is.workflow.actions.list`; ROOM-03's Note body is a hand-authored text template with no
+conditional operand and no List row. Both are **regression-protection** requirements, satisfied
+by `docs/phase5_self_check.py` (CIRC-04) and `docs/note_identity_check.py` (ROOM-03) staying
+green through the rebuild — both exited 0 after every rebuild in plans 13-01 and 13-02, as did
+`docs/sequence_dispatch_check.py` for the Mirror dispatch path. Eleven of the twelve
+`docs/*.py` checkers are green; `docs/manifest_check.py` is **expected red** for the D-04
+reason below.
+
+`docs/manifest_check.py` fails with `AssertionError: row 'Core source': MANIFEST declares
+2831992 bytes, src/PROSOCHE-Dumb.xml is 2916560 bytes` — the expected consequence of
+regenerating the sources in plan 13-01. It was **not** silenced, and MANIFEST rows were **not**
+edited without re-signing, which is exactly the prohibition that forbids it. Plan 13-04 owns the
+re-sign.
+
+### Gate B advisory read and signed-artifact provenance (plan 13-04, 2026-08-17)
+
+*This subsection was reserved and left deliberately empty by plan 13-03, which ran no build, no
+validator gate and no signer. Plan 13-04 fills it with what it actually measured.*
+
+**Rebuild and provenance.** `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678
+HEAD` exited **0** before either generator ran. `tools/build_state_engine.py` and
+`tools/build_sentient.py` were then run in that order, and the rebuild was **byte-idempotent**:
+`git status --porcelain` was empty afterwards, so both sources carried the wave-2 digests
+`99388cad…` (Core) and `d01154b3…` (Aware) **as of this 13-04 run**. Those two source digests were
+superseded by the CR-01 re-ship at `365937e`; they are recorded here as the wave-2 measurement, not
+as current. (These are `src/*.xml` digests, not signed-artifact digests — nobody imports a source
+XML, and `artifacts/shortcuts/MANIFEST.md` remains the authoritative live record.) The operative
+claim is unaffected and was re-verified after the re-ship: the rebuild is byte-idempotent. That
+matters beyond tidiness — it means a re-run
+after an interruption converges on the same digests rather than producing a new set, so the
+hashes in `artifacts/shortcuts/MANIFEST.md` are reproducible rather than run-specific
+(threat T-13-26).
+
+**Checker baseline before signing.** All eleven non-manifest checkers exited **0** *before*
+anything was signed, deliberately: a signed artifact built from a source that fails a checker is
+a false provenance claim. `docs/manifest_check.py` was the expected twelfth red at that point,
+failing with the byte-identical D-04 message plans 13-01 through 13-03 each recorded —
+`AssertionError: row 'Core source': MANIFEST declares 2831992 bytes, src/PROSOCHE-Dumb.xml is
+2916560 bytes`. It exits **0** at the end of this plan; D-04 is closed by re-signing and
+recomputing every row, **not** by editing byte counts to match a stale artifact.
+
+**Gate A — mandatory, clean on both forks.**
+
+| Command | Result |
+|---|---|
+| `validate-shortcut src/PROSOCHE-Dumb.xml --target-macos 26 --target-platform all` | `Validation passed.`, exit **0** |
+| `validate-shortcut src/PROSOCHE-Sentient.xml --target-macos 26 --target-platform all` | `Validation passed.`, exit **0** |
+
+**Gate B — advisory read only, run standalone per fork.** Each command below was issued on its
+own. Neither appears in any `&&` chain, in either task's `<verify>` block, or in any definition
+of done — gate B's waiver is permanent, so it can never exit 0 and is therefore structurally
+incapable of being a gate (`.claude/CLAUDE.md` §1). Both exited **1**, which is the expected
+outcome, and each reported **exactly one** finding line.
+
+Verbatim, `validate-shortcut src/PROSOCHE-Dumb.xml --target-macos 27 --target-platform all`:
+
+```
+Validation failed:
+
+First failing action: index 0 (is.workflow.actions.comment)
+Snippet: {'WFCommentActionText': 'PROSOCHE - Nine Circles (Dumb fork). This shortcut is the whole product: it reads two setup answers from import, checks for a saved setup file, creates one on first run along with a setup note, and opens that not...
+
+- Unknown AppIntent parameter key(s) for com.apple.mobilenotes.SharingExtension at index 4192: WFCreateNoteInput. ToolKit v78 expects: OpenWhenRun, contents, folder, interpretAsMarkdown, name.
+```
+
+Verbatim, `validate-shortcut src/PROSOCHE-Sentient.xml --target-macos 27 --target-platform all`:
+identical but for the action index, which reads `4260`.
+
+Index-normalised, so a future run can diff against it without the index churn every edit causes:
+
+```
+Unknown AppIntent parameter key(s) for com.apple.mobilenotes.SharingExtension at index N: WFCreateNoteInput. ToolKit v78 expects: OpenWhenRun, contents, folder, interpretAsMarkdown, name.
+```
+
+**Exactly one such line per fork, and nothing else.** That is the single permanent waiver
+recorded in `.claude/CLAUDE.md` §1 and in §14 — device-donor ground truth outranks the
+`macOS 27`-tagged catalog entry, and `STRING_ENVELOPE_PARAMS["com.apple.mobilenotes.SharingExtension"]`
+retains it on purpose. The `First failing action: index 0` line is the validator's own framing
+of *where it stopped*, not a second finding. **This was the run most likely to surface a real
+regression** — the phase moved 660 row serializations, and gate B is the only channel that
+checks parameter keys and picker literals at all. It surfaced none, so no finding was
+investigated because none was reported. Note gate B's own limit, unchanged: at
+`--target-macos 27` it may *accept* an OS27-only parameter key iOS 26 does not offer, so it
+supplements gate A and never replaces it.
+
+**Signing — the two canonical display names, no suffix.**
+
+> **SUPERSEDED — the digests, sizes and census in this plan-13-04 subsection describe the
+> `737ce07` build, which no longer exists on disk.** The code-review pass that followed execution
+> found CR-01: `_list_row()` discriminated on Python type, so 44 attachment-free
+> (literal-by-content) rows shipped inside the variable-row wrapper — a second unevidenced framing,
+> at row 8, the row selected at Circle VIII. The fix and full re-ship landed in `365937e`. The
+> **current** shipped artifacts are Core `233802 B` / `b07497ba…` and Aware `237842 B` /
+> `212598cf…`, and the census is **616 wrapped / 50 bare**, not 660/6. The figures below are
+> retained as the record of what was signed at 13-04 time; do not read them as current. The
+> authoritative live values are the six rows of `artifacts/shortcuts/MANIFEST.md`, proven against
+> disk by `python3 docs/manifest_check.py`.
+
+| Fork | Source | Signed basename | Bytes | SHA-256 |
+|---|---|---|---:|---|
+| Core *(superseded)* | `src/PROSOCHE-Dumb.xml` | `PROSOCHĒ — Nine Circles — Core.shortcut` | 234830 | `fe1bafdf53f872a3e149734456899d1be0987706551d7b8fa7b50f81b8a913b7` |
+| Aware *(superseded)* | `src/PROSOCHE-Sentient.xml` | `PROSOCHĒ — Nine Circles — Aware.shortcut` | 239184 | `bd1264d502891c9afeeccb66134dceaf66288a1da890133498605538aa75ba19` |
+
+Both begin with the `AEA1` magic and both are non-zero. `artifacts/shortcuts/` holds exactly
+those two `.shortcut` files and no other basename of any kind. Neither known signer quirk fired:
+both `shortcuts sign` invocations succeeded on the first attempt, so `sign-shortcut`'s two
+auto-retries were not exercised. The dated pre-sign archives are
+`artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-184943.xml` and
+`— Aware-184954.xml`, each byte-identical to its `src/` counterpart, which is what makes an
+archive a pre-sign record rather than a copy of something else.
+
+**`.claude/CLAUDE.md` §8's filename-discipline examples are stale, and the rule is not.** §8
+names the forks `Dumb`/`Sentient`; Phase 11 renamed the *products* to `Core`/`Aware` and
+`docs/manifest_check.py` hard-codes the live names as DIST-04, so signing to the §8 example
+names would fail that checker. The *source* filenames deliberately remain `PROSOCHE-Dumb.xml`
+and `PROSOCHE-Sentient.xml`. The discipline itself is load-bearing rather than cosmetic and was
+re-confirmed on this build: neither recovered `Shortcut.wflow` contains a `WFWorkflowName` key
+at all (measured — `'WFWorkflowName' in plist` is `False` for both) even though both `src/*.xml`
+set it, so the signer strips it and **the filename is the sole carrier of the display name**. A
+suffixed file imports as a second, differently named library entry that the user's two Personal
+Automations do not reference — a silently dead install.
+
+**Decrypt-verification — what actually shipped.** Both containers were recovered through the
+full AEA1 workflow rather than inferred from the unsigned source plus a file mtime: the leaf
+certificate was extracted from the auth-data plist's `SigningCertificateChain` (779 DER bytes,
+both forks), its public key taken with `openssl x509`, then `aea decrypt` (exit 0), `aa extract`
+(exit 0) and `plutil -convert xml1` (exit 0). Measured on the **recovered** plists, not on
+`src/`:
+
+| Measurement | Core | Aware |
+|---|---:|---:|
+| Total actions | 4346 | 4414 |
+| `is.workflow.actions.list` actions | 67 | 67 |
+| `WFItems` rows, total | 666 | 666 |
+| Rows wrapped as `{WFItemType: 0, WFValue: …}` | **660** | **660** |
+| Bare-string rows (the six exit names) | **6** | **6** |
+| Dict rows missing `WFItemType` | **0** | **0** |
+| `WFWorkflowName` present | `False` | `False` |
+
+This is the only check that would catch a row altered between source and shipped artifact
+(threat T-13-23), and it is what licenses the claim that the wrapper fix *shipped* rather than
+merely *built*. `aea` and `aa` were both available at `/usr/bin`, so no tooling deviation was
+recorded.
+
+**MANIFEST.** All six rows — two sources, two new dated archives, two signed artifacts — were
+recomputed from disk in one pass rather than only the rows believed to have moved; Phase 10
+measured three of six wrong at once (threat T-13-22). `docs/manifest_check.py` exits **0**, and
+all twelve `docs/*.py` checkers are green at the end of this plan. `docs/phase5_self_check.py`
+(CIRC-04) and `docs/note_identity_check.py` (ROOM-03) are among them, which is the whole of what
+those two regression-protection requirements needed — proven unregressed against the artifact
+that actually ships, with no work invented for either.
+
+**Device verdict — BLOCKED, and recorded as observed.** `xcrun devicectl list devices` reported
+`No devices found.` on 2026-08-17, so nothing in this subsection is device evidence and
+**DIST-03 remains open**, unchanged since Phase 10. `13-UAT.md` is authored cold-runnable with
+six tests and every outcome left **blank** and marked `BLOCKED`. No simulator run, no decrypted-artifact
+inference and no plausible-looking pass was substituted for a device observation. The booted
+simulator could not settle these questions in any case — it lacks `com.apple.mobilenotes` and
+cannot import a signed `.shortcut` at all — and the plist is already proven correct at file
+level, which is exactly what a device observation neither adds to nor subtracts from.
+
+**Re-import note for Phase 19.** A user holding any previously signed build keeps the blank-row
+Mirror until they **re-import**. That is inherent to Shortcuts distribution and needs no
+migration, but Phase 19 must therefore test a **re-imported** build rather than a stale install,
+or it will observe the old defect and attribute it to a fix that did land. The artifact to
+import is `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` at SHA-256
+**`b07497ba…`** (the `365937e` re-ship); anything else is the wrong build. **SUPERSEDED:** an
+earlier revision of this sentence named `fe1bafdf…`, the `737ce07` build that carried the CR-01
+defect. Importing that one would test the defect rather than the fix.
