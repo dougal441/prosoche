@@ -22,6 +22,7 @@ from build_state_engine import (
     verify_dispatch_coverage,
     verify_exit_events_seed,
     verify_list_item_wrappers,
+    verify_no_removed_snapshot_leaf_reads,
     verify_numeric_operands,
     verify_output_names,
     verify_panic_escape_seed,
@@ -395,6 +396,14 @@ def main() -> None:
     # user dim or silent with no recorded way back, and neither validator gate can see
     # ordering.  Asserted per fork, never inferred from the Dumb run.
     verify_capture_persistence(actions)
+    # PHASE 16 (16-04), D-02, same per-fork reasoning again.  Sentient inherits the reduced
+    # settings_snapshot shape from the built Dumb source rather than re-seeding it, so this
+    # asserts the fork added no read of a leaf D-02 retired.  A Sentient-ONLY read is exactly
+    # the case Dumb's own run cannot see: the Mirror's context window is assembled on this
+    # fork alone, and a dotted read of a removed leaf there is a hard runtime error that
+    # aborts before restore_managed_settings() and strands the Aware-fork user dim or silent.
+    # Asserted per fork, never inferred from the Dumb run.
+    verify_no_removed_snapshot_leaf_reads(actions)
     verify_sentinel_gates(actions)
     # Sentient inherits the router verbatim from the built Dumb source, but assert it here
     # too: an inserted Sentient block must never land between the OPEN/CLOSE tests and the

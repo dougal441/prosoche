@@ -104,8 +104,15 @@ def main() -> None:
     for marker in ("PHASE 5 PRIMITIVE DISPATCH", "PHASE 5 LIVE ICE REDIRECT", "PHASE 5 ICE EXPIRY",
                    "PHASE 5 RESTORE MANAGED SETTINGS", "PHASE 5 MANUAL EMERGENCY RESTORE"):
         require(marker in comments, f"missing semantic marker: {marker}")
+    # PHASE 16 (16-04), D-02: the two bare leaf names "changed_at" and
+    # "changed_by_session_id" stood in this tuple and are REMOVED.  They are written at zero
+    # sites and read at zero sites now; asserting their presence would assert against the
+    # build that produces the artifact this checker inspects.  The two DOTTED
+    # original_value keys and cooldown_until are retained deliberately -- original_value is
+    # the leaf every restore gate reads, and its absence from the bootstrap seed is the
+    # cycle-10 hard-error class.
     for key in ("settings_snapshot.brightness.original_value", "settings_snapshot.volume.original_value",
-                "changed_at", "changed_by_session_id", "cooldown_until"):
+                "cooldown_until"):
         require(key in text, f"missing state safety key: {key}")
     require("AXToggleColorFiltersIntent" not in text and "UAToggleColorFiltersIntent" not in text,
             "unsupported Color Filters action was emitted")

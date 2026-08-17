@@ -1003,6 +1003,79 @@ brightness/volume machinery might remove the mechanism and make the question moo
 cut was cancelled, so DEV-06 and the `Session ID` scope defect are both live again. See §19.8. The
 decision itself is unchanged and still reserved to the user; this line points forward only.
 
+### Addendum (2026-08-18) — DEV-06 is CLOSED. Decided by the user: **REMOVAL.**
+
+Everything above this heading is the record as it stood, retained unedited. This addendum
+supersedes it on three points and closes the entry. Phase 16, plan 16-04, decision **D-02**
+(LOCKED, see `.planning/phases/16-*/16-CONTEXT.md`).
+
+**1. The site count above is STALE. Measured: 44 per fork, not 20.**
+
+Measured 2026-08-18 by a `plistlib` key scan over both built forks, immediately before the
+removal:
+
+| Leaf | Write sites, `Dumb` | Write sites, `Sentient` |
+|---|---:|---:|
+| `settings_snapshot.brightness.changed_at` | 11 | 11 |
+| `settings_snapshot.brightness.changed_by_session_id` | 11 | 11 |
+| `settings_snapshot.volume.changed_at` | 11 | 11 |
+| `settings_snapshot.volume.changed_by_session_id` | 11 | 11 |
+| **total** | **44** | **44** |
+
+Derivation: **2 leaves × 2 groups × 11 `primitive_dispatch()` renderings per fork = 44.** The
+eleven renderings are nine `Test a Circle` submenu cases plus the two in `universal_leaving()`.
+The figure is arrived at two independent ways — counted off the artifact and derived off the
+rendering count — and they agree exactly.
+
+This is the same staleness class as the 18-vs-28 correction `09-RESEARCH.md` had to make, and
+it has the same two causes: the `Test a Circle` unroll, and Phase 11's eleventh dispatch
+rendering. **A delta LARGER than the rendering count explains would mean a regression — a write
+emitted somewhere `primitive_dispatch()` does not reach — not a recount.**
+
+`§17`'s companion figure moves with it: "only 2 of the 20 … the other 18 record an empty owner"
+becomes **4 of 22 `changed_by_session_id` writes carried a real owner, and 18 recorded an empty
+one.** The "18" survives only by coincidence. Post-removal both figures are **0**, asserted
+against the rebuilt artifact.
+
+**2. DEV-06 — DECIDED by the user, 2026-08-18: drop the unused fields.**
+
+Of the four options `§17` put to the user, the second was chosen: **remove
+`changed_at` and `changed_by_session_id` entirely.** Ship-checklist item 4 is therefore
+**CLOSED**.
+
+The reasoning that made removal correct, recorded so it is not re-litigated:
+
+- **Zero consumers.** No read of state targeted either field anywhere in either fork — not
+  through `read_value()`'s chain, not through a flat `get_value()`.
+- **The two guards that actually protect the overlap case consult neither identity nor time.**
+  `if_block("<group> Snapshot", 100)` short-circuits a second session on snapshot *presence*, so
+  it never overwrites a live original; and every restore path gates on `original_value > 0`.
+  The exposure `§17` described as "narrow" was in fact already closed, by structure rather than
+  by ownership.
+- **A naive field-equality check would have been worse than nothing.** It would block the
+  legitimate case where the last CLOSE restores the first capture — the case `09-UAT.md`'s
+  first-principles write-up traced. Removal avoids introducing that defect at all.
+
+**3. Why the decision became timely exactly now — the consequence plan 16-01 created.**
+
+Before plan 16-01, these fields were written into the `State` dictionary, which is never saved
+after the OPEN arm's last save. They therefore **did not survive the run that wrote them**: any
+ownership check would have been reading a leaf no run could populate. 16-01 made the capture
+persist to `state.json` — which is precisely what would have given these fields consequences for
+the first time. Retiring dead state one plan *after* the fix that would have made it real is the
+whole reason D-02 sits in this phase and in this order.
+
+**Ship-checklist item 5 — the `Session ID` scope defect — is RESOLVED BY REMOVAL, not deferred.**
+Item 5 was conditional on item 4 resolving to "implement". It resolved to "remove", so there is
+no longer a field whose scope could be wrong. Both rows are closed; items 1–3 are unaffected.
+
+**What enforces this going forward.** The removal is safe **only because there is no reader** —
+`.claude/CLAUDE.md`'s verified runtime semantics make a dotted read of a missing segment a *hard*
+runtime error, and Shortcuts has no `try`/`catch`. `tools/build_state_engine.py::
+verify_no_removed_snapshot_leaf_reads` fails the build if any read ever targets one of these
+names again, on **both** forks, reusing the existing read-key index rather than a grep. It was
+demonstrated to fire on an injected read of each surface before being accepted (T-16-16).
+
 ---
 
 ## 9. Revisions — 2026-08-16 (donor ground truth)
