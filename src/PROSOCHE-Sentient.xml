@@ -1507,7 +1507,7 @@ Guard against empty fields before reading anything nested inside them. Six field
   "last_open_at": null,
   "last_close_at": null,
   "last_app": null,
-  "active_session": null,
+    "active_session": {"id": "null", "started_at": "null", "declared_duration_seconds": "null", "intention": "null"},
   "pending_exit": {"type": "null", "timestamp": "null"},
   "recent_sessions": [],
   "recent_contracts": [],
@@ -1560,7 +1560,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 								<key>VariableName</key>
 								<string>Behavioural Day</string>
 							</dict>
-							<key>{1448, 1}</key>
+							<key>{1540, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
