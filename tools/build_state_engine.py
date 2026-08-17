@@ -678,8 +678,22 @@ def _list_row(item):
     text_token()'s `if name:` branch is the nearest conceptual relative, but it
     discriminates on a None field inside a parts tuple, not on a value's Python type.  The
     shape below is fixed by donor evidence, not by an in-file analog.
+
+    THE FUNCTION IS TOTAL, AND THAT IS THE POINT (phase 13 code review, WR-03).  The original
+    `item if isinstance(item, str) else {...}` accepted ANYTHING as the else branch.  Probed:
+    `_list_row(5)` returned {"WFItemType": 0, "WFValue": 5} -- a fabricated row shape for a
+    value type this docstring explicitly says is unaudited, emitted with no error; and
+    `_list_row(already_wrapped)` silently DOUBLE-WRAPPED, which is exactly the "sweeping every
+    row corrupts the legitimate rows" hazard .claude/CLAUDE.md axis 8 warns about, with
+    nothing between it and a signed artifact.  The contract is therefore asserted at the
+    emitter, where the offending value is still in hand and can be named.
     """
-    return item if isinstance(item, str) else {"WFItemType": 0, "WFValue": item}
+    if isinstance(item, str):
+        return item
+    if not (isinstance(item, dict) and item.get("WFSerializationType") == "WFTextTokenString"):
+        raise SystemExit("mirror_text() row is neither a literal str nor a WFTextTokenString "
+                         f"(a WFItems row has exactly those two kinds): {item!r}")
+    return {"WFItemType": 0, "WFValue": item}
 
 
 def mirror_text(items, name: str):
