@@ -2565,7 +2565,16 @@ def verify_state_seed(actions):
 # 'settings_snapshot'"), on a key the bootstrap template never declared at all. See the
 # note beside KNOWN_SENTINEL_EXISTENCE_GATES for the full before/after.
 PENDING_EXIT_SEED = {"type": CLEARED_SENTINEL, "timestamp": CLEARED_SENTINEL}
-PENDING_EXIT_ANCHOR = '"active_session": null,'
+# Re-pointed PHASE 12 (12-02): this literal previously named the "active_session": null,
+# line, which seed_active_session() now rewrites into a permanent four-leaf container (see
+# ACTIVE_SESSION_ANCHOR).  Re-pointed to the line immediately above, stable and untouched
+# by this phase -- key order in the emitted JSON object is semantically irrelevant (the
+# template is only ever parsed with json.loads), so the resulting position change for
+# pending_exit is harmless.  seed_pending_exit() early-returns on every build today because
+# "pending_exit" is already in the committed template, so this literal is not exercised in
+# normal operation -- but a from-scratch regeneration without it would have raised a bare
+# StopIteration (no message) the moment seed_active_session() rewrote the old anchor line.
+PENDING_EXIT_ANCHOR = '"last_app": null,'
 
 
 def seed_pending_exit(actions):
@@ -2813,6 +2822,152 @@ def verify_exit_events_seed(actions):
                 "over nothing, behaviour recorded [ASSUMED] (A1) and settleable only at "
                 "evidence rung 2. exit_selection_counter seeded 0 is what makes the two "
                 "condition-101 guards over it take their Otherwise arm on clean state")
+
+
+# PHASE 12 (12-02) -- active_session gets the SAME container/leaf treatment pending_exit
+# received in cycle 16 (see seed_pending_exit()'s docstring) and settings_snapshot before
+# it: the seeder establishes a PERMANENT four-leaf container, never again replaced
+# wholesale, so its own existence is now an invariant, and a separate verifier asserts the
+# same constant so the two cannot silently drift.
+#
+# WHY THIS IS SESS-07 / SAFE-01, NOT TIDINESS.  restore_managed_settings("Reloaded
+# State") -- the only path that restores brightness and volume after a Dimming or Silence
+# primitive -- sits inside three nested active_session-derived arms in close_pipeline():
+# the entry existence gate, the reload existence gate, and the ownership compare.  Every
+# .id / .started_at / .declared_duration_seconds dotted read on that path currently runs
+# against a bare JSON null parent on a fresh state file.  A hard "could not evaluate the
+# key path" error at any of them aborts the run BEFORE the restore, leaving the user on a
+# dimmed screen or a silenced device with no restore -- exactly the failure
+# .claude/CLAUDE.md names when it says capture-and-restore reliability IS the safety
+# mechanism.
+#
+# The four leaves are the measured union of every dotted read and write of active_session:
+# .id (read at persist_contract(), route_exit()'s Create branch, record_exit_and_route(),
+# and both close_pipeline() sites), .started_at (read at close_pipeline()'s entry gate),
+# .declared_duration_seconds (read at close_pipeline(), written at persist_contract()),
+# .intention (written at persist_contract(), read nowhere -- seeded anyway, mirroring
+# PENDING_EXIT_SEED's "timestamp").
+#
+# Every leaf takes the CLEARED_SENTINEL, never the empty string: an empty seed passes
+# `has any value` (Donor 6.1), and a fabricated number could restore a setting the user
+# never had.  Condition 5 ("string is not") is a valid set/unset gate for active_session.id
+# ONLY because the seed guarantees the leaf is non-empty; seeding one leaf "" collapses
+# that reasoning.  Collision with a real session ID is impossible in the other direction:
+# session IDs are "session-<epoch>-<1..2147483647>", so no real ID can equal the literal
+# "null".
+ACTIVE_SESSION_SEED = {
+    "id": CLEARED_SENTINEL,
+    "started_at": CLEARED_SENTINEL,
+    "declared_duration_seconds": CLEARED_SENTINEL,
+    "intention": CLEARED_SENTINEL,
+}
+# The line this seeder REPLACES IN PLACE, not an insertion point -- see
+# seed_active_session()'s docstring.  This literal was formerly PENDING_EXIT_ANCHOR; see
+# the re-pointing note beside that constant.
+ACTIVE_SESSION_ANCHOR = '"active_session": null,'
+
+
+def seed_active_session(actions):
+    """Establish active_session as a permanent four-leaf sentinel container in bootstrap.
+
+    MECHANISM: replace-in-place, not insert-after-anchor -- seed_settings_snapshot()'s
+    SNAPSHOT_EMPTY replace is the mechanics analog, not seed_pending_exit()'s insert.  The
+    template is located by content (_state_template() anchors on '"schema_version"', never
+    an index), the idempotency guard is the collision-free token '"active_session": {'
+    (NOT '"active_session"', which already matches the un-seeded "active_session": null,
+    line and would make this seeder a permanent no-op), indent is derived from the anchor
+    line rather than hard-coded, and the edit goes through _replace_in_token(), never
+    str.replace -- it shifts every attachmentsByRange offset that sits after the edit and
+    re-asserts each still lands on a U+FFFC placeholder (.claude/CLAUDE.md §5: an
+    out-of-bounds range can crash Shortcuts on import).
+
+    WHAT IT PREVENTS.  See the SESS-07 / SAFE-01 note beside ACTIVE_SESSION_SEED:
+    restore_managed_settings("Reloaded State") sits inside three nested
+    active_session-derived arms in close_pipeline(), so a hard error on .id, .started_at
+    or .declared_duration_seconds aborts BEFORE the restore and strands the user dimmed or
+    silenced.  Same cycle-10 finding 5 precedent clear_snapshot()'s docstring records: the
+    container must never again be replaced wholesale.
+
+    Idempotent: a second run finds '"active_session": {' already in the template and
+    returns; verify_active_session_seed() re-proves the shape either way.
+    """
+    _, inner = _state_template(actions)
+    if '"active_session": {' in inner["string"]:
+        return  # already seeded; verify_active_session_seed() proves it is the right shape
+    line = next(text for text in inner["string"].splitlines() if ACTIVE_SESSION_ANCHOR in text)
+    indent = line[:len(line) - len(line.lstrip())]
+    leaves = ", ".join(f'"{leaf}": "{value}"' for leaf, value in ACTIVE_SESSION_SEED.items())
+    _replace_in_token(inner, ACTIVE_SESSION_ANCHOR, f'{indent}"active_session": {{{leaves}}},')
+
+
+def verify_active_session_seed(actions):
+    """Fail the build unless active_session is seeded exactly as a four-leaf container.
+
+    Same discipline as verify_pending_exit_seed(): the invariant seed_active_session()
+    establishes is asserted separately, against the SAME constant, so the two cannot
+    silently drift.
+
+    Three assertions:
+      (1) seed.get("active_session") is a dict whose keys are exactly ACTIVE_SESSION_SEED's
+          keys and whose values each equal the corresponding ACTIVE_SESSION_SEED value.  A
+          missing leaf is a latent hard error at whichever read reaches it first, and on
+          close_pipeline()'s path that hard error aborts BEFORE
+          restore_managed_settings("Reloaded State") runs -- the SESS-07 / SAFE-01
+          consequence: a user stranded on a dimmed or silenced device.
+      (2) no leaf is the empty string.  Stated separately even though the constant
+          comparison already implies it, because the reason is independent and
+          load-bearing: an empty seed passes `has any value` (Donor 6.1) and would make
+          condition 5 ("string is not" CLEARED_SENTINEL) true for an unset session -- the
+          axis-7 trap this phase exists to close.
+      (3) active_session is not itself written with the sentinel as a WHOLE CONTAINER
+          anywhere in actions.  At the time this guard lands that assertion is expected to
+          be satisfied only after a later plan converts the three container clears -- so it
+          is deferred exactly as long as KNOWN_SENTINEL_EXISTENCE_GATES still names
+          "active_session", and becomes live automatically the moment that constant is
+          emptied.  A literal skip is prohibited; a deferral that dissolves itself is the
+          pattern verify_sentinel_gates() already established.
+    """
+    _, inner = _state_template(actions)
+    document = inner["string"].replace('"￼"', '"x"').replace("￼", "0")
+    try:
+        seed = json.loads(document)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"bootstrap state.json template is not valid JSON: {error}")
+    session = seed.get("active_session")
+    if not isinstance(session, dict) or set(session) != set(ACTIVE_SESSION_SEED) \
+            or any(session.get(leaf) != value for leaf, value in ACTIVE_SESSION_SEED.items()):
+        raise SystemExit(
+            f"active_session is seeded as {session!r}; it must be exactly "
+            f"{ACTIVE_SESSION_SEED!r} -- restore_managed_settings(\"Reloaded State\") sits "
+            "inside three nested active_session-derived arms in close_pipeline(), so an "
+            "absent or malformed seed lets a hard 'could not evaluate the key path' error "
+            "abort the run BEFORE the brightness/volume restore, stranding the user dimmed "
+            "or silenced (SESS-07 / SAFE-01)")
+    if "" in session.values():
+        raise SystemExit(
+            f"active_session is seeded with an empty leaf {session!r} -- an EMPTY value "
+            "passes `has any value` (Donor 6.1) and would make condition 5 (\"string is "
+            "not\" the cleared sentinel) read TRUE for an unset session, the axis-7 "
+            "sentinel-vs-real-value confusion this phase exists to close")
+    if "active_session" in KNOWN_SENTINEL_EXISTENCE_GATES:
+        return  # deferred until the container clears this would police are converted
+    offenders = []
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.setvalueforkey":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("WFDictionaryKey") != "active_session":
+            continue
+        inner_value = (parameters.get("WFDictionaryValue") or {}).get("Value")
+        if isinstance(inner_value, dict) and inner_value.get("string") == CLEARED_SENTINEL \
+                and not inner_value.get("attachmentsByRange"):
+            offenders.append(index)
+    if offenders:
+        raise SystemExit(
+            "active_session is still written with the sentinel as a WHOLE CONTAINER at "
+            f"action(s) {offenders} -- now that the container is a permanent four-leaf "
+            "shape, only the .id LEAF may be cleared with the sentinel (cycle-10 finding 5, "
+            "the same rule clear_snapshot()'s docstring records)")
 
 
 # ---------------------------------------------------------------------------
@@ -3792,6 +3947,7 @@ def main():
     # token, and seeding a new field is the reason the schema_version bump below exists.
     seed_panic_escape(actions)
     seed_exit_events(actions)
+    seed_active_session(actions)
     fix_state_rebind(actions)
     fix_date_format_key(actions)
     fix_shownote_key(actions)
@@ -3826,6 +3982,7 @@ def main():
     verify_pending_exit_seed(actions)
     verify_panic_escape_seed(actions)
     verify_exit_events_seed(actions)
+    verify_active_session_seed(actions)
     verify_restore_gates(actions)
     verify_sentinel_gates(actions)
     verify_compound_value_reads(actions)
