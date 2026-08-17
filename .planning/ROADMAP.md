@@ -792,14 +792,29 @@ reliability is. That revision was scoped to the experimental fork; decide it for
 
 Distinct-Circle allocation is already settled by **BD-06 Decision 4** — do not re-cut it.
 
+**Planning correction (2026-08-17, plan-phase).** Research re-measured the artifact and found a P0
+this goal did not know about: **the capture is never persisted.** A captured
+`settings_snapshot.*.original_value` is written into the `State` dictionary, but the last `State`
+save on the OPEN arm precedes `universal_leaving()` and every later save writes `Reloaded State` —
+a different dictionary. CLOSE and Emergency Restore therefore find the cleared sentinel, fail the
+numeric gate, and skip. The screen dims and nothing in the product un-dims it. So "run `09-UAT.md`
+tests 2–12" is **not** the opening move: fix persistence first, re-sign, then instrument. `09-UAT.md`
+is superseded by `16-UAT.md` (no build identity, pre-rename fork names, test list predates the
+finding); its single recorded pass does not carry forward. Two user decisions locked before planning:
+**D-01** floor and dim target both to `0`; **D-02** remove `changed_at` / `changed_by_session_id`.
+
 **Severity:** major
 **Requirements**: CIRC-03, CIRC-05, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-03
 **Depends on:** Phase 12
-**Plans:** 0 plans
+**Plans:** 5 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 16 to break down)
+- [ ] 16-01-PLAN.md — TRACER: persist the captured original before the device is changed; build guard + negative control (wave 1)
+- [ ] 16-02-PLAN.md — Aimed rung-2 coercion probe at a direct Set parameter; disposition the 11 uncoerced volume sites (wave 1)
+- [ ] 16-03-PLAN.md — D-01: floor and dim target to zero; retire the never-zero clause from all six sites (wave 2)
+- [ ] 16-04-PLAN.md — D-02: remove the two dead snapshot leaves as one coordinated change; no-reader guard (wave 3)
+- [ ] 16-05-PLAN.md — Rebuild, re-sign, refresh manifest, author 16-UAT.md; device session BLOCKED-or-proceed (wave 4)
 
 ### Phase 17: Exile split and exit-route deepening
 
