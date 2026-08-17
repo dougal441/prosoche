@@ -109,9 +109,37 @@ regression check to keep is "no `read_value` targets a removed leaf".
   wrong at the direct Set-action parameter position, follow `09-RESEARCH.md`'s fresh-donor
   protocol instead.
 - **Distinct-Circle allocation** is settled by BD-06 Decision 4 — do not re-cut it.
-- **No device result may be fabricated.** DIST-03 is still in force (`xcrun devicectl list
-  devices` → `No devices found.`, re-verified after the Phase 13 merge). Anything untested on
-  hardware is recorded as BLOCKED with its real reason.
+- **No device result may be fabricated.** Anything untested on hardware is recorded as BLOCKED
+  with its real reason — and the reason must be the true one. See the corrected DIST-03 status
+  immediately below.
+
+### CORRECTION — the DIST-03 reason, re-measured 2026-08-17 during planning
+
+An earlier draft of this file (and `16-RESEARCH.md`) asserted `xcrun devicectl list devices` →
+`No devices found.` **That was true at session start and is no longer true.** Re-measured:
+
+```
+dougal | 8E45671C-9E4D-54C9-AC19-2EB65747337E | available (paired) | iPhone16,1
+tunnelState: disconnected | pairingState: paired | transport: wired | osVersion: 26.6
+```
+
+A **paired iPhone 15 Pro on iOS 26.6, wired, with no live tunnel.** Substantively DIST-03 still
+blocks an autonomous run — there is no connected session to drive, and Personal Automations are
+user-created on the device regardless — but "No devices found." would be recording something
+false, which this project forbids exactly as firmly as a false pass. The blocked reason is
+**"paired device present, `tunnelState: disconnected`; no live session to drive"**, not "no
+device exists".
+
+Two consequences that matter:
+
+- `iPhone16,1` is **Apple-Intelligence-capable**, so this hardware can exercise the Aware
+  (Sentient) fork when a session is arranged — the device split in `## Constraints` is satisfied.
+- iOS **26.6** is inside the declared `iOS 26.x` target, so an observation on it is
+  same-major-version evidence, not an extrapolation.
+
+Any executor re-measuring this must branch on `tunnelState` from the JSON output, **not** on the
+`State` column (which reads `available (paired)` even with the tunnel down), and must record the
+output verbatim.
 
 ### Hard environmental constraint at plan time
 
