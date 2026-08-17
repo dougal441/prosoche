@@ -14,10 +14,15 @@ from build_state_engine import (
     normalise_numeric_operands,
     normalise_output_names,
     normalise_string_envelopes,
+    verify_compound_value_reads,
+    verify_conditional_action_string,
     verify_conditional_inputs,
     verify_dispatch_coverage,
+    verify_exit_events_seed,
     verify_numeric_operands,
     verify_output_names,
+    verify_panic_escape_seed,
+    verify_pending_exit_seed,
     verify_required_pickers,
     verify_restore_gates,
     verify_router_shape,
@@ -295,6 +300,36 @@ def main() -> None:
     # survived the fork, and it fails loudly if a future Sentient-only insertion ever adds
     # a settings_snapshot read that the shared bootstrap does not establish.
     verify_state_seed(actions)
+    # PHASE 12 (12-01).  Sentient INHERITS the seeded bootstrap template from the built Dumb
+    # source rather than re-seeding it, so the assertion is the whole point here: it proves
+    # exit_events and exit_selection_counter survived the fork.  Asserted per fork, never
+    # inferred from Dumb -- a fork that dropped the rolling window would leave STATE-12's
+    # "bounded, versioned document" claim false on the Aware artifact with no error anywhere.
+    verify_exit_events_seed(actions)
+    # PHASE 12 (12-01, PD-3) -- four guards this fork inherited but never asserted.  Measured
+    # before this phase: build_sentient.py imported 13 symbols and ran 13 guards, and none of
+    # these four was among them -- so pending_exit, the very seed pattern 12-01 mirrors, was
+    # not checked on the Aware fork at all.  The phase rule is "fix whole classes, never
+    # site-by-site", and a verifier set that asserts the NEW seed but not the pattern it
+    # copies is exactly the site-by-site posture that rule forbids.  Each is a pure assertion
+    # over the already-emitted artifact, so arming them cannot change what ships -- it can
+    # only reveal a pre-existing defect.  Sentient inherits each of these from the built Dumb
+    # source, so these assert the fork did not lose them:
+    #   verify_pending_exit_seed        -- the {type, timestamp} container whose absence
+    #                                      reproduced the confirmed cycle-16 hard error.
+    #   verify_panic_escape_seed        -- the flat numeric panic_escape_enabled seed and the
+    #                                      numeric (never condition-100/101) gate over it.
+    #   verify_compound_value_reads     -- that no COMPOUND_STATE_KEYS member (recent_sessions,
+    #                                      recent_contracts, exit_events,
+    #                                      profile_snapshot.enabled_exits) is read through
+    #                                      read_value()'s gettext chain; the guard most
+    #                                      directly at risk from this phase's exit_events work.
+    #   verify_conditional_action_string -- the ownership-compare WFConditionalActionString
+    #                                      shape that plan 12-03 must preserve at four sites.
+    verify_pending_exit_seed(actions)
+    verify_panic_escape_seed(actions)
+    verify_compound_value_reads(actions)
+    verify_conditional_action_string(actions)
     # Cycle 12, axis 7 -- GATE SEMANTICS.  Sentient inherits the restore block and every
     # sentinel write from Dumb, so these assert the fork did not lose them; and because
     # Sentient adds its own conditionals, they also cover any Sentient-only gate that a
