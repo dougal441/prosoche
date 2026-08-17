@@ -205,16 +205,31 @@ CLEARED_SENTINEL = "null"
 # write and clear only the .type/.timestamp LEAVES, gated by a STRING "is not sentinel"
 # test (condition 5), not an existence test. Full trace in seed_pending_exit()'s docstring.
 #
-# active_session remains LATENT and UNCHANGED this cycle: the confirmed device run
-# reached breadcrumb I (past every active_session read on the OPEN critical path) with
-# no active_session-related error, so it is not live -- the cycle-16 directive against
-# fixing a non-reachable defect speculatively applies. Its bootstrap state is a bare JSON
-# null (present, unlike pending_exit's former total absence), and a flat read of an
-# absent key returns nothing -- which passes `is not "null"` and would then run the
-# nested DOTTED read of .id against a missing parent, i.e. it would trade a latent hard
-# error for an immediate one. Fixing it needs the same container/leaf treatment
-# pending_exit just received; recorded as a candidate follow-up, not done here.
-KNOWN_SENTINEL_EXISTENCE_GATES = ("active_session",)
+# active_session CLOSED PHASE 12 (12-03). The defect: the bootstrap active_session was a
+# bare JSON null, so every .id / .started_at / .declared_duration_seconds dotted read that
+# ran beneath a condition-100 existence gate over that container would hard-error the
+# instant the container held a written sentinel instead of a genuine session -- the same
+# axis-7 GATE SEMANTICS failure pending_exit had, on a different key. Measured (12-03,
+# re-running this guard's own two rules with the deferral emptied): 34 emitted offenders --
+# 15 condition-100 existence gates and 19 dotted reads hanging beneath them -- from six
+# generator functions (persist_contract() rendering 11x, record_exit_and_route() rendering
+# 2x, close_pipeline()'s entry and reload gates, route_exit()'s Create branch, and
+# open_pipeline()'s container write). Fixed by Phase 12's container/leaf split:
+# seed_active_session() (12-02) established active_session as a PERMANENT four-leaf
+# {id, started_at, declared_duration_seconds, intention} container; 12-03 then converted
+# every container gate to a leaf gate on active_session.id, or -- at the four sites that
+# already carried a condition-4 ownership compare -- let that same compare absorb the
+# existence check for free, since the compare already reads false for the cleared
+# sentinel. open_pipeline() now writes all four leaves individually; close_pipeline(),
+# live_ice_redirect() and manual_emergency_restore() clear active_session.id only, never
+# the whole container. Why it mattered beyond tidiness: restore_managed_settings("Reloaded
+# State") -- the only path that restores brightness and volume after a Dimming or Silence
+# primitive -- sat inside these gates, so a hard error on the CLOSE path aborted BEFORE the
+# restore ran, stranding the user dimmed or silenced (SESS-07, SAFE-01).
+#
+# The tuple below is now EMPTY: zero remaining known sentinel-existence gaps, not "none
+# checked" -- verify_sentinel_gates() runs its two rules over every key, unexempted.
+KNOWN_SENTINEL_EXISTENCE_GATES = ()
 
 
 def cleared_value():
@@ -3170,10 +3185,11 @@ def verify_sentinel_gates(actions):
     The sentinel is PRESENT and NON-EMPTY, so condition 100 reads TRUE in exactly the case
     it exists to exclude, and any dotted read inside that branch then runs against a string
     parent and raises "could not evaluate the key path" (Donor 6.1, line 3).
-    KNOWN_SENTINEL_EXISTENCE_GATES records the key(s) still carrying this defect (pending_exit
-    was CLOSED cycle 16 via the container/leaf split and removed from this set; only
-    active_session remains, deliberately, per the note beside that constant), with the
-    reason they cannot be flipped in isolation; see the note beside CLEARED_SENTINEL.
+    KNOWN_SENTINEL_EXISTENCE_GATES records the key(s) still carrying this defect. Both known
+    instances are now CLOSED: pending_exit (cycle 16) and active_session (Phase 12, 12-03),
+    each via the same container/leaf split -- see the note beside CLEARED_SENTINEL for the
+    active_session trace. The tuple is EMPTY, so both rules below run unexempted over every
+    key.
     """
     sentinel, reads, offenders = _sentinel_written_keys(actions), _read_variable_keys(actions), []
     deferred = set(KNOWN_SENTINEL_EXISTENCE_GATES)
