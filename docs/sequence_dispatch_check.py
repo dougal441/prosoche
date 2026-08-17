@@ -1,31 +1,47 @@
 #!/usr/bin/env python3
-"""Report which Config sequence entries dispatch nothing, and which branches nothing names.
+"""Gate the build on which Config sequence entries dispatch nothing, and which branches nothing names.
 
-THIS IS A REPORTING SCRIPT, NOT A GATE.  It exits 0 in every case, including when it finds
-an orphan it has never seen before.  That is deliberate and is required by the ROADMAP:
-Circle 8 already ships dead -- the `"Voice"` sequence entry names no emitted dispatch branch
-and silently matches nothing, with no error anywhere -- and fixing it is a later phase's
-work (`.planning/todos/pending/2026-08-16-build-circle-8-voice-primitive.md`).  A checker
-that failed on it would block this phase on a defect this phase was told not to fix.  So the
-orphan is RECORDED, by name and by the Circle positions it occupies, and the run stays green.
-A future phase may promote this script to a build guard once the primitive roster and the
-matching strategy have settled under BD-06.
+THIS IS A GATE.  It exits non-zero on any orphan, any unreachable branch, any branch of
+unknown matching semantics, and any entry matched by more than one distinct branch name.
+It was written as a reporter, and it stayed one for as long as the defect it reports was
+owned elsewhere; phase 11 plan 02 closed that defect and this is the promotion its own
+docstring anticipated.
 
-BD-06 FORWARD COMPATIBILITY, which is why this file looks more indirect than it needs to be
-today.  `docs/CAPABILITY-DECISIONS.md` BD-06 Decision 5 abolishes the three combined
-sequence entries (`Ash+Confession`, `Silence+Mirror`, `Dimming+Mirror`) and moves
-`primitive_dispatch()` from condition code 99 ("contains") to condition code 4 ("string
-is") -- exact matching, under which an unmatched entry becomes a build-time failure instead
-of a silent runtime no-op.  This script must survive that change WITHOUT EDITS, so:
+WHY A GATE AND NOT A REPORT.  A sequence entry that names no emitted dispatch branch is a
+SILENT RUNTIME NO-OP: the Circle produces no intervention, no error and no log, the run
+completes, and State is written as though the intervention had fired.  It is invisible to
+`validate_shortcut.py`, which sees a structurally perfect plist; invisible to the ToolKit
+catalog, which knows nothing about the value of a `WFConditionalActionString`; and invisible
+to decrypting the signed artifact, which recovers the same perfect plist.  Nothing between
+the generator and the user's iPhone can see it.  That is exactly how Circle 8 shipped dead
+for four phases: the entry `"Voice"` named no branch and matched nothing.  Plan 11-02
+retired that entry, gave Circle 8 the `"Loud Mirror"` name and a real dispatch branch, and
+`KNOWN_ORPHANS` is empty as a result.
+
+`docs/CAPABILITY-DECISIONS.md` BD-06 Decision 5 is the governing decision.  It abolishes the
+three combined sequence entries (`Ash+Confession`, `Silence+Mirror`, `Dimming+Mirror`),
+moves `primitive_dispatch()` from condition code 99 ("contains") to condition code 4
+("string is"), and states the invariant in the form this script now enforces: every distinct
+primitive name in any `sequences` array has EXACTLY ONE matching dispatch branch, and every
+branch is named by at least one entry.
+
+This script survived plan 11-02's condition-code move with no edit to its resolution logic,
+and the properties that made that possible are load-bearing rather than stylistic:
 
   * it never hard-codes a condition code as a filter.  Every mode-0 conditional testing the
     selected-primitive variable is collected, whatever code it carries.
   * it never assumes substring matching.  Each conditional's matching rule is derived from
-    ITS OWN code by match_strategy(); a code neither rule recognises is reported as unknown
+    ITS OWN code by match_strategy(); a code neither rule recognises is failed as unknown
     semantics rather than silently treated as one of them.
   * it splits entries on the plus character unconditionally.  Splitting a name with no plus
-    yields the name itself, so the same code reads today's combined entries and tomorrow's
-    single-name entries with no branch.
+    yields the name itself, so the same code read the retired combined entries and reads
+    today's single-name entries with no branch -- and fails on a combined entry under exact
+    matching rather than mis-parsing it.
+
+`tools/build_state_engine.py`'s `verify_dispatch_coverage()` enforces the same invariant
+inside both builders, before any write.  The two are deliberate duplicates: the build guard
+aborts a bad build, and this script proves the shipped artifact independently, from disk,
+without importing the generator that produced it.
 
 Read-only: parses the built artifact with plistlib.  No subprocess, no rebuild.
 """
@@ -45,12 +61,12 @@ CONDITIONAL = "is.workflow.actions.conditional"
 # every dispatch arm tests.  A name, not a code -- see the module docstring.
 SELECTED_PRIMITIVE = "Selected Primitive"
 
-# Orphans that are known, accepted, and owned elsewhere.  Each maps to the todo that owns
-# the fix.  An orphan NOT in this mapping is still reported and still exits 0, but it is
-# marked as unexpected so it cannot hide among the accepted ones.
-KNOWN_ORPHANS = {
-    "Voice": ".planning/todos/pending/2026-08-16-build-circle-8-voice-primitive.md",
-}
+# Orphans that are known, accepted, and owned elsewhere.  Each maps to the artifact that
+# owns the fix.  THE ESCAPE HATCH IS DELIBERATELY LEFT VISIBLE AND DELIBERATELY EMPTY: now
+# that this script gates, a non-empty mapping is a reviewed exception that suppresses a hard
+# failure, never the normal case.  Its single historical entry was the Circle-8 `"Voice"`
+# orphan, closed by phase 11 plan 02.  An orphan NOT in this mapping fails the run.
+KNOWN_ORPHANS = {}
 
 
 def match_strategy(code):
@@ -147,17 +163,47 @@ def _positions(sites) -> str:
     return ", ".join(f"{sequence} (Circle {position})" for sequence, position in sites)
 
 
+def require(value: bool, message: str) -> None:
+    """The docs/*.py failure convention: AssertionError, never SystemExit.
+
+    SystemExit belongs to the generator's own verify_* family.  Keeping the two apart is
+    what makes a traceback attributable to the right side of the build.
+    """
+    if not value:
+        raise AssertionError(message)
+
+
+def resolving_names(component: str, branches) -> set:
+    """The distinct branch NAMES that fire for this sequence component.
+
+    Distinct NAMES, never action instances.  Each branch name is legitimately rendered once
+    per primitive_dispatch() rendering -- ten times in the current artifact -- so an instance
+    count is not the invariant BD-06 states.  "Exactly one dispatch branch" is a statement
+    about names.
+    """
+    return {branch["tested"] for branch in branches
+            if isinstance(branch["tested"], str)
+            and resolves(branch["tested"], component, branch["strategy"])}
+
+
 def main() -> None:
     actions = load_actions()
     components = sequence_components(config_literal(actions))
     branches = collect_dispatch_branches(actions)
 
-    orphans, unreachable, unknown = [], [], []
+    orphans, unreachable, unknown, duplicates = [], [], [], []
 
     for component in sorted(components):
-        if not any(resolves(branch["tested"], component, branch["strategy"])
-                   for branch in branches if isinstance(branch["tested"], str)):
+        matched = resolving_names(component, branches)
+        if not matched:
             orphans.append(component)
+        elif len(matched) > 1:
+            # BD-06 says EXACTLY one.  The orphan test above is an at-least-one test, and
+            # this is the half it never covered: under condition 99 the entry "Loud Mirror"
+            # also matches the "Mirror" branch, so Circle 8 would silently run two
+            # interventions back to back.  This is what would have caught the collision had
+            # the 99 -> 4 move been forgotten.
+            duplicates.append((component, sorted(matched)))
 
     for tested in sorted({branch["tested"] for branch in branches
                           if isinstance(branch["tested"], str)}):
@@ -195,10 +241,55 @@ def main() -> None:
         print(f"  action {branch['index']} tests {branch['tested']!r} "
               f"with condition {branch['code']!r}")
 
+    print("\nDUPLICATES -- sequence entries matched by more than one distinct branch name:")
+    if not duplicates:
+        print("  (none)")
+    for component, matched in duplicates:
+        print(f"  {component}: matched by {matched}")
+
     unexpected = [component for component in orphans if component not in KNOWN_ORPHANS]
     print(f"\nsequence dispatch check: {len(orphans)} orphan(s) "
           f"({len(unexpected)} unexpected), {len(unreachable)} unreachable, "
-          f"{len(unknown)} of unknown semantics -- reported, not gated")
+          f"{len(unknown)} of unknown semantics, {len(duplicates)} duplicate(s)")
+
+    # The gate.  Every message states the CONSEQUENCE, not merely the fact.
+    require(
+        not unexpected,
+        f"{len(unexpected)} sequence entr(y/ies) dispatch NOTHING and are not a reviewed "
+        f"exception: " + "; ".join(f"{name!r} at {_positions(components[name])}" for name in unexpected)
+        + ".  An undispatched entry is a silent runtime no-op -- the Circle produces no "
+        "intervention, no error and no log -- and it is invisible to validate_shortcut.py, "
+        "to the ToolKit catalog and to the signed-artifact decrypt, which is how Circle 8 "
+        "shipped dead for four phases.  Add the branch to primitive_dispatch()'s name tuple "
+        "or correct the name in the Config literal; do not add it to KNOWN_ORPHANS to "
+        "silence this",
+    )
+    require(
+        not unreachable,
+        f"{len(unreachable)} dispatch branch(es) {unreachable} are named by NO sequence "
+        "entry.  Dead generated code is not harmless here: it is the signature of a "
+        "half-applied rename, in which the generator tuple moved and the Config literal did "
+        "not, and the matching orphan on the other side is a Circle that now dispatches "
+        "nothing.  Name it in a sequence or stop emitting it",
+    )
+    require(
+        not unknown,
+        f"{len(unknown)} dispatch branch(es) carry a condition code neither 99 ('contains') "
+        f"nor 4 ('string is'): "
+        + "; ".join(f"action {b['index']} tests {b['tested']!r} with {b['code']!r}" for b in unknown)
+        + ".  Guessing which rule applies would let this script report a clean dispatch "
+        "surface it never actually checked, which is worse than no check at all",
+    )
+    require(
+        not duplicates,
+        f"{len(duplicates)} sequence entr(y/ies) match MORE THAN ONE distinct dispatch "
+        f"branch: " + "; ".join(f"{name!r} matched by {matched}" for name, matched in duplicates)
+        + ".  BD-06 Decision 5 requires exactly one.  Under condition 99 ('contains') a "
+        "branch fires whenever its name is a substring of the entry, so the entry silently "
+        "runs two interventions back to back and the user sees the wrong Circle.  Move the "
+        "dispatch to condition 4 ('string is') or rename the colliding branch",
+    )
+    print("\nsequence dispatch check: passed")
 
 
 if __name__ == "__main__":

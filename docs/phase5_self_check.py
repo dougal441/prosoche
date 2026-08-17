@@ -7,10 +7,19 @@ import plistlib
 import subprocess
 from pathlib import Path
 
+# Reuse the existing locate-by-content reader rather than inventing a third idiom for the
+# same literal.  Both scripts live in docs/, so this resolves when either is run directly.
+from sequence_dispatch_check import config_literal
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src/PROSOCHE-Dumb.xml"
 BUILDER = ROOT / "tools/build_state_engine.py"
+
+# BD-06 Decision 3's shipped roster, minus "Redirect", whose implementation is Phase 17's.
+# Nine names for nine slots in each of the three sequences.
+SHIPPED_PRIMITIVES = {"Pause", "Black and White", "Silence", "Intention", "Dim", "Eject",
+                      "Mirror", "Loud Mirror", "Frozen"}
 
 
 def digest() -> str:
@@ -62,12 +71,36 @@ def main() -> None:
 
     require(ids[:5] == ["is.workflow.actions.comment", "is.workflow.actions.comment", "is.workflow.actions.gettext",
                          "is.workflow.actions.setvariable", "is.workflow.actions.gettext"], "pinned imports changed")
-    # BD-06 renames this roster one name per plan; "Pause" (was "Knock") moved in phase 11
-    # plan 01.  This tuple and the Config `sequences` arrays must change in the same commit,
-    # so the artifact and the checker can never disagree about which name is live.
-    for name in ("Pause", "Ash", "Silence", "Confession", "Dimming", "Exile", "Mirror", "Voice", "Ice",
-                 "Ash+Confession", "Silence+Mirror", "Classic", "BlackMirror", "Ambient"):
+    # BD-06 Decision 3's nine shipped primitive names plus the three sequence names.  This
+    # tuple and the Config `sequences` arrays must change in the same commit, so the artifact
+    # and the checker can never disagree about which names are live.
+    for name in ("Pause", "Black and White", "Silence", "Intention", "Dim", "Eject",
+                 "Mirror", "Loud Mirror", "Frozen", "Classic", "BlackMirror", "Ambient"):
         require(name in text, f"missing sequence or primitive: {name}")
+
+    # The retired vocabulary is proved gone STRUCTURALLY, over the parsed Config literal's
+    # sequences, never by a text grep over the whole artifact.  Several retired words
+    # legitimately survive elsewhere in the file as internal variable names and structural
+    # markers -- "Ice Profile", "Ice Until", LIVE_ICE_MARKER, "Confession Intention",
+    # "Voice Enabled", "Toggle Voice", "Voice Memos" -- so a file-wide grep for them would be
+    # both wrong and unsatisfiable.  What BD-06 actually constrains is the sequences arrays.
+    sequences = config_literal(actions)["sequences"]
+    require(set(sequences) == {"Classic", "BlackMirror", "Ambient"},
+            f"sequences are {sorted(sequences)}, expected exactly Classic/BlackMirror/Ambient")
+    for name, entries in sequences.items():
+        require(len(entries) == 9, f"sequence {name} has {len(entries)} slots, expected 9")
+    components = {entry for entries in sequences.values() for entry in entries}
+    require(components == SHIPPED_PRIMITIVES,
+            f"sequence components are {sorted(components)}, expected exactly the nine BD-06 "
+            f"shipped names {sorted(SHIPPED_PRIMITIVES)}")
+    for component in sorted(components):
+        require("+" not in component,
+                f"sequence entry {component!r} is a combined entry; BD-06 Decision 5 abolished "
+                "all three, and under condition 4 ('string is') a combined entry dispatches "
+                "NOTHING -- a silent runtime no-op with no error anywhere")
+    require("Redirect" not in components,
+            "the name 'Redirect' appears in a sequence, but no Redirect branch is emitted "
+            "until Phase 17 -- naming it now is an entry that dispatches nothing")
     for marker in ("PHASE 5 PRIMITIVE DISPATCH", "PHASE 5 LIVE ICE REDIRECT", "PHASE 5 ICE EXPIRY",
                    "PHASE 5 RESTORE MANAGED SETTINGS", "PHASE 5 MANUAL EMERGENCY RESTORE"):
         require(marker in comments, f"missing semantic marker: {marker}")

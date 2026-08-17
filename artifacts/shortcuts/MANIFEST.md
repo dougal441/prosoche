@@ -1,11 +1,11 @@
 # Shortcut Distribution Manifest
 
-Rebuilt 2026-08-17 by phase 11 plan 01, the Build Addendum 01 tracer: the single BD-06
-primitive rename `Knock` → `Pause`, driven from the generator's dispatch tuple through the
-Config literal in `src/PROSOCHE-Dumb.xml` action 7 and read back out of both signed
-containers by decryption. The preceding rebuild was quick task `260817-au7`, which repaired
-the iOS 26 Personal Automation onboarding steps in the Control Room Note (see
-`docs/BUILD-NOTES.md` §20). Built with Shortcuts Playground
+Rebuilt 2026-08-17 by phase 11 plan 02: BD-06 Decision 4's whole slot table applied in one
+commit — nine shipped primitive names live in all three `sequences` arrays, ninety
+`Selected Primitive` conditionals moved from condition 99 ("contains") to condition 4
+("string is"), and `Loud Mirror` given a real dispatch branch so Circle 8 is no longer dead.
+The preceding rebuild was phase 11 plan 01, the tracer that moved one name (`Knock` →
+`Pause`) end to end. Built with Shortcuts Playground
 target `--target-macos 26 --target-platform all`. The `all` platform target is deliberate and
 is recorded as `docs/BUILD-NOTES.md` DEV-01: the `ios` target rejects the file wholesale —
 including the `conditional` and comment identifiers — because the bundled iOS snapshot is
@@ -19,31 +19,43 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Dumb source | `src/PROSOCHE-Dumb.xml` | 2,260,491 | `efad0819d5c01ae6bced0eb42beca4a21bc66753bdfe7d602c1dc5e1930efe81` |
-| Dumb archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Dumb-103801.xml` | 2,260,491 | `efad0819d5c01ae6bced0eb42beca4a21bc66753bdfe7d602c1dc5e1930efe81` |
-| Dumb signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut` | 193,836 | `bb93af559b92dedbee2e41a14187ff31d27ce213ada763e699e51ac6fbc575eb` |
-| Sentient source | `src/PROSOCHE-Sentient.xml` | 2,297,171 | `8d9c61056e7395983298baf642f6a06bbbca5e2d53b9fcb75df5a03f5663cda1` |
-| Sentient archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Sentient-103814.xml` | 2,297,171 | `8d9c61056e7395983298baf642f6a06bbbca5e2d53b9fcb75df5a03f5663cda1` |
-| Sentient signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Sentient.shortcut` | 198,150 | `e162be1643672d73c2bc603d222175f3d6e54caa5df07f29e0bcddeffa97b088` |
+| Dumb source | `src/PROSOCHE-Dumb.xml` | 2,667,477 | `c92ccb3087e7fdb086f51a579ea67bf634bd8efd51af595a53de067b4feae102` |
+| Dumb archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Dumb-105621.xml` | 2,667,477 | `c92ccb3087e7fdb086f51a579ea67bf634bd8efd51af595a53de067b4feae102` |
+| Dumb signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut` | 218,979 | `7a9ba1fee55d404b1cd79ff5c8cecac3d61b643e4497fbbe22d258e9a10d0357` |
+| Sentient source | `src/PROSOCHE-Sentient.xml` | 2,704,157 | `2b83f7915982d62001f6345da5c68feefe5a4dec15089cf4de3a4e83e3c17f6e` |
+| Sentient archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Sentient-105633.xml` | 2,704,157 | `2b83f7915982d62001f6345da5c68feefe5a4dec15089cf4de3a4e83e3c17f6e` |
+| Sentient signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Sentient.shortcut` | 223,070 | `e7c8f31141f18cb526d008242e89cd887df1c43333f2a99f8a25bf14ad28f04a` |
 
 Each dated archive is byte-identical to its `src/` counterpart, which is what makes the
 archive a pre-sign record rather than a copy of something else. The two source checksums
-differ by design. Both source byte counts are unchanged from the preceding rebuild because
-`Knock` and `Pause` are the same length; the hashes are not, which is the point of recording
-both. Both forks passed the validator and all ten static checks (`state_engine`, `phase5`,
-`phase6`, `phase7`, `phase9`, `sentient_audit`, `sentient_core`, `environmental_restore`,
-`router_ui_census`, `sequence_dispatch`) in a single run at this commit, plus
-`manifest_check` as the eleventh once this table was refreshed.
+differ by design. Both sources grew by roughly 407 KB against the preceding rebuild: adding
+the ninth dispatch branch costs one wrapper plus one `mirror_and_voice()` expansion in each
+of the ten `primitive_dispatch()` renderings, taking the dispatch surface from 80 branches
+to 90. Both forks passed the validator and all eleven prior static checks plus
+`docs/note_identity_check.py` in a single run at this commit, and `manifest_check` as the
+twelfth once this table was refreshed.
 
-Both signed containers were decrypted via the AEA1 recipe and asserted against the tracer
-rename: `plutil -lint OK` on both recovered plists; the retired entry appears on **zero**
-lines of either; `Pause` appears on 43 lines of each (three `sequences` cells plus ten
-dispatch renderings × three sites, plus the ten pre-existing `Ash` alert bodies that already
-contained the word); and the recovered `sequences` object holds `Pause` in exactly three
-cells per fork. The global attachment invariant was re-measured on the recovered payloads
-rather than only on `src/`: **775** `WFTextTokenString` values in Dumb and **779** in
-Sentient, every one with `attachmentsByRange` keys equal to its own `U+FFFC` offsets, zero
-mismatches. This is structural evidence only.
+Two of those checks changed status in this rebuild. `docs/sequence_dispatch_check.py` is no
+longer a reporter: it now exits non-zero on any orphaned sequence entry, any unreachable
+dispatch branch, any branch of unknown matching semantics, and any entry matched by more
+than one distinct branch name, and its `KNOWN_ORPHANS` escape hatch is empty. It was proven
+to fail before it was trusted to pass — a copy of the Dumb source with one sequence cell
+replaced by a name no branch emits makes it exit 1. `tools/build_state_engine.py` gained
+`verify_dispatch_coverage()`, armed in both builders, which enforces the same invariant
+before any write. Neither instrument existed for the four phases during which Circle 8
+dispatched nothing.
+
+Both signed containers were decrypted via the AEA1 recipe and asserted against the roster
+move: `plutil -lint OK` on both recovered plists; the retired names `Knock`,
+`Ash+Confession`, `Silence+Mirror` and `Dimming+Mirror` appear on **zero** lines of either
+payload; `Loud Mirror` appears on **23** lines of each, so the Circle-8 entry reached the
+shipped artifact; every `Selected Primitive` conditional in both payloads carries condition
+code **4** and none carries 99; and the recovered `sequences` object holds exactly the nine
+shipped names, nine per array, with `Eject` at Circle 6 in all three. The global attachment
+invariant was re-measured on the recovered payloads rather than only on `src/`: **1,105**
+`WFTextTokenString` values in Dumb and **1,109** in Sentient, every one with
+`attachmentsByRange` keys equal to its own `U+FFFC` offsets, zero mismatches. This is
+structural evidence only.
 
 **Do not rename these files.** A signed `.shortcut` carries no display name inside it:
 measured this phase, the AEA1 auth-data plist holds only `SigningCertificateChain`, and the
@@ -79,12 +91,21 @@ and recomputes every size and hash above from the files themselves.
 > arrived at a working automation. Read `docs/BUILD-NOTES.md` §20, and confirm the flow during
 > the outstanding device UAT.
 >
-> **⚠ This build additionally carries the first BD-06 primitive rename, `Knock` → `Pause`,
-> which has never dispatched on a real iPhone.** The name is proven present in the generator
-> tuple, in all three `sequences` arrays, on all ten emitted dispatch branches and in the
-> decrypted payload of both signed containers — all of it file-level structural proof. That a
-> Circle-1 open actually reaches the renamed branch on device is **not** proven and is not
-> claimed. Read `docs/BUILD-NOTES.md` §21.
+> **⚠ This build additionally carries BD-06's entire renamed primitive roster and a changed
+> dispatch comparator, none of which has ever run on a real iPhone.** All nine shipped names
+> are proven present in the generator tuple, in all three `sequences` arrays, on all ninety
+> emitted dispatch branches and in the decrypted payload of both signed containers, and every
+> one of those branches is proven to carry condition code 4 — all of it file-level structural
+> proof. That any Circle actually reaches its renamed branch under exact matching on device is
+> **not** proven and is not claimed. Read `docs/BUILD-NOTES.md` §21.
+>
+> **⚠ Two states in this build are deliberately INTERIM, not designed behaviour.** Circle 8
+> (`Loud Mirror`) dispatches `mirror_and_voice()` — the same implementation as Circle 7's
+> `Mirror` — so that the entry reaches a real branch and the dispatch-coverage guard can be a
+> hard gate; **Phase 15** replaces it with the designed Voice primitive. Circle 6 holds
+> `Eject` in all three sequences, where BD-06 gives `Classic` and `Ambient` to `Redirect`;
+> `Redirect` has no implementation until **Phase 17**, and naming it now would be an entry
+> that dispatches nothing. Neither is a finished decision.
 >
 > **DIST-03 — device verification — remains OPEN.** `xcrun devicectl list devices` reports
 > no devices, so no criterion in either UAT file has been exercised. Nothing in this manifest
