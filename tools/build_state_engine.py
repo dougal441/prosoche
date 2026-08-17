@@ -109,6 +109,51 @@ def uid() -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"prosoche-state-engine/{UUID_COUNTER}")).upper()
 
 
+def stable_uid(name: str) -> str:
+    """A UUID drawn from OUTSIDE uid()'s counter sequence, keyed by a name.
+
+    PHASE 16 (16-01) -- THE DEFECT THIS CLOSES, found by gate A failing on the first
+    rebuild after the capture-persistence fix:
+
+      Duplicate GroupingIdentifier '6219B3ED-727D-56FA-A9FB-787F84AEAE89'
+      for start action at index 4383; first seen at index 3672
+
+    Mechanism.  uid() is a COUNTER, so every identifier it returns is positional: the Nth
+    call always yields uuid5(".../N").  Most of the artifact is regenerated on every build,
+    so those identifiers are re-derived together and stay consistent.  But
+    gate_control_room_shownote() INSERTS its wrapper into the hand-authored find-or-create
+    block and is idempotent by positional probe -- it returns early when the wrapper is
+    already there.  So that one wrapper's GroupingIdentifier was FROZEN into
+    src/PROSOCHE-Dumb.xml at whatever counter value the build that first created it had
+    reached (measured: 1310), and every build since preserved it verbatim.
+
+    That makes it a landmine rather than a bug: it is harmless exactly as long as no
+    regenerated block ever lands on counter 1310.  Adding the 22 save_state() calls this
+    plan requires shifted every later uid() by +22, a silence() rendering landed on 1310,
+    and two unrelated conditional blocks began sharing one GroupingIdentifier -- which
+    .claude/CLAUDE.md records as the project's #1 documented real-world mistake, silently
+    corrupting block boundaries.  Any future phase that changes the action count upstream
+    of that wrapper would have re-armed the same landmine at a different value.
+
+    The fix is to take the preserved identifier OUT of the counter sequence entirely.  A
+    name-keyed uuid5 is stable across builds (so the pass stays idempotent) and can never
+    equal a counter-derived uid() (so the collision is unrepresentable rather than merely
+    unlikely).  Pinned by verify_group_identifier_uniqueness().
+
+    REJECTED ALTERNATIVE: regenerating the wrapper on every build so its identifier comes
+    from the current counter run.  It would work, but it discards the positional
+    idempotency that PHASE 10 (10-02) deliberately built into that pass, and it would
+    rewrite a hand-authored region on every build for no other reason.
+    """
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, f"prosoche-state-engine/stable/{name}")).upper()
+
+
+# The Control Room shownote gate is the one generated control-flow block that is PRESERVED
+# across builds rather than regenerated, so its GroupingIdentifier must not come from
+# uid()'s counter.  See stable_uid()'s docstring for the measured collision this prevents.
+SHOWNOTE_GATE_GROUP = stable_uid("gate-control-room-shownote")
+
+
 def action(identifier: str, **parameters):
     return {"WFWorkflowActionIdentifier": identifier,
             "WFWorkflowActionParameters": parameters}
@@ -594,6 +639,52 @@ def persist_contract():
 
 
 def dimming():
+    """Capture the original brightness, PERSIST it, and only then change the device.
+
+    PHASE 16 (16-01) CLOSES THE P0: the capture reached a dictionary that was never saved.
+    `set_value("settings_snapshot.brightness.original_value", ...)` writes into `State`
+    (set_value()'s default target), but on the OPEN arm the last `save_state("State")`
+    sits ABOVE universal_leaving(), and every save from the CLOSE pipeline onward sources
+    `Reloaded State` -- a different dictionary.  So the captured original never reached
+    state.json.  CLOSE and Emergency Restore reloaded the file, found the CLEARED_SENTINEL
+    in the leaf, failed restore_managed_settings()'s numeric `> 0` gate, and skipped.  The
+    screen dimmed and nothing in the product un-dimmed it.  Same on the MANUAL
+    `Test a Circle` path.  This is the live instance of threat T-16-01 and the actual
+    mitigation for SAFE-05.
+
+    THE ORDERING RULE NOW ENFORCED: the file records the original strictly BEFORE
+    Set Brightness runs.  Shortcuts has no try/catch, so safety here is achieved by
+    ordering, not by detection -- there is no action sequence in which the device is
+    changed while state.json still holds the sentinel.  verify_capture_persistence()
+    pins the rule at build time; docs/phase9_self_check.py's
+    capture_persistence_negative_control() proves that guard load-bearing.
+
+    THE REJECTED ALTERNATIVE, and why -- this resolves 16-RESEARCH.md Open Question 5.
+    The obvious placement is the outer `capture_g` arm, immediately after the set_value
+    block: one save per rendering, and it covers both inner arms at once.  It is WRONG.
+    That arm also runs on the already-dim path, where no Set Brightness fires, so it would
+    persist a snapshot for a change that never happened.  A later CLOSE would then read a
+    positive original, pass the `> 0` gate, and set brightness to it -- so a user who
+    raised brightness by hand mid-session would have it pulled back down by a Circle that
+    never touched it.  Persisting ONLY on the applying arm makes the snapshot mean exactly
+    "a change is outstanding", which is what every restore gate already assumes.  The cost
+    is stated rather than hidden: the save is emitted inside the nested otherwise-arm, so
+    it renders once per primitive_dispatch() rendering on the applying path only.
+
+    The dictionary name is load-bearing (T-16-04): set_value()'s default target and
+    save_state()'s default source are both `State`.  Passing "Reloaded State" here would
+    persist a dictionary that never received the capture -- the exact mechanism of the
+    defect.  Take both defaults; do not name a source.
+
+    One edit, eleven renderings.  primitive_dispatch() renders this function eleven times
+    per fork (nine Test-a-Circle submenu cases plus two in universal_leaving()), so the
+    generator-level change closes the MANUAL half of the defect by construction rather
+    than site-by-site.  Do NOT add a second save to the Test a Circle menu arm.
+
+    The condition-100 container gate (snapshot_g) and the numeric `> 0` capture gate
+    (capture_g) are UNTOUCHED by this change and must stay so -- they are this project's
+    input validation over an absent or untrusted Get Device Details reading (T-16-03).
+    """
     a = [comment("""Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
 - Do not brighten an already dim screen and never set zero.
@@ -608,14 +699,47 @@ def dimming():
           set_value("settings_snapshot.brightness.changed_by_session_id", variable("Session ID"))]
     a += config("safety.dim_target", "Dim Target")
     already_dim_g, already_dim_if = if_block("Captured Brightness", 1, number=variable("Dim Target"))
-    a += [already_dim_if, action("is.workflow.actions.nothing"), otherwise(already_dim_g),
-          set_brightness(variable("Dim Target")), end_if(already_dim_g), otherwise(capture_g),
+    a += [already_dim_if, action("is.workflow.actions.nothing"), otherwise(already_dim_g)]
+    # PHASE 16 (16-01): persist BEFORE the apply, and only on the arm that applies.  See
+    # this function's docstring for why the outer capture arm was rejected.
+    a += save_state()
+    a += [set_brightness(variable("Dim Target")), end_if(already_dim_g), otherwise(capture_g),
           alert("Dim", "Brightness could not be captured, so nothing was changed."), end_if(capture_g),
           end_if(snapshot_g)]
     return a
 
 
 def silence():
+    """Capture the original Media volume, PERSIST it, and only then change the device.
+
+    The exact mirror of dimming(); read that docstring for the full derivation.  Stated
+    here too rather than cross-referenced only, because the two functions are edited
+    independently and a reader arriving at this one must not have to infer the rule.
+
+    PHASE 16 (16-01) CLOSES THE SAME P0 ON THIS SIDE: the capture went into `State`, which
+    is never saved after the OPEN arm's last save, so restore_managed_settings() reloaded
+    the file, read the CLEARED_SENTINEL, failed its numeric `> 0` gate, and skipped.  The
+    volume dropped and nothing in the product raised it back.
+
+    THE ORDERING RULE: state.json records the original strictly BEFORE Set Volume runs.
+    Ordering, not detection -- Shortcuts has no try/catch.  Pinned by
+    verify_capture_persistence().
+
+    THE REJECTED ALTERNATIVE: persisting in the outer `capture_g` arm.  It also runs on the
+    already-quiet path, where no Set Volume fires, so it would record a snapshot for a
+    change that never happened and a later CLOSE would drive volume to it -- overriding a
+    volume the user set by hand.  The save therefore sits inside the applying arm only, so
+    a persisted snapshot means exactly "a change is outstanding".  Resolves
+    16-RESEARCH.md Open Question 5.
+
+    save_state() takes its default source `State`, matching set_value()'s default target.
+    Naming "Reloaded State" would persist a dictionary that never received the capture --
+    the defect itself, pointed the other way (T-16-04).
+
+    The emitted Shortcuts comment below states Media-only scoping and never-increase.  That
+    is SAFE-02, it is still true, and this change does not touch it.  Nor does it touch the
+    condition-100 container gate or the numeric `> 0` capture gate (T-16-03).
+    """
     a = [comment("""Silence is reversible or message-only:
 - Capture Current Volume once when no snapshot exists.
 - Use Media volume only and never increase it.
@@ -631,8 +755,11 @@ def silence():
     target = number(0.10, "Silence Target")
     a += target
     quiet_g, quiet_if = if_block("Captured Volume", 1, number=variable("Silence Target"))
-    a += [quiet_if, action("is.workflow.actions.nothing"), otherwise(quiet_g),
-          set_media_volume(variable("Silence Target")), end_if(quiet_g), otherwise(capture_g),
+    a += [quiet_if, action("is.workflow.actions.nothing"), otherwise(quiet_g)]
+    # PHASE 16 (16-01): persist BEFORE the apply, and only on the arm that applies.  See
+    # this function's docstring for why the outer capture arm was rejected.
+    a += save_state()
+    a += [set_media_volume(variable("Silence Target")), end_if(quiet_g), otherwise(capture_g),
           alert("Silence", "Volume could not be captured, so nothing was changed."), end_if(capture_g),
           end_if(snapshot_g)]
     return a
@@ -3548,6 +3675,164 @@ def _tested_variable(parameters):
     return None
 
 
+def _save_source_dictionary(actions, index):
+    """The dictionary a documentpicker.save at `index` persists, or None.
+
+    DEPENDS ON save_state()'s EMITTED SHAPE and nothing else: it emits exactly
+    setitemname(WFName="state.json", WFInput=variable(<source>)) immediately followed by
+    documentpicker.save(WFInput=output(<that setitemname>, "Renamed Item")).  The save
+    action itself never names the dictionary -- it carries a reference to the RENAMED ITEM,
+    so the source is only recoverable by looking back at the setitemname that produced it.
+    Hence the three-action lookback: one is the emitted distance, and the slack absorbs a
+    normalisation pass inserting between them without silently returning None (which would
+    make every caller's "was it persisted?" test read false and the guard become
+    decoration).
+
+    This is the one genuinely new helper Phase 16 needed: no existing guard resolves a
+    save's SOURCE.  If save_state() ever stops emitting the setitemname, this returns None
+    everywhere and verify_capture_persistence() starts failing loudly -- which is the
+    correct direction for a safety guard to fail.
+    """
+    for candidate in range(index - 1, max(index - 4, -1), -1):
+        if actions[candidate].get("WFWorkflowActionIdentifier") != "is.workflow.actions.setitemname":
+            continue
+        parameters = actions[candidate].get("WFWorkflowActionParameters", {})
+        descriptor = (parameters.get("WFInput") or {}).get("Value")
+        if isinstance(descriptor, dict):
+            return descriptor.get("VariableName")
+        return None
+    return None
+
+
+def verify_capture_persistence(actions):
+    """Fail the build if a brightness/volume apply can be reached from an unpersisted capture.
+
+    THE DEFECT THIS CLOSES -- PHASE 16 (16-01), the phase's P0 and the live instance of
+    threat T-16-01.  dimming()/silence() captured the device's current reading and wrote it
+    to settings_snapshot.<group>.original_value in the `State` dictionary, then changed the
+    device.  But `State` is never saved again after the OPEN arm's last save (every save
+    from the CLOSE pipeline onward sources `Reloaded State`, a different dictionary), so
+    the captured original never reached state.json.  CLOSE and Emergency Restore reloaded
+    the file, found the CLEARED_SENTINEL in the leaf, failed restore_managed_settings()'s
+    numeric `> 0` gate, and skipped.  The screen dimmed and nothing in the product un-dimmed
+    it; SAFE-05's Emergency Restore was structurally incapable of restoring.
+
+    THE EVIDENCE: measured against the BUILT artifact, not inferred from the generator.
+    Before the fix this guard's own logic reported 24 offenders on the Dumb fork (applies at
+    1035, 1122, 1291, 1378, 1585, ...); after it, zero on both forks.
+
+    THE INVARIANT, stated over the APPLY rather than over the save: no
+    is.workflow.actions.setbrightness / setvolume may be reached, in action order, from a
+    setvalueforkey writing settings_snapshot.<group>.original_value unless a
+    documentpicker.save SOURCING `State` occurs between them.  Bookkeeping is per <group>,
+    so a volume save cannot clear a pending brightness capture -- the two primitives render
+    interleaved inside primitive_dispatch() and a shared flag would let one vouch for the
+    other.  The save's source is resolved through _save_source_dictionary(): a save of
+    `Reloaded State` persists a dictionary that never received the capture, which is the
+    exact mechanism of the defect (T-16-04) and must NOT clear the pending flag.
+
+    WHY THE RESTORE SIDE IS NOT FALSELY FLAGGED, by construction rather than by exemption:
+    restore_managed_settings() also emits setbrightness/setvolume, fed by Restore Brightness
+    / Restore Volume.  Those are READ from the snapshot, never preceded by a capture write
+    on the same run of the walk, so no pending flag is outstanding when they are reached and
+    they are silently correct.  The pending flag is additionally dropped when the walk
+    leaves the conditional arm the capture was written into, so a capture on a branch that
+    was not taken cannot arraign an apply somewhere else entirely.
+
+    IF THIS FIRES, a future reader should conclude that a capture-and-restore path has been
+    reordered so the device is changed before the file records how to change it back -- and
+    that the correct response is to move the save earlier, never to relax the guard.  A
+    crash, a force-quit or a missed CLOSE between the two leaves the user dim or silent with
+    no recorded way back.
+    """
+    arms, offenders = _enclosing_if_arms(actions), []
+    pending = {}
+    for index, item in enumerate(actions):
+        identifier = item.get("WFWorkflowActionIdentifier")
+        parameters = item.get("WFWorkflowActionParameters", {})
+        # Drop any capture whose arm the walk has now left: it cannot reach an apply that
+        # is no longer inside it.
+        enclosing = {id(entry) for entry in arms[index]}
+        for group in [group for group, scope in pending.items() if not scope <= enclosing]:
+            del pending[group]
+        if identifier == "is.workflow.actions.setvalueforkey":
+            key = parameters.get("WFDictionaryKey")
+            if isinstance(key, str) and key.startswith(f"{SNAPSHOT_ROOT}.") \
+                    and key.endswith(".original_value"):
+                target = (parameters.get("WFDictionary") or {}).get("Value", {})
+                if target.get("VariableName") == "State":
+                    pending[key.split(".")[1]] = enclosing
+        elif identifier == "is.workflow.actions.documentpicker.save":
+            if _save_source_dictionary(actions, index) == "State":
+                pending.clear()
+        elif identifier in {"is.workflow.actions.setbrightness", "is.workflow.actions.setvolume"}:
+            group = "brightness" if identifier.endswith("setbrightness") else "volume"
+            if group in pending:
+                offenders.append((index, f"applies {group} while the captured original is "
+                                         f"still only in the State variable, never saved"))
+    if offenders:
+        raise SystemExit(
+            "a brightness/volume apply is reachable from an unpersisted capture -- the "
+            "device is changed before the file records how to change it back, so a crash, "
+            "force-quit or missed CLOSE strands the user dim or silent: "
+            + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
+            + f" ({len(offenders)} total)")
+
+
+def verify_group_identifier_uniqueness(actions):
+    """Fail the build if two control-flow blocks share one GroupingIdentifier.
+
+    PHASE 16 (16-01).  THE DEFECT: gate A rejected the first rebuild after the
+    capture-persistence fix with "Duplicate GroupingIdentifier ... for start action at
+    index 4383; first seen at index 3672".  A preserved wrapper held a FROZEN
+    counter-derived identifier and a regenerated silence() block landed on the same
+    counter value -- full mechanism in stable_uid()'s docstring, fix in
+    gate_control_room_shownote().
+
+    Why a guard and not just the fix.  .claude/CLAUDE.md records a reused
+    GroupingIdentifier as the project's #1 documented real-world mistake: it silently
+    corrupts block boundaries at runtime.  The collision here was a LANDMINE, not a
+    one-off -- harmless until an unrelated change shifted the counter onto it, and
+    re-armable by any future phase that changes the action count.  Nothing in the
+    generator noticed; only the external validator did, and only because it happened to
+    check.  This guard moves the detection inside the build, where the derivation that
+    explains it lives.
+
+    THE INVARIANT: every GroupingIdentifier carries exactly one block start
+    (WFControlFlowMode 0) and exactly one block end (mode 2).  Middle arms (mode 1) are
+    deliberately uncounted -- an If has one Otherwise, but a Choose from Menu has one per
+    menu item, so a count there would be an arbitrary number rather than an invariant.
+
+    IF THIS FIRES, a reader should conclude that two structurally unrelated blocks are
+    being emitted with one identifier -- not that the count needs adjusting.  Find which
+    identifier, and whether one of the two sites is preserved across builds rather than
+    regenerated; if it is, it needs stable_uid(), not a new counter value.
+    """
+    starts, ends = {}, {}
+    for index, item in enumerate(actions):
+        parameters = item.get("WFWorkflowActionParameters", {})
+        group = parameters.get("GroupingIdentifier")
+        if group is None:
+            continue
+        mode = parameters.get("WFControlFlowMode")
+        if mode == 0:
+            starts.setdefault(group, []).append(index)
+        elif mode == 2:
+            ends.setdefault(group, []).append(index)
+    offenders = []
+    for group in sorted(set(starts) | set(ends)):
+        opened, closed = starts.get(group, []), ends.get(group, [])
+        if len(opened) != 1 or len(closed) != 1:
+            offenders.append((group, f"{len(opened)} start(s) at {opened} and "
+                                     f"{len(closed)} end(s) at {closed}"))
+    if offenders:
+        raise SystemExit(
+            "a GroupingIdentifier is not owned by exactly one control-flow block -- a "
+            "reused identifier silently corrupts block boundaries at runtime: "
+            + "; ".join(f"{group}: {why}" for group, why in offenders[:5])
+            + f" ({len(offenders)} total)")
+
+
 def verify_restore_gates(actions):
     """Fail the build if a brightness/volume write is not numerically gated.
 
@@ -4217,8 +4502,35 @@ def gate_control_room_shownote(actions):
             if (prior.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
                     and prior_parameters.get("WFControlFlowMode") == 0
                     and prior_parameters.get("WFCondition") == 2):
+                # PHASE 16 (16-01): re-stamp rather than merely returning.  A wrapper built
+                # before SHOWNOTE_GATE_GROUP existed carries a FROZEN counter-derived
+                # identifier, which collides the moment a regenerated block reaches that
+                # counter value -- the measured gate-A failure in stable_uid()'s docstring.
+                # Re-stamping converts an already-wrapped artifact in place and is itself
+                # idempotent: on every later build the three actions already hold the
+                # stable value and the writes are no-ops.
+                # Scope the re-stamp to THIS wrapper's own three actions, walking forward
+                # from the shownote to its End If.  A global "replace every action holding
+                # the stale identifier" is WRONG and was measured wrong: the stale value is
+                # duplicated precisely because an unrelated regenerated block already holds
+                # it, so a global pass re-stamps that block too and simply moves the
+                # collision onto the new identifier.
+                stale = prior_parameters.get("GroupingIdentifier")
+                if stale != SHOWNOTE_GATE_GROUP:
+                    prior_parameters["GroupingIdentifier"] = SHOWNOTE_GATE_GROUP
+                    for sibling in actions[index + 1:]:
+                        parameters = sibling.get("WFWorkflowActionParameters", {})
+                        if parameters.get("GroupingIdentifier") != stale:
+                            continue
+                        parameters["GroupingIdentifier"] = SHOWNOTE_GATE_GROUP
+                        if parameters.get("WFControlFlowMode") == 2:
+                            break
                 return
         gate_group, gate_if = if_block("Manual Show Note Requested", 2, number=0)
+        # Out of uid()'s counter sequence: this wrapper is PRESERVED across builds, so a
+        # positional identifier would freeze and later collide.  See stable_uid().
+        gate_group = SHOWNOTE_GATE_GROUP
+        gate_if["WFWorkflowActionParameters"]["GroupingIdentifier"] = gate_group
         # Authored here rather than left to main()'s auto-comment pass, so the emitted
         # plist carries the reason instead of the generic "Control-flow check" filler.
         gate_comment = comment(
@@ -4446,6 +4758,7 @@ def main():
     verify_conditional_inputs(actions)
     verify_conditional_action_string(actions)
     verify_list_item_wrappers(actions)
+    verify_group_identifier_uniqueness(actions)
     verify_numeric_operands(actions)
     verify_state_seed(actions)
     verify_pending_exit_seed(actions)
@@ -4453,6 +4766,7 @@ def main():
     verify_exit_events_seed(actions)
     verify_active_session_seed(actions)
     verify_restore_gates(actions)
+    verify_capture_persistence(actions)
     verify_sentinel_gates(actions)
     verify_compound_value_reads(actions)
     verify_router_shape(actions)

@@ -57,6 +57,11 @@ REQUIRED_SYMBOLS = (
     "seed_settings_snapshot",     # establishes the subtree at bootstrap
     "verify_state_seed",          # build guard: every snapshot READ has a seeded counterpart
     "verify_restore_gates",       # build guard: every snapshot-fed write is numerically gated
+    # PHASE 16 (16-01): the ordering half of the same safety property.  verify_restore_gates
+    # proves a restore never writes a junk value; this proves a capture reaches DISK before
+    # the device is changed, so there is something to restore FROM.  Listed here so a future
+    # subtractive pass cannot silently delete the guard that makes SAFE-05 effective.
+    "verify_capture_persistence",  # build guard: no apply is reachable from an unpersisted capture
 )
 
 SET_BRIGHTNESS = "is.workflow.actions.setbrightness"

@@ -15,6 +15,7 @@ from build_state_engine import (
     normalise_output_names,
     normalise_string_envelopes,
     verify_active_session_seed,
+    verify_capture_persistence,
     verify_compound_value_reads,
     verify_conditional_action_string,
     verify_conditional_inputs,
@@ -388,6 +389,12 @@ def main() -> None:
     # future insertion puts over a sentinel-written key.  A brightness/volume write reached
     # with an empty value is a black screen, so this is asserted per fork, never inferred.
     verify_restore_gates(actions)
+    # PHASE 16 (16-01), same per-fork reasoning one axis over: Sentient inherits
+    # dimming()/silence() and the whole capture-persist-apply ordering from the built Dumb
+    # source, but a Sentient-only insertion between a capture and its apply would strand the
+    # user dim or silent with no recorded way back, and neither validator gate can see
+    # ordering.  Asserted per fork, never inferred from the Dumb run.
+    verify_capture_persistence(actions)
     verify_sentinel_gates(actions)
     # Sentient inherits the router verbatim from the built Dumb source, but assert it here
     # too: an inserted Sentient block must never land between the OPEN/CLOSE tests and the
