@@ -1512,6 +1512,161 @@ def verify_circle_zero_silence(actions):
                          "kind may produce a Circle/pressure/heat banner")
 
 
+# ---------------------------------------------------------------------------
+# BD-06 Decision 5 -- the EIGHTH defect class, alongside the seven parameter-defect axes
+# recorded in .claude/CLAUDE.md.  Each of those seven is a parameter whose SHAPE is wrong.
+# This one is different in kind: two independently well-formed halves that no longer agree
+# with each other.  The name primitive_dispatch() writes into the Selected Primitive
+# variable, and the name it compares that variable against, are produced by two different
+# sources -- the Config literal's `sequences` arrays and the generator's own branch tuple --
+# and nothing at run time reconciles them.  iOS merely compares two strings.
+
+# The variable primitive_dispatch() writes the looked-up sequence entry into, and the one
+# every dispatch arm tests.  A NAME, not a code: see verify_dispatch_coverage()'s docstring.
+SELECTED_PRIMITIVE = "Selected Primitive"
+
+
+def verify_dispatch_coverage(actions):
+    """Fail the build if any sequence entry dispatches nothing, or any branch is unnamed.
+
+    BD-06 Decision 5 states the invariant: every distinct primitive name appearing in any
+    `sequences` array must have EXACTLY ONE matching dispatch branch, and every dispatch
+    branch must be named by at least one sequence entry.
+
+    Why this needs a build guard at all.  A dispatch entry that matches no branch produces
+    no error anywhere -- the Circle silently does nothing, the run completes, State is
+    written, and the user sees an ordinary open.  It is invisible to validate_shortcut.py,
+    to the ToolKit catalog, and to decrypting the signed artifact, because all three see a
+    structurally perfect plist.  That is exactly how Circle 8 shipped dead for four phases:
+    the entry "Voice" named no emitted branch and matched nothing, with no error anywhere.
+
+    Four distinct failure classes, each with its own message:
+      orphan      -- a sequence component that no branch resolves for;
+      unreachable -- a distinct branch name that no component resolves for;
+      unknown     -- a branch whose matching rule cannot be resolved, either because its
+                     condition code is one neither rule knows or because its comparison
+                     target is not a plain literal;
+      duplicate   -- a component matched by more than one DISTINCT branch name.  Distinct
+                     NAMES are counted, never action instances: each branch name is
+                     legitimately rendered once per primitive_dispatch() rendering, so an
+                     instance count is not the invariant BD-06 states.
+
+    Matching semantics are resolved PER BRANCH from that branch's own WFCondition and never
+    from a hardcoded constant -- 99 is "contains", 4 is "string is".  Hardcoding either
+    would make this guard silently wrong on the exact commit that changes the code it
+    hardcoded, which is the one commit it most needs to be right on.
+    """
+    literals = [item["WFWorkflowActionParameters"]["WFTextActionText"] for item in actions
+                if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.gettext"
+                and isinstance(item.get("WFWorkflowActionParameters", {}).get("WFTextActionText"), str)
+                and '"config_version"' in item["WFWorkflowActionParameters"]["WFTextActionText"]]
+    if len(literals) != 1:
+        raise SystemExit(
+            f"dispatch coverage: found {len(literals)} Config JSON literal(s) -- a gettext whose "
+            "WFTextActionText is a plain string containing config_version -- and exactly 1 is "
+            "required.  Zero means this guard silently checks nothing and every sequence entry "
+            "goes unverified; more than one means it would check an arbitrary member of a set "
+            "the caller did not know existed")
+    try:
+        config = json.loads(literals[0])
+    except json.JSONDecodeError as error:
+        raise SystemExit(
+            f"dispatch coverage: the Config literal is not parseable JSON ({error}) -- "
+            "detect.dictionary consumes it at run time, so an unparseable literal means the "
+            "whole Config subtree, not merely the dispatch surface, is unreadable on device")
+
+    # Every distinct name any sequence names, with where it names it.  Split on '+'
+    # unconditionally: a name with no '+' yields itself, so this reads a legacy combined
+    # entry correctly and FAILS on it rather than silently mis-parsing it as one name.
+    components: dict[str, list[str]] = {}
+    for sequence, entries in config.get("sequences", {}).items():
+        for position, entry in enumerate(entries, start=1):
+            for component in str(entry).split("+"):
+                component = component.strip()
+                if component:
+                    components.setdefault(component, []).append(f"{sequence} (Circle {position})")
+
+    # NO FILTERING BY CONDITION CODE.  Excluding a branch here because its code is
+    # unfamiliar would make an unrecognised dispatch scheme look like an empty dispatch
+    # surface -- the precise silent failure this guard exists to expose.
+    branches = []
+    for item in actions:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("WFControlFlowMode") != 0:
+            continue
+        variable_name = (parameters.get("WFInput", {}).get("Variable", {})
+                         .get("Value", {}).get("VariableName"))
+        if variable_name != SELECTED_PRIMITIVE:
+            continue
+        code = parameters.get("WFCondition")
+        tested = parameters.get("WFConditionalActionString")
+        if not isinstance(tested, str):
+            strategy = "unknown"
+        elif code == 99:      # "contains": the tested string need only appear inside the entry
+            strategy = "contains"
+        elif code == 4:       # "string is": the tested string must equal the entry exactly
+            strategy = "exact"
+        else:
+            strategy = "unknown"
+        branches.append((tested, code, strategy))
+
+    def resolving_names(component: str) -> set:
+        """The distinct branch NAMES that fire for this sequence component."""
+        names = set()
+        for tested, _code, strategy in branches:
+            if strategy == "contains" and tested in component:
+                names.add(tested)
+            elif strategy == "exact" and tested == component:
+                names.add(tested)
+        return names
+
+    unknown = [(tested, code) for tested, code, strategy in branches if strategy == "unknown"]
+    if unknown:
+        raise SystemExit(
+            f"dispatch coverage: {len(unknown)} dispatch branch(es) have unresolvable matching "
+            f"semantics {sorted(set(unknown), key=repr)} -- a condition code neither 99 "
+            "('contains') nor 4 ('string is'), or a comparison target that is not a plain "
+            "literal.  Guessing which rule applies would let this guard report a clean "
+            "dispatch surface it never actually checked")
+
+    orphans = sorted(name for name in components if not resolving_names(name))
+    if orphans:
+        detail = "; ".join(f"{name!r} at {', '.join(components[name])}" for name in orphans)
+        raise SystemExit(
+            f"dispatch coverage: {len(orphans)} sequence entr(y/ies) dispatch NOTHING -- {detail}.  "
+            "An undispatched entry is a silent runtime no-op: the Circle produces no "
+            "intervention, no error and no log, which is how Circle 8 shipped dead for four "
+            "phases.  It is invisible to validate_shortcut.py, to the ToolKit catalog and to "
+            "the signed-artifact decrypt, so this build guard is the only place it can be "
+            "caught.  Either add the branch to primitive_dispatch()'s name tuple or correct "
+            "the name in the Config literal's sequences array -- never relax this guard")
+
+    duplicates = sorted(name for name in components if len(resolving_names(name)) > 1)
+    if duplicates:
+        detail = "; ".join(f"{name!r} matched by {sorted(resolving_names(name))}" for name in duplicates)
+        raise SystemExit(
+            f"dispatch coverage: {len(duplicates)} sequence entr(y/ies) match MORE THAN ONE "
+            f"distinct dispatch branch -- {detail}.  BD-06 Decision 5 requires exactly one.  "
+            "Under condition 99 ('contains') a branch fires whenever its name is a substring "
+            "of the entry, so an entry silently runs two interventions back to back and the "
+            "user sees the wrong Circle.  Move the dispatch to condition 4 ('string is') or "
+            "rename the colliding branch")
+
+    named = set()
+    for name in components:
+        named |= resolving_names(name)
+    unreachable = sorted({tested for tested, _code, _strategy in branches} - named)
+    if unreachable:
+        raise SystemExit(
+            f"dispatch coverage: {len(unreachable)} dispatch branch(es) {unreachable} are named "
+            "by NO sequence entry.  Dead generated code is not harmless here: it is the "
+            "signature of a half-applied rename, where the tuple moved and the Config literal "
+            "did not, and the matching orphan on the other side is the Circle that now "
+            "dispatches nothing.  Name it in a sequence or stop emitting it")
+
+
 def install_cooldown_branches(actions):
     """Install Ice only in the true/otherwise arms of the named cooldown If."""
     # Removing both first repairs builds made by the earlier broad-anchor helpers.
