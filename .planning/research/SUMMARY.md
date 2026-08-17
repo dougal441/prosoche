@@ -16,7 +16,7 @@ The strongest product-discipline finding: the one sec preregistered study found 
 ## Key Findings
 
 ### Recommended Stack
-Shortcuts Playground plugin v1.2.1 (skill docs + validator + signer), the macOS-only `shortcuts` CLI for signing, Python 3.10+ for the validator. Validate at `--target-macos 26 --target-platform ios`. One `state.json` + one Apple Note — no CSV, no second machine store.
+Shortcuts Playground plugin v1.2.1 (skill docs + validator + signer), the macOS-only `shortcuts` CLI for signing, Python 3.10+ for the validator. Validate under the **two-gate rule** — gate A mandatory (`--target-macos 26 --target-platform all`), gate B advisory (`--target-macos 27 --target-platform all`); stated in full in `.claude/CLAUDE.md` §1 `### Exact validator invocation`. One `state.json` + one Apple Note — no CSV, no second machine store.
 
 ### Expected Features
 **Must have:** idempotent bootstrap, deterministic state engine (Heat/Gravity/Pressure/profiles), session-ID race-proof OPEN/CLOSE reconciliation, nine primitives (min. Knock/Confession/Exile/Ice), Circle IX with guaranteed route-out, six exits with outcome recording, environmental safety floors + Emergency Restore, corrupt-state recovery.
