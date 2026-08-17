@@ -458,12 +458,28 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 **Plans:** 6 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 11-01-PLAN.md — Tracer: one primitive end to end, generator through plist to signed artifact; `tools/plist_text_edit.py` and `docs/note_identity_check.py` (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 11-02-PLAN.md — Dispatch-coverage build guard, then BD-06's roster and exact-match dispatch in one commit (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 11-03-PLAN.md — Note renamed to `PROSOCHĒ`, Dante's nine names surfaced positionally, optional hardening section (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 11-04-PLAN.md — Blocking decision: `schema_version` disposition and old-signed-artifact disposition (wave 4, not autonomous)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 11-05-PLAN.md — Panic Escape made deliberately removable and restorable; Emergency Restore provably untouched (wave 5)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 11-06-PLAN.md — Dumb→Core / Sentient→Aware rename, Aware-side note divergence, ship and decrypt-verify (wave 6)
 
 ### Phase 12: State-shape sentinel gaps — exit_events and active_session
