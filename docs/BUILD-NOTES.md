@@ -1644,3 +1644,164 @@ being written by a concurrent session while this task ran. **Handling: reference
 dependency.** No claim in this section rests on them — every figure above, including the
 enum-coverage counts in §22.3 that 006 would otherwise have been cited for, was measured
 directly here against the loader. They are noted as adjacent concurrent work, nothing more.
+
+---
+
+## 23. The Note rename, the Dante name surface, and the Purgatory profile (phase 11 plan 03, 2026-08-17)
+
+The **user-facing** half of Build Addendum 01 — §1 (the nine Circle names), §3 (the optional
+hardening instruction) and §4 (the Note title) — plus **BD-06-A1**, a user decision taken the
+same day, mid-phase, which renamed the middle descent profile.
+
+**Every row in this section is STRUCTURAL.** `DIST-03` is open, no iPhone is connected, and
+nothing recorded here has been observed running. Where this section says "verified" it means
+*verified in the file, or in the decrypted payload of the signed container* — never on device.
+
+### 23.1 What moved
+
+| Change | Sites | Mechanism |
+|---|---:|---|
+| Apple Note title `PROSOCHĒ — Control Room` → `PROSOCHĒ` | 3 per fork | `tools/plist_text_edit.py` guarded round trip |
+| `## READ THIS FIRST` stale-note instruction | 1 per fork | same |
+| `## THE NINE CIRCLES` legend | 1 per fork | same |
+| `## OPTIONAL HARDENING` section | 1 per fork | same |
+| `CIRCLE_NAMES` + `circle_menu_title()` | new, generator | `tools/build_state_engine.py` |
+| Test-a-Circle items **and** case titles | 9 + 9 per fork | derived from that one constant |
+| Profile `Limbo` → `Purgatory` | 9 per fork + 4 files | class sweep, see §23.4 |
+
+The Note's three identity sites are the `is.workflow.actions.filter.notes` lookup predicate,
+the body's H1, and `com.apple.mobilenotes.SharingExtension`'s `name` parameter. They must move
+together: if the predicate and the title disagree, PROSOCHĒ creates a Note it can never find
+again and appends its ledger to a fresh one on every state-changing run, silently.
+`docs/note_identity_check.py` asserts all three against one `EXPECTED_TITLE` constant.
+
+The **internal** name is unchanged everywhere, per commit `e84ee77`: the `Open Control Room`
+menu item (asserted by `docs/phase7_self_check.py`), the `Control Room Note` variable, the
+`MANUAL_MARKER` and refresh comment anchors, and the `gate_control_room_shownote()` /
+`fix_shownote_key()` / `fix_notes_filter_limit()` function names.
+
+### 23.2 Deviation 1 — the Find-Notes operator was RETAINED at `contains`
+
+`.planning/phases/11-.../11-RESEARCH.md` §6.2 recommended moving the `Name` filter row's
+`Operator` from `99` ("contains") to `4` ("string is") in the same edit that shortened the
+title, because a shorter title under `contains` also matches a leftover Note from an earlier
+install — and with `WFContentItemLimitNumber: 1` plus a Get Item From List "First Item",
+PROSOCHĒ would bind to that Note and append its ledger there permanently.
+
+**The operator was not moved.** Two independent reasons:
+
+1. The current value is `BOOT-08`'s **recorded decision**, taken against the documented
+   Find-Notes name-matching trap. Reversing a recorded decision needs evidence.
+2. Whether `Operator: 4` is accepted in a `WFContentPredicateTableTemplate` on the Notes
+   `Name` property is **UNVERIFIED** — the condition-code table in `.claude/CLAUDE.md` §4
+   documents `4` for `WFCondition` on *conditionals*, and no donor, golden shortcut or
+   catalog entry in this project covers the filter-template case. Writing it would be
+   inference against a recorded decision, which the project's capability rule forbids.
+
+**Evidence that would close it:** a donor export of a Find Notes action configured by hand on
+the owner's iPhone with the `Name` filter set to "is", recovered via the §8 / §11 AEA1 recipe,
+read for the `Operator` literal the device actually writes. Rung 3–4 by `.claude/CLAUDE.md`
+§9's ladder — `com.apple.mobilenotes` is absent from the booted simulator, so rung 2 cannot
+reach it.
+
+**Interim mitigation:** a `## READ THIS FIRST` paragraph asking the user to delete or rename
+an old-titled Note. That is a user instruction, not a mechanism, and it is recorded as such.
+The operator is **pinned** by `docs/note_identity_check.py`'s `EXPECTED_NAME_OPERATOR`, whose
+comment names BOOT-08 and the decision record, so a future change is a deliberate edit to a
+named constant rather than a silent side effect of a copy change. Full record:
+`docs/CAPABILITY-DECISIONS.md` **BD-06-A2**.
+
+**Second-order, pre-existing:** both forks create a Note with the same title. Not introduced
+here — both wrote `PROSOCHĒ — Control Room` before — but sharper now that the title is shorter.
+Giving the forks distinct Note titles is a product decision that belongs with the Dumb→Core /
+Sentient→Aware rename in plan `11-06`.
+
+### 23.3 Deviation 2 — `## OPTIONAL HARDENING` is not at the tail
+
+Build Addendum 01 §3 says the optional hardening instruction goes "at the end of the Note".
+It was placed **immediately after `## Do not target these apps`** instead, and `## THE NINE
+CIRCLES` was placed before the `## MY PHONE, ON PURPOSE` proforma rather than after it.
+
+**Reason:** `manual_note_refresh()` appends a fresh `## CURRENT SETTINGS` / `## CURRENT STATE`
+/ `## ATTENTION LEDGER` block to the **end** of the Note on every state-changing manual run
+(`appendnote`, `operation="append"`). The Note therefore grows monotonically, and anything
+placed at the tail is progressively buried under machine-appended duplicates. A section a user
+is meant to read once and act on cannot live where the machine writes. The hardening section is
+also topically the same subject as the do-not-target guidance — both are about which apps go
+into the automation — so the placement is better copy as well as more durable.
+
+Final heading order, asserted in both forks and in both decrypted payloads:
+`## Do not target these apps` → `## OPTIONAL HARDENING` → `## THE NINE CIRCLES` →
+`## MY PHONE, ON PURPOSE`.
+
+### 23.4 BD-06-A1 — the middle profile is `Purgatory`
+
+BD-06 made `Limbo` the positional name of **Circle 1**, while `Limbo` was already the name of
+the **middle profile** — one word naming a depth and a pace. The user's decision renames the
+profile rather than disambiguating the copy, which also makes the three profiles the three
+canticles of the Commedia: **Paradise / Purgatory / Inferno**. Circle 1 keeps `Limbo`.
+
+**The rename had to be total, and that is a runtime fact, not a tidiness preference.** A
+profile name is a live dotted Config key path — `thresholds.<profile>`,
+`cooldown_seconds.<profile>` — and this project's verified runtime semantics record that **a
+dotted read with any missing segment is a hard error**, not a silent miss. A surviving
+`thresholds.Limbo` read against a `Purgatory` profile value would be a crash. Swept by class
+in one commit:
+
+- the Change Profile menu's `WFMenuItems` and its three case titles (generator, `PROFILE_NAMES`)
+- `thresholds.Limbo` → `thresholds.Purgatory`, array unchanged at `[3, 5, 7, 9, 11, 13, 16, 19, 22]`
+- `cooldown_seconds.Limbo` → `cooldown_seconds.Purgatory`, value unchanged at `180`
+- the import question's `DefaultValue` and its prompt text
+- the bootstrap normalisation fallback (unrecognised answer → `Purgatory`), comment and Text action
+- `docs/state_engine_self_check.py`'s `THRESHOLDS` table and its two assertions
+- `src/CONFIG-BLOCK.md` — literal, two field-reference rows, the transcription-recipe example, change log
+
+**No migration, dual-key alias or read-time normalisation was built.** BD-06-A1 forbids all
+three by name: PROSOCHĒ is a new, as-yet-undeployed product, the only installs are the owner's
+own testing, and old `state.json` files are explicitly not a consideration. A device holding
+`profile: "Limbo"` would hard-error at its next OPEN; that consequence is real and is
+**accepted** because there is no population it can harm.
+
+**Verified per fork, on the shipped payload:** `Limbo` survives on exactly **three** sites in
+each — the Test-a-Circle item, its matching case title, and the Note legend line — and every
+one is a `Circle 1 · Limbo` label. None is a profile, threshold, cooldown or menu occurrence.
+No disambiguation line was written, because the two names no longer collide; threat `T-11-16`
+is **eliminated**, not mitigated.
+
+**Circle 0 is named "The Indifferent"** after Dante's *ignavi*, who are placed in the vestibule
+**before** Circle 1 — exactly Circle 0's position. Recorded in `docs/CAPABILITY-DECISIONS.md`
+BD-06-A1 and here, and **nowhere else**: the name reaches no user-facing surface this phase.
+The Note's legend still lists **nine** Circles, the Test-a-Circle menu still offers nine, and
+`verify_circle_zero_silence()` — which structurally enforces that Circle 0 shows nothing at all
+on the OPEN path — is unmodified and green. Naming the band is not surfacing it.
+
+**Every `Limbo` occurrence earlier in this file is a historical profile reference**, written
+when that was the profile's name, and is superseded by this section. `docs/BUILD-NOTES.md` is
+append-only, so those records are left standing as what was true when they were written rather
+than rewritten to say something they did not.
+
+### 23.5 Evidence table
+
+| Check | Result |
+|---|---|
+| Provenance gate `git merge-base --is-ancestor 7ca8ebb… HEAD` | exit **0**, before every builder run |
+| `tools/build_state_engine.py` / `tools/build_sentient.py` | exit **0**, three times each |
+| Idempotence | a second consecutive build leaves both sources byte-identical (`1e5bf2bd…` / `567befdb…`) |
+| No-op `plistlib` round trip before each guarded edit | 2,667,477 == 2,667,477; 2,667,711 == 2,667,711 |
+| Twelve `docs/*.py` checks | all exit **0**, at all three task commit boundaries |
+| Note identity, both forks | three sites agree on `PROSOCHĒ`, Name operator **99** |
+| Attachment invariant, `src/` | **1,105** (Dumb) / **1,109** (Sentient) token strings, **0** offset mismatches |
+| Attachment invariant, decrypted payloads | same counts, **0** mismatches |
+| Test-a-Circle submenu | `WFMenuItems` == the nine case titles, element for element, both forks and both payloads |
+| Note-body heading order | do-not-target < OPTIONAL HARDENING < THE NINE CIRCLES < MY PHONE, both forks |
+| Profile menu | `['Paradise', 'Purgatory', 'Inferno']`, both forks and both payloads |
+| Config literal keys | `thresholds` and `cooldown_seconds` keyed by exactly the three canticles; `Limbo` absent from both |
+| Surviving `Limbo` | **3** sites per fork, every one a `Circle 1 · Limbo` label |
+| Validator (gate A) ×2, `--target-macos 26 --target-platform all` | `Validation passed.`, exit 0 |
+| Signed artifacts | 219,923 B / 224,186 B, canonical basenames, no suffix |
+| Dated archive SHA-256 == `src/` counterpart | `1e5bf2bd…` == `1e5bf2bd…`; `567befdb…` == `567befdb…` |
+| Decrypt-verify, both containers | `plutil -lint` **OK** ×2; `THE NINE CIRCLES` and `OPTIONAL HARDENING` present in each |
+| `docs/manifest_check.py` after each refresh | passed, 6 rows verified against disk |
+| `--target-macos 27`, `--target-platform ios`, `timeout` | never invoked |
+
+**`DIST-03` is OPEN.** No iPhone is connected. Not one row above is behavioural evidence.
