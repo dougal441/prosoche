@@ -2209,3 +2209,155 @@ via `_tested_variable()`; the emitted `profile_snapshot.create_target_url` equal
 `CLEARED_SENTINEL` on both `src/PROSOCHE-Dumb.xml` and `src/PROSOCHE-Sentient.xml`;
 `docs/phase6_self_check.py` exits 0 (six exit routes survive, double build byte-idempotent);
 gate A (`--target-macos 26 --target-platform all`) prints `Validation passed.` on both forks.
+
+## 27. Phase 12 — the recording duty: assumptions, decisions and the ship gate (plan 12-05, 2026-08-17)
+
+The closing plan of this phase. Everything below discharges `.claude/CLAUDE.md` §9's recording
+duty — "a probe's result is recorded, not consumed" — for every assumption carried, decision
+taken, and research correction measured across plans 12-01 through 12-05. This section is
+this phase's single point of reference; nothing here is repeated elsewhere in this document
+except by cross-reference to §26 above, which already carries `create_target_url`'s full
+decision record.
+
+### Assumptions carried, each with its status and settling rung
+
+- **A1** — `is.workflow.actions.repeat.each` over an **empty** array. `[ASSUMED]` a
+  zero-iteration no-op. **Unsettled at the close of this phase.** Settleable at evidence
+  rung 2 — a simulator probe; needs no Notes app, no Apple Intelligence, no Personal
+  Automation, no real hardware. **Planner decision PD-1 (below): deliberately not spent.**
+  `seed_exit_events()` fixes the ABSENT case either way a probe might resolve, so a rung-2
+  probe could not change one line of shipped code — it would only change how severely A1's
+  entry here is framed. Recorded as reasoning, not just verdict, so a later reader does not
+  reopen it as an oversight rather than a considered pass.
+- **A2** — a dotted read whose **final** segment is missing raises identically to one whose
+  **intermediate** segment is missing. HIGH confidence, but this is inference from two
+  written records — `.claude/CLAUDE.md`'s "any missing segment" runtime-semantics wording,
+  and the generator's own comment at the `sequences.<Sequence>.<Dispatch Circle>` read site —
+  not a fresh device measurement made in this phase. It is what makes
+  `profile_snapshot.create_target_url` (§26) a genuine defect rather than tidying: without A2,
+  there would be no basis to expect the Create branch's dotted read to hard-error on a leaf
+  the container-level key already has neighbours for. Still unsettled at any rung above
+  inference at the close of this phase.
+- **A3** — "no installed base to protect" (`docs/CAPABILITY-DECISIONS.md` BD-06-A1
+  Amendment 3, `:550`) was re-confirmed as this phase's schema-bump precondition before Plan
+  12-01 moved `schema_version` 3→4 — Amendment 3 is unchanged from the value Plan 12-01 read
+  it at, and this phase added no new instance of the assumption; it merely spent the one
+  Phase 11 already banked. What the bump costs if that record is ever wrong: heat, gravity,
+  pressure, the rolling windows and every `exit_stats[*].samples`, with no migration, no
+  dual-key alias and no read-time normalisation — all three forbidden by name in this
+  project's stated conventions. Recorded here because this is the phase that spent it, not
+  because this phase re-measured it.
+- **A5** — `set_value` on a dotted key whose leaf does not yet exist creates the leaf. Already
+  relied on in shipped builds before this phase (`persist_contract()`'s renders, among
+  others). The four-leaf `active_session` seed (Plan 12-02) removes the dependency on this
+  specific assumption for every `active_session.*` write this phase touches — the four leaves
+  now always pre-exist before any `set_value` reaches them — but the assumption itself
+  remains load-bearing elsewhere in the generator and is not independently re-verified here.
+
+### Decisions taken by the planner, each with its rationale
+
+- **PD-1** — no simulator probe spent on A1 (above). `.claude/CLAUDE.md` §9's own rule:
+  "never climb higher than the open question requires." A1's fix is byte-identical whichever
+  way the empty-array question resolves, so a rung-2 probe would answer a question with no
+  code consequence, at the cost of building, signing and importing a probe artifact that is
+  itself a new defect surface.
+- **PD-2** — `create_target_url`'s seed value and gate shape, resolved at Plan 12-04's Task 1
+  checkpoint to **option-a** (sentinel seed plus a condition-5 leaf gate), the planner's own
+  recommendation. Full comparison against options B and C, the implementation, and the
+  verified evidence are recorded in full at §26 above — this entry exists only so the phase's
+  decision inventory is complete from this section alone; §26 remains the canonical record.
+  This is a **one-way** decision: `route_exit()`'s Create branch now assumes the sentinel
+  shape permanently, and reverting it would require a fresh schema consideration rather than
+  a bare code revert.
+- **PD-3** — the Aware fork's pre-existing verifier gap was closed **completely**, not
+  partially, in Plan 12-01: `verify_pending_exit_seed`, `verify_panic_escape_seed`,
+  `verify_compound_value_reads` and `verify_conditional_action_string` were armed in
+  `tools/build_sentient.py` alongside the two new guards this phase introduced
+  (`verify_exit_events_seed`, `verify_active_session_seed`). Measured outcome: **all five
+  passed** on first arming, and the Aware fork's digest was byte-identical before and after —
+  direct evidence the newly-armed guards are pure assertions, not transforms. "Fix whole
+  classes, never site-by-site" (`.claude/CLAUDE.md`, Debugging technique) applied to a
+  verifier-coverage gap, not only to a generator defect.
+
+### Measured corrections to the phase research
+
+- **`verify_state_seed()`'s generalisation is not a pure deletion.** Both `12-RESEARCH.md`
+  and `12-PATTERNS.md` described the change as "delete the `settings_snapshot` root filter."
+  Measured against the live tree in Plan 12-04: that filter was doing two jobs at once —
+  scoping to one key family **and** scoping to reads of the right dictionary. Deleting it
+  alone would have tested 74 legitimate `Config` and `Previous Session` reads against the
+  bootstrap seed and failed the build. The correct change **adds** a source-variable filter,
+  `STATE_READ_SOURCE_VARIABLES = ("State", "Reloaded State")`, filtering by the measured
+  `WFInput.Value.VariableName` accessor path, alongside deleting the old key-root filter.
+  Measured per-source read counts at that commit: **`State`** 141 literal / 6 composite,
+  **`Reloaded State`** 44 literal, **`Config`** 30 literal / 23 composite, **`Previous
+  Session`** 3 literal. Only the first two source variables are in scope for the generalised
+  guard; `Config` and `Previous Session` reads are excluded by dictionary identity, not by key
+  name.
+- **`route_exit()`'s Create branch needed no gate change under the new container-as-invariant
+  shape.** `12-RESEARCH.md` flagged the branch's bare `active_session.id` dotted read,
+  followed by a condition-4 ownership compare, as missing an enclosing existence gate under
+  the *old* shape (where `active_session` could be JSON `null`). Once Plan 12-03 made the
+  container a seeded, permanent invariant, that same bare read became the **correct** target
+  shape — the exact idiom every other owner site converged on — and "fixing" it would have
+  been a regression. Plan 12-03 made zero code changes at this site and recorded the reason
+  explicitly at the site and in its own commit body; recorded again here so a later reader
+  does not "fix" it back a second time.
+- **`open_pipeline()` writes four leaves, not three.** The bootstrap research's plan for the
+  container→leaf write conversion enumerated `.id`, `.started_at`,
+  `.declared_duration_seconds`. Plan 12-03 added a fourth: `.intention` is explicitly cleared
+  in the same write block even though nothing reads it today, specifically to reproduce the
+  old wholesale-replace semantics exactly — the former container write destroyed any prior
+  `.intention` on every OPEN, and leaving the fourth leaf unwritten would let stale
+  cross-session data survive as unintentional drift the container write never permitted.
+- **The product display names are `Core` / `Aware`, not `Dumb` / `Sentient`.**
+  `.claude/CLAUDE.md` was not updated at Phase 11 plan 06's rename and carried the stale
+  literals forward into `12-CONTEXT.md`. This phase's own artifacts — `MANIFEST.md`,
+  `docs/manifest_check.py`'s `DISPLAY_NAMES`, both signed `.shortcut` basenames, and this
+  BUILD-NOTES section — all use the live names. No functional code was affected; this is a
+  planning-document correction only.
+
+### Gate B baselines — verbatim, indices as measured at this plan's rebuild
+
+Both runs are standalone, advisory, never `&&`-chained into anything (`.claude/CLAUDE.md`
+§1). Each shows **exactly one** line — the permitted `com.apple.mobilenotes.SharingExtension`
+/ `WFCreateNoteInput` waiver — and nothing else, confirming Plan 12-03's nine moved emission
+sites introduced no parameter-key or picker-literal regression.
+
+```
+$ validate-shortcut src/PROSOCHE-Dumb.xml --target-macos 27 --target-platform all
+Validation failed:
+First failing action: index 0 (is.workflow.actions.comment)
+- Unknown AppIntent parameter key(s) for com.apple.mobilenotes.SharingExtension at index 4192:
+  WFCreateNoteInput. ToolKit v78 expects: OpenWhenRun, contents, folder, interpretAsMarkdown,
+  name.
+```
+
+```
+$ validate-shortcut src/PROSOCHE-Sentient.xml --target-macos 27 --target-platform all
+Validation failed:
+First failing action: index 0 (is.workflow.actions.comment)
+- Unknown AppIntent parameter key(s) for com.apple.mobilenotes.SharingExtension at index 4260:
+  WFCreateNoteInput. ToolKit v78 expects: OpenWhenRun, contents, folder, interpretAsMarkdown,
+  name.
+```
+
+Both indices moved down from Plan 12-01's own recorded baseline (Core 4302, Aware 4370) —
+consistent with, though not independently attributed to, Plan 12-03's net action-count
+reduction from converting eleven `persist_contract()` renders, two `record_exit_and_route()`
+renders and `close_pipeline()`'s reload gate from a flat-read-plus-existence-gate pair to a
+single leaf read, and from replacing `open_pipeline()`'s wholesale container write with four
+leaf writes (a net reduction of three actions there alone). The waiver text itself is
+unchanged and remains the single permitted finding on either fork. Gate B stays advisory and
+is never `&&`-chained into any definition of done, per `.claude/CLAUDE.md` §1.
+
+### `docs/CAPABILITY-DECISIONS.md`
+
+**Untouched by this plan.** Plan 12-05 Task 2's device UAT (`12-UAT.md`) resolved
+**BLOCKED** — `xcrun devicectl list devices` reported "No devices found." on 2026-08-17, the
+same DIST-03 gap that blocked `09-UAT.md` and `10-UAT.md` — so no device observation exists
+for this phase to settle a capability question with. An empty capability record is the
+correct outcome here, not a speculative one: nothing about the exit-recording path's
+real-device behaviour is known beyond what Plan 12-05 Task 1's decrypted-artifact inspection
+proved structurally (schema_version 4, a four-leaf `active_session`, `exit_events == []` in
+both recovered bootstrap templates).
