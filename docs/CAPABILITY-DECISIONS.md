@@ -650,3 +650,146 @@ Dumb→Core / Sentient→Aware rename in plan `11-06`, not with a copy change.
 observed running. Every statement here is about what the file says, not what the device does.
 
 **Requirement:** ROOM-01, ROOM-02
+
+---
+
+## BD-06-A3 — `schema_version` is bumped 2→3 this phase; the old-named signed artifacts are deleted
+
+**Recorded 2026-08-17, plan `11-04` wave 4.** This record exists to fix two dispositions so that
+plans `11-05` and `11-06` implement them without re-deriving or re-asking. It implements nothing
+itself: no generator edit, no template edit, no rebuild is made by this plan.
+
+`11-04` was authored as a **blocking `checkpoint:decision`** rated `one-way`. It is
+**discharged** — not skipped, and not auto-approved by an agent. The developer answered it in
+**BD-06-A1, Amendment 3** (2026-08-17), which is the input this record consumes.
+
+### Decision 1 — take the bump: `schema_version` moves 2 → 3
+
+The chosen option, verbatim from the plan's option table:
+
+> **`bump`** — *"Bump the version so the seed changes reach installed devices."*
+
+**Why the question existed.** A stored `state.json` that satisfies the three-check validity gate
+(`schema_version` present, string-equals the accepted literal, `profile` non-empty) is **reused
+forever**. A change to the bootstrap seed template is therefore invisible on any device that
+already holds a file. `schema_version` is the only lever that forces the rebuild branch, and it
+was used for exactly this purpose once before, 1→2.
+
+Two seed changes in this phase need that lever:
+
+- plan `11-05` adds a new bootstrap field (the Panic Escape flag). Without a bump, the removal
+  path `11-05` builds is **dead** on an installed device — the flag it reads is simply absent.
+- plan `11-06` changes an existing seed value (the `fork` label). Without a bump, the device
+  keeps reporting the old fork name in its status line and in the Note's settings block after
+  the rename, which reads as a bug of unknown origin.
+
+**The cost that was accepted — stated in full, because it is the reasoning that made the answer
+free, not the answer itself.** There is **no field-preserving migration**. Shortcuts provides no
+mechanism for one, and this project has never built one. A device whose stored version is no
+longer accepted rebuilds `state.json` from the template on its very next run, discarding
+**accumulated heat, gravity, pressure, the rolling windows (`recent_sessions`,
+`recent_contracts`), the session record, and the exit-learning history (`exit_stats[*].samples`)**.
+That loss is unrecoverable: the Apple Note retains the human-readable ledger, but the machine
+state is gone. Had a real installed base existed, this would have been a data migration with no
+safe path, which is precisely why `11-04` was gated rather than decided inside a plan.
+
+**Why it is free here.** BD-06-A1 Amendment 3 records the developer's statement that PROSOCHĒ is
+a **new, as-yet-undeployed product**, that the only existing installs are the owner's own
+testing, and that old `state.json` files are **explicitly not a consideration**. The `one-way`
+rating rested entirely on destroying a real accumulated behavioural record. There is no such
+record to destroy, so nothing irrecoverable is discarded and the gate is discharged.
+
+**The gate reinstates itself.** This is a conditional discharge, not a permanent one. If a real
+installed base ever exists, the cost above applies again unchanged, this decision returns to
+`one-way`, and the blocking `checkpoint:decision` must be reinstated before any further
+`schema_version` move. Threat `T-11-19` is marked `not applicable` for the same conditional
+reason and returns to `high` under the same trigger.
+
+**A second, independent reason the bump is the correct disposition this phase — not merely a free
+one.** BD-06-A1 Amendment 1 renames the middle profile `Limbo` → `Purgatory`, which moves the
+live Config key paths `thresholds.Limbo` → `thresholds.Purgatory` and
+`cooldown_seconds.Limbo` → `cooldown_seconds.Purgatory`. This project's verified runtime
+semantics are that a **dotted read with any missing segment is a hard error**, not a silent miss
+(`.claude/CLAUDE.md` § *Verified iOS Shortcuts runtime semantics*). A device still holding
+`profile: "Limbo"` would therefore hard-error at its next OPEN. BD-06-A1 **accepted** that
+consequence on the grounds that no population can be harmed by it. A `schema_version` bump does
+better than accept it: by forcing the rebuild branch, it reseeds `profile` from the new template,
+so the stale value that would trigger the hard error is replaced rather than tolerated. This is a
+file-level argument about which branch the generator's control flow takes — **it is not a
+device-verified claim**, and it is offered as a reason the bump is well-aimed, not as evidence
+that any device behaves this way.
+
+**What was deliberately NOT built.** BD-06-A1 forbids all three by name, and none was built:
+
+| Not built | Why it was excluded |
+|---|---|
+| A migration path | No field-preserving migration is possible, and with no installed base there is nothing to migrate |
+| A dual-key Config alias (accepting both `Limbo` and `Purgatory`) | Would permanently encode a name collision BD-06-A1 renamed the profile specifically to dissolve |
+| A read-time profile normalisation | Same objection, plus it would hide the stale value rather than replace it |
+
+### The implementation surface — so plan `11-05` does not rediscover it
+
+`fix_state_rebind()` in `tools/build_state_engine.py` is a **code** edit, not a data edit. Measured
+2026-08-17: the function spans `:3255-3315`. **Anchor on the symbol, not the line numbers — they
+shift on every edit.** (`11-RESEARCH.md` Pitfall 7 cites `:3022-3084` for this function; that
+citation is **stale** as of this commit and should be read as naming the symbol, not the span.)
+
+It hardcodes **three** literals, not two, and they must all move in the **same commit**:
+
+| # | Site (measured) | Current | Role |
+|---:|---|---|---|
+| 1 | `:3283-3284` — `_replace_in_token(inner, '"schema_version": 1,', '"schema_version": 2,')` | `1,` → `2,` | The **bootstrap template seed** — the value a rebuilt `state.json` is written with |
+| 2 | `:3291` — `parameters.get("WFConditionalActionString") in ("1", "2")` | `("1", "2")` | The **recognition tuple** the transformer uses to locate the existing version-check conditional |
+| 3 | `:3296` — `version_check["WFConditionalActionString"] = "2"` | `"2"` | The **runtime validity-gate literal** the device compares its stored `schema_version` against |
+
+**Why these are one edit and not three.** Sites 1 and 3 are the pair the plan named: move the
+template without the gate literal and every device rebuilds forever; move the gate literal without
+the template and every device — including a clean install — **fails its validity gate immediately**,
+because the file it just wrote does not satisfy the check it is about to be measured by. Site 2 is
+the coupling that is easiest to miss: it is what makes the transformer **idempotent**. Once site 3
+writes `"3"`, a *subsequent* build no longer recognises the conditional, `version_check` stays
+`None`, and the build aborts at `raise SystemExit("schema version check conditional not found")`.
+The tuple must therefore admit the new value or the *next* rebuild fails — not this one, which is
+what makes it a delayed and confusing failure.
+
+### Decision 2 — the old-named signed artifacts are **deleted**, not retained
+
+After plan `11-06` renames the forks, these two files at `artifacts/shortcuts/` become orphans and
+are to be **removed** in the same commit that writes the new-named signed artifacts:
+
+- `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut`
+- `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Sentient.shortcut`
+
+**Why deletion rather than retention.** Three reasons, measured:
+
+1. **`docs/manifest_check.py` cannot see an orphan.** It asserts only the rows `MANIFEST.md`
+   gives it (`:47`), hashing and sizing each declared path from disk. A file no row names is
+   invisible to it. Retention would therefore be an **unchecked** state — the one thing this
+   project's twelve structural checks exist to prevent.
+2. **Two plausible "current" imports side by side is exactly the confusion the signed-name
+   discipline exists to prevent** (`.claude/CLAUDE.md` §8: the signed filename must equal the
+   intended display name). A user browsing the directory after the rename would find four signed
+   files and no way to tell which two are current.
+3. **Nothing unrecoverable is lost.** Both files are **git-tracked** (verified via
+   `git ls-files`), so `git show` recovers the exact bytes at any later point.
+
+**One precision, because the obvious argument for deletion is wrong.** The dated archives under
+`artifacts/shortcuts/2026-08-*/` do **not** contain signed `.shortcut` files — verified: every
+file under `2026-08-17/` is an unsigned `.xml`, and a repo-wide `find` locates signed artifacts
+only at the two canonical paths above. So the dated archives preserve the **XML build input**
+under the old name, not a signed artifact. Deletion is recoverable through **git**, not through
+the archive directory. The dated archives themselves are historical records and are **left
+untouched** either way, per the precedent set by quick task `260817-au7`.
+
+No claim is made that re-signing a preserved XML reproduces byte-identical signed output; the
+recoverability claimed here is git's, and only git's.
+
+### No behavioural claim
+
+**DIST-03 is open. No iPhone is connected, and no device has run either build.** Nothing in this
+record is device-evidenced. Every statement above concerns what the files say and which branch the
+generator's control flow takes — not what any device does. In particular, the claim that a bump
+causes an installed device to rebuild its `state.json` is a reading of the generator and the
+validity gate, and it is **not** verified on hardware.
+
+**Requirement:** AUDIT-02 (extends), DIST-02
