@@ -55,7 +55,7 @@ untested path in the product), Phase 4 UAT tests 1 and 3-6, Phase 8's real-iPhon
 Phase 19's full nine-Circle sweep. Report the opens-to-first-interruption count from
 `10-UAT.md` Test 2 — it decides whether Phase 10's raised entry thresholds need tuning.
 
-Last activity: 2026-08-17 — Phase 11 execution started
+Last activity: 2026-08-17 — Completed quick task 260817-fae: spike 004 downgraded to PARTIAL (ineligible-hardware leg never tested)
 
 Progress: [██████████] 100%
 
@@ -248,6 +248,7 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 | 260817-2ng | Reconcile stale Use Model On-Device literal audit trail (CAP-26/DEV-03/UA-02/BD-04) | 2026-08-17 | 1732448 | [260817-2ng-use-model-literal-reconciliation](./quick/260817-2ng-use-model-literal-reconciliation/) |
 | 260817-au7 | Repair the iOS 26 Personal Automation onboarding in both forks; rebuild, re-sign, decrypt-verify | 2026-08-17 | c961af9 | [260817-au7-ios26-automation-onboarding](./quick/260817-au7-ios26-automation-onboarding/) |
 | 260817-d9m | Record agent-side tooling and the four-rung evidence-escalation ladder (CLAUDE.md §9); sync STACK.md AEA1 drift; admit simulator/probe evidence in BUILD-NOTES §3 | 2026-08-17 | 5e0a895 | [260817-d9m-record-agent-side-tooling-and-device-evi](./quick/260817-d9m-record-agent-side-tooling-and-device-evi/) |
+| 260817-fae | Downgrade spike 004 to PARTIAL — the ineligible-hardware leg was never tested; propagate to skill, CONVENTIONS, spike 008, wrap-up | 2026-08-17 | pending | [260817-fae-downgrade-spike-004-to-partial-ineligibl](./quick/260817-fae-downgrade-spike-004-to-partial-ineligibl/) |
 
 ## Deferred Items
 

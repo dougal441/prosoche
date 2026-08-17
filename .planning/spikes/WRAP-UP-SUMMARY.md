@@ -13,7 +13,7 @@ session-model-and-automations, environmental-primitives
 | 001 | device-is-locked-literal | standard | VALIDATED | session-model-and-automations, environmental-primitives |
 | 002 | close-automation-vs-screen-lock | standard | VALIDATED | session-model-and-automations |
 | 003 | device-model-literal | standard | **INVALIDATED** | sentient-and-capability-gating |
-| 004 | capability-gate | standard | VALIDATED | sentient-and-capability-gating |
+| 004 | capability-gate | standard | **PARTIAL** (downgraded 2026-08-17, was VALIDATED) | sentient-and-capability-gating |
 | 005 | ios-color-filters-identifier | standard | VALIDATED | environmental-primitives, authoring-parameters |
 | 006 | picker-serialisation-taxonomy | standard | VALIDATED | authoring-parameters |
 | 007 | unresolvable-picker-failure-mode | standard | PARTIAL | evidence-and-probes |
@@ -46,7 +46,19 @@ already do exactly that.
 version, no build number, and no app-presence check substitutes; the real API is Swift-only
 and ruled out by the no-companion-app constraint. Combined with the absence of try/catch
 anywhere in Shortcuts, this forces the design to an explicit toggle plus an **ordering**
-fail-safe — verified on both capable and ineligible hardware.
+fail-safe.
+
+**But the ordering fail-safe's ineligible-hardware behaviour is unproven** (spike 004
+downgraded to PARTIAL, 2026-08-17). The device recorded as the ineligible test never had its
+generation noted, the run omitted `WFLLMModel` so it exercised the undocumented default model
+source rather than the pinned On-Device path that ships, and the error it produced —
+*"Support for selected model is downloading"* — is a **provisioning** message, not an
+eligibility rejection. An iPhone 16e later ran the same shortcut successfully once its models
+had downloaded, which is what exposed the misattribution. The failure window is therefore
+wider than assumed: it reaches **capable hardware at first run**, before a ~7 GB model
+download completes — which under a merged product is the most fragile moment in the product.
+What survives is the structural property: the core runs first, so any downstream halt is
+contained, and that was observed once under a real failure.
 
 **Screen lock fires CLOSE.** The session model needs no separate lock trigger and no
 lock-state poll. The residual hazard is storage, not signalling: file-permission prompts

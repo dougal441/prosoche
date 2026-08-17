@@ -62,7 +62,10 @@ execute Shortcuts itself.
   (e.g. `Use Model` on hardware that may not support it) must use **ordering**, not
   detection or recovery: place the non-negotiable core logic before the risky optional
   step, so a failure there costs only the optional step, never the core behavior. Confirmed
-  in spike 004 both in the shipped plist bytes and on real ineligible hardware.
+  in spike 004 in the shipped plist bytes, and by an observed on-device halt — though the
+  cause of that halt was never identified (spike 004 is PARTIAL; see its Reassessment).
+  Apple DTS states it directly: *"there is currently no way to detect an error from an
+  action."*
 - **`WFFileErrorIfNotFound = false`** on Get File is the real "does this file exist"
   mechanism — cleaner than attempt-and-treat-as-absent.
 - **State-dictionary presence check:** gate on whether `Detect Dictionary`'s output itself

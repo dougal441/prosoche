@@ -49,7 +49,7 @@ Parameter notes:
 
 ### Step 2 — the ordering fail-safe
 
-This is the entire safety design. Verified on real hardware in both directions (spike 004):
+This is the entire safety design:
 
 ```
 [core deterministic escalation]      ← unconditional, FIRST, no dependency on anything below
@@ -59,16 +59,40 @@ This is the entire safety design. Verified on real hardware in both directions (
 [end if]
 ```
 
-**iPhone 15 Pro (capable), toggle on:** core escalation alert fired **first**, then a
-one-time Save File permission prompt, then the Use Model result
-(*"Sentient mirror: Hello! How can I assist you today?"*).
+**Ordering is a structural property** — the core runs first and depends on nothing below it,
+so *any* downstream halt is contained by construction. Build it this way. What follows is
+what has and has not actually been observed.
 
-**iPhone SE (ineligible), toggle on:** core escalation alert fired at action index 3 — the
-first executable step — then Use Model failed with a native, non-crashing system error:
-*"Could not run 'Use Model' to use this action. Support for selected model is downloading."*
-The core intervention had already completed. No corrupt state write, no silent hang.
+**Observed (spike 004, 2026-08-16):**
 
-**iPhone 15 Pro, toggle off:** core escalation fired, no Use Model attempt.
+- *iPhone 15 Pro, toggle off:* core escalation fired, no Use Model attempt.
+- *iPhone 15 Pro, toggle on:* core escalation fired **first**, then a one-time Save File
+  permission prompt, then the Use Model result.
+- *An iPhone SE, toggle on:* core escalation fired at action index 3 — the first executable
+  step — then Use Model halted with a native, non-crashing error, *"Support for selected
+  model is downloading."* The core had already completed. **The ordering held under a real
+  failure.** That single observation stands.
+
+**Not observed — do not claim these (verdict downgraded to PARTIAL, 2026-08-17):**
+
+- **Behaviour on genuinely ineligible hardware.** The spike's draft XML omits `WFLLMModel`
+  entirely, so **both runs exercised the undocumented default model source, not the pinned
+  On-Device path PROSOCHĒ ships.** Separately, *"Support for selected model is downloading"*
+  is a **provisioning-state** message, not an eligibility rejection — an iPhone 16e (A18,
+  8 GB, capable) later ran the same shortcut successfully once its models had downloaded,
+  which shows the message tracks download state. The SE run is equally consistent with
+  ineligible hardware or with a device that had simply not provisioned. Nothing distinguishes
+  them, and the SE's generation was never recorded.
+- **That a Use Model failure is always a graceful halt** rather than a hang or partial write.
+
+**The consequence that matters for the merge.** If the failure is about provisioning rather
+than eligibility, **capable devices fail too, in an ordinary state**: models are a ~7 GB
+download needing Wi-Fi and power and are absent on a fresh or freshly-reset device, and the
+user can switch Apple Intelligence off in Settings. Under two forks that window is only
+reachable by someone who deliberately installed the AI fork. Under one merged product it is
+reachable by a new user on perfectly good hardware **during first run** — PROSOCHĒ's most
+fragile moment. Scope the merge risk as "any user whose models haven't landed yet," not
+"users who answer the toggle wrongly on old hardware."
 
 ### Step 3 — the toggle
 
@@ -103,9 +127,11 @@ Loop. Correctness here is entirely the build's responsibility.
     system app as a proxy is not possible either.
 - **Do not design any "attempt, catch failure, save a boolean" recovery. There is no
   try/catch in Shortcuts at all.** An action failure halts the entire shortcut; nothing after
-  it runs. Confirmed via docs, web research, and separately on real ineligible hardware.
+  it runs. Confirmed via docs, via an observed halt on device, and directly by an Apple DTS
+  engineer: *"there is currently no way to detect an error from an action."*
 - **Do not put anything load-bearing after a Use Model call.** Whatever follows it will not
-  run on ineligible hardware.
+  run whenever the model is unavailable — which includes capable hardware mid-provisioning,
+  not just ineligible hardware.
 - **Do not assume `WFWorkflowImportQuestions` can carry a runtime-computed default.** It
   resolves before any action executes. Any capability check would have to happen at run time
   and be cached in `state.json` — and per spike 003 there is no such check to run.
@@ -119,11 +145,22 @@ Loop. Correctness here is entirely the build's responsibility.
   interruption the onboarding should anticipate. It can also re-prompt on every automation
   run and **cannot be granted while the screen is locked** — see
   `session-model-and-automations.md`.
-- Not fully verified: whether the iPhone SE error is permanent for ineligible hardware or a
-  transient "model support downloading" state that could resolve. The wording suggests Apple
-  attempts to provision model support even on some ineligible hardware, which the capability
-  audit did not anticipate. Not chased — the ordering fail-safe holds either way.
 - Apple Intelligence cannot be tested on the simulator. This path is rung 3+ only.
+
+### Open — four device runs nobody has done
+
+Spike 004 is **PARTIAL** until these land. The last two are the ones that decide the merge.
+
+| Open question | Evidence needed |
+|---|---|
+| Does the **On-Device-pinned** `askllm` behave like the unpinned one? | Re-run the gate with `WFLLMModel = "Apple Intelligence on Device"` — the config that actually ships |
+| Is a genuinely-ineligible-hardware failure a graceful halt, or a hang / partial write? | A run on a **known** ineligible device — iPhone 15 / 15 Plus (A16), iPhone 14 or earlier, or an iPhone SE 2nd/3rd gen — with the generation recorded |
+| What happens on **capable hardware with models not yet downloaded**? | A capable device with Apple Intelligence freshly enabled, run before provisioning finishes |
+| What happens with **Apple Intelligence switched off** on capable hardware? | Same device, AI toggled off in Settings |
+
+For every re-run, record: device model, iOS version, whether Apple Intelligence is enabled,
+and whether the model download had completed. The original run recorded none of these, which
+is why its failure could never be attributed.
 
 ## Origin
 

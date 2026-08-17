@@ -56,7 +56,7 @@ Non-negotiable design decisions that emerged from spiking. Every reference honou
 |------|-----------|-------------|
 | Authoring parameters | `references/authoring-parameters.md` | Three-class rule (synthesizable / runtime-derivable / hand-selection-only) predicts from the catalog alone whether a parameter can be written offline. **PROSOCHĒ has zero hand-selection blockers across all 51 emitted actions.** |
 | Evidence and probes | `references/evidence-and-probes.md` | The four-rung ladder, the AEA1 donor round-trip, and the correct validator invocation. **Rung 2 tests the build, not the import — the simulator cannot import a signed `.shortcut`.** |
-| Sentient and capability gating | `references/sentient-and-capability-gating.md` | `WFLLMModel = "Apple Intelligence on Device"` (donor). Hardware detection is impossible; ordering is the only fail-safe, and it is verified on real ineligible hardware. |
+| Sentient and capability gating | `references/sentient-and-capability-gating.md` | `WFLLMModel = "Apple Intelligence on Device"` (donor). Hardware detection is impossible; ordering is the only fail-safe. **Its ineligible-hardware behaviour is unproven** — the failure window is provisioning, not eligibility, so it reaches capable devices at first run. |
 | Session model and automations | `references/session-model-and-automations.md` | **Screen lock fires CLOSE**, same as an app switch — no extra trigger or poll needed. Open hazard: file-permission prompts cannot be granted while locked. |
 | Environmental primitives | `references/environmental-primitives.md` | Ash is real on iOS under `AXToggleColorFiltersIntent`; both legs donor-confirmed (`state` `1`/`0`, omit `operation`). Still no accessibility read-back. |
 
@@ -101,7 +101,7 @@ preserved in `sources/` for complete reference.
 - 001-device-is-locked-literal (VALIDATED)
 - 002-close-automation-vs-screen-lock (VALIDATED)
 - 003-device-model-literal (INVALIDATED)
-- 004-capability-gate (VALIDATED)
+- 004-capability-gate (PARTIAL — downgraded 2026-08-17, was VALIDATED)
 - 005-ios-color-filters-identifier (VALIDATED)
 - 006-picker-serialisation-taxonomy (VALIDATED)
 - 007-unresolvable-picker-failure-mode (PARTIAL)

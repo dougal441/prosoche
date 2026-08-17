@@ -195,7 +195,12 @@ offsets at indices 24 and 46 were correct on the first pass.
 
 ## Results
 
-**Verdict: VALIDATED.**
+> **⚠ SUPERSEDED — this section records the 2026-08-16 verdict as originally written.**
+> It is kept verbatim rather than rewritten, because the misattribution is itself the
+> lesson. **Verdict is now PARTIAL** — read *Reassessment (2026-08-17)* below before citing
+> anything in this section.
+
+**Verdict: VALIDATED.** ← *superseded; now PARTIAL*
 
 On-device runs (2026-08-16):
 
@@ -207,7 +212,8 @@ On-device runs (2026-08-16):
   then the Use Model result: *"Sentient mirror: Hello! How can I assist you today?"*
   Toggle → state write → Sentient branch all behaved as designed.
 
-**iPhone SE (not Apple-Intelligence-capable):**
+**iPhone SE (not Apple-Intelligence-capable):** ← *the eligibility claim in this heading is
+unsupported; generation was never recorded, and the run omitted `WFLLMModel`. See Reassessment.*
 - Answered "yes" → core escalation alert fired (action index 3, first executable step —
   unconditional per the build), then Use Model failed with a native, non-crashing system
   error: *"Could not run 'Use Model' to use this action. Support for selected model is
@@ -220,6 +226,11 @@ hardware, not just in theory. The toggle correctly gates the Sentient branch in 
 directions, and a Use Model failure — whatever its cause — cannot pre-empt the core
 deterministic escalation because nothing about the core step depends on the Sentient
 branch succeeding, or even being attempted.
+
+> ⚠ **The first sentence above is wrong.** The hardware was not established to be
+> ineligible. What the run does support is the clause that follows it: a Use Model failure —
+> *whatever its cause* — did not pre-empt the core escalation. That is the structural
+> property, and it survives. "On real ineligible hardware" does not.
 
 **New finding, not previously in the project's capability audit:** Save File triggers a
 one-time OS permission prompt ("Allow to save 1 dictionary to a file") on first write per
