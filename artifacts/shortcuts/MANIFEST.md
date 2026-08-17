@@ -38,23 +38,19 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
 | Core source | `src/PROSOCHE-Dumb.xml` | 2831992 | `589ee1211bc66071d25fed4834ca3041df71d400874909e6c428a422ee891190` |
-| Core archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-161458.xml` | 2831994 | `e0c151c14fd4bd56818d4822889e4a3f211bb8598ef0c5e308f301855512d48d` |
-| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 229903 | `d1377102f6ad45a084a4467ae72d82d5dc27fbb1e1d31bda30d47bb124750a59` |
+| Core archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-164519.xml` | 2831992 | `589ee1211bc66071d25fed4834ca3041df71d400874909e6c428a422ee891190` |
+| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 229959 | `4acc696af87eb66ad4fffe9fb265ff58311b8a79dc6a0d1f9724c5ded83406fc` |
 | Aware source | `src/PROSOCHE-Sentient.xml` | 2868673 | `ff50b4532df0867790444fbebc2e6be02598347859a0ff8bfcfd26ff03c741ec` |
-| Aware archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Aware-161508.xml` | 2868675 | `f33ca7a000ac0ab0f4cc9a74aa281396de0f415f4766b12a5add880b6b3dcf8a` |
-| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 234118 | `e2a56bf2b6bc76ef57aa7013d267b77e33172a65dae1d9eca2d20540b6618719` |
+| Aware archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Aware-164529.xml` | 2868673 | `ff50b4532df0867790444fbebc2e6be02598347859a0ff8bfcfd26ff03c741ec` |
+| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 234012 | `447eead5020ab78292ec56275e6f5ae1f1b3f8e307ebc002f9e6a11f9246e9cd` |
 
-**The two source rows above were corrected out-of-band by this repository's WR-01 code-review
-fix** (commit `5f55edc`, `/gsd-code-review --fix` against `12-REVIEW.md`): `seed_active_session()`
-double-indented the `active_session` bootstrap line by 2 bytes per fork; the fix re-seeds it
-flush with its siblings and this table's Core/Aware **source** rows now reflect the corrected
-`src/*.xml`. The **archive and signed** rows below still describe the pre-fix `ea7a0f4` build
-byte-for-byte — the archive is therefore no longer byte-identical to its `src/` counterpart,
-contradicting the "byte-identical" claim two paragraphs down — because re-archiving and
-re-signing is a separate build-and-release step this fix did not perform. `docs/manifest_check.py`
-still passes: it verifies each row against its own file independently and asserts no
-archive-equals-source invariant. A future rebuild that re-archives and re-signs both forks
-should refresh the archive/signed rows and remove this note.
+**Re-archived and re-signed against the corrected source (2026-08-17, same session as WR-01).**
+`seed_active_session()`'s double-indent bug (WR-01, commit `5f55edc`) shortened the `active_session`
+bootstrap line by 2 bytes per fork; that fix landed in `src/*.xml` first, and the archive/signed rows
+above were then refreshed to match — every row in this table, including the two `.shortcut` files, is
+now byte-identical in provenance to the same corrected `src/*.xml` this table's source rows describe.
+The archive rows are therefore byte-identical to their `src/` counterparts (size and hash match
+exactly), consistent with the "byte-identical" claim below. `docs/manifest_check.py` passes.
 
 **The two old-named signed artifacts were DELETED, not retained**, per
 `docs/CAPABILITY-DECISIONS.md` BD-06-A3 Decision 2. `artifacts/shortcuts/` now holds exactly
@@ -101,10 +97,11 @@ branch, consistent with the sentinel-seeded invariant these three fields now gua
 comparison for `create_target_url`'s seed shape and the assumptions this phase carried without
 a fresh device measurement (A1, A2, A5). **Structurally proven, device-unobserved**: all three
 changes are proven present and correctly gated in the generator, in both `src/*.xml` artifacts,
-and (per §27) in the decrypted signed payloads at commit `ea7a0f4`; none of it has run on a real
-iPhone — `12-UAT.md` recorded **BLOCKED** (`xcrun devicectl list devices` reported no devices,
-so no criterion in that file was exercised). Read `docs/BUILD-NOTES.md` §26-27 and
-`12-UAT.md` before treating any of this phase's behaviour as device-confirmed.
+and (per §27, re-verified after the WR-01 re-sign above) in the decrypted signed payloads of the
+current `.shortcut` files; none of it has run on a real iPhone — `12-UAT.md` recorded **BLOCKED**
+(`xcrun devicectl list devices` reported no devices, so no criterion in that file was exercised).
+Read `docs/BUILD-NOTES.md` §26-27 and `12-UAT.md` before treating any of this phase's behaviour
+as device-confirmed.
 
 **A signed artifact's filename is the only carrier of its display name — re-measured on this
 build.** Both containers were decrypted and neither recovered `Shortcut.wflow` contains a
