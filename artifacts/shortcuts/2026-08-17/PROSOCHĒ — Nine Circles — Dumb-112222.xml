@@ -36,7 +36,7 @@ The next two actions are pinned in place: the import questions below are matched
 				<key>UUID</key>
 				<string>ED6EF200-B665-4FC4-AC47-AA55B0CFB57F</string>
 				<key>WFTextActionText</key>
-				<string>Purgatory</string>
+				<string>Limbo</string>
 			</dict>
 		</dict>
 		<dict>
@@ -123,12 +123,12 @@ ALLOW_MANUAL_UNIT_CONVERSION: the settings text below includes the date pattern 
   },
   "thresholds": {
     "Paradise": [4, 7, 10, 13, 16, 19, 22, 25, 28],
-    "Purgatory": [3, 5, 7, 9, 11, 13, 16, 19, 22],
+    "Limbo": [3, 5, 7, 9, 11, 13, 16, 19, 22],
     "Inferno": [2, 3, 5, 7, 9, 11, 13, 15, 17]
   },
   "cooldown_seconds": {
     "Paradise": 60,
-    "Purgatory": 180,
+    "Limbo": 180,
     "Inferno": 300
   },
   "sequences": {
@@ -1178,7 +1178,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<string>The import answer was not Paradise. Check whether it is Inferno instead:
 - Input uses the same descent answer checked above.
 - If it is exactly Inferno, that becomes the setup's profile below.
-- Otherwise — Purgatory itself, a typo, or anything unrecognised — the setup's profile below always becomes Purgatory, the documented default.</string>
+- Otherwise — Limbo itself, a typo, or anything unrecognised — the setup's profile below always becomes Limbo, the documented default.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -1253,7 +1253,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<key>UUID</key>
 				<string>8C23F6F5-DFC9-4A81-A2E3-EDE229948560</string>
 				<key>WFTextActionText</key>
-				<string>Purgatory</string>
+				<string>Limbo</string>
 			</dict>
 		</dict>
 		<dict>
@@ -30440,7 +30440,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFMenuItems</key>
 				<array>
 					<string>Paradise</string>
-					<string>Purgatory</string>
+					<string>Limbo</string>
 					<string>Inferno</string>
 				</array>
 			</dict>
@@ -30652,7 +30652,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
-				<string>Purgatory</string>
+				<string>Limbo</string>
 			</dict>
 		</dict>
 		<dict>
@@ -30663,7 +30663,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>D4567F1D-ECC9-59C9-B429-26108FB21E41</string>
 				<key>WFTextActionText</key>
-				<string>Purgatory</string>
+				<string>Limbo</string>
 			</dict>
 		</dict>
 		<dict>
@@ -32114,15 +32114,15 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<string>Test a Circle</string>
 				<key>WFMenuItems</key>
 				<array>
-					<string>Circle 1 · Limbo</string>
-					<string>Circle 2 · Lust</string>
-					<string>Circle 3 · Gluttony</string>
-					<string>Circle 4 · Greed</string>
-					<string>Circle 5 · Wrath</string>
-					<string>Circle 6 · Heresy</string>
-					<string>Circle 7 · Violence</string>
-					<string>Circle 8 · Fraud</string>
-					<string>Circle 9 · Treachery</string>
+					<string>Circle 1</string>
+					<string>Circle 2</string>
+					<string>Circle 3</string>
+					<string>Circle 4</string>
+					<string>Circle 5</string>
+					<string>Circle 6</string>
+					<string>Circle 7</string>
+					<string>Circle 8</string>
+					<string>Circle 9</string>
 				</array>
 			</dict>
 		</dict>
@@ -32136,7 +32136,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
-				<string>Circle 1 · Limbo</string>
+				<string>Circle 1</string>
 			</dict>
 		</dict>
 		<dict>
@@ -38812,7 +38812,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
-				<string>Circle 2 · Lust</string>
+				<string>Circle 2</string>
 			</dict>
 		</dict>
 		<dict>
@@ -45488,7 +45488,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
-				<string>Circle 3 · Gluttony</string>
+				<string>Circle 3</string>
 			</dict>
 		</dict>
 		<dict>
@@ -52164,7 +52164,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
-				<string>Circle 4 · Greed</string>
+				<string>Circle 4</string>
 			</dict>
 		</dict>
 		<dict>
@@ -58840,7 +58840,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
-				<string>Circle 5 · Wrath</string>
+				<string>Circle 5</string>
 			</dict>
 		</dict>
 		<dict>
@@ -65516,7 +65516,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
-				<string>Circle 6 · Heresy</string>
+				<string>Circle 6</string>
 			</dict>
 		</dict>
 		<dict>
@@ -72192,7 +72192,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
-				<string>Circle 7 · Violence</string>
+				<string>Circle 7</string>
 			</dict>
 		</dict>
 		<dict>
@@ -78868,7 +78868,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
-				<string>Circle 8 · Fraud</string>
+				<string>Circle 8</string>
 			</dict>
 		</dict>
 		<dict>
@@ -85544,7 +85544,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
-				<string>Circle 9 · Treachery</string>
+				<string>Circle 9</string>
 			</dict>
 		</dict>
 		<dict>
@@ -93939,28 +93939,6 @@ Both automations are needed. Without CLOSE, PROSOCHĒ has no way to measure how 
 
 Do not point either automation at Phone, Messages, Maps, Wallet, an authenticator, a password manager, or any other app you might need in a hurry or in an emergency. PROSOCHĒ is meant for the apps you open without deciding to, not the ones you rely on.
 
-## OPTIONAL HARDENING
-
-Optional, and entirely up to you. If you want one more layer, add the Shortcuts app itself to the apps you selected in Automation A and Automation B.
-
-Opening Shortcuts is then watched like any other app on that list, so reaching for it to switch the automations off — or to edit them — meets the same interval as everything else. It locks nothing. You can still make the change, and you can take Shortcuts back off the list by the same route. Emergency Restore stays reachable from the manual menu either way.
-
-## THE NINE CIRCLES
-
-PROSOCHĒ measures how automatic your reaching has become and places each open at a depth. There are nine of them, shallowest to deepest, and each carries the name Dante gave that depth.
-
-- Circle 1 · Limbo
-- Circle 2 · Lust
-- Circle 3 · Gluttony
-- Circle 4 · Greed
-- Circle 5 · Wrath
-- Circle 6 · Heresy
-- Circle 7 · Violence
-- Circle 8 · Fraud
-- Circle 9 · Treachery
-
-The name tells you how deep you are. It does not tell you what will happen. Which interruption fires at a given depth is decided by the sequence you chose — Classic, BlackMirror and Ambient order the same interruptions differently — so the same Circle number is a different experience under a different sequence.
-
 ## MY PHONE, ON PURPOSE
 
 This section is yours. Write in it directly, here in the Notes app. Nothing here has to be tidy, and you can write naturally.
@@ -94017,14 +93995,14 @@ Reserved. Nothing is measured here yet.
 Reserved. Nothing is asked for here yet.</string>
 						<key>attachmentsByRange</key>
 						<dict>
-							<key>{6982, 1}</key>
+							<key>{5743, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
 								<key>VariableName</key>
 								<string>Import Descent</string>
 							</dict>
-							<key>{7013, 1}</key>
+							<key>{5774, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
@@ -96307,11 +96285,11 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>Category</key>
 			<string>Parameter</string>
 			<key>DefaultValue</key>
-			<string>Purgatory</string>
+			<string>Limbo</string>
 			<key>ParameterKey</key>
 			<string>WFTextActionText</string>
 			<key>Text</key>
-			<string>Choose your descent: Paradise, Purgatory, or Inferno. If you are not sure, choose Purgatory.</string>
+			<string>Choose your descent: Paradise, Limbo, or Inferno. If you are not sure, choose Limbo.</string>
 		</dict>
 		<dict>
 			<key>ActionIndex</key>

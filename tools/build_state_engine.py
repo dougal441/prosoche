@@ -25,7 +25,42 @@ EXPIRY_MARKER = "--- PHASE 5 ICE EXPIRY ---"
 EXIT_MARKER = "--- PHASE 6 UNIVERSAL LEAVING ---"
 CONTRACT_MARKER = "--- PHASE 6 CONTRACT CLOSE ---"
 EXIT_NAMES = ("Capture", "Coordinate", "Create", "Connect", "Consult", "Close")
+
+# Dante's nine Circles, canonical order, index 0 == Circle 1.  BD-06 Decision 1: the names
+# are POSITIONAL -- they label the DEPTH, not the intervention.  Which intervention fires at
+# a given depth is decided by the Config literal's `sequences` arrays, and the three
+# sequences deliberately order the interventions differently at the same Circle numbers, so
+# a name can never be read as an intervention name.  Build Addendum 01 §1 asks for the names;
+# eight of the nine were measured absent from the artifact entirely, so this ADDS a name
+# surface rather than renaming one.
+#
+# ONE SOURCE OF TRUTH, deliberately.  The Test-a-Circle submenu builds both its `WFMenuItems`
+# array and each case's `WFMenuItemTitle` from this tuple, so the two are identical
+# element-for-element and in order BY CONSTRUCTION.  A choosefrommenu whose case titles drift
+# from its items is `.claude/CLAUDE.md` §4's top documented real-world failure mode; deriving
+# both from one expression is what makes that drift unrepresentable rather than merely
+# unlikely.
+#
+# NOT a profile name.  `Limbo` here is Circle 1's positional name and nothing else -- the
+# middle profile was renamed to `Purgatory` by BD-06-A1 precisely so that this word names
+# exactly one thing.
+CIRCLE_NAMES = ("Limbo", "Lust", "Gluttony", "Greed", "Wrath",
+                "Heresy", "Violence", "Fraud", "Treachery")
+
+# The three descent profiles, which are the three CANTICLES of the Commedia -- BD-06-A1
+# renamed the middle one from `Limbo` to `Purgatory` because `Limbo` is a circle, not a
+# canticle, and BD-06 had just given that word to Circle 1.  A profile name is a live Config
+# key path (`thresholds.<profile>`, `cooldown_seconds.<profile>`), and a dotted read with a
+# missing segment is a HARD ERROR in this runtime, so a partial rename here is a crash rather
+# than a degradation.
+PROFILE_NAMES = ("Paradise", "Purgatory", "Inferno")
+
 UUID_COUNTER = 0
+
+
+def circle_menu_title(circle: int) -> str:
+    """The one expression that renders a Test-a-Circle label, for items AND case titles."""
+    return f"Circle {circle} · {CIRCLE_NAMES[circle - 1]}"
 
 # Every sentence below is selected only in an OPEN run after its named facts are
 # present.  The strings are deliberately local and deterministic: Dumb never
@@ -1770,8 +1805,12 @@ def manual_emergency_restore():
     a += [menu(group, 1, title="Open Control Room"), *number(1, "Manual Show Note Requested")]
     a += [menu(group, 1, title="Sync My Profile"), *number(1, "Manual Refresh Requested"), *number(1, "Manual Sync Requested")]
     profile_menu = uid()
-    a += [menu(group, 1, title="Change Profile"), menu(profile_menu, 0, prompt="Choose profile", items=["Paradise", "Limbo", "Inferno"])]
-    for profile in ("Paradise", "Limbo", "Inferno"):
+    # BD-06-A1: the middle profile is `Purgatory`, not `Limbo`.  Items and case titles both
+    # come from PROFILE_NAMES so they cannot drift, and the chosen literal is written
+    # straight into `profile`, which is then read back as `thresholds.<profile>` -- a dotted
+    # path, so a name here that no threshold key matches is a hard runtime error.
+    a += [menu(group, 1, title="Change Profile"), menu(profile_menu, 0, prompt="Choose profile", items=list(PROFILE_NAMES))]
+    for profile in PROFILE_NAMES:
         text_id = uid()
         a += [menu(profile_menu, 1, title=profile), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=profile), set_var("Manual Profile", output(text_id, "Text")), set_value("profile", variable("Manual Profile")), *number(1, "Manual Refresh Requested"), *save_state()]
     a += [menu(profile_menu, 2)]
@@ -1785,9 +1824,13 @@ def manual_emergency_restore():
     voice_g, voice_if = if_block("Manual Voice", 2, number=0)
     a += [voice_if, *number(0, "Manual Voice Next"), otherwise(voice_g), *number(1, "Manual Voice Next"), end_if(voice_g), set_value("voice_enabled", variable("Manual Voice Next")), *number(1, "Manual Refresh Requested"), *save_state()]
     test_menu = uid()
-    a += [menu(group, 1, title="Test a Circle"), menu(test_menu, 0, prompt="Test a Circle", items=[f"Circle {number}" for number in range(1, 10)])]
+    # Items and case titles BOTH come from circle_menu_title(), so they are the same list in
+    # the same order by construction -- see CIRCLE_NAMES.  Do not hand-write either.  This
+    # submenu sits in the MANUAL arm, so surfacing the Dante names here adds no OPEN-arm
+    # surface and cannot touch Circle 0's silent band (verify_circle_zero_silence()).
+    a += [menu(group, 1, title="Test a Circle"), menu(test_menu, 0, prompt="Test a Circle", items=[circle_menu_title(number) for number in range(1, 10)])]
     for test_circle in range(1, 10):
-        a += [menu(test_menu, 1, title=f"Circle {test_circle}"), *number(test_circle, "Test Circle")]
+        a += [menu(test_menu, 1, title=circle_menu_title(test_circle)), *number(test_circle, "Test Circle")]
         a += read_value("pressure", variable("State"), "Pressure Next") + read_value("heat", variable("State"), "Heat Final") + read_value("circle", variable("State"), "Circle Next")
         a += [set_var("Circle Next", variable("Test Circle")), comment("Test Circle uses a copied Circle value:\n- Pressure remains the saved recorded value.\n- This branch does not set or save Pressure.\n- Chosen Circle behaviour runs with the copied value only.")] + primitive_dispatch("Test Circle")
     a += [menu(test_menu, 2), menu(group, 1, title="Reset Today"), *number(0, "Manual Zero"), set_value("opens_today", variable("Manual Zero")), set_value("gravity", variable("Manual Zero")), *number(1, "Manual Refresh Requested"), *save_state(), menu(group, 1, title="Emergency Restore")]
@@ -3100,7 +3143,9 @@ def fix_notes_filter_limit(actions):
     iPhone) carries AppIntentDescriptor + WFContentItemLimitEnabled=true +
     WFContentItemLimitNumber=1 -- an explicit "exactly one result, never a chooser" bound;
     this artifact's site had none of the three. This artifact's own search predicate
-    (Name contains "PROSOCHĒ — Control Room") and its Get Item From List "First Item"
+    (Name contains the Note's user-facing title -- `PROSOCHĒ` since plan 11-03 shortened it
+    from `PROSOCHĒ — Control Room`; the Operator is still 99, pinned by
+    docs/note_identity_check.py) and its Get Item From List "First Item"
     consumer are unchanged and already correctly find the intended note (per the reported
     symptom itself) -- only the missing result bound is added, matching Donor 8's shape
     exactly rather than guessing which subset of the three fields matters.

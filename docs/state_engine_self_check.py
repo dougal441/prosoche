@@ -9,9 +9,12 @@ cannot substitute for an on-device Shortcuts run.
 # width, so band widths are preserved exactly and only entry into Circle 1 is delayed.
 # This table is a duplicate of the Config literal at src/PROSOCHE-Dumb.xml action 7 and
 # must be changed in the same commit as it.
+# BD-06-A1 (phase 11-03): the middle profile is `Purgatory`, renamed from `Limbo` so that
+# `Limbo` names exactly one thing -- Circle 1's positional depth. The three profiles are the
+# three canticles. The ARRAY is unchanged; only the key moved.
 THRESHOLDS = {
     "Paradise": [4, 7, 10, 13, 16, 19, 22, 25, 28],
-    "Limbo": [3, 5, 7, 9, 11, 13, 16, 19, 22],
+    "Purgatory": [3, 5, 7, 9, 11, 13, 16, 19, 22],
     "Inferno": [2, 3, 5, 7, 9, 11, 13, 15, 17],
 }
 
@@ -39,9 +42,9 @@ def heat(value, away_seconds=0, opened=True):
 
 
 def main():
-    assert [circle("Limbo", n) for n in (0, 3, 20, 99)] == [0, 1, 8, 9]
+    assert [circle("Purgatory", n) for n in (0, 3, 20, 99)] == [0, 1, 8, 9]
     # Circle 0, the silent band: Pressure below the profile's first threshold shows nothing.
-    assert circle("Limbo", 2) == 0 and circle("Paradise", 3) == 0 and circle("Inferno", 1) == 0
+    assert circle("Purgatory", 2) == 0 and circle("Paradise", 3) == 0 and circle("Inferno", 1) == 0
     # Config-literal invariants (src/CONFIG-BLOCK.md): nine entries, strictly ascending,
     # and a last entry below heat.cap + gravity.cap = 35 so Circle 9 stays reachable.
     for profile, table in THRESHOLDS.items():
