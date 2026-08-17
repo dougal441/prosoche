@@ -20,6 +20,7 @@ from build_state_engine import (
     verify_conditional_inputs,
     verify_dispatch_coverage,
     verify_exit_events_seed,
+    verify_list_item_wrappers,
     verify_numeric_operands,
     verify_output_names,
     verify_panic_escape_seed,
@@ -339,6 +340,16 @@ def main() -> None:
     verify_panic_escape_seed(actions)
     verify_compound_value_reads(actions)
     verify_conditional_action_string(actions)
+    # PHASE 13 (13-01).  Sentient forks the BUILT Dumb XML, so it inherits all 67
+    # is.workflow.actions.list actions and every one of their rows -- including the 660
+    # Mirror rows this phase wrapped in the donor-confirmed {WFItemType, WFValue} envelope.
+    # Asserted per fork, never inferred from the Dumb run: a fork that dropped, re-serialized
+    # or unwrapped a row would ship a BLANK Mirror on the Aware artifact with no error
+    # anywhere in the pipeline -- the validator sees a structurally perfect plist and the
+    # ToolKit catalog has no entry for WFItems row shape at all.  Phase 12 already recorded
+    # what site-by-site arming costs here (four inherited guards imported by Dumb and never
+    # run on Aware); the phase rule is "fix whole classes, never site-by-site".
+    verify_list_item_wrappers(actions)
     # Cycle 12, axis 7 -- GATE SEMANTICS.  Sentient inherits the restore block and every
     # sentinel write from Dumb, so these assert the fork did not lose them; and because
     # Sentient adds its own conditionals, they also cover any Sentient-only gate that a

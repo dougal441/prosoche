@@ -645,10 +645,48 @@ def exile():
             action("is.workflow.actions.returntohomescreen")]
 
 
+def _list_row(item):
+    """Frame one is.workflow.actions.list row the way iOS itself frames it.
+
+    THE TWO-KIND RULE.  A WFItems array mixes exactly two row kinds and never a third: a
+    LITERAL row is a bare string, and an ATTACHMENT-BEARING row is the wrapper dict
+    {"WFItemType": 0, "WFValue": <the WFTextTokenString, unchanged>}.  A raw
+    WFTextTokenString sitting directly in WFItems is neither, and is the defect this
+    function exists to make unrepresentable at the emitter.  WFValue NESTS the existing
+    envelope verbatim -- nothing here deep-copies, rebuilds or re-serializes it, which is
+    exactly what keeps every attachmentsByRange offset inside it valid.
+
+    EVIDENCE.  .planning/debug/Donor 4.shortcut and .planning/debug/Donor 4.1.shortcut --
+    two independent device-authored donors, decrypted in Phase 13 via the .claude/CLAUDE.md
+    section 8 recipe and byte-identical to each other on this action.  Both show one array
+    carrying bare <string> rows ("Circle", "follows") alongside a wrapped variable row.
+
+    RUNTIME CONSEQUENCE OF OMITTING THE WRAPPER.  An unwrapped row validates, signs and
+    imports perfectly, then renders as an EMPTY row on device -- so mirror_text()'s Item At
+    Index selection can land on a blank template and the Mirror shows nothing.  That is
+    precisely the failure CIRC-07 forbids ("a precise behavioural reflection built only from
+    recorded facts").
+
+    WFItemType VALUES OTHER THAN 0 ARE DELIBERATELY UNAUDITED.  Both donors exercise only
+    text rows, so 0 is the only value the evidence supports.  Number, dictionary, file and
+    entity row kinds are not emitted by this generator, and their type codes must NOT be
+    guessed here, in verify_list_item_wrappers(), or in any document -- a guess would enter
+    the project record as evidence (.claude/CLAUDE.md, do-not-fabricate).
+
+    THIS IS A NEW IDIOM, NOT A COPY OF A CODEBASE PRECEDENT.  There is no isinstance-based
+    literal/variable discriminator anywhere in the emitter-helper region (:134-660).
+    text_token()'s `if name:` branch is the nearest conceptual relative, but it
+    discriminates on a None field inside a parts tuple, not on a value's Python type.  The
+    shape below is fixed by donor evidence, not by an in-file analog.
+    """
+    return item if isinstance(item, str) else {"WFItemType": 0, "WFValue": item}
+
+
 def mirror_text(items, name: str):
     """Select one non-empty template from a fact-gated list using Circle 1..9."""
     list_id, item_id = uid(), uid()
-    a = [action("is.workflow.actions.list", UUID=list_id, WFItems=list(items)),
+    a = [action("is.workflow.actions.list", UUID=list_id,
+                WFItems=[_list_row(item) for item in items]),
          action("is.workflow.actions.getitemfromlist", UUID=item_id,
                 WFItemSpecifier="Item At Index", WFItemIndex=variable("Circle Next"),
                 WFInput=output(list_id, "List")),
@@ -2446,6 +2484,50 @@ def verify_conditional_action_string(actions):
                          + f" ({len(offenders)} total)")
 
 
+def verify_list_item_wrappers(actions):
+    """Fail the build if a variable-bearing List row omits the iOS row wrapper.
+
+    WFItems is is.workflow.actions.list's row array, and it is a TWO-KIND slot: a literal
+    row is a bare string, an attachment-bearing row is {"WFItemType": 0, "WFValue":
+    <WFTextTokenString>}.  A raw WFTextTokenString placed directly into the array is
+    neither.  It is structurally valid and silently wrong at run time -- it renders as an
+    EMPTY row on device, so mirror_text()'s Item At Index selection can return a blank
+    template and the Mirror shows nothing.  That is the exact failure CIRC-07 forbids.
+
+    Evidence: .planning/debug/Donor 4.shortcut and .planning/debug/Donor 4.1.shortcut,
+    device-authored, decrypted in Phase 13 and byte-identical on this action.  Measured over
+    the phase-start artifacts: 66 defective List actions carrying 660 unwrapped rows in each
+    fork, every one of them emitted by mirror_text().
+
+    NOTHING ELSE COVERS THIS AXIS.  STRING_ENVELOPE_PARAMS / verify_string_envelopes() reach
+    named string-typed PARAMETERS, never the rows nested inside a WFItems array.  The
+    ToolKit v78 catalog carries no entry for WFItems row shape at all, so neither validator
+    gate can see it -- validate-shortcut reports a structurally perfect plist, and
+    decrypting the signed artifact recovers that same perfect plist.  Nothing between this
+    generator and the user's iPhone can detect the defect, which is why it is a build-time
+    gate rather than a post-hoc report.
+
+    WFItemType values other than 0 are deliberately unaudited (no donor exercises a non-text
+    row), so this guard asserts only that the KEY is present and never which value it holds.
+    Offenders are collected as (action index, row position) tuples rather than the flat
+    action index every sibling guard uses: this defect is per row, and an action-level
+    message would hide ten rows behind one number.
+    """
+    offenders = []
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.list":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        for position, row in enumerate(parameters.get("WFItems", [])):
+            if isinstance(row, dict) and "WFItemType" not in row:
+                offenders.append((index, position))
+    if offenders:
+        raise SystemExit("List rows carry a raw WFTextTokenString instead of the iOS "
+                         "{WFItemType, WFValue} wrapper (renders blank on device): "
+                         + ", ".join(f"action {i} row {p}" for i, p in offenders[:5])
+                         + f" ({len(offenders)} total)")
+
+
 # ---------------------------------------------------------------------------
 # CYCLE 11 -- STATE SHAPE, the sixth defect axis.  Not a wrong shape in the emitted
 # plist at all: a wrong BELIEF about iOS semantics, held by the generator's authors.
@@ -4163,6 +4245,7 @@ def main():
     verify_required_pickers(actions)
     verify_conditional_inputs(actions)
     verify_conditional_action_string(actions)
+    verify_list_item_wrappers(actions)
     verify_numeric_operands(actions)
     verify_state_seed(actions)
     verify_pending_exit_seed(actions)
