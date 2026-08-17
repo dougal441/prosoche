@@ -1,12 +1,14 @@
 # Shortcut Distribution Manifest
 
-**This table's six hash/size rows describe the phase 12 plan 05 refresh (commit `ea7a0f4`,
-2026-08-17), not the phase 11 plan 06 rebuild.** That refresh re-signed both forks under their
-live display names after phase 12's state-shape work landed; see the **Phase 12** paragraph
-and closing `⚠` bullet below for what that work actually changed in the signed artifact. The
-paragraph immediately below is retained as the phase 11 plan 06 rebuild's own record — it
-describes the rename, not the current table — and is superseded where it conflicts with the
-Phase 12 paragraph that follows it.
+**This table's six hash/size rows describe the phase 13 plan 04 re-sign (2026-08-17), not the
+phase 12 plan 05 refresh and not the phase 11 plan 06 rebuild.** That re-sign followed phase
+13's `WFItems` row-wrapper fix; see the **Phase 13** paragraph and closing `⚠` bullet below for
+what that work changed in the signed artifact. Every earlier paragraph in this file is retained
+as its own rebuild's record — each describes the table as it stood then, not as it stands now —
+and each is superseded where it conflicts with a later paragraph. The previous rows, retained
+so a reader can identify a build already on a device: Core source/archive `2831992` bytes
+`589ee121…`, Core signed `229959` bytes `4acc696a…`, Aware source/archive `2868673` bytes
+`ff50b453…`, Aware signed `234012` bytes `447eead5…`.
 
 Rebuilt 2026-08-17 by phase 11 plan 06: **the two variants ship under their new names.**
 `Dumb` becomes **`Core`** and `Sentient` becomes **`Aware`**, at every site where the name is
@@ -37,12 +39,30 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Core source | `src/PROSOCHE-Dumb.xml` | 2831992 | `589ee1211bc66071d25fed4834ca3041df71d400874909e6c428a422ee891190` |
-| Core archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-164519.xml` | 2831992 | `589ee1211bc66071d25fed4834ca3041df71d400874909e6c428a422ee891190` |
-| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 229959 | `4acc696af87eb66ad4fffe9fb265ff58311b8a79dc6a0d1f9724c5ded83406fc` |
-| Aware source | `src/PROSOCHE-Sentient.xml` | 2868673 | `ff50b4532df0867790444fbebc2e6be02598347859a0ff8bfcfd26ff03c741ec` |
-| Aware archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Aware-164529.xml` | 2868673 | `ff50b4532df0867790444fbebc2e6be02598347859a0ff8bfcfd26ff03c741ec` |
-| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 234012 | `447eead5020ab78292ec56275e6f5ae1f1b3f8e307ebc002f9e6a11f9246e9cd` |
+| Core source | `src/PROSOCHE-Dumb.xml` | 2916560 | `99388cad597417685eb8624a0b4b34e18a6bd30805ac38beb2f3188026c3e679` |
+| Core archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-184943.xml` | 2916560 | `99388cad597417685eb8624a0b4b34e18a6bd30805ac38beb2f3188026c3e679` |
+| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 234830 | `fe1bafdf53f872a3e149734456899d1be0987706551d7b8fa7b50f81b8a913b7` |
+| Aware source | `src/PROSOCHE-Sentient.xml` | 2953241 | `d01154b3e1b5990e5d3bc6d92e8dd895b92d0448217356772d077022e5215666` |
+| Aware archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Aware-184954.xml` | 2953241 | `d01154b3e1b5990e5d3bc6d92e8dd895b92d0448217356772d077022e5215666` |
+| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 239184 | `bd1264d502891c9afeeccb66134dceaf66288a1da890133498605538aa75ba19` |
+
+**Re-archived and re-signed by phase 13 plan 04 (2026-08-17).** All six rows above were
+recomputed from disk in one pass — both sources, both new dated archives and both signed
+artifacts — rather than only the rows believed to have moved, because Phase 10 measured three
+of six wrong at once. `src/*.xml` were regenerated from `tools/build_state_engine.py` and
+`tools/build_sentient.py` after the provenance ancestor check passed, and the rebuild was
+**byte-idempotent**: a rebuild on an already-built tree left `git status` empty, so the digests
+above are reproducible rather than run-specific. Both forks passed **gate A**
+(`--target-macos 26 --target-platform all`, `Validation passed.`, exit 0) before signing, and
+**gate B** (`--target-macos 27 --target-platform all`) was read **standalone and advisorily**
+per fork, reporting exactly the one permanent `WFCreateNoteInput` waiver each and nothing else
+— the run most likely to surface a regression, since this phase moved 660 row serializations.
+Both signed containers were then **decrypted** through the AEA1 recipe and measured: 67
+`is.workflow.actions.list` actions, **660** rows wrapped as `{WFItemType: 0, WFValue: …}`,
+**6** bare-string rows (the exit names, deliberately unwrapped) and **0** dict rows missing
+`WFItemType`, per fork. That is what actually shipped, not what the source claims. Full record
+in `docs/BUILD-NOTES.md` §28. The paragraph immediately below is the phase 12 WR-01 re-sign's
+own record and is **SUPERSEDED** by this one where the two conflict.
 
 **Re-archived and re-signed against the corrected source (2026-08-17, same session as WR-01).**
 `seed_active_session()`'s double-indent bug (WR-01, commit `5f55edc`) shortened the `active_session`
@@ -102,6 +122,29 @@ current `.shortcut` files; none of it has run on a real iPhone — `12-UAT.md` r
 (`xcrun devicectl list devices` reported no devices, so no criterion in that file was exercised).
 Read `docs/BUILD-NOTES.md` §26-27 and `12-UAT.md` before treating any of this phase's behaviour
 as device-confirmed.
+
+**Phase 13 — the `WFItems` row wrapper (plans 13-01 through 13-04, 2026-08-17).** Every
+`is.workflow.actions.list` row this generator emitted was a bare `WFTextTokenString` dict with
+no row framing around it. Donors 4 and 4.1 — device-authored `WFItems` arrays — show that a
+non-literal row must be wrapped as `{WFItemType: 0, WFValue: <the token string>}`, and that a
+plain literal row is a bare string. An unwrapped row is not a wrong *envelope*; it is a missing
+*container*, which is why a type-scoped sweep for a wrong string envelope was structurally
+blind to it for three cycles and why it is recorded as its own defect axis (**8**) in
+`.claude/CLAUDE.md` rather than filed under axis 2. **66** call sites and **660** rows were
+wrapped; the **6** exit-name rows stayed bare literals by design, and Donors 4 and 4.1 show
+exactly that mix in a single device-authored array. A new build guard,
+`verify_list_item_wrappers()`, raises before any write in both builders. The visible symptom
+this predicts is a **Mirror alert whose body is empty** — the phase exists so that a blank
+Circle in Phase 19 device testing is a real finding rather than a known artifact. The
+**conditional operand** family was the other half of the phase's hypothesis and was
+**REFUTED**: Donor 5 shows the `TEXT`-slot comparison target is already correct at every site,
+so this phase deliberately changed **nothing** there and pinned the correct shape with a
+positive assertion instead. See `docs/BUILD-NOTES.md` §28 and
+`docs/CAPABILITY-DECISIONS.md` BD-07 / BD-08. **Structurally proven, device-unobserved**: the
+wrapping is proven in the generator, in both `src/*.xml` and in both decrypted signed payloads;
+none of it has run on a real iPhone. `xcrun devicectl list devices` reported `No devices
+found.` on 2026-08-17, so `13-UAT.md` is recorded **BLOCKED** with every outcome left blank —
+the same posture Phases 10 and 12 recorded, and DIST-03 stays open.
 
 **A signed artifact's filename is the only carrier of its display name — re-measured on this
 build.** Both containers were decrypted and neither recovered `Shortcut.wflow` contains a
@@ -331,6 +374,23 @@ and recomputes every size and hash above from the files themselves.
 > is device-confirmed. As with the phase 11 plan 05 bump, installing this build over an
 > existing one discards that device's accumulated behavioural state. Read
 > `docs/BUILD-NOTES.md` §26-27 before distributing or relying on these builds.
+>
+> **⚠ This build additionally carries phase 13's `WFItems` row wrapper across 660 rows, which
+> has never run on a real iPhone — and it is the build you must re-import to get it.** Every
+> non-literal List row is now framed as `{WFItemType: 0, WFValue: …}` per Donors 4 and 4.1;
+> the six exit names stay bare literals by design. Proven present in the generator, in both
+> `src/*.xml` and in the **decrypted payload** of both signed containers (67 List actions, 660
+> wrapped rows, 6 bare, 0 unwrapped, per fork) — file-level structural proof and nothing more.
+> **If you are still running any earlier signed build, you keep the blank-row Mirror until you
+> re-import this one**, and testing a stale install would observe the old defect and
+> misattribute it to a fix that did land. Two things remain device-only and unobserved: that a
+> Mirror renders **non-empty** text over a wrapped List, and that `getitemfromlist`'s Item At
+> Index extraction returns the **intended** row rather than merely some non-empty one — a
+> non-empty but wrong row would pass a non-emptiness-only test. The conditional operand family
+> was **REFUTED and deliberately unchanged**, so any red operator chip observed on this build is
+> a **new** finding with a live artifact to inspect. Read `docs/BUILD-NOTES.md` §28 and run
+> `.planning/phases/13-red-operator-conditionals-and-the-wfitems-list-wrapper/13-UAT.md` when a
+> device is available.
 >
 > **DIST-03 — device verification — remains OPEN.** `xcrun devicectl list devices` reports
 > no devices, so no criterion in either UAT file has been exercised. Nothing in this manifest
