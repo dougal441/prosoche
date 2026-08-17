@@ -3675,6 +3675,110 @@ def _tested_variable(parameters):
     return None
 
 
+def _save_source_dictionary(actions, index):
+    """The dictionary a documentpicker.save at `index` persists, or None.
+
+    DEPENDS ON save_state()'s EMITTED SHAPE and nothing else: it emits exactly
+    setitemname(WFName="state.json", WFInput=variable(<source>)) immediately followed by
+    documentpicker.save(WFInput=output(<that setitemname>, "Renamed Item")).  The save
+    action itself never names the dictionary -- it carries a reference to the RENAMED ITEM,
+    so the source is only recoverable by looking back at the setitemname that produced it.
+    Hence the three-action lookback: one is the emitted distance, and the slack absorbs a
+    normalisation pass inserting between them without silently returning None (which would
+    make every caller's "was it persisted?" test read false and the guard become
+    decoration).
+
+    This is the one genuinely new helper Phase 16 needed: no existing guard resolves a
+    save's SOURCE.  If save_state() ever stops emitting the setitemname, this returns None
+    everywhere and verify_capture_persistence() starts failing loudly -- which is the
+    correct direction for a safety guard to fail.
+    """
+    for candidate in range(index - 1, max(index - 4, -1), -1):
+        if actions[candidate].get("WFWorkflowActionIdentifier") != "is.workflow.actions.setitemname":
+            continue
+        parameters = actions[candidate].get("WFWorkflowActionParameters", {})
+        descriptor = (parameters.get("WFInput") or {}).get("Value")
+        if isinstance(descriptor, dict):
+            return descriptor.get("VariableName")
+        return None
+    return None
+
+
+def verify_capture_persistence(actions):
+    """Fail the build if a brightness/volume apply can be reached from an unpersisted capture.
+
+    THE DEFECT THIS CLOSES -- PHASE 16 (16-01), the phase's P0 and the live instance of
+    threat T-16-01.  dimming()/silence() captured the device's current reading and wrote it
+    to settings_snapshot.<group>.original_value in the `State` dictionary, then changed the
+    device.  But `State` is never saved again after the OPEN arm's last save (every save
+    from the CLOSE pipeline onward sources `Reloaded State`, a different dictionary), so
+    the captured original never reached state.json.  CLOSE and Emergency Restore reloaded
+    the file, found the CLEARED_SENTINEL in the leaf, failed restore_managed_settings()'s
+    numeric `> 0` gate, and skipped.  The screen dimmed and nothing in the product un-dimmed
+    it; SAFE-05's Emergency Restore was structurally incapable of restoring.
+
+    THE EVIDENCE: measured against the BUILT artifact, not inferred from the generator.
+    Before the fix this guard's own logic reported 24 offenders on the Dumb fork (applies at
+    1035, 1122, 1291, 1378, 1585, ...); after it, zero on both forks.
+
+    THE INVARIANT, stated over the APPLY rather than over the save: no
+    is.workflow.actions.setbrightness / setvolume may be reached, in action order, from a
+    setvalueforkey writing settings_snapshot.<group>.original_value unless a
+    documentpicker.save SOURCING `State` occurs between them.  Bookkeeping is per <group>,
+    so a volume save cannot clear a pending brightness capture -- the two primitives render
+    interleaved inside primitive_dispatch() and a shared flag would let one vouch for the
+    other.  The save's source is resolved through _save_source_dictionary(): a save of
+    `Reloaded State` persists a dictionary that never received the capture, which is the
+    exact mechanism of the defect (T-16-04) and must NOT clear the pending flag.
+
+    WHY THE RESTORE SIDE IS NOT FALSELY FLAGGED, by construction rather than by exemption:
+    restore_managed_settings() also emits setbrightness/setvolume, fed by Restore Brightness
+    / Restore Volume.  Those are READ from the snapshot, never preceded by a capture write
+    on the same run of the walk, so no pending flag is outstanding when they are reached and
+    they are silently correct.  The pending flag is additionally dropped when the walk
+    leaves the conditional arm the capture was written into, so a capture on a branch that
+    was not taken cannot arraign an apply somewhere else entirely.
+
+    IF THIS FIRES, a future reader should conclude that a capture-and-restore path has been
+    reordered so the device is changed before the file records how to change it back -- and
+    that the correct response is to move the save earlier, never to relax the guard.  A
+    crash, a force-quit or a missed CLOSE between the two leaves the user dim or silent with
+    no recorded way back.
+    """
+    arms, offenders = _enclosing_if_arms(actions), []
+    pending = {}
+    for index, item in enumerate(actions):
+        identifier = item.get("WFWorkflowActionIdentifier")
+        parameters = item.get("WFWorkflowActionParameters", {})
+        # Drop any capture whose arm the walk has now left: it cannot reach an apply that
+        # is no longer inside it.
+        enclosing = {id(entry) for entry in arms[index]}
+        for group in [group for group, scope in pending.items() if not scope <= enclosing]:
+            del pending[group]
+        if identifier == "is.workflow.actions.setvalueforkey":
+            key = parameters.get("WFDictionaryKey")
+            if isinstance(key, str) and key.startswith(f"{SNAPSHOT_ROOT}.") \
+                    and key.endswith(".original_value"):
+                target = (parameters.get("WFDictionary") or {}).get("Value", {})
+                if target.get("VariableName") == "State":
+                    pending[key.split(".")[1]] = enclosing
+        elif identifier == "is.workflow.actions.documentpicker.save":
+            if _save_source_dictionary(actions, index) == "State":
+                pending.clear()
+        elif identifier in {"is.workflow.actions.setbrightness", "is.workflow.actions.setvolume"}:
+            group = "brightness" if identifier.endswith("setbrightness") else "volume"
+            if group in pending:
+                offenders.append((index, f"applies {group} while the captured original is "
+                                         f"still only in the State variable, never saved"))
+    if offenders:
+        raise SystemExit(
+            "a brightness/volume apply is reachable from an unpersisted capture -- the "
+            "device is changed before the file records how to change it back, so a crash, "
+            "force-quit or missed CLOSE strands the user dim or silent: "
+            + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
+            + f" ({len(offenders)} total)")
+
+
 def verify_group_identifier_uniqueness(actions):
     """Fail the build if two control-flow blocks share one GroupingIdentifier.
 
@@ -4662,6 +4766,7 @@ def main():
     verify_exit_events_seed(actions)
     verify_active_session_seed(actions)
     verify_restore_gates(actions)
+    verify_capture_persistence(actions)
     verify_sentinel_gates(actions)
     verify_compound_value_reads(actions)
     verify_router_shape(actions)
