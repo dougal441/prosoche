@@ -83,6 +83,47 @@ fork — that is now stale and must be corrected too.
 The safety property is unchanged and is the whole point: **capture-and-restore reliability**,
 not floor avoidance. Which makes D-02 and the persistence defect the real safety work here.
 
+#### CORRECTION to D-01's site list — re-measured 2026-08-17 during plan revision
+
+**The site list above is incomplete. The measured count is NINE, not six.** The decision itself
+is unchanged and remains LOCKED; only its blast radius was under-counted. Recorded here because
+this file is what the executor reads, and an incomplete list here is the root cause of a class
+that was twice under-fixed: the original enumeration found six, a review pass found two more, and
+re-measuring during revision found a ninth.
+
+The counting unit is **a distinct assertion of the retired clause that must be independently
+corrected.** An assertion's own failure message and adjacent narrative comment belong to that
+assertion. A *separate summary of what an assertion asserts* counts on its own — because relaxing
+the assertion makes the summary false, and a summary that outlives its assertion is a live false
+statement. Two of the nine are exactly that shape, and both were missed by earlier counts.
+
+| # | Site (anchors measured 2026-08-17; locate by content, they shift) | Note |
+|---|---|---|
+| 1 | `docs/environmental_restore_check.py` — the dim-target strictness assertion and its failure message, `:257-258`, with the narrative comment above at `:246-251` | the site D-01 names |
+| 2 | `docs/environmental_restore_check.py` — the **module docstring** at `:17`, which summarises what the checker asserts and names a strictly-positive dim target | **missed by both prior counts** |
+| 3 | `docs/phase5_self_check.py:117` — the per-action brightness-parameter assertion | currently inert decoration |
+| 4 | `.planning/REQUIREMENTS.md:123` — SAFE-01's statement | |
+| 5 | `.planning/REQUIREMENTS.md:66` — CIRC-05's statement clause | |
+| 6 | `.planning/REQUIREMENTS.md:66` — CIRC-05's **trailing parenthetical** describing what the checker guards; same line as site 5, separate assertion | **missed by the original six**; an amendment scoped to the clause leaves it standing and false |
+| 7 | `docs/CAPABILITY-DECISIONS.md` BD-02 — the band-and-floor text at `:44`, `:54`, `:58`, plus the Phase 9 addendum's provisional framing at `:60` | |
+| 8 | `.claude/CLAUDE.md:23` — the `## Constraints` Safety bullet | |
+| 9 | `tools/build_state_engine.py:597-600` — `dimming()`'s emitted Shortcuts `comment()` action | **missed by the original six**; see below |
+
+**Site 9 is not documentation — it ships.** `dimming()` has **no Python docstring**, so any
+instruction phrased as "update the function docstrings" does not reach it. Its first emitted
+action is a Shortcuts `comment()` whose middle bullet forbids a zero brightness write, and
+`primitive_dispatch()` renders that comment **eleven times per fork**. Measured 2026-08-17: 11
+occurrences in `src/PROSOCHE-Dumb.xml` and 11 in `src/PROSOCHE-Sentient.xml`. Without this fix
+both signed forks ship 22 user-visible comment actions asserting a floor the same build sets to
+zero — a false safety claim inside the product, not merely in its records. Plan 16-03 asserts a
+count of zero against the **rebuilt** artifact.
+
+**`silence()`'s parallel comment must NOT be edited.** Measured and confirmed during revision:
+`tools/build_state_engine.py:618-621` states Media-only volume scoping and never-increase, which
+is SAFE-02 and remains true under D-01. The structural symmetry of `dimming()` and `silence()` is
+not a reason to change both; editing it would weaken a live safety statement that D-01 does not
+touch.
+
 **D-02 — DEV-06: remove `changed_at` and `changed_by_session_id` entirely.** Decided by the
 user via `ponytail`, on the standard "if the functionality doesn't need it, get rid of it".
 
