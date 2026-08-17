@@ -141,7 +141,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
 
   1. The Knock shows a brief, non-lecturing interruption carrying real telemetry; Confession asks for a free-text intention and then a time boundary (2/5/10/15/custom).
-  2. Ash applies the audited visual-salience reduction or its documented Phase 1 fallback; Silence reduces media audio only when the original value can be captured and restored, otherwise degrades safely; Dimming reduces brightness only when reversible and never to zero, otherwise degrades safely — and across all primitives, brightness is never set to zero, volume is never increased or startling, any setting whose original value can't be captured is left unchanged, and pre-existing accessibility configuration is never blindly overridden.
+  2. Ash applies the audited visual-salience reduction or its documented Phase 1 fallback; Silence reduces media audio only when the original value can be captured and restored, otherwise degrades safely; Dimming reduces brightness only when reversible — only when the original has been captured **and durably persisted** — otherwise degrades safely; and across all primitives, every environmental change is captured and persisted before it is applied and is always restored, volume is never increased or startling, any setting whose original value can't be captured is left unchanged, and pre-existing accessibility configuration is never blindly overridden. (Both brightness clauses in this criterion were amended 2026-08-18 under user decision **D-01**; the volume and accessibility clauses are untouched — D-01 is brightness-only. Authority: `docs/CAPABILITY-DECISIONS.md` BD-02's Supersession note.)
   3. Exile routes immediately to an exit without a permission prompt and returning remains possible only as an affirmative act; the Mirror shows a precise behavioural reflection built only from recorded facts; the Voice speaks the Mirror at most once per run, only when voice is enabled, never at unsafe levels.
   4. Ice applies a deterministic cooldown whose duration varies by profile, decided entirely without the model; a target-app OPEN during Ice immediately ejects or redirects with remaining cooldown shown where practical; blocked attempts don't endlessly inflate Heat; Ice always expires, granting Heat relief and clearing the cooldown.
   5. Switching between Classic (default), Black Mirror, and Ambient sequences visibly changes which primitives each Circle invokes, including combined primitives, and a stronger Circle does not necessarily replay every weaker Circle's prompt; Emergency Restore clears cooldown, the active session, and recoverable brightness/volume/colour state, and is reachable even while in Ice.
@@ -284,10 +284,18 @@ this phase does not reverse that cut, which proceeds independently on main.
      overlapping sessions each either restore correctly or leave the user at a device-safe
      state — never silent-forever, never loud, and never *stuck* at a changed brightness/
      volume with no path back to the original value (§21, §32). Brightness may target the
-     device's true minimum, not an artificial 10–15% floor — corrected 2026-08-16 per
+     device's true minimum, not an artificial floor — corrected 2026-08-16 per
      user on-device report that the practical minimum is dim, not a literal black/unusable
      screen (see `docs/CAPABILITY-DECISIONS.md` BD-02 addendum); the safety mechanism is
      capture-and-restore reliability (criteria 2–3, 5), not floor avoidance.
+     **Amended 2026-08-18 (phase 16 plan 05).** This criterion was already substantively
+     right; what it lacked was the main-line settlement. The 2026-08-16 correction it cites
+     was *provisional* and scoped to the experimental fork when written. User decision
+     **D-01** (LOCKED 2026-08-17) settles it on the **main line** — `safety.brightness_floor`
+     and `safety.dim_target` are both `0`, shipped by plan 16-03. The criterion's meaning and
+     its 2026-08-16 date are unchanged; only its status is. Authority: BD-02's Supersession
+     note. The retired band wording was removed rather than restated, because a live file
+     that quotes the clause it retires still carries the clause.
 
   5. Emergency Restore recovers from every failure mode found above.
   6. DEV-06 (restore-ownership check) is re-evaluated live on this fork now that the cut
@@ -785,10 +793,16 @@ read nowhere. That was recorded MOOT conditional on the cut proceeding; the cut 
 so DEV-06 and the `Session ID` scope defect both return. `docs/BUILD-NOTES.md` §17 reserves
 the DEV-06 decision to the user — surface it, do not decide it unilaterally.
 
-**The brightness floor was corrected and needs a decision on main.** Phase 9 revised BD-02's
-"never zero, 10–15% band": the user's on-device observation is that iOS's practical minimum
-is dim, not black, so avoiding zero was never itself the safety property — capture-and-restore
-reliability is. That revision was scoped to the experimental fork; decide it for main here.
+**The brightness floor was corrected, and the main-line decision has been TAKEN.** Phase 9
+revised BD-02's floor clause — cited here, deliberately not restated, since a live file that
+reproduces the clause it retires still carries it. The user's on-device observation is that
+iOS's practical minimum is dim, not black, so avoiding a particular value was never itself the
+safety property — capture-and-restore reliability is. That revision was scoped to the
+experimental fork. **User decision D-01, LOCKED 2026-08-17, settles it on main:**
+`safety.brightness_floor` and `safety.dim_target` are both `0`. Plan **16-03** carried the code
+half (six code sites, incl. the emitted comment shipping 11× per fork); plan **16-05** carried
+the record half (21 measured record sites) and the repo-scoped gate. Authority:
+`docs/CAPABILITY-DECISIONS.md` BD-02's Supersession note.
 
 Distinct-Circle allocation is already settled by **BD-06 Decision 4** — do not re-cut it.
 

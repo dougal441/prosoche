@@ -35,7 +35,10 @@ python3 tools/build_state_engine.py && python3 tools/build_sentient.py && python
 **Two members of this chain are deliberately not green for part of the phase. Both are expected,
 and neither is a number to adjust.**
 
-- `docs/retired_clause_check.py` **does not exist until plan 16-05 creates it** (wave 4). Before
+- `docs/retired_clause_check.py` — **✅ LANDED 2026-08-18 (plan 16-05, wave 4). From wave 5 onward
+  run the chain as written and expect this term GREEN; do not drop it.** The paragraph below is
+  retained because it remains the correct instruction for anyone replaying waves 1–3.
+  It **did not exist until plan 16-05 created it** (wave 4). Before
   that wave the command fails at that link with a missing-file error; drop that one term when
   running the suite mid-phase. It is listed here from now because from wave 4 onward it gates
   the retired-clause class on every future run — a checker that ran only in the plan that wrote
