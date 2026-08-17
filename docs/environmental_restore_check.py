@@ -14,8 +14,10 @@ That leaves a hazard with no guard: the machinery is now load-bearing safety cod
 future subtractive pass could remove with nothing anywhere to stop it, and its removal is
 invisible to `validate_shortcut.py`, to the plist, and to every other check in `docs/`.
 This script is that guard.  It asserts the symbols, both restore call sites, the numeric
-coercion table entries, media-only volume scoping, a strictly positive dim target and the
-bootstrap seed -- so a re-attempt at the cut turns a check red instead of silently removing
+coercion table entries, media-only volume scoping, a dim target at or above the configured
+brightness floor (relaxed from a stricter test by decision D-01 -- read the note carried at
+that assertion) and the bootstrap seed -- so a re-attempt at the cut turns a check red
+instead of silently removing
 the mechanism that `SAFE-03` (never change a setting whose original cannot be captured) and
 `SAFE-05` (Emergency Restore restores recoverable environmental state) depend on.
 
@@ -248,19 +250,39 @@ def artifact_check(actions) -> None:
 
     # SAFE-01 as shipped and SAFE-02 as configured.
     #
-    # BD-02's Phase 9 addendum (2026-08-16) CORRECTED the historical "never zero, 10-15%
-    # band" clause: iOS's practical brightness minimum is dim, not a literal black screen,
-    # per an on-device user report, and the real safety mechanism was always
-    # capture-and-restore rather than floor avoidance.  So the assertion below is
-    # STRICTLY POSITIVE plus "not below the configured floor" -- deliberately not a pinned
-    # 0.10-0.15 band, which would re-impose the clause that addendum removed.
+    # WHAT THIS ASSERTS NOW, AND WHY IT WAS RELAXED -- PHASE 16 (plan 16-03).
+    #
+    # The lower bound this check used to place under the dim target is RETIRED by user
+    # decision D-01 (LOCKED 2026-08-17; the current record is the 2026-08-18 revision block
+    # in .planning/phases/16-dimming-and-silence-as-distinct-device-proven-circles/
+    # 16-CONTEXT.md).  The retired clause is CITED here and deliberately not quoted -- it
+    # lived in BD-02's original Decision paragraph in docs/CAPABILITY-DECISIONS.md and in
+    # the canonical strategy's Sec 21.  Quoting it back into a live file would leave a
+    # surviving occurrence inside its own supersession note.
+    #
+    # BD-02's Phase 9 addendum (2026-08-16) had already corrected that clause, on an
+    # on-device user report that iOS renders its dimmest practical setting as dim rather
+    # than as a black or unusable screen.  That addendum was provisional and scoped to the
+    # experimental fork.  D-01 SETTLES it on the main line: it is neither provisional nor
+    # fork-scoped any longer.  The canonical strategy is frozen as the historical design
+    # input, and BD-02 is the authority where the two disagree.
+    #
+    # The safety property was never the bound.  It is capture-and-restore reliability: the
+    # original is read, persisted to disk BEFORE the device is changed (PHASE 16 plan 16-01,
+    # pinned by verify_capture_persistence) and restored by four independent triggers.  So
+    # what survives here is the RELATIONSHIP -- the dim target sits at or above the
+    # configured floor -- and that assertion is left byte-identical on purpose.  With both
+    # keys at 0 it holds AT EQUALITY, which is precisely what makes the floor bind exactly
+    # rather than never bind: one step below the floor is unreachable because the target IS
+    # the floor.
     config = _config_literal(actions)
     safety = config.get("safety")
     require(isinstance(safety, dict), "the Config literal has no safety block")
     dim_target = safety.get("dim_target")
     floor = safety.get("brightness_floor")
-    require(isinstance(dim_target, (int, float)) and dim_target > 0,
-            f"safety.dim_target is {dim_target!r}; the dim target must be strictly positive")
+    require(isinstance(dim_target, (int, float)) and dim_target >= 0,
+            f"safety.dim_target is {dim_target!r}; the dim target must be a number at or "
+            "above 0 -- D-01 retired the stricter test, it did not remove the check")
     require(isinstance(floor, (int, float)) and dim_target >= floor,
             f"safety.dim_target {dim_target!r} is below safety.brightness_floor {floor!r}")
     require(safety.get("allow_volume_increase") is False,

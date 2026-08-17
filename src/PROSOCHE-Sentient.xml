@@ -194,8 +194,8 @@ ALLOW_MANUAL_UNIT_CONVERSION: the settings text below includes the date pattern 
     "exploit_min_observations": 10
   },
   "safety": {
-    "brightness_floor": 0.10,
-    "dim_target": 0.12,
+    "brightness_floor": 0,
+    "dim_target": 0,
     "allow_volume_increase": false,
     "ash_managed_color_filters": true
   }
@@ -24377,7 +24377,7 @@ Prior respected: ￼</string>
 				<key>WFCommentActionText</key>
 				<string>Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.</string>
 			</dict>
 		</dict>
@@ -31025,7 +31025,7 @@ Prior respected: ￼</string>
 				<key>WFCommentActionText</key>
 				<string>Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.</string>
 			</dict>
 		</dict>
@@ -42505,7 +42505,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFCommentActionText</key>
 				<string>Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.</string>
 			</dict>
 		</dict>
@@ -49374,7 +49374,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFCommentActionText</key>
 				<string>Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.</string>
 			</dict>
 		</dict>
@@ -56243,7 +56243,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFCommentActionText</key>
 				<string>Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.</string>
 			</dict>
 		</dict>
@@ -63112,7 +63112,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFCommentActionText</key>
 				<string>Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.</string>
 			</dict>
 		</dict>
@@ -69981,7 +69981,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFCommentActionText</key>
 				<string>Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.</string>
 			</dict>
 		</dict>
@@ -76850,7 +76850,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFCommentActionText</key>
 				<string>Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.</string>
 			</dict>
 		</dict>
@@ -83719,7 +83719,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFCommentActionText</key>
 				<string>Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.</string>
 			</dict>
 		</dict>
@@ -90588,7 +90588,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFCommentActionText</key>
 				<string>Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.</string>
 			</dict>
 		</dict>
@@ -97457,7 +97457,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFCommentActionText</key>
 				<string>Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.</string>
 			</dict>
 		</dict>
