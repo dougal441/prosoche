@@ -108,6 +108,31 @@ execute Shortcuts itself.
   absence is not proof of a default value either — Donor 9 contains a fully parameter-less
   instance of an action another donor writes with `state` set. Read absence across several
   donors before concluding anything from it.
+- **Classify a parameter before authoring it — the three-class rule.** Look up its
+  `typePythonName` in `toolkit-v78-first-party-parameter-keys.json`:
+  a **primitive** (`str`/`bool`/`float`/`int`/`DateTime`/`File`/`URL`) is always writable;
+  a **`*_parameter`** enum is writable if catalogued in `toolkit-v78-first-party-enum-cases.json`
+  (525 of 526 are), else it needs a donor or an `.intentdefinition`;
+  a **`*_entity`** is writable *only via a runtime variable*, and only if its family has a
+  `filter.*` query action. The 14 queryable families are `apps articles calendarevents
+  contacts displays eventattendees files images locations music notes photos reminders
+  windows`. An entity family outside that list (Home, Focus, Safari tabs, Mail, Wallet,
+  Podcasts) genuinely cannot be authored offline — it must be hand-picked on the device and
+  exported. Run this check before adopting any new action.
+- **Never write an entity identifier — find the entity at runtime.** Donor 8 is the
+  reference pattern: `filter.notes` with a plain string predicate (`Name` contains, operator
+  `99`) produces a `Note` output, and `shownote`/`appendnote` consume it as an ordinary
+  `WFTextTokenAttachment`. No identifier appears in the plist at all. The generators already
+  do this (`entity=variable("Control Room Note")`); keep it that way.
+- **The booted simulator cannot import a signed `.shortcut`.** Measured 2026-08-17 on
+  iPhone 17 Pro / iOS 26.5: `shortcuts://import-shortcut?url=…` rejects a plain HTTP URL
+  ("The shortcut URL provided was invalid" — it wants an iCloud link); the Files app never
+  surfaces "On My iPhone" even with files seeded into
+  `group.com.apple.FileProvider.LocalStorage` and a SpringBoard respring; Safari's download
+  banner does not respond to synthesized taps; iCloud Drive needs an Apple Account.
+  **Rung 2 therefore tests the *build* (validator, signer, byte shape), not the *import*.**
+  This narrows `.claude/CLAUDE.md` §9, which currently lists "import success" as rung-2.
+  Signing the simulator into an Apple Account would likely unlock it — a user decision.
 - **Silent automation probes:** any shortcut wired into a Personal Automation must have
   zero UI (no Show Result/Show Alert) — an automation that displays something interrupts
   the user on every trigger. Log to a Note instead.

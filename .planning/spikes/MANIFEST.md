@@ -112,6 +112,52 @@ an unanalysed `Set Colour Filters.shortcut` sitting in `.planning/debug/` the wh
   Mac, sitting between donor ground truth and the ToolKit catalog. They gave exact parameter
   types, enum cases, and integer indices for an action absent from every bundled snapshot.
 
+### Can anything in Shortcuts only be built by hand on the device? (spikes 006–009)
+
+The motivating fear, raised directly: is there any Shortcuts construct that **cannot** be
+pre-built offline and must instead be hand-selected inside Shortcuts.app and exported —
+which would block the entire build-and-sign pipeline for whatever feature needs it. The
+suspected shape was a parameter carrying a device-minted opaque identifier that only the
+owning app can mint.
+
+**Answer: no, not for PROSOCHĒ. Zero blockers.** The class of hand-selection-only
+parameters is real and large in general (1,305 entity-typed parameters across 703 entity
+types), but PROSOCHĒ's 51-action surface touches none of it.
+
+**From the picker spikes:**
+
+- **A three-class taxonomy governs every parameter**, with a rule that predicts the class
+  from the catalog alone: primitives → **Class A** (synthesizable); `*_parameter` enums →
+  **Class A** if catalogued, else needs a donor or `.intentdefinition`; `*_entity` →
+  **Class B** (runtime-derivable) if the family has a `filter.*` action, else **Class C**
+  (hand-selection-only).
+- **Only 14 entity families are queryable** — `apps articles calendarevents contacts
+  displays eventattendees files images locations music notes photos reminders windows`.
+  Everything else (Home, Focus, Safari tabs, Mail, Wallet, Podcasts) is genuine Class C.
+  PROSOCHĒ touches none of them.
+- **The feared shape does not appear anywhere in 35 real shortcuts.** Zero opaque blobs,
+  zero security-scoped bookmarks, zero bare-UUID entity references. Every identifier a real
+  device writes is human-readable.
+- **Entity slots are satisfied by variables, not literals.** Donor 8 proves the pattern on
+  hardware: `Find Notes` (predicate `Name contains "PROSOCHE"` — a plain string) →
+  `Show Note` consuming the output as an ordinary attachment. No note identifier is ever
+  written. This is what makes the Control Room Note buildable offline, and the generators
+  already do it (`entity=variable("Control Room Note")`).
+- **`WFLLMModel = "Apple Intelligence on Device"`** — donor ground truth. Of 526 distinct
+  enum-picker types in the entire first-party surface, this was the **only** uncatalogued
+  one, and it is exactly the item CLAUDE.md §3 item 15 flagged as the top unknown. None of
+  the three spellings the audit was weighing (`"On-Device"`, `"On Device"`, an integer) was
+  right — a direct vindication of the do-not-guess rule. **Promote CLAUDE.md §3 item 15 to
+  VERIFIED.**
+- **The booted simulator cannot import a signed `.shortcut`** through any channel tried —
+  `import-shortcut` requires an iCloud link, Files never surfaces "On My iPhone", Safari's
+  download button ignores synthesized taps, and iCloud Drive needs an Apple Account.
+  **CLAUDE.md §9 lists "import success" as a rung-2 capability; measured, it is not.**
+  Rung 2 can test the *build*, not the *import*.
+- **PROSOCHĒ never writes a third-party bundle id into an Open App action.** `APPS` is a
+  closed set of six first-party apps matching `Donor - apps` exactly; tracked apps are
+  chosen by the user inside the Personal Automation and never appear in any generated plist.
+
 ## Spikes
 
 | # | Name | Type | Validates | Verdict | Tags |
@@ -121,6 +167,10 @@ an unanalysed `Set Colour Filters.shortcut` sitting in `.planning/debug/` the wh
 | 003 | device-model-literal | standard | Given a real iPhone, when Get Device Details queries "Device Model", then the exact literal string format (identifier vs marketing name) is known | INVALIDATED ✗ | shortcuts, device-detection |
 | 004 | capability-gate | standard | Given a single merged shortcut with a manual opt-in toggle, when the core deterministic escalation runs before the optional Sentient (Use Model) step, then a Use Model failure never prevents the core intervention from firing | VALIDATED ✓ | shortcuts, device-detection, state-machine |
 | 005 | ios-color-filters-identifier | standard | Given the donors `Set Colour Filters.shortcut` and `Donor 9.shortcut`, when decrypted, then the real iOS 26 Color Filters identifier and parameter serialization are established as device ground truth | VALIDATED ✓ — exists on iOS as `AX*`, not the `UA*` the audit trail recorded; apply leg confirmed, restore leg still schema-only | capability-audit, evidence-hierarchy, accessibility, ash, donor |
+| 006 | picker-serialisation-taxonomy | standard | Given all 16 donors + the 19-shortcut golden corpus, when every parameter that could carry a device-minted value is classified, then each falls into synthesizable / runtime-derivable / hand-selection-only, with a rule predicting the class from the catalog alone | VALIDATED ✓ — 3 classes, zero opaque blobs anywhere; 14 queryable entity families | capability-audit, evidence-hierarchy, entity-references, pickers, donor, blocker-analysis |
+| 007 | unresolvable-picker-failure-mode | standard | Given a shortcut authored offline whose picker value we cannot know, when imported and run, then determine whether it fails at import, at run, or renders empty | PARTIAL ⚠ — question moot (PROSOCHĒ opens only 6 first-party apps); simulator cannot import a signed `.shortcut`, probe preserved for a device run | capability-audit, pickers, openapp, simulator, rung-2, probe |
+| 008 | use-model-picker-literal | standard | Given the unanalysed `Use Model.shortcut` donor, when decrypted, then the exact `WFLLMModel` On-Device literal becomes device ground truth | VALIDATED ✓ — `"Apple Intelligence on Device"`; the last uncatalogued enum picker of 526 | capability-audit, evidence-hierarchy, donor, sentient, use-model, pickers |
+| 009 | prosoche-exposure-audit | standard | Given 006's taxonomy, when applied to every action PROSOCHĒ's generators emit, then the complete blocker list is known and each blocker has a workaround or is confirmed unbuildable | VALIDATED ✓ — **zero blockers**; 51 actions, 6 picker slots, all Class A or B | capability-audit, blocker-analysis, generators, pickers, entity-references |
 
 ## Spun-Out Work
 
