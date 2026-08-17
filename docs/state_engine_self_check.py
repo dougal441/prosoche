@@ -89,7 +89,10 @@ def structural_check():
     setters = [(index, action) for index, action in enumerate(actions)
                if action["WFWorkflowActionIdentifier"] == "is.workflow.actions.setvalueforkey"]
     keys = [action["WFWorkflowActionParameters"]["WFDictionaryKey"] for _, action in setters]
-    for required in ("heat", "gravity", "pressure", "circle", "active_session", "recent_sessions", "last_close_at"):
+    # PHASE 12 (12-03): the required literal moved to the dotted leaf "active_session.id"
+    # -- the container/leaf split converted every setter to write only that leaf, so the
+    # unqualified container key no longer appears among setter keys by construction.
+    for required in ("heat", "gravity", "pressure", "circle", "active_session.id", "recent_sessions", "last_close_at"):
         assert required in keys
     # Every write immediately rebinds the full dictionary it just returned.
     for index, action in setters:
