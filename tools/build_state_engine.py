@@ -2517,9 +2517,19 @@ def verify_conditional_action_string(actions):
         # the check above compares against the raw placeholder STRING, the pin below only
         # ever runs on the DICT case.  Neither can see the other's subject.
         if isinstance(value, dict):
-            token_value = value.get("Value", {})
+            # THE PIN FAILS CLOSED.  `Value` is a dict only while the envelope is intact.  A
+            # flatten-in-place regression that leaves `Value` a plain string used to kill this
+            # guard with `AttributeError: 'str' object has no attribute 'get'` -- a traceback
+            # naming the GUARD rather than the offending action index, and not the SystemExit
+            # this project's convention requires.  A non-string `string` raised TypeError the
+            # same way.  Both now fall through into `unpinned` and are REPORTED, because a
+            # malformed target is exactly what the pin exists to catch, not a reason it may
+            # stop working.
+            token_value = value.get("Value")
+            token_string = token_value.get("string") if isinstance(token_value, dict) else None
             if (value.get("WFSerializationType") != "WFTextTokenString"
-                    or "￼" not in token_value.get("string", "")
+                    or not isinstance(token_string, str)
+                    or "￼" not in token_string
                     or not token_value.get("attachmentsByRange")):
                 unpinned.append(index)
     if offenders:
