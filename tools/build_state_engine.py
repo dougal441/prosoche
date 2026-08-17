@@ -2464,8 +2464,43 @@ def verify_conditional_action_string(actions):
     (WFInput side only) nor STRING_ENVELOPE_PARAMS (does not cover
     is.workflow.actions.conditional) catches this axis, so this is a dedicated guard against
     the exact same defect class shipping silently again.
+
+    PHASE 13 (13-02) -- SECOND, POSITIVE ASSERTION: PIN THE DONOR-5 ENVELOPE.
+
+    .planning/debug/Donor 5.shortcut was decrypted in Phase 13 (its first analysis ever) and
+    shows iOS ITSELF authoring the variable-bearing comparison target as a WFTextTokenString:
+    Value.string is a single "￼", Value.attachmentsByRange is keyed "{0, 1}" and holds a
+    BARE {Type: "Variable", VariableName: ...} dict (not re-wrapped in a
+    Value/WFSerializationType envelope), WFCondition is an <integer>, and WFInput sits
+    alongside it carrying the OPPOSITE WFTextTokenAttachment envelope -- with NO coercion
+    aggrandizement on either side.  token() at :145-148 emits a key-for-key identical shape.
+    A device-authored donor is the top of this project's evidence hierarchy, so that shape is
+    settled: the generator has been emitting the device-correct envelope all along.
+
+    THE "14 DEFECTIVE SITES" CLAIM IS REFUTED BY MEASUREMENT.  The ROADMAP, the pending todo
+    and .planning/debug/HANDOFF.md all assert this family is broken.  Measured by plistlib
+    walk over both phase-start artifacts: 192 (Core) / 195 (Aware) mode-0 conditionals carry
+    this slot, exactly 20 per fork are variable-bearing (19 at WFCondition 4, 1 at 99), ALL 20
+    match Donor 5, and 0 are defective.  The site the ROADMAP named as a starting point,
+    if_block("Previous Respected", 4, ...), is not even a member of the family -- it passes a
+    raw Python literal and never a token().
+
+    THIS ASSERTION THEREFORE PINS A CORRECT SHAPE RATHER THAN REPAIRING A BROKEN ONE.  Its
+    entire purpose is to stop a future pass -- acting on that stale prose -- from "fixing" 20
+    device-confirmed sites.  If it fires, the change that caused it is the defect.
+
+    THE RAW-LITERAL COMPARISON TARGETS (172 Core / 175 Aware) ARE DELIBERATELY NOT ASSERTED
+    HERE.  Donor 5 covers only the variable-bearing case; no donor shows a pure literal
+    comparison target, so whether iOS writes one as a bare string or as an attachment-free
+    WFTextTokenString is UNVERIFIED.  Those literals are device-proven working (the OPEN/CLOSE
+    router compares Input Key against raw "OPEN"/"CLOSE" and HANDOFF.md:126 records every
+    breadcrumb A-J firing on device), so inventing an assertion for them would encode a guess
+    as a build gate -- exactly what the project's do-not-fabricate rule forbids.  Settling it
+    needs a one-action donor with a literal comparison: a rung-4 request, not a rung-1
+    inference.
     """
     offenders = []
+    unpinned = []
     for index, item in enumerate(actions):
         if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
             continue
@@ -2475,13 +2510,31 @@ def verify_conditional_action_string(actions):
             continue
         if "WFConditionalActionString" not in parameters:
             continue
-        if parameters["WFConditionalActionString"] == "￼":
+        value = parameters["WFConditionalActionString"]
+        if value == "￼":
             offenders.append(index)
+        # The two checks are DISJOINT BY PYTHON TYPE and share this one loop deliberately:
+        # the check above compares against the raw placeholder STRING, the pin below only
+        # ever runs on the DICT case.  Neither can see the other's subject.
+        if isinstance(value, dict):
+            token_value = value.get("Value", {})
+            if (value.get("WFSerializationType") != "WFTextTokenString"
+                    or "￼" not in token_value.get("string", "")
+                    or not token_value.get("attachmentsByRange")):
+                unpinned.append(index)
     if offenders:
         raise SystemExit("conditional comparison targets hold the abandoned bare placeholder "
                          "character instead of a wired token() reference: actions "
                          + ", ".join(str(i) for i in offenders[:5])
                          + f" ({len(offenders)} total)")
+    if unpinned:
+        raise SystemExit("variable-bearing conditional comparison targets have LOST the "
+                         "device-confirmed Donor 5 WFTextTokenString envelope (a single "
+                         "￼ string plus a non-empty attachmentsByRange); this assertion "
+                         "PINS a shape iOS itself authors, so the change that tripped it is "
+                         "the defect, not the shape: actions "
+                         + ", ".join(str(i) for i in unpinned[:5])
+                         + f" ({len(unpinned)} total)")
 
 
 def verify_list_item_wrappers(actions):
