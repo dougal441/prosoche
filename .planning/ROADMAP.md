@@ -612,10 +612,20 @@ finding rather than a known artifact.
 **Plans:** 4 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 13-01-PLAN.md — Tracer: wrap all 660 variable-bearing `WFItems` rows via `_list_row()`, add `verify_list_item_wrappers()`, arm it on both forks, rebuild to gate A, and demonstrate the guard is sensitive
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 13-02-PLAN.md — Pin the Donor-5-confirmed conditional operand shape inside `verify_conditional_action_string()`, sweep nothing, and demonstrate both raises with the ordering mask recorded
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 13-03-PLAN.md — The single-pass doc update: axis list to nine, `BD-07`/`BD-08`, the Phase 13 BUILD-NOTES record, the corrected ROADMAP prose, and the todo closed with a tombstone
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 13-04-PLAN.md — Ship: rebuild, gate A, gate B advisory read, sign both forks under their live display names, decrypt-verify, refresh every MANIFEST row, and author `13-UAT.md`
 
 ### Phase 14: Ash as real Color Filters grayscale

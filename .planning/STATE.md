@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 12
-current_phase_name: State-shape sentinel gaps — exit_events and active_session
-status: ready-to-plan
-stopped_at: Phase 10 executed (10-05 parked at human-verify on DIST-03); phases 11-20 scoped and queued, none planned yet
-last_updated: "2026-08-17T03:24:18.541Z"
+current_phase: 13
+current_phase_name: Red-operator conditionals and the WFItems List wrapper
+status: ready-to-execute
+stopped_at: Phase 13 planned (4 plans, 4 waves); Phase 12 verification deferred to /gsd-verify-work 12 (device-blocked)
+last_updated: "2026-08-17T00:00:00.000Z"
 last_activity: 2026-08-17
-last_activity_desc: Phase 12 execution started
+last_activity_desc: Phase 13 planned — 4 plans across 4 waves, plan-checker passed
 progress:
   total_phases: 24
   completed_phases: 9
-  total_plans: 38
+  total_plans: 42
   completed_plans: 33
 ---
 
@@ -23,12 +23,40 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 12 — State-shape sentinel gaps — exit_events and active_session
+**Current focus:** Phase 13 — Red-operator conditionals and the WFItems List wrapper
 
 ## Current Position
 
-Phase: 12 (State-shape sentinel gaps — exit_events and active_session) — EXECUTING
-Plan: 1 of 5
+Phase: 13 (Red-operator conditionals and the WFItems List wrapper) — READY TO EXECUTE
+Plans: 4 (waves 1-4, fully sequential), plan-checker passed
+
+**Phase 13 research rewrote the phase.** Donor 5 was decrypted for the first time and
+**refuted family 1**: iOS itself authors a variable in a conditional's TEXT slot as a
+`WFTextTokenString` template with `WFInput` alongside taking the opposite
+`WFTextTokenAttachment` envelope — key-for-key identical to what `token()` emits. There are
+**0 defective conditional sites, not 14**; the sites are already correct and must not be swept.
+Family 1 becomes record-the-refutation plus a *pinning* guard so a later pass cannot "fix" a
+device-confirmed shape.
+
+**Family 2 is real and 33× larger than recorded** — **66 defective List actions carrying 660
+unwrapped rows per fork, not 2**, all from one function, `mirror_text()`. Donors 4/4.1 confirm
+the `{"WFItemType": 0, "WFValue": <WFTextTokenString>}` wrapper *and* that literal rows stay
+bare strings, so the fix branches per row; a blanket sweep would corrupt `list_items(EXIT_NAMES, …)`.
+
+Two further ROADMAP premises did not hold: the named "concrete starting site"
+`if_block("Previous Respected", 4, …)` passes a raw literal and was never a family member, and
+the cited `Screenshot 2026-08-14 at 11.55.12 pm.png` does not exist in the worktree, the main
+checkout, or git history — no task depends on it.
+
+**Stale constraint corrected before planning:** the forks were renamed Dumb/Sentient → **Core/Aware**
+in Phase 11. `.claude/CLAUDE.md` §8 still names the old ones; signing to them would fail
+`docs/manifest_check.py`'s DIST-04 assertion. Source XMLs and generator filenames are unchanged.
+
+**Baseline measured green before execution:** 12/12 `docs/*.py` checkers pass, gate A clean on
+both forks, gate B showing exactly the one permitted waived line each. Any red during execution
+is therefore caused by the phase. `docs/manifest_check.py` is *deliberately* red in waves 1-3
+(rebuilding stales the MANIFEST) and closed in 13-04 — stated as constraint D-04 in every
+affected plan objective so an executor does not "fix" it by editing rows without re-signing.
 
 **Phase 10 is executed.** Waves 1-4 landed; 10-05 is parked at its `checkpoint:human-verify`
 resolved to the `blocked` branch (DIST-03, no connected iPhone). `10-UAT.md` is authored and
