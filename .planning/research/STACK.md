@@ -240,15 +240,76 @@ What the Playground documentation actually flags as breaking at scale, consisten
 
 ---
 
-## 8. Signing and the AEA1 constraint
+## 8. Signing and AEA1 round-tripping
 
 - **What produces an importable `.shortcut`:** only `shortcuts sign --mode <anyone|people-who-know-me> --input <unsigned.shortcut-or-xml> --output <signed.shortcut>` (the real macOS `shortcuts` CLI, wrapped by `sign-shortcut`). Signing adds roughly 19KB and is what makes Shortcuts.app agree to import the file at all — an unsigned XML/`.shortcut` cannot be imported on-device.
-- **AEA1 constraint on round-tripping:** a signed `.shortcut` is an **Apple Encrypted Archive** (magic bytes `AEA1`). It **cannot be read back as a plaintext plist** by `plutil`, `xxd`, `file`, or any other inspector — confirmed repeatedly across `README.md`, `CHANGELOG.md`, and both agent definitions, and enforced defensively by `shortcuts-playground-selftest` (which checks for `AEA1` magic bytes as proof of a successful sign). Practically: **`shortcut-remixer` refuses to operate on a `.shortcut` file** — it explicitly checks the file extension and the first 4 bytes, and if either matches signed/`AEA1`, it escalates asking the user to re-export as unsigned XML (Shortcuts.app → Share → Copy → paste into a `.xml` file) rather than attempting to parse it.
-- **Consequence for PROJECT.md's "retain unsigned XML source" requirement:** the unsigned draft XML the build agent writes (before `sign-shortcut` runs) *is* the canonical, forkable, open-source, inspectable source artifact — this maps exactly to PROJECT.md's requirement ("Unsigned XML source retained for both forks... open-source, inspectable, forkable"). There is no way to regenerate that XML from the signed `.shortcut` other than the manual on-device Share→Copy export path; the repository must keep the pre-sign `.xml` alongside the signed `.shortcut`, not attempt to derive one from the other programmatically.
+- **Signed artifacts are recoverable:** a signed `.shortcut` is an **Apple Encrypted Archive** (magic bytes `AEA1`) — which is why `shortcuts-playground-selftest` checks for those magic bytes as proof of a successful sign. `plutil`, `xxd`, and `file` cannot inspect the outer container as a plist, but agents **may and should** recover its payload when the signed artifact is the available or authoritative evidence. The AEA1 auth-data bplist contains its `SigningCertificateChain`; extract the leaf certificate's public key, run `aea decrypt`, then unwrap the Apple Archive with `aa extract`. This was proven with `.planning/debug/Donor - notes.shortcut`, exported from the owner's iPhone.
+
+  ```bash
+  signed_shortcut="/absolute/path/to/Signed.shortcut"
+  inspection_dir="$(mktemp -d)"
+  python3 -c 'import struct,plistlib,pathlib,sys; d=pathlib.Path(sys.argv[1]).read_bytes(); sz=struct.unpack_from("<I",d,8)[0]; pathlib.Path(sys.argv[2]).write_bytes(plistlib.loads(d[12:12+sz])["SigningCertificateChain"][0])' "$signed_shortcut" "$inspection_dir/leaf.der"
+  openssl x509 -inform DER -in "$inspection_dir/leaf.der" -noout -pubkey > "$inspection_dir/pub.pem"
+  aea decrypt -i "$signed_shortcut" -o "$inspection_dir/payload.aa" -sign-pub "$inspection_dir/pub.pem"
+  mkdir -p "$inspection_dir/unwrapped"
+  aa extract -i "$inspection_dir/payload.aa" -d "$inspection_dir/unwrapped"
+  plutil -convert xml1 -o "$inspection_dir/Shortcut.xml" "$inspection_dir/unwrapped/Shortcut.wflow"
+  ```
+
+- **Remixing and source retention:** `shortcut-remixer` still refuses a signed `.shortcut` directly — it checks the file extension and the first 4 bytes, and if either matches signed/`AEA1` it escalates rather than attempting to parse it; give it the recovered `Shortcut.xml` instead. Keep the pre-sign unsigned XML as the canonical editable source because it preserves the authored build input and exact source history — this maps exactly to PROJECT.md's requirement ("Unsigned XML source retained for both forks... open-source, inspectable, forkable") — but do not treat its absence as making a signed artifact opaque or unrecoverable.
 - **Filename discipline:** the signed output filename must equal the intended shortcut display name (no `_signed` suffix) — treating a `_signed`-suffixed library name as a failed build is an explicit rule (`BEST_PRACTICES.md` §Signing & Install Naming). For the two-fork deliverable, this means the two signed artifacts should literally be named `PROSOCHĒ — Nine Circles — Dumb.shortcut` and `PROSOCHĒ — Nine Circles — Sentient.shortcut`.
 - **Known signer quirks** (both auto-retried by `sign-shortcut`, but worth knowing): `shortcuts sign` sometimes reports `Error: The file doesn't exist.` for a file that does exist (retry from a clean XML→`.shortcut` copy); sometimes reports `Error: ... isn't in the correct format.` even when `validate-shortcut`/`plutil -lint` both pass (retry after `plutil -convert binary1`). Both retries are built into `sign-shortcut` automatically.
 
 ---
+
+## 9. Agent-side tooling and device-evidence channels
+
+Which evidence channel to reach for when a runtime question is open, and which rung is too high or too low for that question. Tooling measured 2026-08-17.
+
+| Tool | How it is reached | Availability |
+|---|---|---|
+| `/ponytail` | The `anthropic-skills` skill — laziest solution that actually works: YAGNI, standard library and native platform features before dependencies, minimal diffs | Sanctioned. Prefer the minimal change — but laziness never licenses skipping the seven parameter-defect axes under `## Conventions` or the do-not-fabricate protocol in `docs/BUILD-NOTES.md` §2. |
+| iOS Simulator | `mcp__Claude_Code_iOS_Simulator__control` (actions `attach`, `launch`, `screenshot`, `tap`, `swipe`, `text`, `button`, `open_url`, `detach`), plus `xcrun simctl` from Bash | Always available on this Mac. |
+| iPhone Mirroring | Real-device UAT on the owner's iPhone | Not always live; the user sets it up on request. |
+
+**Measured simulator inventory (2026-08-17).** `xcrun simctl list runtimes` reports exactly one runtime, **iOS 26.5 (26.5 - 23F77)** — inside the project's declared "iOS 26.x" target, so a simulator observation is same-major-version evidence rather than a version extrapolation. `xcrun simctl list devices available` reports iPhone 17 Pro `79A84C29-DB62-40A2-AC3F-CCB5F8192F86` **Booted**, among five iPhones and five iPads. `xcrun simctl listapps 79A84C29-DB62-40A2-AC3F-CCB5F8192F86` reports 25 apps: `com.apple.shortcuts` **present**, `com.apple.mobilenotes` **absent**. Re-run all three to re-derive every simulator claim in this section.
+
+### The evidence-escalation ladder
+
+| Rung | Channel | Settles | Costs |
+|---|---|---|---|
+| 1 | File-level analysis — validator, ToolKit catalog, golden corpus, decrypted plist | Structure, identifier presence, parameter shape | Nothing |
+| 2 | Simulator probe — the agent builds, signs, imports, runs and observes it itself | Import success, runtime variable resolution, control flow, operator/operand type validity, most parameter-key questions | Agent time only |
+| 3 | Device probe over iPhone Mirroring — the agent drives the user's iPhone | Everything the simulator cannot | One connected session, requested from the user |
+| 4 | User-run probe or donor export on the real device | Anything mirroring cannot reach, or that needs the user's own hands | The user's time — the scarcest input |
+
+**The governing rule: never climb higher than the open question requires, and never skip a rung that would have caught a defect in the probe itself.** Both halves bite. Climbing early spends a scarce device session on something rung 1 or 2 would have settled for free; skipping a rung hands the device a probe that fails for a reason unrelated to the question it was built to answer.
+
+This ladder **extends** the four-item `### Evidence hierarchy` under `## Conventions`, supplying the probe and simulator rungs that list omits. It does not replace it, and the donor's rank there is unchanged.
+
+### Rung 2's ceiling — what a simulator pass may never close
+
+A rung-2 pass may **not** raise a verdict on any of the following. Each is device-gated for a measured reason:
+
+- **The Control Room Note path, in full.** `com.apple.mobilenotes` is absent from the booted simulator's 25 apps, measured above — so every `com.apple.mobilenotes.SharingExtension`, `appendnote`, `filter.notes` and `shownote` behaviour needs rung 3+.
+- **Apple Intelligence.** The simulator is not Apple-Intelligence-capable hardware, so the Sentient `Use Model` / On-Device path (CAP-26, BD-04-R2) needs rung 3+.
+- **Personal Automation triggers** (App Is Opened / Is Closed). They are user-created on the device and cannot be exercised on a simulator at any effort.
+- **Real-hardware environmental behaviour** — brightness and volume capture-and-restore.
+
+### Probes and donors
+
+A **donor** is evidence the user already happens to have. A **probe shortcut** is evidence we deliberately manufacture, so it can be aimed at precisely the open question rather than at whatever the donor happened to contain. Both are first-class instruments; they differ in provenance and in aim.
+
+A genuinely-open rung-2 target today: the **unaudited `CoercionItemClass` values for boolean, file, dictionary and entity-reference operands** (`## Conventions` rule 6). Pure runtime operand-type resolution — it needs no Notes, no model and no real hardware, which is exactly what makes it a rung-2 question rather than a rung-3 one.
+
+### Two standing policies
+
+- **Probes are simulator-tested before they reach the user's iPhone**, wherever the scope is small enough for the simulator to exercise them. Handing over an untested probe is a defect, not a shortcut. A probe that fails on import, or fails for a reason unrelated to the question it was built to answer, burns a device round trip and teaches nothing — and `## Conventions` ("Read the error text, not just the letter") already records that misattributed failures cost this project multiple cycles.
+- **Maximise UAT over iPhone Mirroring.** When mirroring is live the agent drives the device itself rather than issuing the user a list of taps. Requesting the session is unchanged — the agent must still ask for it, and must name specifically what needs to be observed — but once connected, exhaust what can be observed before handing the session back.
+
+### The recording duty
+
+A probe's result is **recorded, not consumed**: into `docs/BUILD-NOTES.md`'s device-evidence sections, and into `docs/CAPABILITY-DECISIONS.md` where it settles a capability question. Probes are cheap to build and expensive to re-run; the record is the whole return on them.
 
 ## Recommended Stack
 
@@ -290,7 +351,7 @@ shortcuts-playground-selftest                          # expect "✔ All checks 
 | `WFTextTokenAttachment` on display-facing text fields (`WFAlertActionMessage`, `WFNotificationActionBody`/`Title`, Show Result `Text`) | Runtime-verified to silently render blank/default text even though it validates and imports fine | `WFTextTokenString` with a `` placeholder, even for a single bare variable |
 | `ActionOutput` references to Repeat's end-action UUID for `Repeat Index`/`Repeat Item` | Shows up as "Repeat Results" in the UI and fails at runtime | Named `Type: Variable`, `VariableName: "Repeat Index"`/`"Repeat Item"` |
 | Reusing a `GroupingIdentifier` across nested or sibling control-flow blocks | Silently corrupts block boundaries — the #1 documented real-world mistake in the corpus analysis | A freshly `uuidgen`'d, uppercase UUID per control-flow block, no exceptions |
-| Reading a signed `.shortcut` file with `plutil`/`xxd`/`file`, or asking `shortcut-remixer` to diff one | It's an AEA1 encrypted archive; every plaintext inspector fails on it, and the remix agent will refuse and escalate | Always keep and diff the pre-sign unsigned XML archive |
+| Treating `plutil`/`xxd`/`file` failure on the outer signed `.shortcut` as proof that its plist is unrecoverable | Those tools see the AEA1 container, not the plist payload | Use §8's `aea decrypt` → `aa extract` workflow, convert `Shortcut.wflow` to XML, then inspect or pass that XML to `shortcut-remixer` |
 | Targeting the validator at `--target-macos 27`/`latest` for this project | Loads OS27-only parameter-gating (`WFAllowWebSearch`, `FollowUp`, `interpretAsMarkdown`, etc.) that don't apply to an "iOS 26.x" shortcut and could produce false confidence or false rejections | `--target-macos 26 --target-platform ios` |
 | Treating a validator pass as "done" | The plugin's own explicit rule: "A valid XML draft without a signed `.shortcut` is not a useful stopping point" | Always complete the archive+sign+verify-non-zero-bytes step |
 | A CSV or second machine-readable store alongside `state.json` | Explicitly out of scope per PROJECT.md; also has no bearing on the Shortcuts toolchain — not a capability question, a design one, reaffirmed here because Get/Save File audit (§3 item 2) shows Shortcuts' file actions are perfectly adequate for one JSON | One `state.json`, rolling-window arrays, one Apple Note |

@@ -67,6 +67,21 @@ Each is a JSON file under the ToolKit data directory. An Evidence cell must name
 
 An Evidence cell that does not name at least one of the five ToolKit JSON files, one of the prose reference docs, or one golden-shortcut XML filename **is not acceptable**. A verdict resting only on external corroboration is recorded as `UNVERIFIED`, never higher.
 
+### Simulator and probe observations — extension to the citation rule
+
+The rule above admits file-level sources only, which leaves an agent who has actually *run* something with no legal way to cite it — so the finding is either dropped or laundered into a file-level citation it did not come from. Two further classes are admissible:
+
+- **A simulator observation** — cite it by naming the shortcut run, the command used, and the runtime and device it ran against.
+- **A probe observation** — the same three, plus the open question the probe was built to answer.
+
+Both rank **below** the primary device evidence of §11 and §14, and **above** any ToolKit-catalog inference.
+
+**Ceiling.** A simulator observation may raise a verdict above `UNVERIFIED` only for behaviour the simulator can actually exercise. It may **never** do so for the Notes path, Apple Intelligence, Personal Automation triggers, or environmental capture-and-restore — those stay device-gated no matter how cleanly the simulator ran.
+
+**Recording duty.** A probe result is written back — into this document's device-evidence sections, and into `docs/CAPABILITY-DECISIONS.md` where it settles a capability question — rather than left in the transcript. A probe nobody recorded has to be run again.
+
+The tooling inventory and the full four-rung evidence-escalation ladder live in `.claude/CLAUDE.md` §9, which is their single home. Nothing measured is restated here, so the two cannot drift.
+
 ### Runnable lookup snippet
 
 Every plan re-runs this identical query rather than improvising a new one:
