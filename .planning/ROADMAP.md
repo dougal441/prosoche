@@ -609,11 +609,14 @@ finding rather than a known artifact.
 **Severity:** major
 **Requirements**: CIRC-04, CIRC-07, ROOM-03, DIST-01, DIST-02
 **Depends on:** Phase 12
-**Plans:** 0 plans
+**Plans:** 4 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 13 to break down)
+- [ ] 13-01-PLAN.md — Tracer: wrap all 660 variable-bearing `WFItems` rows via `_list_row()`, add `verify_list_item_wrappers()`, arm it on both forks, rebuild to gate A, and demonstrate the guard is sensitive
+- [ ] 13-02-PLAN.md — Pin the Donor-5-confirmed conditional operand shape inside `verify_conditional_action_string()`, sweep nothing, and demonstrate both raises with the ordering mask recorded
+- [ ] 13-03-PLAN.md — The single-pass doc update: axis list to nine, `BD-07`/`BD-08`, the Phase 13 BUILD-NOTES record, the corrected ROADMAP prose, and the todo closed with a tombstone
+- [ ] 13-04-PLAN.md — Ship: rebuild, gate A, gate B advisory read, sign both forks under their live display names, decrypt-verify, refresh every MANIFEST row, and author `13-UAT.md`
 
 ### Phase 14: Ash as real Color Filters grayscale
 
