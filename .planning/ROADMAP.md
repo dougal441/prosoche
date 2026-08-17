@@ -525,11 +525,24 @@ session, so treat it as new-risk surface.
 **Plans:** 5 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 12-01-PLAN.md — Tracer: seed `exit_events` + `exit_selection_counter`, guard them, bump schema 3→4, arm on both forks
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 12-02-PLAN.md — Seed `active_session` as a permanent four-leaf container and guard it
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 12-03-PLAN.md — Convert every `active_session` gate/write/clear to leaf semantics; empty `KNOWN_SENTINEL_EXISTENCE_GATES`
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 12-04-PLAN.md — Decide and close `profile_snapshot.create_target_url`; generalise `verify_state_seed()` to every state read
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 12-05-PLAN.md — Sign both forks, refresh MANIFEST, gate B advisory read, `12-UAT.md` device exit-path test
 
 ### Phase 13: Red-operator conditionals and the WFItems List wrapper
