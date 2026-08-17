@@ -432,10 +432,20 @@ inversion the evidence hierarchy exists to prevent:
    Evidence: `.planning/debug/Donor 4.shortcut` and `.planning/debug/Donor 4.1.shortcut` —
    device-authored, decrypted in Phase 13, byte-identical on this action, and showing **both**
    row kinds mixed in one array (`"Circle"`, a wrapped `Dictionary Value` token, `"follows"`).
-   Build guard: `verify_list_item_wrappers()` in `tools/build_state_engine.py`, armed on both
-   forks, asserting only that the `WFItemType` **key is present** and never which value it
-   holds. Wrap only rows that are already dicts — sweeping every row corrupts the legitimate
+   **Discriminate on attachment-bearing-ness, NOT on Python type.** This is the correction that
+   cost a full re-ship in Phase 13: an `isinstance(item, str)` discriminator wraps every non-`str`,
+   including a `WFTextTokenString` built from a template with no `￼` placeholder and therefore an
+   **empty `attachmentsByRange`**. That is a literal row by content, encoded as a variable row — a
+   second unevidenced framing, invisible to the guard, the validator and the decrypt, and it
+   shipped. A row is LITERAL when it carries no attachment, whatever its Python type; only an
+   attachment-bearing row takes the wrapper. Sweeping every row likewise corrupts the legitimate
    bare-string literals.
+
+   Build guard: `verify_list_item_wrappers()` in `tools/build_state_engine.py`, armed on both
+   forks. It asserts the whole row contract — the `WFItemType` **key is present** and never which
+   value it holds, `WFValue` is present and well-shaped, and a wrapped row's
+   `WFValue.Value.attachmentsByRange` is **non-empty** (the inverse assertion that catches the
+   defect above). Anchor on the symbol, not the line.
 
    Boundary: only `WFItemType` `0`, a **text** row, is donor-observed. Neither donor exercises
    a number, dictionary or file row, so any other value must be established from evidence and
