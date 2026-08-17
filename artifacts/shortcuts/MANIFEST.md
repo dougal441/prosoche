@@ -6,10 +6,12 @@ commit — nine shipped primitive names live in all three `sequences` arrays, ni
 ("string is"), and `Loud Mirror` given a real dispatch branch so Circle 8 is no longer dead.
 The preceding rebuild was phase 11 plan 01, the tracer that moved one name (`Knock` →
 `Pause`) end to end. Built with Shortcuts Playground
-target `--target-macos 26 --target-platform all`. The `all` platform target is deliberate and
-is recorded as `docs/BUILD-NOTES.md` DEV-01: the `ios` target rejects the file wholesale —
-including the `conditional` and comment identifiers — because the bundled iOS snapshot is
-incomplete, not because the shortcut is unsound.
+under the project's **two-gate rule** (stated in full in `.claude/CLAUDE.md` §1
+`### Exact validator invocation`). These artifacts were built and validated under **gate A**,
+`--target-macos 26 --target-platform all`, which passes clean on both forks. **Gate B**,
+`--target-macos 27 --target-platform all`, was read against them advisorily and reported the
+one recorded waiver (`WFCreateNoteInput`, device-donor ground truth) and nothing else —
+measurements in `docs/BUILD-NOTES.md` §22.
 
 Both forks were regenerated from the same generator run rather than either being carried
 forward: `src/PROSOCHE-*.xml` are generated files, and Sentient is a fork *of the built Dumb

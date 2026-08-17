@@ -72,12 +72,23 @@ Donor-confirmed literals — full table in `references/authoring-parameters.md` 
 | Notes folder | `applenotes:folder/DefaultFolder-CloudKit` |
 | `openapp.WFSelectedApp.TeamIdentifier` | `"0000000000"` (first-party) |
 
-Validator invocation — **both must pass**:
+Validator invocation — the **two-gate rule** (stated in full in `.claude/CLAUDE.md` §1
+`### Exact validator invocation`; measurements in `docs/BUILD-NOTES.md` §22):
 
 ```bash
-validate-shortcut --target-macos 26 "X.xml"
-validate-shortcut --target-macos 27 --target-platform ios "X.xml"
+validate-shortcut --target-macos 26 --target-platform all "X.xml"   # gate A: MANDATORY, must pass clean
+validate-shortcut --target-macos 27 --target-platform all "X.xml"   # gate B: ADVISORY, expect exit 1
 ```
+
+**Only gate A must pass.** Gate B is advisory and **cannot exit 0** — it carries a permanent
+one-line waiver per fork (`WFCreateNoteInput` on `com.apple.mobilenotes.SharingExtension`,
+device-donor ground truth that outranks the catalog). That single line is the expected
+result, not a build failure. Anything gate B reports *outside* the waiver is a real finding.
+Never chain gate B into a definition of done.
+
+Gate B uses `--target-platform all`, not `ios`: the `ios` setting excludes every
+`macOS 27`-tagged catalog entry, dropping all four Notes actions out of checking
+(1105 enum-checked identifiers under `all` versus 455 under `ios`).
 
 Never `--target-macos 26 --target-platform ios` — that pair rejects every action.
 

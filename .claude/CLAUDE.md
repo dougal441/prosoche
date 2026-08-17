@@ -152,9 +152,9 @@ Measurements, the six `validate_shortcut.py` source citations, the four-invocati
 
 ### How a shortcut declares iOS-only vs macOS actions
 
-- The Shortcuts **Playground validator's** `--target-platform` flag is a build-time simulation of what the real device will accept — it is Playground tooling, not a plist feature.
+- The Shortcuts **Playground validator's** `--target-platform` flag selects which bundled ToolKit snapshot is consulted — it is Playground tooling, not a plist feature, and it declares nothing about where the shortcut runs.
 - The actual portability risk is per-action: an action identifier or parameter key gated to "macOS 27" in the bundled catalog (see the Color Filters and Notes findings below) may simply not exist as an option when authoring/running on iPhone.
-- **Practical rule for this project:** validate with `--target-platform all` (**corrected from `ios` per `docs/BUILD-NOTES.md` §13 DEV-01** — the `ios` target rejects the file wholesale because the bundled iOS snapshot is incomplete, so it can conceal nothing) and manually import-test on a real iPhone (Shortcuts Playground cannot execute or verify runtime behavior — its validator only checks structural/plist correctness, per `TOOLKIT_SNAPSHOT.md`).
+- **Practical rule for this project:** run the **two-gate rule** — gate A mandatory, gate B advisory, both defined in full in §1 `### Exact validator invocation`, which is the only place that rule is stated — and then manually import-test on a real iPhone (Shortcuts Playground cannot execute or verify runtime behavior — its validator only checks structural/plist correctness, per `TOOLKIT_SNAPSHOT.md`).
 
 ## 3. Capability audit — verified action identifiers
 
@@ -307,7 +307,7 @@ A probe's result is **recorded, not consumed**: into `docs/BUILD-NOTES.md`'s dev
 | Shortcuts Playground plugin | v1.2.1 (installed) | Skill docs, agents, validator, signer, hooks | The only tool on this machine capable of authoring, validating, and signing `.shortcut` files; ground-truthed against Apple's own ToolKit databases |
 | `shortcuts` CLI (macOS built-in) | whatever ships with the build Mac's OS | `shortcuts sign` — the real signer | No substitute exists; signing is macOS-only |
 | Python | ≥3.10 | Runs `validate_shortcut.py` (uses PEP 604 `X | None` syntax) | Hard requirement of the bundled validator; check via `shortcuts-playground-selftest` |
-| Validator target | `--target-macos 26 --target-platform all` | Correct availability gating for an iOS-26-only shortcut; the platform flag is `all`, **corrected from `ios` per `docs/BUILD-NOTES.md` §13 DEV-01** | See §1 rationale |
+| Validator target | Gate A (mandatory): `--target-macos 26 --target-platform all`. Gate B (advisory): `--target-macos 27 --target-platform all` | Gate A is the identifier/availability baseline at the project's real target and must pass clean; gate B is the parameter-key and picker-literal read, waivered and never blocking | The **two-gate rule** and its mechanism are stated once, in §1 `### Exact validator invocation` |
 
 ### Build sequencing recommendation (per project's own stated order)
 
@@ -322,7 +322,8 @@ A probe's result is **recorded, not consumed**: into `docs/BUILD-NOTES.md`'s dev
 | `ActionOutput` references to Repeat's end-action UUID for `Repeat Index`/`Repeat Item` | Shows up as "Repeat Results" in the UI and fails at runtime | Named `Type: Variable`, `VariableName: "Repeat Index"`/`"Repeat Item"` |
 | Reusing a `GroupingIdentifier` across nested or sibling control-flow blocks | Silently corrupts block boundaries — the #1 documented real-world mistake in the corpus analysis | A freshly `uuidgen`'d, uppercase UUID per control-flow block, no exceptions |
 | Treating `plutil`/`xxd`/`file` failure on the outer signed `.shortcut` as proof that its plist is unrecoverable | Those tools see the AEA1 container, not the plist payload | Use §8's `aea decrypt` → `aa extract` workflow, convert `Shortcut.wflow` to XML, then inspect or pass that XML to `shortcut-remixer` |
-| Targeting the validator at `--target-macos 27`/`latest` for this project | Loads OS27-only parameter-gating (`WFAllowWebSearch`, `FollowUp`, `interpretAsMarkdown`, etc.) that don't apply to an "iOS 26.x" shortcut and could produce false confidence or false rejections | `--target-macos 26 --target-platform all` (the platform flag is `all`, **corrected from `ios` per `docs/BUILD-NOTES.md` §13 DEV-01**; `--target-macos 26` is unchanged and load-bearing for the reason in this row) |
+| Treating `--target-macos 27` as the sole or mandatory gate | At target 27 the validator may *accept* an OS27-only parameter key that iOS 26 does not offer, so it can produce false acceptances. It is a supplement, never a replacement | Gate A mandatory + gate B advisory — the **two-gate rule**, §1 `### Exact validator invocation` |
+| Pairing the iOS platform flag with `--target-macos 26` | Both bundled snapshots are filtered out — one by the platform gate, one by the version gate — leaving an empty allowlist that rejects 3675 of 3675 actions. A check that fails 100% of its inputs carries zero signal | Gate A: `--target-macos 26 --target-platform all` |
 | Treating a validator pass as "done" | The plugin's own explicit rule: "A valid XML draft without a signed `.shortcut` is not a useful stopping point" | Always complete the archive+sign+verify-non-zero-bytes step |
 | A CSV or second machine-readable store alongside `state.json` | Explicitly out of scope per PROJECT.md; also has no bearing on the Shortcuts toolchain — not a capability question, a design one, reaffirmed here because Get/Save File audit (§3 item 2) shows Shortcuts' file actions are perfectly adequate for one JSON | One `state.json`, rolling-window arrays, one Apple Note |
 

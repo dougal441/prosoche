@@ -99,13 +99,26 @@ python3 sweep.py <donor-xml-dir> <golden-xml-dir>
 
 ```bash
 R="$HOME/.claude/plugins/cache/shortcuts-playground/shortcuts-playground/1.2.1"
-"$R/bin/validate-shortcut" --target-macos 26 "Probe.xml"                          # generic v63 baseline
-"$R/bin/validate-shortcut" --target-macos 27 --target-platform ios "Probe.xml"    # loads the v78 enum catalog
+"$R/bin/validate-shortcut" --target-macos 26 --target-platform all "Probe.xml"  # gate A: generic v63 baseline
+"$R/bin/validate-shortcut" --target-macos 27 --target-platform all "Probe.xml"  # gate B: loads the v78 enum catalog
 "$R/bin/sign-shortcut" "Probe.xml" --mode anyone --output-dir "<spike-dir>"
 ```
 
-**Require both validator invocations to pass.** The second is the valuable one — it is the
-only mode that loads the enum-case catalog and can catch an invalid picker literal.
+This is the project's **two-gate rule**, stated in full in `.claude/CLAUDE.md` §1
+`### Exact validator invocation`; measurements in `docs/BUILD-NOTES.md` §22.
+
+**Only gate A must pass** (`Validation passed.`, exit 0). **Gate B is advisory and cannot
+exit 0** — it carries a permanent one-line waiver per fork (`WFCreateNoteInput` on
+`com.apple.mobilenotes.SharingExtension`, device-donor ground truth that outranks the
+`macOS 27`-tagged catalog entry). Expect that one line; treat anything else gate B reports
+as a real finding. Do not read gate B's nonzero exit as a build failure, and never chain it
+into a definition of done.
+
+Gate B is still the valuable one — it is the only mode that loads the enum-case catalog and
+can catch an invalid picker literal. It uses `--target-platform all`, **not** `ios`: the
+`ios` setting excludes every `macOS 27`-tagged catalog entry, which drops all four Notes
+actions out of parameter-key and enum-case checking (1105 enum-checked identifiers under
+`all` versus 455 under `ios`) and adds five spurious identifier rejections.
 
 Note the signer's argument form: positional input, `--output-dir`, **not** `--input/--output`.
 

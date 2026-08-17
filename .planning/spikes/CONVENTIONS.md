@@ -33,15 +33,28 @@ execute Shortcuts itself.
   rather than authoring plist XML by hand — it owns the full build→validate→sign loop and
   already carries this project's wiring-pitfall knowledge (`.claude/CLAUDE.md`
   "seven parameter-defect axes").
-- **Toolchain correction — validator invocation:** `--target-macos 26 --target-platform ios`
-  (the invocation documented in this project's `CLAUDE.md` §1) is currently vacuous in
-  Shortcuts Playground v1.2.1 and rejects every shortcut — `toolkit-v63` is macOS-labelled
+- **Validator invocation — origin of the settled two-gate rule.** The mechanism first recorded
+  here holds and is now the project rule: `--target-macos 26 --target-platform ios` is vacuous
+  in Shortcuts Playground v1.2.1 and rejects every shortcut — `toolkit-v63` is macOS-labelled
   (filtered out by `ios`), and the only iOS snapshot is version-gated to 27 (filtered out
   by `26`), leaving an empty allowlist. Verified against a control golden shortcut (7
-  identical false-rejection errors). **Use both of these and require both to pass:**
-  `--target-macos 26` (generic v63 baseline) and `--target-macos 27 --target-platform ios`
-  (the only mode that loads the v78 enum-case catalog and can catch an invalid picker
-  literal — this is the valuable one, not just a fallback).
+  identical false-rejection errors). The conclusion that a **second gate at `--target-macos 27`**
+  is the valuable one — the only mode that loads the v78 enum-case catalog and can catch an
+  invalid picker literal — also holds.
+
+  **Two corrections to the prescription as written here, both measured 2026-08-17
+  (`docs/BUILD-NOTES.md` §22):**
+  1. The second gate uses `--target-platform all`, **not** `ios`. The `ios` setting excludes
+     every `macOS 27`-tagged catalog entry, which drops all four Notes actions
+     (Create/Append/Find/Show) out of parameter-key and enum-case checking entirely and adds
+     five spurious identifier rejections. Measured: `27 all` enum-checks 1105 identifiers,
+     `27 ios` only 455.
+  2. **Do not "require both to pass."** The second gate carries a permanent one-line waiver
+     (`WFCreateNoteInput`, device-donor ground truth), so it can never exit 0. It is advisory
+     and must never be chained into a definition of done.
+
+  The **two-gate rule** is stated once, in full, in `.claude/CLAUDE.md` §1
+  `### Exact validator invocation`. This bullet is its origin, not a dissent from it.
 - **Enum-case catalog lookup gotcha:** `data/toolkit-v78-first-party-enum-cases.json`
   nests entries one level under a top-level `types` key. A top-level sweep finds nothing
   and produces a false "undocumented" conclusion — always descend into `types` before
