@@ -62,7 +62,10 @@ def main() -> None:
 
     require(ids[:5] == ["is.workflow.actions.comment", "is.workflow.actions.comment", "is.workflow.actions.gettext",
                          "is.workflow.actions.setvariable", "is.workflow.actions.gettext"], "pinned imports changed")
-    for name in ("Knock", "Ash", "Silence", "Confession", "Dimming", "Exile", "Mirror", "Voice", "Ice",
+    # BD-06 renames this roster one name per plan; "Pause" (was "Knock") moved in phase 11
+    # plan 01.  This tuple and the Config `sequences` arrays must change in the same commit,
+    # so the artifact and the checker can never disagree about which name is live.
+    for name in ("Pause", "Ash", "Silence", "Confession", "Dimming", "Exile", "Mirror", "Voice", "Ice",
                  "Ash+Confession", "Silence+Mirror", "Classic", "BlackMirror", "Ambient"):
         require(name in text, f"missing sequence or primitive: {name}")
     for marker in ("PHASE 5 PRIMITIVE DISPATCH", "PHASE 5 LIVE ICE REDIRECT", "PHASE 5 ICE EXPIRY",

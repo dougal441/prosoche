@@ -1400,3 +1400,116 @@ both forks — §9 pins that string to the Dumb signing name, and Sentient's inh
 therefore names the wrong fork. That is a **pre-existing** fork-naming defect, older than
 this task and independent of it, and it belongs with Build Addendum 01 rather than a copy
 repair. Recorded here so it is not mistaken for something this change introduced.
+
+---
+
+## 21. The guarded plist round trip, made executable, and the twelfth checker (phase 11 plan 01, 2026-08-17)
+
+Phase 11 is a mass rename: nine primitive names, three sequence arrays, ten dispatch
+renderings, two forks and eleven checkers. Its single largest risk is that a change
+**validates, signs, imports cleanly and is still wrong**. This plan was the tracer against
+that risk — one name, `Knock` → `Pause`, driven the whole length of the pipeline before any
+other name moved — and it leaves behind the two instruments the remaining plans depend on.
+
+**Everything below is structural.** `DIST-03` — device verification — is **open**: no iPhone
+has been connected, so no statement in this section is device evidence, and none is offered
+as any. Nothing in this phase has been observed running.
+
+### 21.1 §20's method was prose; it is now a module
+
+§20 above records the six-step round trip that quick task `260817-au7` used to edit the
+Control Room Note body without shipping stale `attachmentsByRange` offsets. It records the
+method **and no script** — the next person needing it had to re-derive it from a paragraph.
+`tools/plist_text_edit.py` is that paragraph, executable. Standard library only
+(`plistlib`, `pathlib`, `re`); no third-party import, deliberately.
+
+Public API, in the order the six steps use it:
+
+| Name | Step | What it guarantees |
+|---|---|---|
+| `load(path)` → `(data, original_bytes)` | — | The bytes that were parsed are returned, not re-read, so the equality below compares against exactly what was loaded |
+| `assert_noop_roundtrip(data, original_bytes)` | 1 | `plistlib.dumps(..., fmt=FMT_XML, sort_keys=False)` is byte-identical to the source. Until this holds, no later diff can be attributed to the intended change |
+| `assert_offsets_match(token)` | 2, 6 | Every `attachmentsByRange` key's leading integer equals a real `U+FFFC` offset in that token's own `string`, in document order |
+| `replace_in_token(token, old, new, *, expected_count)` | 2–5 | Asserts the old offsets, asserts the match count, refuses a replacement containing `U+FFFC`, replaces, **rebuilds the ranges from the new placeholder offsets in document order** preserving each attachment's own value dict, then re-asserts |
+| `replace_in_plain(action, key, old, new, *, expected_count)` | 3 | The same count-guarded replacement for a parameter that is a bare `str` — the Config literal is one — and refuses a token envelope outright |
+| `save(path, data)` | — | Exactly one serialisation, exactly one write, mirroring the generator's own `main()` |
+| `find_action(actions, predicate)` | — | Locates by **content**, and requires **exactly one** match: action numbers shift on every rebuild, and a second match means an arbitrary choice between candidates the caller did not know existed |
+
+Failure convention follows `tools/build_state_engine.py`'s `verify_*` family: `SystemExit`
+with a message naming the **consequence**. `expected_count` is not ergonomics — an edit that
+matched fewer or more sites than intended is the exact shape of a silent partial rename.
+
+### 21.2 The twelfth checker — `docs/note_identity_check.py`
+
+Two invariants, one file, because they fail together.
+
+**Note identity.** Three separate places in each fork spell the Control Room Note's name, and
+nothing in the repository made them agree: the `is.workflow.actions.filter.notes` predicate
+that looks the Note up, the H1 heading at the top of the body, and the `name` parameter of
+`com.apple.mobilenotes.SharingExtension` that sets the title. All three are now asserted
+against a single module constant, `EXPECTED_TITLE`, and each is located **by content, never
+by index**, with exactly one of each required so a duplicate cannot hide. The predicate's
+`Operator` is pinned too (currently `99`, "contains"), because RESEARCH §6.2 proposes moving
+it to `4` alongside the title shortening: under `contains`, a shortened title would also
+match a leftover Note from an earlier install, and with the filter's limit of 1 plus First
+Item the wrong Note would be bound. Plan 11-03's rename is therefore a **one-line edit** to
+`EXPECTED_TITLE`, and a change to the matching rule is a visible edit rather than a silent
+one. "Control Room" remains the internal name everywhere in code and docs, per `e84ee77`.
+
+**Attachment offsets.** The checker also walks every nested dict in both whole documents and
+requires that any value carrying both a `string` and an `attachmentsByRange` has range keys
+equal to its own `U+FFFC` offsets. It is armed **before** any Note copy is edited, and it is
+global rather than scoped to the three sites above — a checker that only looked where it
+expected damage would not catch the class. A floor of 775 token strings is asserted as well,
+because a **drop** in the count means string-typed parameters were converted to bare
+`WFTextTokenAttachment` values: parameter-defect axis 2, which validates and imports cleanly
+and then resolves to empty text.
+
+**Proven to fail.** A copy of `src/PROSOCHE-Dumb.xml` with one `attachmentsByRange` key
+shifted by one (`{0, 1}` → `{1, 1}`) was fed to the checker. It exited **1** with:
+
+> `Dumb: token string #1 declares attachment offsets [1] but its U+FFFC placeholders sit at [0] -- a range that does not land on a placeholder points into unrelated prose, and an out-of-bounds range can crash Shortcuts on import`
+
+The sabotage was applied to a temporary copy; the repository artifact was never written.
+
+### 21.3 Evidence table — every row structural, not one of them run on hardware
+
+| # | Claim | Measured | Kind |
+|---:|---|---|---|
+| 1 | No-op `plistlib` round trip byte-identical before any edit | 2,260,491 in == 2,260,491 out (Dumb) | structural |
+| 2 | Provenance gate `git merge-base --is-ancestor 7ca8ebb… HEAD` | exit **0** (checked before each builder run) | structural |
+| 3 | `tools/build_state_engine.py` | exit **0** | structural |
+| 4 | `tools/build_sentient.py`, run from the fresh Dumb source | exit **0** | structural |
+| 5 | Hand edit survives the generator | second consecutive build leaves `src/PROSOCHE-Dumb.xml` at `efad0819…`, unchanged; `git status --short` clean | structural |
+| 6 | Retired name in the built sources | `Knock`: **0** lines in Dumb, **0** in Sentient | structural |
+| 7 | New name in the built sources | `Pause`: **43** lines in each fork — 3 `sequences` cells + 10 dispatch renderings × 3 sites + the 10 pre-existing `Ash` alert bodies that already carried the word | structural |
+| 8 | New name in the Config literal specifically | `Pause` in exactly **3** cells (`Classic[0]`, `BlackMirror[0]`, `Ambient[3]`), retired name absent, JSON still parses | structural |
+| 9 | Attachment keys vs recomputed offsets, `src/` | Dumb **775/775** match, Sentient **779/779** match, **0** mismatches | structural |
+| 10 | `plutil -lint src/PROSOCHE-Dumb.xml` after the guarded edit | **OK** | structural |
+| 11 | Validator, Dumb, `--target-macos 26 --target-platform all` | `Validation passed.` exit **0** | structural |
+| 12 | Validator, Sentient, same invocation | `Validation passed.` exit **0** | structural |
+| 13 | Signed artifact sizes, canonical names, no suffix | `PROSOCHĒ — Nine Circles — Dumb.shortcut` **193,836 B**; `… — Sentient.shortcut` **198,150 B** | structural |
+| 14 | Dated archive SHA-256 equals its `src/` counterpart | Dumb `efad0819…` == `efad0819…`; Sentient `8d9c6105…` == `8d9c6105…` | structural |
+| 15 | `plutil -lint` on both recovered plists | **OK**, **OK** | structural |
+| 16 | Retired name in the **decrypted** payloads | `Knock`: **0** lines in each; recovered `sequences` hold it in **0** cells | structural |
+| 17 | New name in the **decrypted** payloads | `Pause`: **43** lines in each; recovered `sequences` hold it in exactly **3** cells per fork | structural |
+| 18 | Attachment keys vs recomputed offsets, **decrypted** payloads | Dumb **775**, Sentient **779**, **0** mismatches | structural |
+| 19 | The eleven pre-existing `docs/*.py` checks | all exit **0** | structural |
+| 20 | The twelfth, `docs/note_identity_check.py` | exit **0**, and exit **1** on a deliberately shifted offset | structural |
+
+Rows 15–18 are the only non-device channel this project has for "what actually shipped": the
+signed `.shortcut` is an AEA1 container, recovered via the §8 recipe. They say the bytes on
+disk carry the intended name. They do **not** say a Circle-1 open reaches the renamed
+dispatch branch on a phone — that is behavioural, `DIST-03` is open, and it is not claimed
+here or anywhere else in this phase.
+
+### 21.4 Deliberate non-changes
+
+- **`knock()` keeps its Python identifier.** The dispatch tuple carries the *shipped* name and
+  the function carries the *internal* one. `docs/environmental_restore_check.py:55-56` imports
+  generator functions **by name**; renaming any of them is a separate, unrelated breakage.
+- **The Circle-8 `Voice` orphan is left exactly as found.** `docs/sequence_dispatch_check.py`
+  still reports it as a known open defect and still exits 0. Plan 11-02 authors the
+  dispatch-coverage guard and needs the orphan live to prove the guard has teeth.
+- **The condition-99 → condition-4 dispatch move did not happen here.** It is coupled to
+  abolishing the three combined entries and belongs with the rest of the roster, in 11-02.
