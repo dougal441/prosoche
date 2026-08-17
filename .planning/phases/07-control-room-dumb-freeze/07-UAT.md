@@ -145,7 +145,19 @@ result: pending
 ### 4. Change Profile persists and changes Circle mapping
 expected: persists, and demonstrably changes subsequent Circle mapping (cross-check
 against Phase 5's UAT).
-result: pending
+result: partial
+note: "Device, 2026-08-18 07:59-08:01. PERSISTENCE PASSES. The `Choose profile` menu offers all
+  three — Paradise / Purgatory / Inferno. Selected Inferno (from Purgatory); a follow-up Status
+  reads `Profile: Inferno`, and the same Status independently confirms `Sequence: BlackMirror`
+  from Test 5, so both settings persist together without clobbering each other.
+  MAPPING HALF NOT DEMONSTRATED: profile governs the pressure->Circle THRESHOLDS, and pressure is
+  0 on this clean state, so no threshold crossing was exercised. Proving it needs accumulated
+  Pressure via real OPENs, which needs the automations. Not claimed here.
+  FALSE ALARM, recorded so it is not re-raised: the save-permission dialog's JSON preview still
+  read `\"profile\":\"Purgatory\"` immediately AFTER Inferno was chosen. That looked like the
+  selection failing to apply, but Status then showed Inferno — the preview is of an earlier
+  save within the same run, not of the final state. Do not read that dialog as the post-change
+  state."
 
 ### 5. Change Sequence persists and changes Circle mapping
 expected: persists, and demonstrably changes which primitives fire per Circle
@@ -285,5 +297,14 @@ result: pending
 ## Summary
 
 total: 16
-passed: 0
-issues: 0
+passed: 3        # T1, T5, T15
+partial: 2       # T4 (persists; mapping half unproven), T6 (persists; gating half unproven)
+failed: 3        # T2 (stray Note prompts), T2b (unprompted text box, same root cause), T7 (Mirror axis-4)
+pending: 9       # T3, T8, T9, T10, T11, T12, T13, T14, T16
+issues: 3
+
+## Session log
+
+- 2026-08-17 — first device session, Core b07497ba, first install.
+- 2026-08-18 — device wiped, artifact re-airdropped, automations rebuilt; all
+  2026-08-17 results that were re-tested reproduced identically.
