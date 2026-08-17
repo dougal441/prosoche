@@ -177,9 +177,38 @@ types), but PROSOCHĒ's 51-action surface touches none of it.
 | 004 | capability-gate | standard | Given a single merged shortcut with a manual opt-in toggle, when the core deterministic escalation runs before the optional Sentient (Use Model) step, then a Use Model failure never prevents the core intervention from firing | **PARTIAL ⚠** — downgraded 2026-08-17 from VALIDATED. Toggle + ordering hold; the "confirmed on ineligible hardware" claim does not (no `WFLLMModel` pinned, failure class unidentified) | shortcuts, device-detection, state-machine |
 | 005 | ios-color-filters-identifier | standard | Given the donors `Set Colour Filters.shortcut` and `Donor 9.shortcut`, when decrypted, then the real iOS 26 Color Filters identifier and parameter serialization are established as device ground truth | VALIDATED ✓ — exists on iOS as `AX*`, not the `UA*` the audit trail recorded; apply leg confirmed, restore leg still schema-only | capability-audit, evidence-hierarchy, accessibility, ash, donor |
 | 006 | picker-serialisation-taxonomy | standard | Given all 16 donors + the 19-shortcut golden corpus, when every parameter that could carry a device-minted value is classified, then each falls into synthesizable / runtime-derivable / hand-selection-only, with a rule predicting the class from the catalog alone | VALIDATED ✓ — 3 classes, zero opaque blobs anywhere; 14 queryable entity families | capability-audit, evidence-hierarchy, entity-references, pickers, donor, blocker-analysis |
-| 007 | unresolvable-picker-failure-mode | standard | Given a shortcut authored offline whose picker value we cannot know, when imported and run, then determine whether it fails at import, at run, or renders empty | PARTIAL ⚠ — question moot (PROSOCHĒ opens only 6 first-party apps); simulator cannot import a signed `.shortcut`, probe preserved for a device run | capability-audit, pickers, openapp, simulator, rung-2, probe |
+| 007 | unresolvable-picker-failure-mode | standard | Given a shortcut authored offline whose picker value we cannot know, when imported and run, then determine whether it fails at import, at run, or renders empty | **VALIDATED ✓** — upgraded 2026-08-18 from PARTIAL, free-ridden during spike 010. It renders silently EMPTY, and a fabricated descriptor renders silently WRONG (a TikTok descriptor resolved to **AirDrop**, in red). `WFSelectedApp` is load-bearing even for an installed first-party app. The "simulator cannot import" claim is **retired** — `simctl openurl file://` + one synthesized tap works | capability-audit, pickers, openapp, simulator, rung-2, probe |
 | 008 | use-model-picker-literal | standard | Given the unanalysed `Use Model.shortcut` donor, when decrypted, then the exact `WFLLMModel` On-Device literal becomes device ground truth | VALIDATED ✓ — `"Apple Intelligence on Device"`; the last uncatalogued enum picker of 526 | capability-audit, evidence-hierarchy, donor, sentient, use-model, pickers |
 | 009 | prosoche-exposure-audit | standard | Given 006's taxonomy, when applied to every action PROSOCHĒ's generators emit, then the complete blocker list is known and each blocker has a workaround or is confirmed unbuildable | VALIDATED ✓ — **zero blockers**; 51 actions, 6 picker slots, all Class A or B | capability-audit, blocker-analysis, generators, pickers, entity-references |
+| 010 | coercion-at-a-direct-set-parameter | standard | Given a named-variable operand feeding `setbrightness.WFBrightness` with `WFCoercionVariableAggrandizement` / `WFNumberContentItem` — the shape the generator emits at all 15 brightness sites per fork — when imported and run on the simulator, then determine whether it resolves as a Number as opposed to the conditional-operand position Donor 4.1 already confirms | **PARTIAL ⚠** — the chip gate is **structurally incapable of discriminating** here (Set Brightness has no operator picker, so coerced and uncoerced legs render identically); the run cannot settle it either because Set Brightness cannot succeed on a simulator at all. **Nothing contradicts `WFNumberContentItem`; the fresh-donor protocol is NOT triggered.** Side-findings: **assumption A5 CONFIRMED** (synthesized tap completes the import), and **`WFBrightness` is optional, defaulting to 50%** — an unresolved operand fails silently, not loudly | coercion, operand-types, setbrightness, setvolume, simulator, rung-2, probe, evidence-hierarchy |
+
+Each row's directory is `.planning/spikes/<#>-<name>/`. The two spikes touched on 2026-08-18 are
+`.planning/spikes/010-coercion-at-a-direct-set-parameter/` (new) and
+`.planning/spikes/007-unresolvable-picker-failure-mode/` (verdict upgraded, free-ridden from 010).
+
+### The rung-2 correction, recorded once here because it changes how every future spike is scoped
+
+Spikes 007 and 010 together settle a standing claim about the evidence ladder. Spike 007 concluded
+*"the booted simulator cannot import a signed `.shortcut` through any channel"* and narrowed
+`.claude/CLAUDE.md` §9's rung-2 row accordingly. **That conclusion is retired.** It was drawn from
+five failed channels without the sixth having been tried:
+
+```bash
+xcrun simctl openurl <udid> "file:///abs/path.shortcut"   # → the Shortcuts import sheet
+# then one synthesized tap on "Add Shortcut" completes it
+```
+
+Spike 007's `file://` row was measured against the **MCP simulator tool's** scheme allowlist, not
+against `simctl`. The `shortcuts://import-shortcut` scheme genuinely does require an iCloud link —
+re-measured 2026-08-18, `silent=true` does not bypass it — but `openurl` with a plain file URL never
+goes through that scheme. **Rung 2 reaches the editor and the runtime, not merely the build**, and
+CLAUDE.md §9's original rung-2 row was right. Instrument:
+`.planning/spikes/010-coercion-at-a-direct-set-parameter/drafts/sim_input.py`.
+
+**What rung 2 still may not close is unchanged** — real-hardware environmental behaviour, Personal
+Automations, the Control Room Note path, Apple Intelligence. Spike 010 adds a concrete instance:
+`Set Brightness` cannot succeed on a simulator at all, so brightness *consumption* is device-gated
+no matter how good the import channel is.
 
 ## Spun-Out Work
 

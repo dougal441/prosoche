@@ -3,7 +3,7 @@ spike: 007
 name: unresolvable-picker-failure-mode
 type: standard
 validates: "Given a shortcut authored offline whose picker value we cannot know, when imported and run, then determine whether it fails at import, fails at run, or silently renders empty — and whether the bare bundle identifier alone is sufficient"
-verdict: PARTIAL
+verdict: VALIDATED
 related: [006, 009]
 tags: [capability-audit, pickers, openapp, simulator, rung-2, probe]
 ---
@@ -121,3 +121,73 @@ that the simulator can test the *build*, not the *import*.
 Worth one follow-up before accepting that as permanent: signing the simulator into an
 Apple Account would likely unlock both the iCloud Drive and `import-shortcut` routes.
 That is a user decision, not an agent one.
+
+---
+
+## RESOLVED 2026-08-18 — verdict PARTIAL → VALIDATED
+
+Free-ridden during **spike 010**, which found the import channel this spike concluded did not
+exist. The probe preserved here was imported and inspected at zero device cost.
+
+### The import claim above is RETIRED, and the retiring evidence is specific
+
+**`xcrun simctl openurl <udid> "file:///abs/path.shortcut"` renders the Shortcuts import sheet, and
+one synthesized tap on "Add Shortcut" completes the import.** Measured on the same environment this
+spike used — iPhone 17 Pro, iOS 26.5, still no iCloud account.
+
+The `file://` row in the channel table above reads *"Blocked by the tool's scheme allowlist."* That
+was true and it was measured against the **MCP simulator tool's** allowlist — **not** against
+`simctl`, which this spike never tried. Every other row stands: `import-shortcut` still rejects a
+non-iCloud URL (re-measured 2026-08-18 with a `file://` URL and `silent=true`), Files still never
+surfaces "On My iPhone", iCloud Drive still needs an Apple Account.
+
+So the generalisation *"the simulator cannot import a signed `.shortcut` through any channel"* was
+too strong: it was drawn from five failures without the sixth channel having been tried. The
+narrower true statement is that the **`shortcuts://` scheme** requires an iCloud link — `openurl`
+with a plain file URL does not go through that scheme at all. **`.claude/CLAUDE.md` §9's rung-2
+row was right and this spike's correction to it was wrong.** Import success IS a rung-2 capability.
+
+Instrument: `.planning/spikes/010-coercion-at-a-direct-set-parameter/drafts/sim_input.py`.
+
+### The five legs, as rendered in the editor
+
+| leg | authored | renders as | reading |
+|---|---|---|---|
+| **A** | Calendar, donor-exact complete descriptor | **"Open [Calendar]"**, icon and name, normal | control passes — the donor shape resolves |
+| **B** | Reminders — **first-party, INSTALLED**, `WFSelectedApp` **omitted** | **"Open [App]"** — an EMPTY placeholder | **the descriptor is load-bearing** |
+| **C** | Contacts — correct bundle id, **fabricated** display name + nonsense team id | **"Open [ZZZ WRONG NAME ZZZ]"** with the Contacts icon | the editor **trusts the stored descriptor's Name** and does not re-resolve it from the bundle id |
+| **D** | Instagram — third-party, **not installed**, bare identifier | **"Open [App]"** — empty, identical to B | "not installed" and "descriptor absent" are **indistinguishable** in the render |
+| **E** | TikTok — third-party, not installed, **fabricated** descriptor with a placeholder team id | **"Open [AirDrop]"** in **RED** | **mis-resolves to a different, real app** |
+
+Screenshots: `leg-A-control-rendered.png`, `legs-B-and-C-rendered.png`, `legs-C-and-D-rendered.png`,
+`legs-D-and-E-rendered.png`.
+
+### The answer to the original question
+
+The question was: *does an unresolvable picker fail at import, fail at run, or render silently empty?*
+
+**It renders silently empty — and in the worst case it renders silently WRONG.** Nothing fails at
+import. Nothing warns. Legs B and D produce a bare "Open App" that a user would have to notice; leg E
+produces a confident, fully-populated chip naming **AirDrop**, an app the author never mentioned.
+
+**Leg E is the finding that matters.** A fabricated descriptor does not degrade toward emptiness — it
+**resolves to something else**. That is the silent-wrong-behaviour class this project's do-not-fabricate
+rule exists to prevent, now demonstrated end to end rather than argued. It also generalises spike 005's
+lesson (`.intentdefinition` declares the type system; only a donor gives the encoding) from parameter
+literals to **entity descriptors**: a plausible-looking fabricated descriptor is not a degraded correct
+one, it is a *different* one.
+
+**Leg B is the second finding, and it is the one that touches this project's code.** `WFAppIdentifier`
+alone is **not** sufficient, even for a first-party app that is installed. Omit `WFSelectedApp` and the
+action renders unfilled. Spike 006's Class-A verdict for `Open App` therefore holds **only because the
+descriptor is written**, not because the bundle id would have carried it.
+
+**PROSOCHĒ is unaffected, and now for a measured reason rather than an argued one.** `open_app()`
+emits the full `WFSelectedApp` triple for all six first-party apps, which is leg A's shape exactly.
+Leg C additionally shows the *cost of getting the Name wrong*: the editor would display the wrong name
+indefinitely, since it never re-resolves. The generator's hardcoded names must stay correct.
+
+**Still not settled:** launch behaviour. Every observation here is authoring-time render, which is what
+the probe was built for ("do not run it — the question is authoring-time resolution"). What legs D and
+E do when actually *launched* on a device that lacks those apps is untouched, and is not on PROSOCHĒ's
+critical path.

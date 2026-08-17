@@ -3,7 +3,7 @@ spike: 010
 name: coercion-at-a-direct-set-parameter
 type: standard
 validates: "Given a named-variable operand feeding a direct Set-action float parameter (`is.workflow.actions.setbrightness` / `WFBrightness`), when the operand carries `WFCoercionVariableAggrandizement` with `CoercionItemClass: WFNumberContentItem` — the shape the generator emits at all 15 brightness sites per fork — then determine whether that operand resolves as a Number in the Shortcuts editor and is consumed at run time, or renders degraded/red as an unusable operand"
-verdict: PENDING
+verdict: PARTIAL
 related: [007, 006, 001]
 tags: [coercion, operand-types, setbrightness, setvolume, simulator, rung-2, probe, evidence-hierarchy]
 ---
@@ -225,7 +225,177 @@ probe shape asserted from the built XML (20 actions):
 display name exactly, no suffix, per the signing-name discipline. ASCII-only by design so the
 `simctl openurl file://` path needs no escaping. Timestamped pre-sign archive under `2026-08-18/`.
 
+### Simulator session, 2026-08-18 — iPhone 17 Pro, iOS 26.5 (23F77), udid `79A84C29-DB62-40A2-AC3F-CCB5F8192F86`
+
+Precondition re-derived rather than assumed: `xcrun simctl list devices booted` reports exactly that
+device, and `xcrun simctl listapps` confirms `com.apple.shortcuts` present.
+
+**1. The import sheet renders (Finding 3 reproduced independently).**
+`xcrun simctl openurl <udid> "file:///tmp/coercion-probe.shortcut"` produced the Shortcuts import
+sheet with a live "Add Shortcut" button. → `screenshots/01-import-sheet.png`
+
+**2. THE SYNTHESIZED TAP COMPLETES THE IMPORT — research assumption A5 is CONFIRMED, explicitly YES.**
+One synthesized click on "Add Shortcut" completed the import and dropped straight into the Shortcuts
+editor showing the probe's actions. → `screenshots/02-import-completed-editor-open.png`
+
+This retires spike 007's recorded finding and the standing constraint the skill repeats from it.
+**The booted simulator CAN import a signed `.shortcut`.** Spike 007's `file://` row was measured
+against the MCP simulator tool's scheme allowlist, not against `simctl`, which it never tried. Rung 2
+therefore reaches the editor and the runtime, not merely the build.
+
+The instrument is preserved at `drafts/sim_input.py`, with every channel that did *not* work recorded
+in its docstring so nobody re-walks them. Briefly: the tap tool CLAUDE.md §9 names
+(`mcp__Claude_Code_iOS_Simulator__control`) is not exposed to a subagent with a restricted tool list;
+`osascript` is refused assistive access; `idb`/`cliclick` are not installed; `simctl` has no tap verb.
+What works is `CGEventPost` straight to the window server, which needed no Accessibility grant. Two
+preconditions that cost real time and are easy to miss: a `simctl`-booted simulator has **no on-screen
+window** until `open -a Simulator` (a click has nothing to land on), and coordinates must be
+**fractions of the device screen mapped through the window rect measured at run time**, never pixels.
+
+**3. `shortcuts://import-shortcut` still rejects a `file://` URL — measured, not assumed.**
+`shortcuts://import-shortcut?url=file:///…&silent=true` → *"Import Failed. The shortcut URL provided
+was invalid."* Identical to the rejection spike 007 measured for an `http` URL; the scheme wants an
+iCloud link, and `silent=true` does not bypass it because the URL is rejected before the flag is
+consulted. → `screenshots/03-import-shortcut-scheme-rejects-file-url.png`
+So spike 007 was right about `import-shortcut` and wrong only about `openurl file://`.
+
+**4. THE CHIP RENDER DOES NOT DISCRIMINATE AT THIS POSITION. This is the central finding.**
+
+| leg | operand | renders as |
+|---|---|---|
+| A — coerced | `Probe Coerced Target`, Number coercion first in `Aggrandizements` | **normal** blue chip with the orange variable glyph — `screenshots/10-final-build-leg-A-coerced-chip.png` |
+| B — uncoerced control | `Probe Uncoerced Target`, bare descriptor | **normal**, *indistinguishable from leg A* — `screenshots/11-final-build-leg-B-uncoerced-chip.png` |
+| D — restore | `Probe Original Brightness`, bare (correctly) | normal — `screenshots/12-final-build-legs-B-and-D.png` |
+
+The coerced leg does **not** render red. Neither does the control. **They render identically.**
+
+That is not the null result it first looks like — it is the answer to a question this phase had wrong.
+`09-UAT.md` Test 1 is *"the coercion chip does not render red."* At a **conditional operand** that gate
+has teeth, because the operator picker is populated from the operand's static type, so a mismatch has
+no case to render and the chip goes red. **`Set Brightness` has no operator picker.** There is nothing
+for a type mismatch to break in the UI, so **the chip gate is structurally incapable of discriminating
+at a direct Set-action parameter.** A green chip here is not weak evidence — it is *no* evidence.
+
+That is exactly why leg B exists. Without the control, "leg A rendered fine" would have been recorded
+as a pass, and the pass would have been vacuous. The control is what turned a false positive into a
+finding.
+
+The two legs could not be captured in one frame: the labelled comment between them is taller than the
+device screen. Stating that plainly rather than cropping a composite — they are two real screenshots
+of one artifact, taken minutes apart in one scroll.
+
+**5. `Get Device Details → Current Brightness` returns `0` on the simulator.** →
+`screenshots/07-run-leg-C-brightness-reads-0.png`. Informative for probe design, **not promotable** —
+it sits squarely inside the rung-2 ceiling, and this plan's second backstop truth says so in advance.
+
+**6. The run does not settle consumption either — and the negative control is what proved that.**
+
+Running the coerced leg produced:
+
+> **Could Not Run Set Brightness** — There was a problem setting the brightness.
+
+→ `screenshots/13-run-coerced-leg-capability-error-not-parameter-error.png`
+
+This is **not** the parameter error (*"Please choose a value for each parameter in this action"*) that
+this project's conventions name as the signature of an operand-type defect. The tempting inference was:
+*Shortcuts got past parameter validation and reached the OS call, so the coerced operand resolved.*
+
+**That inference is wrong, and the negative control refuted it.** A one-action probe holding a
+`Set Brightness` with `WFBrightness` **entirely absent** renders in the editor as **"Set brightness to
+50%"** and produces **the same** "There was a problem setting the brightness."
+→ `screenshots/14-negative-control-absent-operand-defaults-to-50-percent.png`
+
+Two consequences, and the second is a genuine product finding:
+
+- **The channel cannot distinguish a resolved operand from an absent one.** Both reach the OS call;
+  both fail identically because the simulator has no backlight. `Set Brightness` cannot succeed on a
+  simulator **at all**, so no run there can show whether the operand was consumed. The runtime half of
+  the question is not partially answered — it is **untouched, and now known to be unreachable at
+  rung 2**. That is worth more than a guess: it means no further simulator effort will help and the
+  device session must carry it.
+- **`setbrightness.WFBrightness` is OPTIONAL and defaults to 50%.** If the coercion were ever wrong in
+  a way that left the operand unresolved, `Set Brightness` would **not** error — it would silently
+  apply **50% brightness**. A silent unrequested environmental change with no capture is a strictly
+  worse failure mode than a halt, and it bears directly on SAFE-01 / CIRC-05. **The device instrument
+  must therefore verify the brightness VALUE APPLIED, not merely that the action did not error.** A
+  "no error" device result would be consistent with a completely broken operand.
+
+Building that control cost one small artifact and overturned the conclusion this spike was about to
+record. `.claude/CLAUDE.md`'s "read the error text, not just the letter" is the rule that caught it.
+
+**7. Show Alert modals are undismissable on this channel.** `is.workflow.actions.alert` accepted
+neither a synthesized tap on OK nor a hardware Return across six attempts (geometry verified against
+the display bounds); the run wedges permanently at the first alert. Regular in-app UI — the Add
+Shortcut button, the run button, list scrolling — takes synthesized taps normally. This is why the
+probe ships in **two variants** (below), and it matters beyond this spike: the product's own `alert()`
+is used throughout both forks, so any future attempt to exercise a real fork on the simulator hits
+this wall at the first message-only degrade path.
+
+### Artifacts
+
+| file | purpose |
+|---|---|
+| `PROSOCHE Coercion Probe.shortcut` | **silent** — no blocking UI; the variant a simulator can run end to end |
+| `PROSOCHE Coercion Probe Breadcrumbs.shortcut` | the A–D ladder, for a **device** session where a human can tap |
+| `PROSOCHE Coercion Negative Control.shortcut` | one `Set Brightness` with no operand — the control that refuted §6's inference |
+
+`drafts/assert_probe_shape.py` asserts the two probe variants are **identical on all three Set
+Brightness sites**, so a chip observed in one and a run observed in the other are observations of the
+same wiring. That is checked, not claimed.
+
 ## Results
 
-*(filled in during task 2 — verdict, screenshots, and the disposition of the 11 uncoerced
-`setvolume` sites)*
+### Verdict: **PARTIAL**
+
+**Settled at rung 2, and genuinely useful:**
+
+1. **Research assumption A5 is CONFIRMED — yes, the synthesized tap completes the import.** The
+   simulator import channel is real. `.claude/CLAUDE.md` §9's rung-2 row and the skill's
+   `evidence-and-probes.md` rung-2 table both needed correcting, and were corrected.
+2. **The chip gate does not discriminate at a direct Set-action float parameter, and cannot.**
+   `09-UAT.md` Test 1, re-established against the current build, is **not a valid instrument here** —
+   its single recorded pass was never evidence about `WFBrightness`, only about conditionals. The
+   coerced and uncoerced legs render identically.
+3. **`WFBrightness` is optional and defaults to 50%** — so an unresolved operand fails *silently and
+   dangerously* rather than loudly.
+
+**NOT settled, and now known to be unsettleable at rung 2:**
+
+4. **Whether `Set Brightness` actually CONSUMES a Number-coerced named-variable operand at run time.**
+   `Set Brightness` cannot succeed on a simulator at all. This is `must_haves` backstop truth 1 and it
+   remains **UNVERIFIED**, exactly as CLAUDE.md §9's rung-2 ceiling requires.
+5. **Whether `Get Device Details` current-brightness returns a usable, correctly typed value on real
+   hardware.** The simulator returns `0`. Backstop truth 2, **UNVERIFIED and not promotable**.
+6. **Real-hardware environmental behaviour** — whether the screen physically dims and un-dims, and
+   what `WFBrightness = 0.0` looks like. Untouched. Personal Automations, the Control Room Note path
+   and Apple Intelligence are likewise untouched.
+
+**Why PARTIAL and not INVALIDATED — this distinction is load-bearing.** Nothing observed contradicts
+`WFNumberContentItem`. The coerced leg did not render red; the run's failure was a **capability**
+failure the control proved an operand-less action produces identically. **The fresh-donor protocol is
+NOT triggered.** No replacement `CoercionItemClass` appears anywhere in this spike, and
+`drafts/assert_probe_shape.py` fails the build if one ever does.
+
+**Why not VALIDATED.** The one thing that would validate it — the operand being consumed — is the one
+thing rung 2 cannot see. Recording a green chip as a pass would be recording a measurement the
+instrument is incapable of making.
+
+**What the device session must now carry**, stated precisely so it is not re-derived: run the
+**Breadcrumbs** variant on hardware and confirm that the coerced leg sets brightness to **0.42** and
+the uncoerced control to **0.66** — *by observing the value*, not by observing the absence of an error.
+Per §6, "no error" is consistent with a silently defaulted 50%.
+
+### Disposition of the 11 uncoerced `setvolume` sites
+
+Recorded in `docs/BUILD-NOTES.md` alongside the name-scoped measurement that backs it. In short:
+**correctly left uncoerced**, on a name-scoped check of every assignment of the silence-target
+variable in both built forks — not by analogy to brightness. The 15/15-brightness vs 4/15-volume
+asymmetry is a **sourcing artifact, not a gap**: brightness operands are `gettext`-sourced (Text) and
+need the coercion; the silence target is `number()`-sourced and is already Number-typed, so the
+generator correctly skips it. `docs/environmental_restore_check.py` deliberately asserts no coercion
+count for exactly this reason. **Do not "fix" the asymmetry by pattern-matching brightness.**
+
+### Free-ride: spike 007's App Picker Probe
+
+Run while the channel was open, per the plan. Results recorded in **spike 007**, where they belong —
+they retire that spike's open question and its verdict moves PARTIAL → VALIDATED.

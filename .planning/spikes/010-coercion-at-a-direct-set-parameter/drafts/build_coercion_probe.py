@@ -42,9 +42,11 @@ effect, an observer can tell WHICH from the screen alone.  A shared literal woul
 is the whole discrimination the control leg exists to provide.  Both values are mid-range
 and safe; neither darkens the display.
 
-BREADCRUMBS.  Alerts A..E at base depth, per `.claude/CLAUDE.md`'s breadcrumb-bisection
-convention.  A run that halts reports as a letter, so a failure is attributable to one
-leg in a single run rather than to "the probe".
+BREADCRUMBS A..D at base depth, per `.claude/CLAUDE.md`'s breadcrumb-bisection convention.
+A run that halts reports as a letter, so a failure is attributable to one leg in a single
+run rather than to "the probe".  They are `Show Result`, NOT `Show Alert`: a Show Alert
+modal in the simulator accepts neither a synthesized tap nor a hardware Return, so the
+first alert wedges the run permanently.  See `breadcrumb()` for the measurement.
 
 Run:  python3 .planning/spikes/010-coercion-at-a-direct-set-parameter/drafts/build_coercion_probe.py
 """
@@ -55,7 +57,6 @@ import uuid
 
 DRAFTS = pathlib.Path(__file__).resolve().parent
 NAME = "PROSOCHE Coercion Probe"
-OUT = DRAFTS / f"{NAME}.xml"
 
 # Deterministic UUIDs, same idiom as the generator (:105-109): a counter through uuid5 so
 # a rebuild is byte-identical and a diff shows only real changes.
@@ -114,6 +115,27 @@ def alert(title: str, message):                                 # generator :402
                   WFAlertActionMessage=message)
 
 
+def breadcrumb(label: str, message: str):
+    """A run-time breadcrumb the simulator channel can actually dismiss.
+
+    MEASURED THIS SESSION, and the reason this is not `alert()`.  A `Show Alert`
+    (`is.workflow.actions.alert`) modal in the simulator responds to NEITHER a synthesized
+    tap on OK nor a hardware Return -- six attempts, three of each, window geometry
+    verified against the display bounds.  The run wedges there permanently and the probe
+    teaches nothing past its first breadcrumb.  A `Show Result` sheet dismisses on Return
+    on the same channel, first try.  Regular in-app UI (the Add Shortcut button, the run
+    button, list scrolling) does take synthesized taps; it is specifically the modal
+    ALERT that does not.
+
+    The distinction matters beyond this probe: the product's own `alert()` is used
+    throughout both forks, so any future attempt to exercise a real fork on the simulator
+    hits this wall at the first message-only degrade path.  Recorded in the spike README
+    as a channel finding.
+    """
+    return action("is.workflow.actions.showresult",
+                  Text=text_token([(f"{label} -- {message}", None)]))
+
+
 def device_detail(detail: str, name: str):                      # generator :441
     detail_id = uid()
     return [action("is.workflow.actions.getdevicedetails", UUID=detail_id,
@@ -163,103 +185,136 @@ def gettext(literal: str):
 COERCED_TARGET = "0.42"
 UNCOERCED_TARGET = "0.66"
 
-actions = []
+def build(silent: bool):
+    global _COUNTER
+    _COUNTER = 0          # deterministic UUIDs per variant
+    actions = []
 
-# The validator requires exactly this two-comment preamble (BEST_PRACTICES.md "Shortcut
-# Building Techniques"; validate_shortcut.py :2552-2569) and separately REJECTS internal
-# parameter names anywhere in comment text, requiring Shortcuts UI wording instead.  So
-# every comment below names actions and fields the way the editor shows them; the exact
-# plist keys live in this script's docstrings and in the spike README, which is where a
-# reader who needs them is looking anyway.
-actions.append(comment(
-    "SPIKE 010 -- NUMBER COERCION AT A DIRECT SET-ACTION PARAMETER\n"
-    "\n"
-    "ONE question: is the Number coercion correct on a Set Brightness operand -- a\n"
-    "DIRECT action parameter -- as opposed to the If-condition operand position that\n"
-    "Donor 4.1 already confirms?\n"
-    "\n"
-    "Standalone. Reads no state file, references no production shortcut, needs no\n"
-    "Personal Automation. Safe to run: it captures the current brightness BEFORE it\n"
-    "writes anything, and restores it at the end.\n"
-    "\n"
-    "PRIMARY observation is the EDITOR, not the run: compare leg A's operand chip\n"
-    "against leg B's. Leg B is deliberately uncoerced. That is the control, not a bug."))
+        # The validator requires exactly this two-comment preamble (BEST_PRACTICES.md "Shortcut
+    # Building Techniques"; validate_shortcut.py :2552-2569) and separately REJECTS internal
+    # parameter names anywhere in comment text, requiring Shortcuts UI wording instead.  So
+    # every comment below names actions and fields the way the editor shows them; the exact
+    # plist keys live in this script's docstrings and in the spike README, which is where a
+    # reader who needs them is looking anyway.
+    actions.append(comment(
+        "SPIKE 010 -- NUMBER COERCION AT A DIRECT SET-ACTION PARAMETER\n"
+        "\n"
+        "ONE question: is the Number coercion correct on a Set Brightness operand -- a\n"
+        "DIRECT action parameter -- as opposed to the If-condition operand position that\n"
+        "Donor 4.1 already confirms?\n"
+        "\n"
+        "Standalone. Reads no state file, references no production shortcut, needs no\n"
+        "Personal Automation. Safe to run: it captures the current brightness BEFORE it\n"
+        "writes anything, and restores it at the end.\n"
+        "\n"
+        "PRIMARY observation is the EDITOR, not the run: compare leg A's operand chip\n"
+        "against leg B's. Leg B is deliberately uncoerced. That is the control, not a bug."))
 
-actions.append(comment(
-    "Shortcuts generated by Shortcuts Playground. May contain mistakes. Always check "
-    "the shortcut's actions first.\n"
-    "\n"
-    "This shortcut was created via the following user prompt:\n"
-    "\n"
-    "> Build an aimed probe that isolates exactly one open question: whether the Number\n"
-    "> coercion this project attaches to variable operands is correct at a direct Set\n"
-    "> Brightness parameter, as opposed to the If-condition operand position a donor\n"
-    "> already confirms. Four legs: a coerced Set Brightness, an identical uncoerced\n"
-    "> control, a Get Device Details brightness read, and a restore leg so running it\n"
-    "> cannot strand the display."))
+    actions.append(comment(
+        "Shortcuts generated by Shortcuts Playground. May contain mistakes. Always check "
+        "the shortcut's actions first.\n"
+        "\n"
+        "This shortcut was created via the following user prompt:\n"
+        "\n"
+        "> Build an aimed probe that isolates exactly one open question: whether the Number\n"
+        "> coercion this project attaches to variable operands is correct at a direct Set\n"
+        "> Brightness parameter, as opposed to the If-condition operand position a donor\n"
+        "> already confirms. Four legs: a coerced Set Brightness, an identical uncoerced\n"
+        "> control, a Get Device Details brightness read, and a restore leg so running it\n"
+        "> cannot strand the display."))
 
-# --- LEG C first: capture before any write. Ordering is the safety mechanism. ---
-actions.append(comment(
-    "LEG C (runs FIRST) -- READ.\n"
-    "Get Device Details -> Current Brightness. The detail name is donor-confirmed\n"
-    "(spike 001, Donor 10), not invented. Runs before either write so leg D restores\n"
-    "the TRUE original rather than the probe's own test value."))
-actions += device_detail("Current Brightness", "Probe Original Brightness")
-actions.append(action("is.workflow.actions.showresult",
-                      Text=text_token([("Leg C -- Current Brightness reads: ", None),
-                                       ("", "Probe Original Brightness")])))
+    # --- LEG C first: capture before any write. Ordering is the safety mechanism. ---
+    actions.append(comment(
+        "LEG C (runs FIRST) -- READ.\n"
+        "Get Device Details -> Current Brightness. The detail name is donor-confirmed\n"
+        "(spike 001, Donor 10), not invented. Runs before either write so leg D restores\n"
+        "the TRUE original rather than the probe's own test value."))
+    actions += device_detail("Current Brightness", "Probe Original Brightness")
+    if not silent:
+        actions.append(action("is.workflow.actions.showresult",
+                              Text=text_token([("Leg C -- Current Brightness reads: ", None),
+                                               ("", "Probe Original Brightness")])))
 
-# --- LEG A: the question under test ---
-actions.append(comment(
-    "LEG A -- COERCED. THE QUESTION UNDER TEST.\n"
-    "Text '0.42' -> Set Variable -> Set Brightness fed by that named variable, WITH the\n"
-    "Number coercion attached first. Byte-identical to the shape the generator emits at\n"
-    "the restore step -- the highest-stakes production instance of this wiring. The Text\n"
-    "source is load-bearing: a Number-sourced operand would need no coercion at all, and\n"
-    "the probe would be testing nothing."))
-actions.append(alert("Probe A", "COERCED leg is next. Set Brightness 0.42, operand carries the Number coercion."))
-a_text_id, a_text = gettext(COERCED_TARGET)
-actions.append(a_text)
-actions.append(set_var("Probe Coerced Target", output(a_text_id, "Text")))
-actions.append(set_brightness(coerced("Probe Coerced Target")))
+    # --- LEG A: the question under test ---
+    actions.append(comment(
+        "LEG A -- COERCED. THE QUESTION UNDER TEST.\n"
+        "Text '0.42' -> Set Variable -> Set Brightness fed by that named variable, WITH the\n"
+        "Number coercion attached first. Byte-identical to the shape the generator emits at\n"
+        "the restore step -- the highest-stakes production instance of this wiring. The Text\n"
+        "source is load-bearing: a Number-sourced operand would need no coercion at all, and\n"
+        "the probe would be testing nothing."))
+    if not silent:
+        actions.append(breadcrumb("Probe A", "COERCED leg is next. Set Brightness 0.42, operand carries the Number coercion."))
+    a_text_id, a_text = gettext(COERCED_TARGET)
+    actions.append(a_text)
+    actions.append(set_var("Probe Coerced Target", output(a_text_id, "Text")))
+    actions.append(set_brightness(coerced("Probe Coerced Target")))
 
-# --- LEG B: the control ---
-actions.append(comment(
-    "LEG B -- UNCOERCED CONTROL.\n"
-    "The identical chain with NO aggrandizement. Its purpose is to show what an ABSENT\n"
-    "coercion looks like in the same editor, so leg A is read against a reference rather\n"
-    "than against expectation. A different literal (0.66) so an observer can tell from\n"
-    "the screen alone WHICH write took effect if only one did."))
-actions.append(alert("Probe B", "COERCED leg done. UNCOERCED control leg is next. Set Brightness 0.66, operand bare."))
-b_text_id, b_text = gettext(UNCOERCED_TARGET)
-actions.append(b_text)
-actions.append(set_var("Probe Uncoerced Target", output(b_text_id, "Text")))
-actions.append(set_brightness(variable("Probe Uncoerced Target")))
+    # --- LEG B: the control ---
+    actions.append(comment(
+        "LEG B -- UNCOERCED CONTROL.\n"
+        "The identical chain with NO aggrandizement. Its purpose is to show what an ABSENT\n"
+        "coercion looks like in the same editor, so leg A is read against a reference rather\n"
+        "than against expectation. A different literal (0.66) so an observer can tell from\n"
+        "the screen alone WHICH write took effect if only one did."))
+    if not silent:
+        actions.append(breadcrumb("Probe B", "COERCED leg done. UNCOERCED control leg is next. Set Brightness 0.66, operand bare."))
+    b_text_id, b_text = gettext(UNCOERCED_TARGET)
+    actions.append(b_text)
+    actions.append(set_var("Probe Uncoerced Target", output(b_text_id, "Text")))
+    actions.append(set_brightness(variable("Probe Uncoerced Target")))
 
-# --- LEG D: restore ---
-actions.append(comment(
-    "LEG D -- RESTORE.\n"
-    "Put brightness back to leg C's captured value. NO coercion here, deliberately and\n"
-    "correctly: Get Device Details already returns a Number, so the generator skips an\n"
-    "already-Number-typed operand and leaves such a site untouched. Reproducing that\n"
-    "skip is part of reproducing the generator faithfully."))
-actions.append(alert("Probe C", "UNCOERCED leg done. Restore leg is next."))
-actions.append(set_brightness(variable("Probe Original Brightness")))
-actions.append(alert("Probe D", "Restore done. Probe complete -- brightness is back at its original value."))
+    # --- LEG D: restore ---
+    actions.append(comment(
+        "LEG D -- RESTORE.\n"
+        "Put brightness back to leg C's captured value. NO coercion here, deliberately and\n"
+        "correctly: Get Device Details already returns a Number, so the generator skips an\n"
+        "already-Number-typed operand and leaves such a site untouched. Reproducing that\n"
+        "skip is part of reproducing the generator faithfully."))
+    if not silent:
+        actions.append(breadcrumb("Probe C", "UNCOERCED leg done. Restore leg is next."))
+    actions.append(set_brightness(variable("Probe Original Brightness")))
+    if not silent:
+        actions.append(breadcrumb("Probe D", "Restore done. Probe complete -- brightness is back at its original value."))
 
-root = {
-    "WFWorkflowActions": actions,
-    "WFWorkflowClientVersion": "2700.0.4",
-    "WFWorkflowHasOutputFallback": False,
-    "WFWorkflowIcon": {"WFWorkflowIconGlyphNumber": 61521,
-                       "WFWorkflowIconStartColor": 4271458815},
-    "WFWorkflowInputContentItemClasses": [],
-    "WFWorkflowMinimumClientVersion": 900,
-    "WFWorkflowMinimumClientVersionString": "900",
-    "WFWorkflowName": NAME,
-    "WFWorkflowOutputContentItemClasses": [],
-    "WFWorkflowTypes": [],
-}
+    return actions
 
-OUT.write_bytes(plistlib.dumps(root, fmt=plistlib.FMT_XML, sort_keys=False))
-print(f"wrote {OUT} ({len(actions)} actions)")
+
+def write(actions, name):
+    root = {
+        "WFWorkflowActions": actions,
+        "WFWorkflowClientVersion": "2700.0.4",
+        "WFWorkflowHasOutputFallback": False,
+        "WFWorkflowIcon": {"WFWorkflowIconGlyphNumber": 61521,
+                           "WFWorkflowIconStartColor": 4271458815},
+        "WFWorkflowInputContentItemClasses": [],
+        "WFWorkflowMinimumClientVersion": 900,
+        "WFWorkflowMinimumClientVersionString": "900",
+        "WFWorkflowName": name,
+        "WFWorkflowOutputContentItemClasses": [],
+        "WFWorkflowTypes": [],
+    }
+    out = DRAFTS / f"{name}.xml"
+    out.write_bytes(plistlib.dumps(root, fmt=plistlib.FMT_XML, sort_keys=False))
+    print(f"wrote {out} ({len(actions)} actions)")
+    return out
+
+
+# TWO VARIANTS, ONE SOURCE OF TRUTH.  The Set Brightness actions -- the entire question
+# under test -- are emitted by the SAME code path in both, so a chip observed in one and
+# a run observed in the other are observations of the same wiring.  `assert_probe_shape.py`
+# checks both files, so that claim is asserted rather than asserted-in-prose.
+#
+#   SILENT   -- no Show Result, no Show Alert, nothing that blocks.  This is the variant
+#               the simulator can actually run end to end, because modal run-time UI on
+#               that channel accepts neither a synthesized tap nor a hardware Return (see
+#               `breadcrumb()`).  With no blocking UI the RUN ITSELF is the signal: a
+#               clean completion means every Set Brightness accepted its operand; a
+#               rejection surfaces as an error naming the offending action.
+#   BREADCRUMB -- the A..D ladder, for a future DEVICE session where a human taps. There
+#               the breadcrumbs are worth their cost, because a halt reports as a letter.
+#
+# Keeping both is the point: the instrument a simulator needs and the instrument a device
+# needs are genuinely different, and discovering that was itself a channel finding.
+write(build(silent=True), NAME)
+write(build(silent=False), f"{NAME} Breadcrumbs")
