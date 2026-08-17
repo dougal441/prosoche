@@ -21,12 +21,12 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Dumb source | `src/PROSOCHE-Dumb.xml` | 2,667,711 | `01e3060cc047de20c667d87419f2e44b58c24dc512904706ce2ca8f0d95dd79f` |
-| Dumb archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Dumb-112222.xml` | 2,667,711 | `01e3060cc047de20c667d87419f2e44b58c24dc512904706ce2ca8f0d95dd79f` |
-| Dumb signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut` | 219,163 | `fb42c9c8575b17271b321917cf090a2d8eff5953932332b8a1d09ea5f120897c` |
-| Sentient source | `src/PROSOCHE-Sentient.xml` | 2,704,391 | `938d04f74ae33ad6d0014080684e644c0cf6c379bf7aeee908c909627ae46d93` |
-| Sentient archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Sentient-112234.xml` | 2,704,391 | `938d04f74ae33ad6d0014080684e644c0cf6c379bf7aeee908c909627ae46d93` |
-| Sentient signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Sentient.shortcut` | 223,202 | `f5b6bc018222fe01429f218492897abd5c308aa1e16751583c6b74b8dffb4501` |
+| Dumb source | `src/PROSOCHE-Dumb.xml` | 2,669,198 | `1e5bf2bd288b4306b0fb7aa3a430b3eefd2f329f429980f56941a4fe095ad789` |
+| Dumb archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Dumb-112947.xml` | 2,669,198 | `1e5bf2bd288b4306b0fb7aa3a430b3eefd2f329f429980f56941a4fe095ad789` |
+| Dumb signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut` | 219,923 | `e12b2e3a29c4a8391185af72104e8304c817f13b1dc5cebbbef7235163d58913` |
+| Sentient source | `src/PROSOCHE-Sentient.xml` | 2,705,878 | `567befdb164a96072fd4433fbc7bf2ad7beaf0e59bc523b56ad3e26bddf8828c` |
+| Sentient archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Sentient-113000.xml` | 2,705,878 | `567befdb164a96072fd4433fbc7bf2ad7beaf0e59bc523b56ad3e26bddf8828c` |
+| Sentient signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Sentient.shortcut` | 224,186 | `14d40b0a1f7e599c0029139d277a8123c4ac021c675dafe067918279be876e22` |
 
 Each dated archive is byte-identical to its `src/` counterpart, which is what makes the
 archive a pre-sign record rather than a copy of something else. The two source checksums
