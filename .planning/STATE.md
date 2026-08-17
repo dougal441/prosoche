@@ -55,7 +55,7 @@ untested path in the product), Phase 4 UAT tests 1 and 3-6, Phase 8's real-iPhon
 Phase 19's full nine-Circle sweep. Report the opens-to-first-interruption count from
 `10-UAT.md` Test 2 — it decides whether Phase 10's raised entry thresholds need tuning.
 
-Last activity: 2026-08-17 — Phase 10 executed; todos #2/#5/#12/#13 closed; phases 11-20 scoped
+Last activity: 2026-08-17 — Completed quick task 260817-d9m: agent-side tooling recorded as CLAUDE.md §9 evidence-escalation ladder
 
 Progress: [██████████] 100%
 
@@ -244,6 +244,7 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 | 260816-ukb | Strip OPEN_BISECT/ROUTER_TRACE/BUILD_STAMP debug scaffolding | 2026-08-16 | 154b998 | [260816-ukb-strip-the-open-bisect-debug-breadcrumb-s](./quick/260816-ukb-strip-the-open-bisect-debug-breadcrumb-s/) |
 | 260817-2ng | Reconcile stale Use Model On-Device literal audit trail (CAP-26/DEV-03/UA-02/BD-04) | 2026-08-17 | 1732448 | [260817-2ng-use-model-literal-reconciliation](./quick/260817-2ng-use-model-literal-reconciliation/) |
 | 260817-au7 | Repair the iOS 26 Personal Automation onboarding in both forks; rebuild, re-sign, decrypt-verify | 2026-08-17 | c961af9 | [260817-au7-ios26-automation-onboarding](./quick/260817-au7-ios26-automation-onboarding/) |
+| 260817-d9m | Record agent-side tooling and the four-rung evidence-escalation ladder (CLAUDE.md §9); sync STACK.md AEA1 drift; admit simulator/probe evidence in BUILD-NOTES §3 | 2026-08-17 | 5e0a895 | [260817-d9m-record-agent-side-tooling-and-device-evi](./quick/260817-d9m-record-agent-side-tooling-and-device-evi/) |
 
 ## Deferred Items
 
