@@ -793,3 +793,69 @@ causes an installed device to rebuild its `state.json` is a reading of the gener
 validity gate, and it is **not** verified on hardware.
 
 **Requirement:** AUDIT-02 (extends), DIST-02
+---
+
+## BD-06-A4 — the Dumb→Core / Sentient→Aware rename is a BREAKING CHANGE for any existing install
+
+**Recorded 2026-08-17, plan `11-06` wave 6.** Build Addendum 01's product rename shipped this
+plan: `PROSOCHĒ — Nine Circles — Dumb` became `PROSOCHĒ — Nine Circles — Core`, and
+`PROSOCHĒ — Nine Circles — Sentient` became `PROSOCHĒ — Nine Circles — Aware`. This record
+exists for one reason: **the rename is a breaking change for any existing install, it cannot be
+made non-breaking, and that must be stated rather than smoothed over.**
+
+### The mechanism, measured on this build
+
+A signed `.shortcut` carries **no display name inside it**. Both containers shipped by this plan
+were decrypted through the AEA1 recipe in `.claude/CLAUDE.md` §8, and neither recovered
+`Shortcut.wflow` contains a `WFWorkflowName` key at all — the signer strips it, and the AEA1
+auth-data plist holds only `SigningCertificateChain`. The display name therefore lives in the
+**filename** and nowhere else.
+
+A user's two Personal Automations (App Is Opened → `OPEN`, App Is Closed → `CLOSE`) reference
+the shortcut by that library name. Consequently:
+
+1. Importing the renamed build does **not** replace the old library entry — it adds a second one.
+2. Both existing automations keep pointing at the **old** entry.
+3. **There is no mechanism able to re-point them.** iOS exposes no API for editing a Personal
+   Automation, this product has no companion app, and a Shortcut cannot create or modify an
+   automation — `.planning` records that constraint from Phase 2 onward and the Note's own
+   `## READ THIS FIRST` has always stated it.
+
+The residual risk is therefore **accepted, not mitigated**: the only remedy is manual, by the
+user, in the Shortcuts app — open each automation, tap its Run Shortcut action, select the new
+name, then delete the old shortcut.
+
+### Where it is stated, so a user and a future phase both see it
+
+| Surface | What it says |
+|---|---|
+| The Control Room Note, `## READ THIS FIRST` | The product was renamed; an earlier install leaves a stale library entry; both Personal Automations must be re-pointed by hand, and nothing can do it for them |
+| `README.md` | The two new artifact names, the previous names, and the breaking-change statement with its mechanism |
+| `artifacts/shortcuts/MANIFEST.md` | A dedicated ⚠ block, plus the deletion disposition of the two old-named signed files |
+| `docs/BUILD-NOTES.md` §25 | The full record: the measurement, §9's discharge, the deliberate non-rename of the source filenames, the Aware-side divergence, and the closing evidence table |
+
+### What was deliberately NOT built
+
+| Not built | Why |
+|---|---|
+| A compatibility shim shipping under the old name | It would reinstate exactly the "two plausible current imports" confusion the signed-name discipline exists to prevent, and BD-06-A3 Decision 2 already deleted the old-named artifacts for that reason |
+| Any attempt to detect a stale install from inside the Shortcut | A Shortcut cannot read, enumerate or edit Personal Automations; there is nothing to detect it with |
+| Softened wording that implies the upgrade is seamless | It is not seamless, and a user who believes it is will conclude PROSOCHĒ silently stopped working |
+
+### Scope of the harm, and why it is acceptable here
+
+The same ground as BD-06-A1 Amendment 3 and BD-06-A3: the developer has recorded that PROSOCHĒ
+is a **new, as-yet-undeployed product** whose only installs are the owner's own testing.
+**The reasoning is conditional, and reinstates itself:** if a real installed base ever exists,
+a rename of a shipped display name becomes a decision with a real population behind it and must
+be gated again rather than taken inside a plan.
+
+### No behavioural claim
+
+**DIST-03 is open. No iPhone is connected, and no device has run either renamed build.** That
+the rename breaks an existing install is a **reasoned consequence** of the stripped-
+`WFWorkflowName` measurement plus the absence of any automation-editing API — it is not an
+observation of a device failing, and no one has yet followed the renamed automation steps end
+to end. Every claim in this record is structural.
+
+**Requirement:** ROOM-02, DIST-01, DIST-02

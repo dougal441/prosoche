@@ -2025,3 +2025,133 @@ Note carrying appended `## CURRENT SETTINGS` blocks; that the numeric `> 0` gate
 intended against a Text-coerced operand on device; and that a device holding
 `"schema_version": "2"` takes the rebuild branch — **all unobserved**. Structural proof is not
 behavioural proof.
+---
+
+## 25. The Dumb→Core / Sentient→Aware rename, and the first Aware-side divergence (phase 11 plan 06, 2026-08-17)
+
+Build Addendum 01's product rename, landed at every site where the name is load-bearing, and
+the closing rebuild of phase 11. **Pure append: this section adds text and deletes none.**
+
+### The two canonical display names
+
+| Was | Is |
+|---|---|
+| `PROSOCHĒ — Nine Circles — Dumb` | **`PROSOCHĒ — Nine Circles — Core`** |
+| `PROSOCHĒ — Nine Circles — Sentient` | **`PROSOCHĒ — Nine Circles — Aware`** |
+
+**The filename is the sole carrier of a shortcut's display name — re-measured on this build,
+not inherited from the record.** Both signed containers were decrypted through the AEA1 recipe
+in `.claude/CLAUDE.md` §8, and neither recovered `Shortcut.wflow` contains a `WFWorkflowName`
+key at all, though both `src/*.xml` files set one: the signer strips it, and the AEA1 auth data
+holds only `SigningCertificateChain`. Everything else about this rename follows from that one
+measurement. A suffixed or mismatched basename would import as a second, differently named
+library entry that the user's two Personal Automations do not reference — a silently dead
+install. `sign-shortcut --name` was therefore passed the exact display name for each fork; left
+to itself the signer defaults to the INPUT basename, which here would have produced
+`PROSOCHE-Dumb`.
+
+### §9 is discharged, not overridden
+
+`docs/BUILD-NOTES.md` §9 binds any rename of the shipped shortcut to updating **both** of the
+Control Room Note's automation sections, and states that the signer must agree with the Note
+rather than the reverse. Both sections were updated first, in `src/PROSOCHE-Dumb.xml`, through
+`tools/plist_text_edit.py`'s offset-recomputing round trip; the signer was then given the same
+string. The Note's own `## READ THIS FIRST` gained one paragraph stating the rename, the stale
+library entry it leaves behind, and that both automations must be re-pointed by hand.
+
+### The `src/*.xml` source filenames are deliberately NOT renamed
+
+They still read `PROSOCHE-Dumb.xml` and `PROSOCHE-Sentient.xml`. Ten code files and roughly
+seventy planning documents reference them, every historical plan's reproducibility depends on
+them, and Build Addendum 01 renames the **products**, not the sources. Recorded here so a later
+phase reads the mismatch as a decision rather than an oversight.
+
+### The first Aware-side content divergence, and the proof that survived it
+
+Before this plan, `tools/build_sentient.py` made exactly three kinds of change to the forked
+Dumb source — the icon and import question, `WFWorkflowName`, and the audit-block insertion —
+and touched neither the Note body, the Note title nor the `"fork"` seed. **The measured
+consequence was a defect that shipped in every previous Sentient build:** its Note named the
+Dumb fork's shortcut in both automation steps and its settings block read `- Fork: Dumb`. The
+defect was recorded as a Deferred Item by quick task `260817-au7` and explicitly assigned to
+this phase.
+
+`fix_fork_strings(actions)` closes it. Three sites, each with an expected occurrence count so
+that a missed or duplicated site fails the build rather than shipping: the Note's two Run
+Shortcut targets, the Note's settings-block fork label, and the bootstrap `state.json` fork
+seed. It runs **before** the `normalise_*` / `verify_*` chain, so the rewritten token strings
+pass the same envelope, output-name and offset guards as everything else, and it mutates the
+forked copy only — the frozen-source assertion still holds. It does **not** touch the Note
+title, which is identical in both forks on purpose and out of this plan's scope. The failure
+path was exercised deliberately: reducing one expected count from 2 to 1 makes
+`tools/build_sentient.py` exit non-zero naming the dead-install consequence, and the count was
+then restored.
+
+That divergence makes `docs/sentient_core_check.py`'s whole-list equality
+`sa[:6] + sa[8:marker] + sa[end + 1:] == da` false **by design**. It was not deleted — deleting
+it would discard the only proof that nothing *else* diverged. It was replaced by a
+**fork-normalised** equality: the inverse substitution is applied to a deep copy of the Sentient
+action list, with an exact expected count per site, recomputing every `attachmentsByRange`
+offset because `Aware` is one character longer than `Core` and sits upstream of every
+attachment in both edited strings. A bounded, counted normalisation cannot absorb an unrelated
+drift. It is paired with a **positive** assertion — the Aware Note names the Aware display name
+at least twice and the Core display name exactly zero times, and its fork seed reads `Aware` —
+so the normalisation cannot mask a genuine defect by quietly rewriting one. The file carries a
+comment naming this plan and saying why the stricter form must not be restored.
+
+### The offset asymmetry, stated because it is the trap
+
+`Dumb` → `Core` is length-neutral, so the bootstrap seed's four attachment offsets survive that
+edit **by luck**. `Core` → `Aware` is one character longer and sits upstream of all four, so
+the same seed's offsets **do** move on the Sentient side. Both edits were therefore made
+through the offset-recomputing round trip rather than reasoning about which happened to be
+safe. A second trap sits next to it: the bootstrap seed is a `WFTextTokenString` **dict** with
+four attachments and real `U+FFFC` placeholders, while the Config literal is a plain `str` with
+zero placeholders — opposite envelopes, adjacent in the same file. A plain-`str` filter finds
+the Config literal and misses the seed entirely.
+
+### The old-named signed artifacts were deleted
+
+Per `docs/CAPABILITY-DECISIONS.md` BD-06-A3 Decision 2, applied rather than re-decided:
+`PROSOCHĒ — Nine Circles — Dumb.shortcut` and `PROSOCHĒ — Nine Circles — Sentient.shortcut`
+were removed in the same commit that wrote the new-named signed artifacts.
+`docs/manifest_check.py` cannot see an orphaned file, so retention would have been an unchecked
+state; both deleted files were git-tracked, so `git show` recovers their exact bytes. The dated
+archives under `artifacts/shortcuts/2026-08-*/` keep their old names as history and were not
+touched.
+
+### Closing evidence table — phase 11 plan 06
+
+Every row **structural**. `DIST-03` is open: no iPhone is connected and no build in this phase
+has run on a device.
+
+| Evidence | Result | Kind |
+|---|---|---|
+| Provenance gate `git merge-base --is-ancestor 7ca8ebb… HEAD` | exit **0**, before every builder run | structural |
+| Twelve `docs/*.py` checks, baseline before any edit | **12/12 green** | structural |
+| Twelve `docs/*.py` checks, final | **12/12 green** | structural |
+| Builder idempotence | a second consecutive `build_state_engine.py` + `build_sentient.py` leaves both sources byte-identical (`12bbfe31…`, `ef431b5d…`) | structural |
+| Root `WFWorkflowName` | Core source `PROSOCHĒ — Nine Circles — Core`; Aware source `PROSOCHĒ — Nine Circles — Aware` | structural |
+| Core Note, decrypted payload | Core display name **×2**, Aware **×0**, `Dumb` **×0**, `Sentient` **×0** | structural |
+| Aware Note, decrypted payload | Aware display name **×2**, Core **×0**, `Dumb` **×0**, `Sentient` **×0** | structural |
+| Fork seeds, decrypted payloads | `"fork": "Core"` ×1 / `"fork": "Aware"` ×1 | structural |
+| `WFWorkflowName` in either recovered payload | **absent** — the signer strips it; the filename is the sole carrier | structural |
+| Phase deliverables in both payloads | `Loud Mirror` ×25, `PANIC ESCAPE` ×5, `THE NINE CIRCLES` ×1 | structural |
+| `fix_fork_strings` failure path | expected count 2 → 1 makes `build_sentient.py` exit **1** naming the dead-install consequence; restored | structural |
+| `docs/note_identity_check.py` | **0** attachment-offset mismatches; 1,205 (Core) / 1,209 (Aware) token strings | structural |
+| Validator gate A ×2 | `Validation passed.`, exit **0** | structural |
+| Signed artifacts | **234,370 B** / **238,668 B**, basenames exactly the two canonical display names, no suffix | structural |
+| Dated archive SHA-256 == `src/` counterpart | `12bbfe31…` == `12bbfe31…`; `ef431b5d…` == `ef431b5d…` | structural |
+| Decrypt-verify | `plutil -lint` **OK** ×2 | structural |
+| `artifacts/shortcuts/*.shortcut` | exactly **2** files, both canonical | structural |
+| `docs/manifest_check.py` after the refresh | passed, 6 rows verified against disk | structural |
+| `git status --short -- artifacts/shortcuts/2026-08-` | empty — the dated historical archives were not touched | structural |
+| `--target-macos 27`, `--target-platform ios`, `timeout` | never invoked | structural |
+
+### What this does NOT establish
+
+**DIST-03 is open.** Nobody has imported either renamed build, followed the renamed automation
+steps, or re-pointed a Personal Automation from an old entry to a new one. That the rename is a
+breaking change is a **reasoned consequence** of the stripped-`WFWorkflowName` measurement, not
+an observation of a device failing. Structural proof is not behavioural proof, and nothing here
+is device-verified.

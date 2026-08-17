@@ -1,17 +1,19 @@
 # Shortcut Distribution Manifest
 
-Rebuilt 2026-08-17 by phase 11 plan 05: Build Addendum 01 §3 — **Panic Escape becomes
-deliberately removable, and reversibly so**. `panic_escape_enabled` is now a first-class flat
-state field; the `Leaving`/`Continue` menu is gated on it; a new eleventh manual menu item
-reads a hand-editable setting line out of the Note, confirms explicitly in either direction,
-and writes the flag. `schema_version` moves 2 → 3 per `docs/CAPABILITY-DECISIONS.md`
-BD-06-A3, so the new bootstrap field actually reaches a device that already holds a
-`state.json`. **Emergency Restore is untouched and is not gated by any of this** — the
-separation is asserted structurally and re-asserted on both decrypted payloads. The preceding
-rebuild was phase 11 plan 03: the Apple Note's title became the bare product name `PROSOCHĒ`
-at all three identity sites, Dante's nine Circle names were surfaced from one generator
-constant, and the middle descent profile was renamed `Limbo` → `Purgatory` per BD-06-A1.
-Built with Shortcuts Playground
+Rebuilt 2026-08-17 by phase 11 plan 06: **the two variants ship under their new names.**
+`Dumb` becomes **`Core`** and `Sentient` becomes **`Aware`**, at every site where the name is
+load-bearing — the root `WFWorkflowName`, the bootstrap `"fork"` seed, the Control Room Note's
+two Run Shortcut targets, the Note's settings-block fork label, `docs/manifest_check.py`'s
+`DISPLAY_NAMES`, `README.md` and the two signed basenames below. **This is a breaking change
+for anyone who imported an earlier build**, and it is stated as one in the Note, in
+`README.md`, in `docs/BUILD-NOTES.md` §25 and in `docs/CAPABILITY-DECISIONS.md` BD-06-A4
+rather than smoothed over. The same rebuild closes the defect this phase inherited by name:
+the Aware fork's Note previously instructed its users to select the **other** fork's shortcut
+in both automation steps and reported the other fork's label in its settings block. The
+preceding rebuild was phase 11 plan 05 — Panic Escape became deliberately removable and
+reversibly so, `panic_escape_enabled` became a first-class flat state field, and
+`schema_version` moved 2 → 3 per BD-06-A3. **Emergency Restore remains untouched by any of
+it.** Built with Shortcuts Playground
 under the project's **two-gate rule** (stated in full in `.claude/CLAUDE.md` §1
 `### Exact validator invocation`). These artifacts were built and validated under **gate A**,
 `--target-macos 26 --target-platform all`, which passes clean on both forks. **Gate B**,
@@ -27,27 +29,54 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Dumb source | `src/PROSOCHE-Dumb.xml` | 2,886,825 | `7ddd94b7e10099d524806d1fa6d9dd79f6d20630480974521af1b3add3ceb885` |
-| Dumb archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Dumb-120124.xml` | 2,886,825 | `7ddd94b7e10099d524806d1fa6d9dd79f6d20630480974521af1b3add3ceb885` |
-| Dumb signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut` | 233,976 | `0768fc72fd7b3e41c44e336404aec036beea521b8a16a28206613813221b85b2` |
-| Sentient source | `src/PROSOCHE-Sentient.xml` | 2,923,505 | `c04f73647f86a2c4bb262fe2e36623dbc7d35ab53e4082930221d3d66bdd948d` |
-| Sentient archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Sentient-120136.xml` | 2,923,505 | `c04f73647f86a2c4bb262fe2e36623dbc7d35ab53e4082930221d3d66bdd948d` |
-| Sentient signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Sentient.shortcut` | 238,171 | `5dfed49d8e9b50285de36934677b7a0f9645b9a45443ddce378bbd4cfaaa3236` |
+| Core source | `src/PROSOCHE-Dumb.xml` | 2,887,243 | `12bbfe310800097357b2e281f3d044f91fbc927dc54e748dd400e845c5c353fb` |
+| Core archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-121802.xml` | 2,887,243 | `12bbfe310800097357b2e281f3d044f91fbc927dc54e748dd400e845c5c353fb` |
+| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 234,370 | `b4ac6df424208d0d681724c9f9abcdae91be84a8eef7eec983b61415d74b3037` |
+| Aware source | `src/PROSOCHE-Sentient.xml` | 2,923,924 | `ef431b5d79ac2dc56e4ece8f647b5cfca418253e4fdc1c96e6dc4e7452470c5e` |
+| Aware archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Aware-121816.xml` | 2,923,924 | `ef431b5d79ac2dc56e4ece8f647b5cfca418253e4fdc1c96e6dc4e7452470c5e` |
+| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 238,668 | `5b98680dcc057dd647285d5e1e08fb24f2b8da44f81709f01cc0472992716c3a` |
+
+**The two old-named signed artifacts were DELETED, not retained**, per
+`docs/CAPABILITY-DECISIONS.md` BD-06-A3 Decision 2. `artifacts/shortcuts/` now holds exactly
+two signed files, and their basenames are exactly the two canonical display names.
+`docs/manifest_check.py` cannot see an orphaned file — it asserts only the rows this table
+gives it — so retention would have been an unchecked state, and four signed files with no way
+to tell which two are current is precisely the confusion the signed-name discipline exists to
+prevent. Nothing unrecoverable was discarded: both deleted files were git-tracked, so
+`git show` recovers their exact bytes. The **source filenames are deliberately unchanged** and
+still read `PROSOCHE-Dumb.xml` / `PROSOCHE-Sentient.xml`; renaming them is churn across ten
+code files and some seventy planning documents and would break every historical plan's
+reproducibility, and the addendum renames the products, not the sources
+(`docs/BUILD-NOTES.md` §25).
 
 Each dated archive is byte-identical to its `src/` counterpart, which is what makes the
 archive a pre-sign record rather than a copy of something else. The two source checksums
-differ by design. Both sources grew by roughly 213 KB against the preceding rebuild, and
-unlike the last two rebuilds this one is **structural, not a copy change**: gating the
-Leaving/Continue menu means `primitive_dispatch()` is now rendered **eleven** times rather
-than ten — the otherwise arm renders it directly so a user who removed the bypass reaches the
-Circle's intervention with no menu — and one rendering is roughly 200 actions. The two
-environmental site-count tables moved with it, to **measured** values: 15 Set Brightness, 15
-Set Volume, 22 Get Device Details, with 15 of 15 brightness sites coerced and 4 of 15 volume
-sites coerced. That last number is the one worth reading twice: it did **not** move, because
-`Silence Target` is `number()`-sourced and therefore already Number-typed, so all eleven of
-its sites are deliberately left uncoerced. Research projected 5; the artifact measures 4, and
-the measurement is what the tables carry. All twelve static checks passed at this commit,
+differ by design. **This rebuild is a copy and identity change, not a structural one**: both
+sources grew by roughly 0.4 KB, entirely the renamed strings and the Note's new rename
+notice. No control flow moved, no action was added or removed, and the environmental
+site-count tables are unchanged from the preceding rebuild at their measured values — 15 Set
+Brightness, 15 Set Volume, 22 Get Device Details, with 15 of 15 brightness sites coerced and
+4 of 15 volume sites coerced. All twelve static checks passed at this commit,
 `manifest_check` included once this table was refreshed.
+
+**A signed artifact's filename is the only carrier of its display name — re-measured on this
+build.** Both containers were decrypted and neither recovered `Shortcut.wflow` contains a
+`WFWorkflowName` key at all, even though both `src/*.xml` files set it: the signer strips it.
+That is why the rename had to reach the filename, why no suffix of any kind is permitted, and
+why the rename is a breaking change nothing on the device can repair — the user's two Personal
+Automations reference the library entry by that name and no API can re-point them.
+
+**The Aware fork now names itself.** Until this rebuild, `tools/build_sentient.py` made no
+content change at all to the forked source, so the Aware fork shipped the Core fork's Note
+verbatim — instructing every Aware user to select a shortcut they do not have, in both
+automation steps, and reporting `- Fork: Dumb` in its settings block. A new
+`fix_fork_strings()` applies the divergence through the offset-recomputing round trip with an
+expected occurrence count per site, and fails the build naming the dead-install consequence if
+any count is wrong. Because that is the first deliberate divergence between the forks,
+`docs/sentient_core_check.py`'s whole-list equality became false by design; it was **not**
+deleted but replaced by a fork-normalised equality with bounded per-site counts, paired with a
+positive assertion that the Aware Note names Aware at least twice and Core exactly zero times.
+Both halves are asserted on the decrypted payloads, not only on `src/`.
 
 **Panic Escape is removable, and Emergency Restore is provably not the same thing.** Panic
 Escape is the `Leaving` case of the menu PROSOCHĒ shows before an intervention — the easy
@@ -232,6 +261,17 @@ and recomputes every size and hash above from the files themselves.
 > gravity, pressure, the rolling windows, the session record and the exit-learning samples.
 > BD-06-A3 accepts that on the recorded grounds that PROSOCHĒ is undeployed; if that is not
 > true of your device, read BD-06-A3 before importing. Read `docs/BUILD-NOTES.md` §24.
+>
+> **⚠ This build is named differently from every build before it, and the rename has never
+> been exercised on a real iPhone.** `Dumb` is now `Core` and `Sentient` is now `Aware`.
+> **If you already imported an earlier build, importing this one does not replace it** — the
+> old entry stays in your library under its old name, and both of your Personal Automations
+> keep pointing at it. There is no mechanism, in this Shortcut or in iOS, that can re-point
+> them: open each automation, tap its Run Shortcut action and select the new name by hand,
+> then delete the old shortcut. That the renamed Note's automation steps lead to a working
+> automation is **structurally proven and behaviourally unobserved** — the strings are proven
+> present in both decrypted payloads and nothing more. Read `docs/BUILD-NOTES.md` §25 and
+> `docs/CAPABILITY-DECISIONS.md` BD-06-A4.
 >
 > **DIST-03 — device verification — remains OPEN.** `xcrun devicectl list devices` reports
 > no devices, so no criterion in either UAT file has been exercised. Nothing in this manifest
