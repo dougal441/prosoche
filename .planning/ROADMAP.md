@@ -455,7 +455,7 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 **Severity:** major
 **Requirements**: AUDIT-02, CIRC-02, CIRC-06, CIRC-08, ROOM-01, ROOM-02, DIST-01, DIST-02
 **Depends on:** Phase 10
-**Plans:** 1/6 plans executed
+**Plans:** 2/6 plans executed
 
 Plans:
 **Wave 1**
@@ -464,7 +464,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 11-02-PLAN.md — Dispatch-coverage build guard, then BD-06's roster and exact-match dispatch in one commit (wave 2)
+- [x] 11-02-PLAN.md — Dispatch-coverage build guard, then BD-06's roster and exact-match dispatch in one commit (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -927,6 +927,7 @@ generator design bear on it directly:
   no other `WFDeviceDetail` case (all 12 confirmed) disambiguates hardware. Apple's real
   check (`SystemLanguageModel.default.availability`) is a Swift API, unreachable without a
   companion app. Shortcuts has no try/catch, so "attempt and recover" is also closed.
+
 - **Spike 004 (PARTIAL — downgraded 2026-08-17, was VALIDATED)** — a single artifact with
   an opt-in import question **is buildable**, and the toggle gates the branch correctly in
   both directions on real hardware. But the safety claim is **not** established. The spike's
@@ -937,9 +938,11 @@ generator design bear on it directly:
   not downloaded yet. Owner's iPhone 16e — capable, models present — ran the same shortcut
   successfully, which is what forced the re-read. What survives: **the ordering property
   held under one real failure** (core completed before the halt).
+
 - **Spike 008 (VALIDATED, donor ground truth)** — `WFLLMModel = "Apple Intelligence on
   Device"`. SEED-006's blocker #2 ("the On-Device literal is unrecovered, and in a merged
   world it blocks everyone") is closed.
+
 - **`tools/build_sentient.py`** — the Aware delta is already *one* additive insertion
   (~56 actions) plus two toggle actions and one import question, all gated on
   `Import AI == "yes"`. Structurally, a merged product is close to what already exists.
@@ -952,10 +955,12 @@ generator design bear on it directly:
    amended — so the first deliverable is a **recorded decision**, not code. §13/§33 Q4 want
    Core as a scientific control baseline; a recorded, stable runtime toggle preserves that
    comparison, and that argument must be made explicitly rather than assumed.
+
 2. **Resolve SEED-006's blocker #3 — determinism must be provably untouched.** In a merged
    artifact both paths live in one graph, which makes the "additive, non-mutating wrap"
    claim harder to assert. `docs/sentient_core_check.py` and the shared build guards are
    the existing lever; decide what replaces the fork-skew check when there is no fork.
+
 3. **Re-run the capability gate properly — this is the phase's gating experiment.** Spike
    004's downgrade leaves the merge's entire safety argument untested. Rebuild the gate with
    `WFLLMModel = "Apple Intelligence on Device"` (the shipped config, which spike 004 never
@@ -996,6 +1001,7 @@ generator design bear on it directly:
    lookup: *open Settings → Apple Intelligence & Siri; if it exists and has finished setting
    up, choose Aware.* That covers the ineligible-hardware case and the
    capable-but-not-provisioned case with one instruction, which a model list cannot do.
+
 6. **If the answer is ONE product:** SEED-005 (re-fork/rebuild Aware) is a hard prerequisite
    — merging a stale Aware would fold known-broken code into the artifact everyone gets.
    Then: onboarding import-question wording, fork-aware build-guard rework, and a **full
