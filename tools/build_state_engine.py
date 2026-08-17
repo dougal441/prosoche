@@ -687,12 +687,34 @@ def _list_row(item):
     row corrupts the legitimate rows" hazard .claude/CLAUDE.md axis 8 warns about, with
     nothing between it and a signed artifact.  The contract is therefore asserted at the
     emitter, where the offending value is still in hand and can be named.
+
+    THE DISCRIMINATOR IS ATTACHMENT-BEARING-NESS, NOT PYTHON TYPE (phase 13 code review,
+    CR-01).  The first cut of this function branched on `isinstance(item, str)`, so EVERY
+    non-str got the wrapper -- including a WFTextTokenString that text_token() built from a
+    template carrying no "￼" placeholder at all and whose attachmentsByRange is therefore
+    EMPTY.  That is a literal row BY CONTENT wearing the variable row's framing: a shape no
+    donor exhibits, and the exact opposite of the rule stated two paragraphs up.  Measured in
+    both src/*.xml and in the decrypted payload of both shipped signed containers: 44 of 660
+    wrapped rows per fork.
+
+    The affected rows are not randomly placed.  mirror_text() selects with Item At Index on
+    Circle Next (1-based), and the two attachment-free templates are MIRROR_SUCCESSES[7] and
+    MIRROR_LAPSES[7] -- ROW 8.  So the unevidenced shape was the one selected at Circle VIII
+    on both the success and the lapse family, and if iOS mishandles it the symptom is a blank
+    Mirror at a high circle: indistinguishable from the defect this whole phase exists to fix.
+    Shipping a SECOND unevidenced row framing to close the first is precisely what the
+    do-not-fabricate rule forbids, so the test is now on the content, and an attachment-free
+    token goes out as the bare <string> both donors show.
     """
     if isinstance(item, str):
         return item
     if not (isinstance(item, dict) and item.get("WFSerializationType") == "WFTextTokenString"):
         raise SystemExit("mirror_text() row is neither a literal str nor a WFTextTokenString "
                          f"(a WFItems row has exactly those two kinds): {item!r}")
+    body = item.get("Value")
+    if (isinstance(body, dict) and isinstance(body.get("string"), str)
+            and not body.get("attachmentsByRange")):
+        return body["string"]
     return {"WFItemType": 0, "WFValue": item}
 
 

@@ -1,14 +1,18 @@
 # Shortcut Distribution Manifest
 
-**This table's six hash/size rows describe the phase 13 plan 04 re-sign (2026-08-17), not the
-phase 12 plan 05 refresh and not the phase 11 plan 06 rebuild.** That re-sign followed phase
-13's `WFItems` row-wrapper fix; see the **Phase 13** paragraph and closing `⚠` bullet below for
-what that work changed in the signed artifact. Every earlier paragraph in this file is retained
+**This table's six hash/size rows describe the phase 13 CODE-REVIEW re-sign (2026-08-17,
+CR-01), not the phase 13 plan 04 re-sign, not the phase 12 plan 05 refresh and not the phase 11
+plan 06 rebuild.** Plan 04's artifacts are superseded: they wrapped 44 attachment-free literal
+rows per fork in the variable-row wrapper, a shape no donor exhibits, and the CR-01 fix moved
+those 44 rows to the bare `<string>` form both donors show. See the **Phase 13 code review**
+paragraph and the closing `⚠` bullet below. Every earlier paragraph in this file is retained
 as its own rebuild's record — each describes the table as it stood then, not as it stands now —
 and each is superseded where it conflicts with a later paragraph. The previous rows, retained
-so a reader can identify a build already on a device: Core source/archive `2831992` bytes
-`589ee121…`, Core signed `229959` bytes `4acc696a…`, Aware source/archive `2868673` bytes
-`ff50b453…`, Aware signed `234012` bytes `447eead5…`.
+so a reader can identify a build already on a device: plan-04 Core source/archive `2916560`
+bytes `99388cad…`, Core signed `234830` bytes `fe1bafdf…`, Aware source/archive `2953241` bytes
+`d01154b3…`, Aware signed `239184` bytes `bd1264d5…`; and before those, Core source/archive
+`2831992` bytes `589ee121…`, Core signed `229959` bytes `4acc696a…`, Aware source/archive
+`2868673` bytes `ff50b453…`, Aware signed `234012` bytes `447eead5…`.
 
 Rebuilt 2026-08-17 by phase 11 plan 06: **the two variants ship under their new names.**
 `Dumb` becomes **`Core`** and `Sentient` becomes **`Aware`**, at every site where the name is
@@ -39,14 +43,38 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Core source | `src/PROSOCHE-Dumb.xml` | 2916560 | `99388cad597417685eb8624a0b4b34e18a6bd30805ac38beb2f3188026c3e679` |
-| Core archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-184943.xml` | 2916560 | `99388cad597417685eb8624a0b4b34e18a6bd30805ac38beb2f3188026c3e679` |
-| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 234830 | `fe1bafdf53f872a3e149734456899d1be0987706551d7b8fa7b50f81b8a913b7` |
-| Aware source | `src/PROSOCHE-Sentient.xml` | 2953241 | `d01154b3e1b5990e5d3bc6d92e8dd895b92d0448217356772d077022e5215666` |
-| Aware archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Aware-184954.xml` | 2953241 | `d01154b3e1b5990e5d3bc6d92e8dd895b92d0448217356772d077022e5215666` |
-| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 239184 | `bd1264d502891c9afeeccb66134dceaf66288a1da890133498605538aa75ba19` |
+| Core source | `src/PROSOCHE-Dumb.xml` | 2901248 | `c62706919f3fca4fc8f44f3361aeb0a60c85d22efa32b26b787f34f105353496` |
+| Core archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-220448.xml` | 2901248 | `c62706919f3fca4fc8f44f3361aeb0a60c85d22efa32b26b787f34f105353496` |
+| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 233802 | `b07497ba1a66506aaaa9c48134f463ceefeac7f4a656e86dad48b0a76414ac5b` |
+| Aware source | `src/PROSOCHE-Sentient.xml` | 2937929 | `709f53f88fef829a6e6af7187a656e8ea5a128f2a475656e44d18a2569f2d878` |
+| Aware archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Aware-220500.xml` | 2937929 | `709f53f88fef829a6e6af7187a656e8ea5a128f2a475656e44d18a2569f2d878` |
+| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 237842 | `212598cff4dd349316aee93c872fb2fd2862eee11f0278d8d02f69a89f447533` |
 
-**Re-archived and re-signed by phase 13 plan 04 (2026-08-17).** All six rows above were
+**Re-archived and re-signed by the phase 13 CODE REVIEW, finding CR-01 (2026-08-17).** This is
+the record for the six rows in the table above; the plan-04 paragraph immediately below is its
+own re-sign's record and is **SUPERSEDED** by this one wherever the two conflict. Plan 04's
+`_list_row()` discriminated on Python type (`isinstance(item, str)`), so every non-`str` got the
+`{WFItemType, WFValue}` wrapper — including two Mirror templates that carry no `￼` placeholder
+and therefore have an **empty** `attachmentsByRange`. Those are literal rows by content, and
+Donors 4 and 4.1 write a literal row as a bare `<string>`. 44 rows per fork shipped in a shape
+**no donor exhibits**, all of them at row position 8 — the row `getitemfromlist` selects at
+**Circle VIII** on both the success and the lapse family, so a device mishandling would have
+looked exactly like the blank Mirror this phase set out to fix. `_list_row()` now discriminates
+on attachment-bearing-ness, `verify_list_item_wrappers()` asserts the inverse rule, and the
+whole ship chain was redone: provenance ancestor check exit 0, both generators re-run, **gate A**
+`Validation passed.` exit 0 on both forks, **gate B** read standalone and advisorily per fork
+(exit 1, exactly the one permanent `WFCreateNoteInput` waiver each and nothing else), both forks
+re-archived and re-signed under the canonical names with no suffix, and all six rows above
+recomputed from disk in one pass. Both signed containers were then **decrypted** through the
+AEA1 recipe and measured on the recovered plists: 67 `is.workflow.actions.list` actions, 666
+rows, **616** wrapped as `{WFItemType: 0, WFValue: …}`, **50** bare-string rows, **0** dict rows
+missing `WFItemType` and **0** wrapped rows carrying an empty `attachmentsByRange`, per fork.
+Per-action row counts are unchanged at `[6] + [10]*66`, so no row was added, dropped or
+reordered. All twelve `docs/*.py` checkers exit 0. Full record in `docs/BUILD-NOTES.md` §28.
+
+**Re-archived and re-signed by phase 13 plan 04 (2026-08-17). SUPERSEDED by the code-review
+re-sign above — every figure in this paragraph describes the plan-04 artifacts, which the table
+above no longer names.** All six rows *of that build* were
 recomputed from disk in one pass — both sources, both new dated archives and both signed
 artifacts — rather than only the rows believed to have moved, because Phase 10 measured three
 of six wrong at once. `src/*.xml` were regenerated from `tools/build_state_engine.py` and
@@ -375,12 +403,15 @@ and recomputes every size and hash above from the files themselves.
 > existing one discards that device's accumulated behavioural state. Read
 > `docs/BUILD-NOTES.md` §26-27 before distributing or relying on these builds.
 >
-> **⚠ This build additionally carries phase 13's `WFItems` row wrapper across 660 rows, which
+> **⚠ This build additionally carries phase 13's `WFItems` row wrapper across 616 rows, which
 > has never run on a real iPhone — and it is the build you must re-import to get it.** Every
-> non-literal List row is now framed as `{WFItemType: 0, WFValue: …}` per Donors 4 and 4.1;
-> the six exit names stay bare literals by design. Proven present in the generator, in both
-> `src/*.xml` and in the **decrypted payload** of both signed containers (67 List actions, 660
-> wrapped rows, 6 bare, 0 unwrapped, per fork) — file-level structural proof and nothing more.
+> **attachment-bearing** List row is now framed as `{WFItemType: 0, WFValue: …}` per Donors 4
+> and 4.1; the **50** attachment-free rows — the six exit names and the two Mirror templates
+> that carry no `￼` placeholder, at 22 call sites each — stay bare `<string>` literals, which
+> is the other half of the same donor-observed two-kind rule. Proven present in the generator,
+> in both `src/*.xml` and in the **decrypted payload** of both signed containers (67 List
+> actions, 666 rows: 616 wrapped, 50 bare, 0 unwrapped, 0 wrapped-but-attachment-free, per
+> fork) — file-level structural proof and nothing more.
 > **If you are still running any earlier signed build, you keep the blank-row Mirror until you
 > re-import this one**, and testing a stale install would observe the old defect and
 > misattribute it to a fix that did land. Two things remain device-only and unobserved: that a
