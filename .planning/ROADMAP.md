@@ -806,17 +806,17 @@ finding); its single recorded pass does not carry forward. Two user decisions lo
 **Severity:** major
 **Requirements**: CIRC-03, CIRC-05, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-03
 **Depends on:** Phase 12
-**Plans:** 6 plans
+**Plans:** 3/6 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 16-01-PLAN.md — TRACER: persist the captured original before the device is changed; build guard + negative control (wave 1)
-- [ ] 16-02-PLAN.md — Aimed rung-2 coercion probe at a direct Set parameter; disposition the 11 uncoerced volume sites (wave 1)
+- [x] 16-01-PLAN.md — TRACER: persist the captured original before the device is changed; build guard + negative control (wave 1)
+- [x] 16-02-PLAN.md — Aimed rung-2 coercion probe at a direct Set parameter; disposition the 11 uncoerced volume sites (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 16-03-PLAN.md — D-01 code half: floor and dim target to zero; six measured code sites, incl. the 11×/fork emitted comment (wave 2)
+- [x] 16-03-PLAN.md — D-01 code half: floor and dim target to zero; six measured code sites, incl. the 11×/fork emitted comment (wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
