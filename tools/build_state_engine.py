@@ -3850,6 +3850,74 @@ def verify_capture_persistence(actions):
             + f" ({len(offenders)} total)")
 
 
+def _is_removed_snapshot_leaf(key: str) -> bool:
+    """True if `key` names a leaf that D-02 retired from the shipped state shape.
+
+    Scoped rather than a bare name match: only a settings_snapshot-rooted dotted key, or
+    the bare leaf name itself, counts.  A foreign dictionary that legitimately owns its own
+    `changed_at` must not be flagged -- a guard that cries wolf gets exempted, and an
+    exempted guard is not a guard.
+    """
+    parts = key.split(".")
+    if parts[-1] not in D02_REMOVED_SNAPSHOT_LEAVES:
+        return False
+    return len(parts) == 1 or parts[0] == SNAPSHOT_ROOT
+
+
+def verify_no_removed_snapshot_leaf_reads(actions):
+    """Fail the build if any read of state targets a leaf that D-02 removed.
+
+    THE DEFECT THIS EXISTS TO PREVENT -- PHASE 16 (16-04), threat T-16-16.  A dotted read
+    of a MISSING segment is a HARD RUNTIME ERROR in this runtime ("could not evaluate the
+    key path"), measured on device and recorded in .claude/CLAUDE.md's verified runtime
+    semantics table.  Shortcuts has no try/catch, so such a read does not degrade -- it
+    aborts the run wherever it stands.  On the CLOSE path that means aborting BEFORE
+    restore_managed_settings(), which strands the user on a dimmed or silenced device: the
+    exact SAFE-01 consequence verify_active_session_seed() already records for its own
+    subtree.
+
+    WHY THIS GUARD IS THE REAL DELIVERABLE OF D-02.  Removing settings_snapshot.<group>.
+    changed_at and .changed_by_session_id from the writes, the bootstrap seed and the
+    phase5 assertion is safe ONLY because NOTHING READS THEM.  That is not a property of
+    the removal; it is a precondition of it, and it can be falsified later by a single
+    innocent-looking line in an unrelated plan.  This guard converts "nothing reads them
+    today" into "nothing may ever read them without failing the build first" -- so a future
+    plan that adds such a read is stopped at build time rather than shipping a hard error
+    to a phone.  If it fires, the correct conclusion is NOT to re-seed the leaf: it is that
+    the new read wants a field that was deliberately retired, and either the read or D-02
+    has to change, by a decision with an owner.
+
+    TWO SURFACES, because reads reach state two ways and covering one would be decoration:
+      (1) read_value()'s getvalueforkey -> gettext -> setvariable chain, resolved by
+          REUSING _read_variable_keys() -- the existing read-key index.  It is not
+          re-implemented here and no source is grepped; the walk backwards through the two
+          output UUIDs lives in that helper and stays there.
+      (2) every getvalueforkey's literal WFDictionaryKey, scanned flat.  This is a
+          DIFFERENT surface, not a second copy of the walk: get_value() emits a
+          getvalueforkey that never terminates in a setvariable, so surface (1) cannot see
+          it at all.
+    """
+    offenders = []
+    for name, keys in sorted(_read_variable_keys(actions).items(), key=lambda pair: str(pair[0])):
+        for key in sorted(key for key in keys if _is_removed_snapshot_leaf(key)):
+            offenders.append(f"variable {name!r} is read from {key!r}")
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.getvalueforkey":
+            continue
+        key = item.get("WFWorkflowActionParameters", {}).get("WFDictionaryKey")
+        if isinstance(key, str) and _is_removed_snapshot_leaf(key):
+            offenders.append(f"action {index} reads {key!r}")
+    if offenders:
+        raise SystemExit(
+            "a read targets a snapshot leaf that decision D-02 REMOVED from the state "
+            f"shape ({', '.join(D02_REMOVED_SNAPSHOT_LEAVES)}) -- the leaf is no longer "
+            "written or seeded, and a dotted read of a missing segment is a hard runtime "
+            "error with no try/catch to contain it, which on the CLOSE path aborts before "
+            "the brightness/volume restore and strands the user dim or silent: "
+            + "; ".join(offenders[:5])
+            + f" ({len(offenders)} total)")
+
+
 def verify_group_identifier_uniqueness(actions):
     """Fail the build if two control-flow blocks share one GroupingIdentifier.
 
@@ -4838,6 +4906,7 @@ def main():
     verify_active_session_seed(actions)
     verify_restore_gates(actions)
     verify_capture_persistence(actions)
+    verify_no_removed_snapshot_leaf_reads(actions)
     verify_sentinel_gates(actions)
     verify_compound_value_reads(actions)
     verify_router_shape(actions)
