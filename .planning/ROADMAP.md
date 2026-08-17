@@ -455,7 +455,7 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 **Severity:** major
 **Requirements**: AUDIT-02, CIRC-02, CIRC-06, CIRC-08, ROOM-01, ROOM-02, DIST-01, DIST-02
 **Depends on:** Phase 10
-**Plans:** 4/6 plans executed
+**Plans:** 5/6 plans executed
 
 Plans:
 **Wave 1**
@@ -476,7 +476,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 11-05-PLAN.md — Panic Escape made deliberately removable and restorable; Emergency Restore provably untouched (wave 5)
+- [x] 11-05-PLAN.md — Panic Escape made deliberately removable and restorable; Emergency Restore provably untouched (wave 5)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
