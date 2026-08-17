@@ -806,7 +806,7 @@ finding); its single recorded pass does not carry forward. Two user decisions lo
 **Severity:** major
 **Requirements**: CIRC-03, CIRC-05, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-03
 **Depends on:** Phase 12
-**Plans:** 3/6 plans executed
+**Plans:** 4/6 plans executed
 
 Plans:
 **Wave 1**
@@ -820,7 +820,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 16-04-PLAN.md — D-02: remove the two dead snapshot leaves as one coordinated change; no-reader guard (wave 3)
+- [x] 16-04-PLAN.md — D-02: remove the two dead snapshot leaves as one coordinated change; no-reader guard (wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
