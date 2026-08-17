@@ -1,15 +1,17 @@
 # Shortcut Distribution Manifest
 
-Rebuilt 2026-08-17 by phase 11 plan 03: the **user-facing** half of Build Addendum 01. The
-Apple Note's title is now the bare product name `PROSOCHĒ` at all three sites that decide its
-identity; Dante's nine Circle names are surfaced for the first time, from one generator
-constant; the Note gained a nine-Circle legend and an optional-hardening section; and the
-middle descent profile was renamed `Limbo` → `Purgatory` per BD-06-A1, so that `Limbo` names
-exactly one thing — Circle 1's depth. The preceding rebuild was phase 11 plan 02, which
-applied BD-06 Decision 4's whole slot table in one commit — nine shipped primitive names live
-in all three `sequences` arrays, ninety `Selected Primitive` conditionals moved from condition
-99 ("contains") to condition 4 ("string is"), and `Loud Mirror` given a real dispatch branch
-so Circle 8 is no longer dead. Built with Shortcuts Playground
+Rebuilt 2026-08-17 by phase 11 plan 05: Build Addendum 01 §3 — **Panic Escape becomes
+deliberately removable, and reversibly so**. `panic_escape_enabled` is now a first-class flat
+state field; the `Leaving`/`Continue` menu is gated on it; a new eleventh manual menu item
+reads a hand-editable setting line out of the Note, confirms explicitly in either direction,
+and writes the flag. `schema_version` moves 2 → 3 per `docs/CAPABILITY-DECISIONS.md`
+BD-06-A3, so the new bootstrap field actually reaches a device that already holds a
+`state.json`. **Emergency Restore is untouched and is not gated by any of this** — the
+separation is asserted structurally and re-asserted on both decrypted payloads. The preceding
+rebuild was phase 11 plan 03: the Apple Note's title became the bare product name `PROSOCHĒ`
+at all three identity sites, Dante's nine Circle names were surfaced from one generator
+constant, and the middle descent profile was renamed `Limbo` → `Purgatory` per BD-06-A1.
+Built with Shortcuts Playground
 under the project's **two-gate rule** (stated in full in `.claude/CLAUDE.md` §1
 `### Exact validator invocation`). These artifacts were built and validated under **gate A**,
 `--target-macos 26 --target-platform all`, which passes clean on both forks. **Gate B**,
@@ -25,19 +27,73 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Dumb source | `src/PROSOCHE-Dumb.xml` | 2,669,198 | `1e5bf2bd288b4306b0fb7aa3a430b3eefd2f329f429980f56941a4fe095ad789` |
-| Dumb archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Dumb-112947.xml` | 2,669,198 | `1e5bf2bd288b4306b0fb7aa3a430b3eefd2f329f429980f56941a4fe095ad789` |
-| Dumb signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut` | 219,923 | `e12b2e3a29c4a8391185af72104e8304c817f13b1dc5cebbbef7235163d58913` |
-| Sentient source | `src/PROSOCHE-Sentient.xml` | 2,705,878 | `567befdb164a96072fd4433fbc7bf2ad7beaf0e59bc523b56ad3e26bddf8828c` |
-| Sentient archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Sentient-113000.xml` | 2,705,878 | `567befdb164a96072fd4433fbc7bf2ad7beaf0e59bc523b56ad3e26bddf8828c` |
-| Sentient signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Sentient.shortcut` | 224,186 | `14d40b0a1f7e599c0029139d277a8123c4ac021c675dafe067918279be876e22` |
+| Dumb source | `src/PROSOCHE-Dumb.xml` | 2,886,825 | `7ddd94b7e10099d524806d1fa6d9dd79f6d20630480974521af1b3add3ceb885` |
+| Dumb archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Dumb-120124.xml` | 2,886,825 | `7ddd94b7e10099d524806d1fa6d9dd79f6d20630480974521af1b3add3ceb885` |
+| Dumb signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Dumb.shortcut` | 233,976 | `0768fc72fd7b3e41c44e336404aec036beea521b8a16a28206613813221b85b2` |
+| Sentient source | `src/PROSOCHE-Sentient.xml` | 2,923,505 | `c04f73647f86a2c4bb262fe2e36623dbc7d35ab53e4082930221d3d66bdd948d` |
+| Sentient archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Sentient-120136.xml` | 2,923,505 | `c04f73647f86a2c4bb262fe2e36623dbc7d35ab53e4082930221d3d66bdd948d` |
+| Sentient signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Sentient.shortcut` | 238,171 | `5dfed49d8e9b50285de36934677b7a0f9645b9a45443ddce378bbd4cfaaa3236` |
 
 Each dated archive is byte-identical to its `src/` counterpart, which is what makes the
 archive a pre-sign record rather than a copy of something else. The two source checksums
-differ by design. Both sources grew by roughly 1.7 KB against the preceding rebuild — this is
-a copy and naming change, not a structural one: the Note body gained two sections and one
-paragraph, and nine menu labels gained a name each. All twelve static checks passed in a
-single run at this commit, `manifest_check` included once this table was refreshed.
+differ by design. Both sources grew by roughly 213 KB against the preceding rebuild, and
+unlike the last two rebuilds this one is **structural, not a copy change**: gating the
+Leaving/Continue menu means `primitive_dispatch()` is now rendered **eleven** times rather
+than ten — the otherwise arm renders it directly so a user who removed the bypass reaches the
+Circle's intervention with no menu — and one rendering is roughly 200 actions. The two
+environmental site-count tables moved with it, to **measured** values: 15 Set Brightness, 15
+Set Volume, 22 Get Device Details, with 15 of 15 brightness sites coerced and 4 of 15 volume
+sites coerced. That last number is the one worth reading twice: it did **not** move, because
+`Silence Target` is `number()`-sourced and therefore already Number-typed, so all eleven of
+its sites are deliberately left uncoerced. Research projected 5; the artifact measures 4, and
+the measurement is what the tables carry. All twelve static checks passed at this commit,
+`manifest_check` included once this table was refreshed.
+
+**Panic Escape is removable, and Emergency Restore is provably not the same thing.** Panic
+Escape is the `Leaving` case of the menu PROSOCHĒ shows before an intervention — the easy
+behavioural bypass. Some people find the option to leave is itself the thing they reach for
+automatically, so it can now be given up. Emergency Restore is a *safety mechanism*: it is
+what puts back a screen a run left dim or a media volume a run left down. The two are kept
+apart at every level, and that separation is the whole safety argument of this build:
+`panic_escape_enabled` does not represent Emergency Restore, no conditional introduced here
+encloses it, and it remains both a manual menu item and one of the two options inside the
+cool-down redirect. Re-measured on the **decrypted payloads**, not on `src/`: two menus offer
+Emergency Restore and two case bodies implement it in each fork, and **none of the four is
+enclosed by any Panic Escape conditional**. The literal string `Emergency Restore` appears 14
+times in each recovered plist, up from 7 at the phase baseline — the new copy names it as
+unaffected in the Note section, in both confirmation prompts and in both ledger lines.
+
+**Removal takes two deliberate acts, and it is reversible by the same route.** The Note gained
+a stable `## PANIC ESCAPE` section immediately before `## MY PHONE, ON PURPOSE` — a region the
+manual refresh never appends to, so the setting cannot be buried under machine-appended
+`## CURRENT SETTINGS` duplicates. It carries one editable line. Changing that line alone does
+nothing; choosing the menu item alone does nothing. Only the two together, with an explicit
+confirmation, write the flag. Putting the word back and choosing the same item restores the
+bypass, with its own confirmation. A Note with no readable section, or a reworded one, can
+only ever restore — never remove.
+
+**The gate is numeric, and the field is flat.** `panic_escape_enabled` is seeded flat at the
+top level of the bootstrap template and gated with a `> 0` test, never a `has any value` test.
+Both choices are forced by this runtime's verified semantics: a **dotted** read whose final
+segment is absent is a hard error, so a nested field could not be gated at all on a
+`state.json` written before it existed, while an existence test reads TRUE for the string
+`"null"` and for `""` — precisely the states that must read as removed. A new build guard,
+`verify_panic_escape_seed()`, asserts the seed, forbids a dotted read of the flag and forbids
+a non-numeric gate on it. It exists because `verify_state_seed()` was measured to be scoped to
+the `settings_snapshot` subtree and would not have covered this field.
+
+**`schema_version` moved 2 → 3, across three coupled literals.** Without it the new bootstrap
+field never reaches a device that already holds a valid `state.json`, and the removal path
+would be dead there. BD-06-A3 records the decision and the cost accepted: there is no
+field-preserving migration, so a device that rebuilds discards accumulated heat, gravity,
+pressure, the rolling windows, the session record and the exit-learning samples. BD-06-A1
+Amendment 3 records that PROSOCHĒ is undeployed and old `state.json` files are explicitly not
+a consideration, which is what makes that free here — **the gate reinstates itself if a real
+installed base ever exists.** The three literals are the template seed, the runtime validity
+gate, and the *recognition tuple* the transformer uses to locate that gate; the third is the
+one plan 11-04 measured and neither the plan nor the research had recorded. Omitting it fails
+the **next** build, not this one, with an error pointing at a missing conditional rather than
+at the bump. All three now derive from named constants so they cannot drift apart again.
 
 **The Apple Note's identity moved, and all three sites moved together.** PROSOCHĒ finds its
 Note by NAME, and three separate strings decide that name: the `is.workflow.actions.filter.notes`
@@ -80,16 +136,17 @@ dual-key alias or read-time normalisation was built; BD-06-A1 records that PROSO
 undeployed and old `state.json` files are explicitly not a consideration.
 
 Both signed containers were decrypted via the AEA1 recipe and asserted against this wave:
-`plutil -lint OK` on both recovered plists; `## THE NINE CIRCLES` and `## OPTIONAL HARDENING`
-each present; the three identity sites all reading `PROSOCHĒ` with the Name operator still 99;
-the Test-a-Circle items equal to their nine case titles; the profile menu reading
-`['Paradise', 'Purgatory', 'Inferno']`; the recovered `thresholds` and `cooldown_seconds`
-objects keyed by exactly those three names with `Purgatory` holding the unchanged
-`[3, 5, 7, 9, 11, 13, 16, 19, 22]` and `180`. The global attachment invariant was re-measured
-on the recovered payloads rather than only on `src/`: **1,105** `WFTextTokenString` values in
-Dumb and **1,109** in Sentient, every one with `attachmentsByRange` keys equal to its own
-`U+FFFC` offsets, zero mismatches — the invariant that matters most this wave, since every
-copy edit sat upstream of the Note body's two attachments. This is structural evidence only.
+`plutil -lint OK` on both recovered plists; `## PANIC ESCAPE` present 5 times and
+`panic_escape_enabled` 7 times in each; `"schema_version": 3` present in each bootstrap
+template; **exactly one** `["Leaving","Continue"]` menu per fork; two Emergency Restore menus
+and two case bodies per fork, none of them enclosed by a Panic Escape conditional; and the
+environmental site counts reading 15 / 15 / 22. The global attachment invariant was
+re-measured on the recovered payloads rather than only on `src/`: **1,205**
+`WFTextTokenString` values in Dumb and **1,209** in Sentient (up from 1,105 / 1,109, the new
+branch's own token strings), every one with `attachmentsByRange` keys equal to its own
+`U+FFFC` offsets, zero mismatches — the invariant that matters most, since the Note body edit
+inserted 1,157 characters upstream of both of that body's attachments, which moved from
+offsets 6982 / 7013 to 8139 / 8170. This is structural evidence only.
 
 The two checker promotions from the preceding rebuild are unchanged and still in force.
 `docs/sequence_dispatch_check.py` exits non-zero on any orphaned sequence entry, unreachable
@@ -160,6 +217,21 @@ and recomputes every size and hash above from the files themselves.
 > its next OPEN. BD-06-A1 accepts that consequence explicitly on the grounds that PROSOCHĒ is
 > undeployed and the only installs are the owner's own testing — **if that is not true of your
 > device, re-run the setup rather than this build.** Read `docs/BUILD-NOTES.md` §23.
+>
+> **⚠ This build additionally carries a removable Panic Escape and a `schema_version` bump,
+> neither of which has ever run on a real iPhone.** The flag, the gate, the Note section, the
+> eleventh menu item and both confirmation directions are proven present in the generator, in
+> both `src/` artifacts and in the decrypted payload of both signed containers — file-level
+> structural proof, and nothing more. That a user editing the setting line and confirming
+> actually removes the bypass, that the restore direction actually restores it, that the
+> bounded `text.match` binds to the intended section on a Note carrying appended
+> `## CURRENT SETTINGS` blocks, and that the numeric gate resolves as intended against a
+> Text-coerced operand are all **unobserved**. So is the bump's central claim: that a device
+> holding `"schema_version": "2"` takes the rebuild branch on its next run. **Installing this
+> build over an existing one discards that device's accumulated behavioural state** — heat,
+> gravity, pressure, the rolling windows, the session record and the exit-learning samples.
+> BD-06-A3 accepts that on the recorded grounds that PROSOCHĒ is undeployed; if that is not
+> true of your device, read BD-06-A3 before importing. Read `docs/BUILD-NOTES.md` §24.
 >
 > **DIST-03 — device verification — remains OPEN.** `xcrun devicectl list devices` reports
 > no devices, so no criterion in either UAT file has been exercised. Nothing in this manifest

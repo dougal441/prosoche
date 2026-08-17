@@ -11,14 +11,28 @@ Two independent proofs, neither of which trusts prose:
    and with them present (must now raise, then must clear once
    bse.normalise_numeric_operands() has run).
 2. site_audit() -- proves the live-generated forks carry the exact expected
-   coercion split across all 28 setbrightness/setvolume sites: 14
-   setbrightness (all 14 coerced, Restore Brightness x4 + Dim Target x10) and
-   14 setvolume (4 coerced -- Restore Volume -- and 10 correctly left
+   coercion split across all 30 setbrightness/setvolume sites: 15
+   setbrightness (all 15 coerced, Restore Brightness x4 + Dim Target x11) and
+   15 setvolume (4 coerced -- Restore Volume -- and 11 correctly left
    uncoerced -- Silence Target, already Number-sourced via number()).
 
 See 09-RESEARCH.md ("Site count correction -- 28, not 18", "Which of the 28
 sites actually need the coercion") and 09-PATTERNS.md ("Table-driven
 numeric-operand coercion") for the full derivation this script verifies.
+
+PHASE 11 (plan 11-05) moved the totals 28 -> 30.  primitive_dispatch() is now
+rendered ELEVEN times rather than ten: nine in the Test-a-Circle submenu, plus
+TWO in universal_leaving(), where Build Addendum 01 §3 made Panic Escape -- the
+`Leaving` case of the Leaving/Continue menu -- removable.  Mechanism A gates the
+whole menu on the flat state field `panic_escape_enabled`; the enabled arm still
+renders the dispatch inside the Continue case, and the otherwise arm renders it
+directly so a user who removed the bypass reaches the intervention with no menu.
+Each extra rendering adds one dimming() and one silence(), hence +1 setbrightness
+and +1 setvolume.  The COERCED counts move asymmetrically and that is correct:
+Dim Target is read_value()-sourced (Text) so every one of the 15 is coerced,
+while Silence Target is number()-sourced (already Number-typed) so all 11 stay
+deliberately uncoerced and the coerced volume count remains 4, not 5.
+Both numbers here were MEASURED against the rebuilt forks, not projected.
 """
 from __future__ import annotations
 
@@ -95,13 +109,18 @@ def negative_control() -> None:
 
 
 def site_audit() -> None:
+    # Derivation, measured after PHASE 11's eleventh primitive_dispatch() rendering
+    # (see this module's docstring for why there are eleven):
+    #   setbrightness = 4 restore_managed_settings() call sites + 11 dimming() renderings
+    #   setvolume     = 4 restore_managed_settings() call sites + 11 silence() renderings
+    # A delta larger than the rendering count explains is a regression, not a table update.
     expected_counts = {
-        "is.workflow.actions.setbrightness": 14,
-        "is.workflow.actions.setvolume": 14,
+        "is.workflow.actions.setbrightness": 15,
+        "is.workflow.actions.setvolume": 15,
     }
     expected_coerced = {
-        "is.workflow.actions.setbrightness": 14,  # Restore Brightness x4 + Dim Target x10
-        "is.workflow.actions.setvolume": 4,        # Restore Volume x4; Silence Target x10 left uncoerced
+        "is.workflow.actions.setbrightness": 15,  # Restore Brightness x4 + Dim Target x11
+        "is.workflow.actions.setvolume": 4,        # Restore Volume x4; Silence Target x11 left uncoerced
     }
     for fork in ("Dumb", "Sentient"):
         source = ROOT / f"src/PROSOCHE-{fork}.xml"
@@ -129,7 +148,7 @@ def site_audit() -> None:
             assert coerced.get(identifier) == expected, (
                 f"{fork}: expected {expected} coerced {identifier} sites, "
                 f"found {coerced.get(identifier)}")
-    print("site_audit: passed (28/28 sites audited, 18 coerced, 10 correctly not)")
+    print("site_audit: passed (30/30 sites audited, 19 coerced, 11 correctly not)")
 
 
 def main() -> None:

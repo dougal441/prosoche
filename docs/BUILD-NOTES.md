@@ -1805,3 +1805,223 @@ than rewritten to say something they did not.
 | `--target-macos 27`, `--target-platform ios`, `timeout` | never invoked |
 
 **`DIST-03` is OPEN.** No iPhone is connected. Not one row above is behavioural evidence.
+
+---
+
+## 24. Panic Escape made removable, and the three-literal schema bump (phase 11 plan 05, 2026-08-17)
+
+Build Addendum 01 §3. Panic Escape — the `Leaving` case of the menu PROSOCHĒ shows before an
+intervention — is now removable, and the removal is reversible. Nothing about the safety
+mechanism moved.
+
+### 24.1 The distinction this plan exists to hold
+
+**Panic Escape is not Emergency Restore, and conflating them is the failure the whole plan is
+written to prevent.**
+
+- **Panic Escape** is a *comfort*: the easy behavioural bypass offered before every primitive,
+  in every sequence and every Circle. Some people find the option to leave is itself the thing
+  they reach for automatically. It can be given up.
+- **Emergency Restore** is a *safety mechanism*: it is what restores a screen a run left dim or
+  a media volume a run left down. It is a manual menu item and one of the two options inside
+  the live-cooldown redirect.
+
+`panic_escape_enabled` **does not represent Emergency Restore, does not gate it, and no
+conditional introduced by this plan encloses it.** That is threat `T-11-22`, the only
+`critical` in this phase: a user with the bypass removed *and* Emergency Restore unreachable is
+stranded inside an intervention. The separation is asserted structurally in the build, and
+**re-asserted against both decrypted payloads** — measured there, not inferred from `src/`.
+
+### 24.2 The mechanism chosen, and what it cost
+
+**Mechanism A — gate the whole menu.** `universal_leaving()` now reads the flag and wraps its
+existing block:
+
+```
+If Panic Escape Enabled > 0
+    <the existing Leaving/Continue menu, unchanged>
+Otherwise
+    primitive_dispatch()          # the eleventh rendering
+End If
+```
+
+The alternative — hoisting the dispatch out of the menu and terminating the `Leaving` path with
+`is.workflow.actions.exit` — would have kept the rendering count at ten, but it restructures
+the OPEN arm's control flow, which `verify_circle_zero_silence()`, `verify_router_shape()` and
+`docs/router_ui_census.py` all reason about, and whether a trailing `exit` after
+`record_exit_and_route()`'s own routing is needed or harmful was **unverified**. Mechanism A
+touches the least structure, and this project's entire guard suite is built on structural
+stability.
+
+**Why gating preserves the invariant.** `verify_circle_zero_silence()` property (b) requires
+**exactly one** `["Leaving","Continue"]` menu in the artifact, enclosed by the `Circle Next > 0`
+silent band. Only the enabled arm emits it, so the count is still one.
+`universal_leaving()` is called from inside the band, so **both** arms inherit the enclosure —
+which is what keeps property (c) and the OPEN-arm surface census green for the otherwise arm's
+new dotted `sequences.` read.
+
+**The cost, paid deliberately: one extra `primitive_dispatch()` rendering — roughly 200
+actions, and both environmental site-count tables move.**
+
+### 24.3 The site counts — measured, and one number research got wrong
+
+| Table | Before (10 renderings) | After (11 renderings) | Delta | What explains it |
+|---|---:|---:|---:|---|
+| `EXPECTED_SITES[setbrightness]` | 14 | **15** | +1 | one more `dimming()` |
+| `EXPECTED_SITES[setvolume]` | 14 | **15** | +1 | one more `silence()` |
+| `EXPECTED_SITES[getdevicedetails]` | 20 | **22** | +2 | one `Current Brightness` + one `Current Volume` |
+| `expected_coerced[setbrightness]` | 14 | **15** | +1 | `Dim Target` is `read_value()`-sourced (Text), so every site needs the coercion |
+| `expected_coerced[setvolume]` | 4 | **4** | **0** | `Silence Target` is `number()`-sourced, already Number-typed, so all 11 stay uncoerced |
+
+`11-RESEARCH.md` §8.2 projected the coerced pair as **15 / 5**. The artifact measures
+**15 / 4**. The projection was not supported by `docs/phase9_self_check.py`'s own derivation
+comment, which already recorded `Silence Target x10 left uncoerced` — an eleventh rendering adds
+an eleventh *uncoerced* volume site, not a coerced one. **The tables carry the measurement.**
+Every delta above was read off the rebuilt forks and checked against the one thing that
+changed; a delta larger than one rendering explains is a regression, and both files now say so
+in their derivation comments.
+
+The composite split moved 28 → **30** sites, 18 → **19** coerced.
+
+### 24.4 The removal path — two acts, and why it lives where it does
+
+Addendum §3 requires a manual edit **in the Note** plus an explicit confirmation. Neither act
+alone changes anything.
+
+1. **The Note.** A stable `## PANIC ESCAPE` section, inserted immediately before
+   `## MY PHONE, ON PURPOSE`. That position is load-bearing: `manual_note_refresh()` **appends**
+   a fresh `## CURRENT SETTINGS` block on every state-changing manual run, so a setting placed
+   in an appended region would be shadowed by its own duplicates. The section carries exactly
+   one editable line, `- Panic Escape: ON`, and prose that names Emergency Restore as
+   unaffected.
+2. **The confirmation.** A new eleventh manual menu item, `Panic Escape`, reads that one bounded
+   section, compares it with the stored flag, and shows a two-item confirmation. Only the
+   confirm case writes the flag, saves state and appends one ledger line. If the Note and the
+   flag already agree, nothing is written and nothing is recorded.
+3. **The restore direction is required, not optional.** Putting the word back to `ON` and
+   choosing the same item offers the mirrored confirmation and writes the flag back to 1. A
+   bypass a user cannot get back is not a choice they made.
+
+**A measured correction to the plan's own reading.** The plan cited the `Sync My Profile`
+branch as the precedent for putting the `gettext → text.match → set_value` chain *in the menu
+case*. It is not there. `Control Room Note` is bound by the Find Notes / Create Note pair that
+sits **after** the entire manual menu block, so a menu case cannot read the Note at all — and
+`Sync My Profile` does not: its case body only raises `Manual Sync Requested`, and the parse
+runs later in `manual_note_refresh()`. The Panic Escape branch is wired the same way, via
+`Manual Panic Escape Requested`. Reading the Note from the menu case would have shipped a
+runtime failure that no validator, catalog lookup or decrypt could see.
+
+**Why not the OPEN arm.** §10 of this file makes it binding that OPEN and CLOSE never parse the
+Note, on both cost and Notes-permission-prompt grounds, and `docs/router_ui_census.py` fails any
+new OPEN-arm surface outside the silent band. A confirmation dialog on an app open is both.
+Measured after the change: **no Note-parsing action entered the OPEN or CLOSE arm in either
+fork.** (Sentient's OPEN arm does carry one pre-existing `text.match` — the Use Model output
+token parse, `(ALLOW|CHALLENGE|DENY)`. It reads the model's reply, never the Note.)
+
+**The match is bounded and unambiguous.** Pattern
+`(?s)## PANIC ESCAPE.*?(?=## MY PHONE, ON PURPOSE)`, then condition **99** ("contains") over
+that short section against the exact literal `- Panic Escape: OFF`. The leading `- ` and the
+capitals are load-bearing, and the section's prose deliberately says *"change the word ON … to
+OFF"* rather than quoting the whole line, so no prose sentence can trip the test. A missing or
+reworded section yields an empty match, which fails the contains test and takes the otherwise
+arm — so an unreadable Note can only ever **restore**, never remove.
+
+### 24.5 Why the flag is flat and the gate is numeric
+
+Both choices are forced by this project's verified runtime semantics (`.claude/CLAUDE.md`), not
+chosen for style:
+
+- **Flat, top-level.** A **dotted** read whose final segment is absent is a **hard error**. A
+  nested `settings.panic_escape_enabled` could not be gated at all on a `state.json` written
+  before the field existed — the read would raise before any conditional saw it. A **flat** read
+  of a missing key returns nothing, no error.
+- **Numeric `> 0`.** An existence gate (condition 100/101) reads **TRUE** for the string
+  `"null"` and for `""` — exactly the states that must read as *removed*. That is the axis-7
+  gate-semantics trap `verify_sentinel_gates()` exists to prevent. `> 0` reads false for `0`,
+  missing, `null` and `""` under every device-measured coercion. Same idiom as Setup Check's two
+  epoch keys.
+
+**A new guard, `verify_panic_escape_seed()`,** asserts the seed value at the top level, forbids
+any dotted read of the flag, and forbids a non-numeric condition code on it. It exists because
+of a measurement: the plan asserted that `verify_state_seed()` covers every state read with a
+seeded counterpart, and it does **not** — its read-side scan is scoped to keys rooted at
+`settings_snapshot`, so an unseeded `panic_escape_enabled` would have passed the build and been
+dead on every device.
+
+**Deviation, recorded.** The plan instructed the seed be added to `src/PROSOCHE-Dumb.xml`
+through `tools/plist_text_edit.py`. It was instead added by an idempotent **generator** pass,
+`seed_panic_escape()`, matching the two existing precedents for the same template
+(`seed_settings_snapshot()`, `seed_pending_exit()`). The edit mechanism is equivalent —
+`_replace_in_token()` shifts every downstream attachment offset and re-asserts each lands on a
+`U+FFFC` placeholder, which is the same guarded round trip — and `docs/note_identity_check.py`
+independently re-verifies every offset in both forks. The gain is that the invariant is
+re-established on every build rather than resting on a one-time hand edit. The Note body edit
+**did** use `tools/plist_text_edit.py`, as instructed: the body is hand-authored source the
+generator only reads.
+
+### 24.6 The schema bump — three coupled literals, not two
+
+`schema_version` moves **2 → 3**, implementing `docs/CAPABILITY-DECISIONS.md` **BD-06-A3**
+Decision 1 verbatim. Without it the new bootstrap field never reaches a device that already
+holds a valid `state.json`, and the removal path is dead there.
+
+`fix_state_rebind()` hardcodes **three** literals, and they must move in the same commit:
+
+| # | Literal | Role | What omitting it does |
+|---:|---|---|---|
+| 1 | template seed text | the value a rebuilt `state.json` is written with | every device rebuilds forever |
+| 2 | the **recognition tuple** | how the transformer *locates* the version-check conditional | the **next** build aborts at `schema version check conditional not found` |
+| 3 | the runtime validity-gate literal | what the device compares its stored version against | even a clean install fails the check it just wrote its file for |
+
+Site 2 is the one plan 11-04 measured and that neither the plan nor `11-RESEARCH.md` Pitfall 7
+had recorded — both described the bump as two literals. It fails **late**: the build that
+performs the bump succeeds, and the one after it fails, pointing at a missing conditional rather
+than at the bump. All three now derive from named constants (`SCHEMA_VERSION`,
+`SCHEMA_VERSION_PREVIOUS`, `SCHEMA_VERSION_ACCEPTED`) so they cannot drift apart again, and the
+template is asserted to carry an accepted version after the pass rather than assumed to.
+
+**No migration, dual-key alias or read-time normalisation was built** — BD-06-A1 forbids all
+three by name. The cost accepted is real and unrecoverable: a device that rebuilds discards
+accumulated heat, gravity, pressure, `recent_sessions`, `recent_contracts`, the session record
+and `exit_stats[*].samples`. It is free here only because BD-06-A1 Amendment 3 records that
+PROSOCHĒ is undeployed. **The gate reinstates itself** if a real installed base ever exists.
+
+### 24.7 Evidence table
+
+Every row is **structural**. `DIST-03` is **OPEN**.
+
+| Check | Result | Kind |
+|---|---|---|
+| Provenance gate `git merge-base --is-ancestor 7ca8ebb… HEAD` | exit **0**, before every builder run | structural |
+| `tools/build_state_engine.py` / `tools/build_sentient.py` | exit **0** | structural |
+| Idempotence | a second and third consecutive build leave `src/PROSOCHE-Dumb.xml` byte-identical | structural |
+| No-op `plistlib` round trip before the Note-body edit | byte-identical, asserted by `plist_text_edit.assert_noop_roundtrip()` | structural |
+| Twelve `docs/*.py` checks | all exit **0** at the final commit (`manifest_check` after the refresh) | structural |
+| Exactly one `["Leaving","Continue"]` menu | **1** per fork, in `src/` and in both decrypted payloads | structural |
+| Emergency Restore surfaces | **2** menus + **2** case bodies per fork, **none enclosed by a Panic Escape conditional**, measured on both payloads | structural |
+| `Emergency Restore` literal occurrences | **7** at the phase baseline → **14** per fork; increased, never reduced | structural |
+| `panic_escape_enabled` seeded flat, top level, `== 1` | asserted by `verify_panic_escape_seed()` and read back from the template JSON | structural |
+| Every Panic Escape gate's condition code | **2** (greater than); zero condition-100/101 gates | structural |
+| Dotted reads of the flag | **0** | structural |
+| Both write directions | **2** `setvalueforkey` writes, in **2** distinct control-flow groups, per fork | structural |
+| Manual menu | **11** items; every `choosefrommenu` group's `WFMenuItems` == its ordered case titles, both forks | structural |
+| Note section order | `## PANIC ESCAPE` precedes `## MY PHONE, ON PURPOSE`; `Emergency Restore` **689** characters after the heading | structural |
+| Note-parsing actions in the OPEN / CLOSE arms | **0** in both forks | structural |
+| Attachment invariant, `src/` and payloads | **1,205** (Dumb) / **1,209** (Sentient) token strings, **0** offset mismatches | structural |
+| Note-body attachment offsets after the 1,157-character insert | 6982 / 7013 → **8139 / 8170**, exactly the inserted length | structural |
+| Site counts | **15 / 15 / 22**, coerced **15 / 4**, in `src/` and both payloads | structural |
+| `schema_version` | template **3**; runtime validity-gate literal **"3"**; both present in both payloads | structural |
+| Validator (gate A) ×2, `--target-macos 26 --target-platform all` | `Validation passed.`, exit **0** | structural |
+| Signed artifacts | **233,976 B** / **238,171 B**, canonical basenames, no suffix | structural |
+| Dated archive SHA-256 == `src/` counterpart | `7ddd94b7…` == `7ddd94b7…`; `c04f7364…` == `c04f7364…` | structural |
+| Decrypt-verify, both containers | `plutil -lint` **OK** ×2; `## PANIC ESCAPE` ×5 and `panic_escape_enabled` ×7 in each | structural |
+| `docs/manifest_check.py` after the refresh | passed, 6 rows verified against disk | structural |
+| `--target-macos 27`, `--target-platform ios`, `timeout` | never invoked | — |
+
+**What is NOT established.** No iPhone is connected and no device has run either build. That a
+user editing the setting line and confirming actually removes the bypass; that the restore
+direction actually restores it; that the bounded `text.match` binds to the intended section on a
+Note carrying appended `## CURRENT SETTINGS` blocks; that the numeric `> 0` gate resolves as
+intended against a Text-coerced operand on device; and that a device holding
+`"schema_version": "2"` takes the rebuild branch — **all unobserved**. Structural proof is not
+behavioural proof.

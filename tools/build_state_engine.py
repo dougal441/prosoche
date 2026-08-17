@@ -947,8 +947,55 @@ def record_exit_and_route(choice_name: str):
 
 
 def universal_leaving():
+    """Offer the Panic Escape bypass, or -- if the user removed it -- dispatch straight through.
+
+    PHASE 11 (11-05), Build Addendum 01 §3.  "Panic Escape" is the `Leaving` case of the
+    menu below: the easy behavioural bypass offered before every primitive, in every
+    sequence and every Circle.  It is now REMOVABLE, gated on the first-class flat state
+    field `panic_escape_enabled` (seeded by seed_panic_escape(), asserted by
+    verify_panic_escape_seed()).
+
+    PANIC ESCAPE IS NOT EMERGENCY RESTORE.  Emergency Restore is a SAFETY mechanism -- a
+    MANUAL menu item (manual_emergency_restore()) and one of the two options inside the
+    live-cooldown redirect (live_ice_redirect()).  Neither is represented by this flag,
+    neither is enclosed by the conditional below, and neither may ever be gated on any
+    Note-editable setting, Circle or Pressure value.  A user who has removed the bypass and
+    cannot reach Emergency Restore is stranded inside an intervention; that is threat
+    T-11-22, the only `critical` in this phase, and the separation is what mitigates it.
+
+    MECHANISM A (11-RESEARCH.md §8.3), chosen over hoisting the dispatch out of the menu:
+      If Panic Escape Enabled > 0   ->  the existing Leaving/Continue menu, unchanged
+      Otherwise                     ->  primitive_dispatch(), the eleventh rendering
+    Only the enabled arm emits the menu, so verify_circle_zero_silence() property (b) --
+    EXACTLY ONE ["Leaving","Continue"] menu, enclosed by the `Circle Next > 0` band -- still
+    holds.  universal_leaving() is called from inside that band (open_pipeline()), so BOTH
+    arms of the new conditional inherit the enclosure, which is what keeps property (c) and
+    docs/router_ui_census.py green for the otherwise arm's new dotted `sequences.` read.
+
+    The gate is a NUMERIC "> 0" test, never a condition-100 existence test.  Per
+    .claude/CLAUDE.md's device-verified runtime semantics a read-then-`has any value` gate
+    is unimplementable on a dotted path and uninformative on a flat one, while "> 0" reads
+    false for a JSON null, for the string "null" and for an empty string under every
+    measured coercion -- the same idiom Setup Check already uses for its two epoch keys.
+
+    COST, paid deliberately: the eleventh primitive_dispatch() rendering moves the two
+    environmental site-count tables (docs/environmental_restore_check.py,
+    docs/phase9_self_check.py) from ten renderings to eleven.  Both were moved to MEASURED
+    values in the same commit, with their derivations rewritten.
+    """
     group = uid()
-    a = [comment(EXIT_MARKER + "\n\n- The session was saved before every interactive action.\n- Leaving is available before every primitive in every sequence and Circle.\n- Continue reaches exactly the selected primitive."),
+    a = [comment(EXIT_MARKER + "\n\n- The session was saved before every interactive action.\n- Leaving -- Panic Escape -- is offered before every primitive whenever the user has kept it.\n- Continue reaches exactly the selected primitive.\n- A user who removed Panic Escape reaches that same primitive directly, with no menu.")]
+    # Read the flag FLAT, from State.  A flat read of a missing key returns nothing and
+    # cannot raise; a dotted read of a missing segment is a hard error, which is why this
+    # field is deliberately top-level rather than nested under a settings object.
+    a += read_value("panic_escape_enabled", variable("State"), "Panic Escape Enabled")
+    panic_group, panic_if = if_block("Panic Escape Enabled", 2, number=0)
+    a += [comment("Decide whether the Panic Escape bypass is still offered:\n"
+                  "- Input is panic_escape_enabled, read flat from State directly above, compared numerically against zero.\n"
+                  "- Greater than zero offers the Leaving/Continue menu exactly as before.\n"
+                  "- Anything else -- zero, missing, null or empty -- goes straight to this Circle's intervention.\n"
+                  "- Emergency Restore is NOT gated here and is not enclosed by this block; it stays reachable from the manual menu and from the cool-down redirect."),
+          panic_if,
          # G-04-4b, revision 1: named the active Circle and stated that this menu belongs to
          # the OPEN path, so it could no longer be mistaken for a CLOSE-path signal.
          # G-04-4b, revision 2 (PHASE 10-01): revision 1 still named neither what is being
@@ -964,7 +1011,14 @@ def universal_leaving():
                                             (".\n\nLeaving: PROSOCHĒ suggests somewhere better to go and takes you there.\n"
                                              "Continue: you go into the app, after this Circle's intervention.", None)]),
               items=["Leaving", "Continue"]), menu(group, 1, title="Leaving")]
-    a += select_exit() + [menu(group, 1, title="Continue")] + primitive_dispatch() + [menu(group, 2), comment("--- PHASE 6 UNIVERSAL LEAVING END ---")]
+    a += select_exit() + [menu(group, 1, title="Continue")] + primitive_dispatch() + [menu(group, 2)]
+    a += [otherwise(panic_group),
+          comment("Panic Escape was removed by the user, so no bypass is offered:\n"
+                  "- This arm renders the SAME primitive dispatch the Continue case renders, verbatim, so no capture-and-restore gate is skipped.\n"
+                  "- It is inside the Circle Next > 0 band with the arm above it, so a Circle-0 open still shows nothing.\n"
+                  "- The user restores Panic Escape from the manual menu; this arm never writes the flag.")]
+    a += primitive_dispatch()
+    a += [end_if(panic_group), comment("--- PHASE 6 UNIVERSAL LEAVING END ---")]
     return a
 
 
@@ -1776,8 +1830,8 @@ def ice_expiry():
 
 def manual_emergency_restore():
     group = uid()
-    choices = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore", "Setup Check"]
-    a = [comment(MANUAL_MARKER + "\n\n- Manual control is the only path that refreshes the Control Room or reads its proforma.\n- OPEN and CLOSE never enter this menu or parse the Note.\n- Test Circle copies recorded values into test variables and never writes Pressure.\n- CYCLE 14 (checkpoint decision): Status and Open Control Room are read-only. Neither sets Manual Refresh Requested; only explicit state-changing choices (Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Reset Today, Emergency Restore) append to the Note."),
+    choices = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore", "Setup Check", "Panic Escape"]
+    a = [comment(MANUAL_MARKER + "\n\n- Manual control is the only path that refreshes the Control Room or reads its proforma.\n- OPEN and CLOSE never enter this menu or parse the Note.\n- Test Circle copies recorded values into test variables and never writes Pressure.\n- CYCLE 14 (checkpoint decision): Status and Open Control Room are read-only. Neither sets Manual Refresh Requested; only explicit state-changing choices (Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Reset Today, Emergency Restore) append to the Note.\n- PHASE 11 (11-05): Panic Escape reads its own setting line out of the Note and writes its own one-line ledger entry, so it sets no Manual Refresh Requested and appends no settings snapshot."),
          # PHASE 10 (10-02): the prompt was the bare product name, which told a user who
          # arrived here unintentionally nothing at all.  A plain str is correct for
          # WFMenuPrompt when nothing is interpolated -- the "Choose profile" and "Choose
@@ -1843,6 +1897,13 @@ def manual_emergency_restore():
     # its WFMenuItems order is CONTROL_FLOW.md's top documented real-world failure mode.
     # Read-only, like Status: it sets no Manual Refresh Requested and appends nothing.
     a += [menu(group, 1, title="Setup Check"), *number(1, "Manual Setup Check Requested")]
+    # PHASE 11 (11-05): the eleventh item, emitted last for the same order rule.  It only
+    # RAISES A FLAG here; the Note read, the comparison, the confirmation and the write all
+    # live in manual_note_refresh(), because `Control Room Note` is not bound until AFTER
+    # this whole menu block (the Find Notes / Create Note pair sits between the two).  That
+    # is exactly how Sync My Profile is wired -- the menu case sets Manual Sync Requested,
+    # and the gettext -> text.match -> set_value chain runs later, once the Note exists.
+    a += [menu(group, 1, title="Panic Escape"), *number(1, "Manual Panic Escape Requested")]
     a += [menu(group, 2), comment("--- PHASE 5 MANUAL EMERGENCY RESTORE END ---")]
     return a
 
@@ -1904,7 +1965,140 @@ def manual_note_refresh():
           otherwise(setup_g), action("is.workflow.actions.nothing"), end_if(setup_g)]
     sync_g, sync_if = if_block("Manual Sync Requested", 2, number=0)
     text_id, match_id = uid(), uid()
-    a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The extracted text is saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), set_value("profile_snapshot.proforma", output(match_id, "Matched Text")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g), comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH END ---")]
+    a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The extracted text is saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), set_value("profile_snapshot.proforma", output(match_id, "Matched Text")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g)]
+    a += panic_escape_branch()
+    a += [comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH END ---")]
+    return a
+
+
+# The one editable line in the Note's `## PANIC ESCAPE` section, in its REMOVED position.
+# The leading "- " and the exact capitals are load-bearing: the branch below tests for this
+# literal with condition 99 ("contains") over the bounded section text, and no other line of
+# that section may reproduce it.  The section's prose deliberately says "change the word ON
+# ... to OFF" rather than quoting the whole line, for exactly this reason.
+PANIC_ESCAPE_OFF_LINE = "- Panic Escape: OFF"
+# The section is bounded by the heading that follows it.  `## PANIC ESCAPE` is inserted once,
+# immediately before `## MY PHONE, ON PURPOSE`, in a region manual_note_refresh() never
+# appends to -- so unlike `## CURRENT SETTINGS`, which accumulates a duplicate on every
+# state-changing manual run, there is exactly one of it and the lazy match is unambiguous.
+PANIC_ESCAPE_SECTION_PATTERN = "(?s)## PANIC ESCAPE.*?(?=## MY PHONE, ON PURPOSE)"
+
+
+def panic_escape_branch():
+    """The deliberate, reversible Panic Escape removal-and-restore path.  MANUAL arm only.
+
+    PHASE 11 (11-05), Build Addendum 01 §3.  Removal takes TWO deliberate acts and neither
+    one alone does anything: the user edits the setting line in the Note by hand, and then
+    confirms explicitly here.  The same two acts, with the word put back, restore it -- the
+    restore direction is required, not optional, because a bypass a user cannot get back is
+    not a choice they made, it is a door that locked behind them.
+
+    WHY IT LIVES HERE AND NOT IN THE MENU.  `Control Room Note` is bound by the Find Notes /
+    Create Note pair that sits BETWEEN manual_emergency_restore() and this function, so the
+    menu case cannot read the Note at all; it raises Manual Panic Escape Requested and this
+    branch does the work.  Identical wiring to Sync My Profile.
+
+    WHY IT IS NOT ON THE OPEN OR CLOSE ARM.  docs/BUILD-NOTES.md §10 makes it binding that
+    OPEN and CLOSE never parse the Note, on both cost and Notes-permission-prompt grounds,
+    and docs/router_ui_census.py would fail any new OPEN-arm surface outside the Circle-0
+    silent band.  A confirmation dialog on an app open is both.
+
+    EMERGENCY RESTORE IS NOT TOUCHED.  Nothing here reads, writes or encloses it, and the
+    copy below never implies it is being removed -- it is named as unaffected, in the Note
+    and in the confirmation prompt, because a user removing their bypass needs to know the
+    safety hatch is still there (T-11-22).
+
+    COPY DISCIPLINE.  Neither confirmation recommends an answer.  Each states what the
+    chosen option does and nothing else.
+    """
+    a = [comment("--- PHASE 11 PANIC ESCAPE SETTING ---\n\n"
+                 "- Runs only when the manual menu's Panic Escape item was chosen.\n"
+                 "- Reads one bounded section out of the Control Room Note; parses nothing else from it.\n"
+                 "- Writes panic_escape_enabled only after an explicit confirmation, in either direction.\n"
+                 "- Emergency Restore is neither read nor written here and is not enclosed by any of these blocks.")]
+    requested_g, requested_if = if_block("Manual Panic Escape Requested", 2, number=0)
+    note_id, match_id, section_id = uid(), uid(), uid()
+    a += [requested_if,
+          action("is.workflow.actions.gettext", UUID=note_id,
+                 WFTextActionText=variable("Control Room Note")),
+          action("is.workflow.actions.text.match", UUID=match_id,
+                 WFMatchTextPattern=PANIC_ESCAPE_SECTION_PATTERN,
+                 text=output(note_id, "Text")),
+          # Coerce the match to Text before comparing it: a Matched Text value compared
+          # directly renders blank, the same gotcha read_value() exists to avoid for
+          # dictionary values.
+          action("is.workflow.actions.gettext", UUID=section_id,
+                 WFTextActionText=output(match_id, "Matched Text")),
+          set_var("Panic Escape Section", output(section_id, "Text"))]
+    a += read_value("panic_escape_enabled", variable("State"), "Panic Escape Stored")
+
+    off_g, off_if = if_block("Panic Escape Section", 99, string=PANIC_ESCAPE_OFF_LINE)
+    a += [comment("Read what the Note's setting line now says:\n"
+                  "- Input is the bounded PANIC ESCAPE section read directly above.\n"
+                  "- Condition 99 (contains) over one short section, against the exact removed-position line.\n"
+                  "- Anything else -- ON, a reworded line, or no section at all -- takes the otherwise arm and can only ever restore, never remove."),
+          off_if]
+
+    # --- The Note asks for removal. -------------------------------------------------
+    still_on_g, still_on_if = if_block("Panic Escape Stored", 2, number=0)
+    remove_menu = uid()
+    a += [comment("Only offer the removal confirmation if the bypass is still present:\n"
+                  "- Input is the stored flag, compared numerically against zero.\n"
+                  "- If the Note and the stored flag already agree, nothing is written and nothing is recorded."),
+          still_on_if,
+          menu(remove_menu, 0,
+               prompt="The Note now says Panic Escape is OFF. Removing it means PROSOCHĒ stops offering Leaving before an intervention: an open at Circle 1 or deeper goes straight to that Circle's intervention. Emergency Restore is not affected and stays on this menu. You can put this back by setting the line to ON and choosing Panic Escape again.",
+               items=["Keep Panic Escape", "Remove Panic Escape"]),
+          menu(remove_menu, 1, title="Keep Panic Escape"),
+          action("is.workflow.actions.nothing"),
+          menu(remove_menu, 1, title="Remove Panic Escape"),
+          *number(0, "Panic Escape Next"),
+          set_value("panic_escape_enabled", variable("Panic Escape Next")),
+          *save_state()]
+    removed_id = uid()
+    a += [action("is.workflow.actions.gettext", UUID=removed_id,
+                 WFTextActionText=text_token([("\n- Panic Escape removed at ", "Now Epoch"),
+                                              (". Leaving is no longer offered before an intervention. Emergency Restore is unaffected.", None)])),
+          action("is.workflow.actions.appendnote", operation="append",
+                 entity=variable("Control Room Note"), text=output(removed_id, "Text")),
+          menu(remove_menu, 2),
+          otherwise(still_on_g),
+          alert("Panic Escape", "The Note says OFF and Panic Escape is already removed. Nothing was changed."),
+          end_if(still_on_g),
+          otherwise(off_g)]
+
+    # --- The Note says ON (or carries no readable setting). -------------------------
+    stored_off_g, stored_off_if = if_block("Panic Escape Stored", 2, number=0)
+    restore_menu = uid()
+    a += [comment("The Note does not ask for removal, so the only change available is a restore:\n"
+                  "- Input is the stored flag, compared numerically against zero.\n"
+                  "- Greater than zero means the Note and the stored flag already agree; nothing is written.\n"
+                  "- Otherwise the bypass is currently removed and the user is asked whether to put it back."),
+          stored_off_if,
+          alert("Panic Escape", "The Note says ON and Panic Escape is already available. Nothing was changed."),
+          otherwise(stored_off_g),
+          menu(restore_menu, 0,
+               prompt="The Note now says Panic Escape is ON, and it is currently removed. Restoring it means PROSOCHĒ offers Leaving again before an intervention, so an open at Circle 1 or deeper shows the Leaving or Continue choice first. Emergency Restore is not affected either way. You can remove it again by setting the line to OFF and choosing Panic Escape again.",
+               items=["Leave Panic Escape removed", "Restore Panic Escape"]),
+          menu(restore_menu, 1, title="Leave Panic Escape removed"),
+          action("is.workflow.actions.nothing"),
+          menu(restore_menu, 1, title="Restore Panic Escape"),
+          *number(1, "Panic Escape Next"),
+          set_value("panic_escape_enabled", variable("Panic Escape Next")),
+          *save_state()]
+    restored_id = uid()
+    a += [action("is.workflow.actions.gettext", UUID=restored_id,
+                 WFTextActionText=text_token([("\n- Panic Escape restored at ", "Now Epoch"),
+                                              (". Leaving is offered again before an intervention. Emergency Restore is unaffected.", None)])),
+          action("is.workflow.actions.appendnote", operation="append",
+                 entity=variable("Control Room Note"), text=output(restored_id, "Text")),
+          menu(restore_menu, 2),
+          end_if(stored_off_g),
+          end_if(off_g),
+          otherwise(requested_g),
+          action("is.workflow.actions.nothing"),
+          end_if(requested_g),
+          comment("--- PHASE 11 PANIC ESCAPE SETTING END ---")]
     return a
 
 
@@ -2421,6 +2615,107 @@ def verify_pending_exit_seed(actions):
             "(\"no value was found for dictionary key 'pending_exit'\"), and any other "
             "leaf value risks the same sentinel-vs-real-value confusion axis 7 already "
             "closed for settings_snapshot")
+
+
+# PHASE 11 (11-05) -- the Panic Escape flag.  Same STATE SHAPE discipline as
+# settings_snapshot and pending_exit above: the seeder establishes it, a separate verifier
+# asserts it, so the two cannot drift.  Deliberately FLAT and top-level, and deliberately
+# NUMERIC.
+#
+# Flat, because universal_leaving()'s gate must be able to read false.  Per
+# .claude/CLAUDE.md's device-verified runtime semantics a DOTTED read whose final segment is
+# absent is a HARD ERROR, so a nested `settings.panic_escape_enabled` could not be gated at
+# all on a state.json written before this field existed -- the read would raise before any
+# conditional saw it.  A FLAT read of a missing key returns nothing, no error.
+#
+# Numeric, because "> 0" is the only comparison that reads false for all four of the states
+# this field can be in on a real device -- 0, missing, JSON null and empty string -- while
+# condition 100 ("has any value") reads TRUE for the string "null" and for "".  That is the
+# axis-7 gate-semantics trap verify_sentinel_gates() exists to prevent.
+#
+# Seeded to 1 (enabled): the bypass is present unless the user deliberately removes it, and
+# removal takes two acts (a hand edit in the Note plus an explicit confirmation).
+PANIC_ESCAPE_KEY = "panic_escape_enabled"
+PANIC_ESCAPE_SEED = 1
+# Anchored on the neighbouring boolean-ish settings line, never on a line number: the
+# template is one long WFTextTokenString and every offset in it moves on any edit.
+PANIC_ESCAPE_ANCHOR = '"ai_enabled": false,'
+
+
+def seed_panic_escape(actions):
+    """Establish panic_escape_enabled as a flat, numeric, top-level bootstrap field.
+
+    Idempotent: a second run finds the key already present and returns.  _replace_in_token()
+    does the guarded round trip -- it shifts every attachmentsByRange offset that sits after
+    the edit and re-asserts that each one still lands on a U+FFFC placeholder, which is the
+    same six-step method tools/plist_text_edit.py implements standalone.  An unshifted offset
+    points into unrelated prose and .claude/CLAUDE.md §5 records that an out-of-bounds range
+    can crash Shortcuts on import.
+    """
+    _, inner = _state_template(actions)
+    if f'"{PANIC_ESCAPE_KEY}"' in inner["string"]:
+        return  # already seeded; verify_panic_escape_seed() proves it is the right shape
+    line = next(text for text in inner["string"].splitlines() if PANIC_ESCAPE_ANCHOR in text)
+    indent = line[:len(line) - len(line.lstrip())]
+    _replace_in_token(inner, PANIC_ESCAPE_ANCHOR,
+                      PANIC_ESCAPE_ANCHOR + f'\n{indent}"{PANIC_ESCAPE_KEY}": {PANIC_ESCAPE_SEED},')
+
+
+def verify_panic_escape_seed(actions):
+    """Fail the build unless the Panic Escape flag is seeded flat and read flat and numerically.
+
+    Three assertions, each naming the failure it prevents:
+      (1) the key is seeded at the TOP LEVEL with the numeric enabled value -- an unseeded
+          field makes the removal path dead on any device, because the gate reads a key that
+          is simply not there;
+      (2) no read of it is DOTTED -- a dotted read is unnecessary for a top-level field and
+          would hard-error on the very state.json shapes the flat form tolerates;
+      (3) every conditional gating it uses a NUMERIC condition code, never 100/101 -- an
+          existence gate reads TRUE for the string "null" and for "", so it could not
+          express "the user removed the bypass".
+
+    NOTE, measured 2026-08-17: verify_state_seed() does NOT cover this field.  Its read-side
+    scan is scoped to keys rooted at `settings_snapshot`, so it would not have noticed an
+    unseeded panic_escape_enabled.  This verifier is why the seed is guarded at all.
+    """
+    _, inner = _state_template(actions)
+    document = inner["string"].replace('"￼"', '"x"').replace("￼", "0")
+    try:
+        seed = json.loads(document)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"bootstrap state.json template is not valid JSON: {error}")
+    if seed.get(PANIC_ESCAPE_KEY) != PANIC_ESCAPE_SEED:
+        raise SystemExit(
+            f"{PANIC_ESCAPE_KEY} is seeded as {seed.get(PANIC_ESCAPE_KEY)!r} at the top level; "
+            f"it must be exactly {PANIC_ESCAPE_SEED!r} -- an unseeded or non-numeric flag "
+            "leaves universal_leaving()'s gate reading a key that is not there, so the "
+            "removal path 11-05 builds is dead on every device")
+
+    dotted, existence = [], []
+    for index, item in enumerate(actions):
+        identifier = item.get("WFWorkflowActionIdentifier")
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if identifier == "is.workflow.actions.getvalueforkey":
+            key = _dictionary_key_string(parameters)
+            if PANIC_ESCAPE_KEY in key and key != PANIC_ESCAPE_KEY:
+                dotted.append((index, key))
+        if identifier == "is.workflow.actions.conditional" and parameters.get("WFControlFlowMode") == 0:
+            name = parameters.get("WFInput", {}).get("Variable", {}).get("Value", {}).get("VariableName")
+            if name == "Panic Escape Enabled" and parameters.get("WFCondition") not in NUMERIC_CONDITION_CODES:
+                existence.append((index, parameters.get("WFCondition")))
+    if dotted:
+        raise SystemExit(
+            f"{PANIC_ESCAPE_KEY} is read through a composite or dotted key "
+            + "; ".join(f"action {i}: {key!r}" for i, key in dotted)
+            + " -- it is a flat top-level field precisely so a read on a state.json that "
+              "predates it returns nothing instead of raising 'could not evaluate the key path'")
+    if existence:
+        raise SystemExit(
+            "a Panic Escape gate uses a non-numeric condition code "
+            + "; ".join(f"action {i}: condition {code}" for i, code in existence)
+            + " -- an existence test reads TRUE for the string \"null\" and for an empty "
+              "string, so it cannot distinguish a removed bypass from a present one; the "
+              "gate must be a numeric '> 0' test")
 
 
 # ---------------------------------------------------------------------------
@@ -3252,6 +3547,21 @@ def fix_date_format_key(actions):
             parameters["WFDateFormat"] = parameters.pop("WFDateFormatString")
 
 
+# PHASE 11 (11-05) -- the three coupled schema-version literals, named once so they cannot
+# drift apart again.  See fix_state_rebind()'s docstring and docs/CAPABILITY-DECISIONS.md
+# BD-06-A3 for why there are three and why they are one edit.
+#
+# A STRING, because site 3 is a WFConditionalActionString and the device compares its stored
+# schema_version as text; the template interpolates the same characters unquoted, which is
+# what makes the two halves comparable at all.
+SCHEMA_VERSION = "3"
+SCHEMA_VERSION_PREVIOUS = "2"
+# The RECOGNITION tuple.  It must admit every literal this transformer has ever written --
+# including the one it is about to write -- or the NEXT build fails to locate the
+# conditional and aborts, one build downstream of the change that caused it.
+SCHEMA_VERSION_ACCEPTED = ("1", "2", "3")
+
+
 def fix_state_rebind(actions):
     """Force a stale device state.json to rebuild once, and make the rebuild reach State.
 
@@ -3267,9 +3577,9 @@ def fix_state_rebind(actions):
         stays bound to whatever the earlier read produced -- a hard-error-prone value on a
         clean install, or the STALE shape on a device whose old file was just superseded on
         disk but not in memory for the rest of THIS run.
-    Bumping schema_version from 1 to 2 (bootstrap template text + the version-check
-    literal) closes (1): it forces every existing device to take the rebuild branch on its
-    very next run, exactly once. The rebind closes (2): after the fresh JSON is produced,
+    Bumping schema_version (bootstrap template text + the version-check literal) closes (1):
+    it forces every existing device to take the rebuild branch on its very next run, exactly
+    once. The rebind closes (2): after the fresh JSON is produced,
     parse it the same way the initial load does (Detect Dictionary) and rebind State to
     that Dictionary output, not to the raw JSON text -- everything downstream
     (getvalueforkey/setvalueforkey) expects a Dictionary-content-item, matching
@@ -3277,23 +3587,58 @@ def fix_state_rebind(actions):
     Dictionary, never as text. Two new actions (Detect Dictionary + Set Variable State),
     inserted immediately after Default State JSON is assigned, before the file save --
     HANDOFF.md's own "schema bump + rebind, ~2 actions" estimate.
-    Idempotent: a second run finds schema_version already 2 and the rebind already present.
+    Idempotent: a second run finds schema_version already at SCHEMA_VERSION and the rebind
+    already present.
+
+    PHASE 11 (11-05) -- the version moves 2 -> 3, per docs/CAPABILITY-DECISIONS.md BD-06-A3
+    Decision 1 ("bump"). It is needed because 11-05 adds a new bootstrap field
+    (panic_escape_enabled) and 11-06 changes an existing seed value (the fork label); without
+    the bump, a device that already holds a valid state.json reuses it forever and neither
+    change ever lands. BD-06-A1 Amendment 3 records that there is no installed base, so the
+    unrecoverable loss a bump normally carries (heat, gravity, pressure, the rolling windows,
+    the session record, exit_stats[*].samples) costs nothing here. No migration, no dual-key
+    alias and no read-time normalisation was built; BD-06-A1 forbids all three by name.
+
+    THREE COUPLED LITERALS, not two -- measured by plan 11-04 and recorded in BD-06-A3's
+    implementation-surface table. They must move in the SAME commit:
+      1. SCHEMA_VERSION_PREVIOUS -> SCHEMA_VERSION in the template text  (the seed a rebuilt
+         state.json is written with);
+      2. SCHEMA_VERSION_ACCEPTED, the RECOGNITION tuple used to LOCATE the version-check
+         conditional (what makes this transformer idempotent);
+      3. SCHEMA_VERSION in version_check["WFConditionalActionString"]  (the runtime validity
+         gate the device compares its stored value against).
+    Sites 1 and 3 are the obvious pair: move the template without the gate and every device
+    rebuilds forever; move the gate without the template and even a clean install fails the
+    check it just wrote its file for. Site 2 is the one that is easy to miss, and it fails
+    LATE: once site 3 writes the new value, the NEXT build no longer recognises the
+    conditional, version_check stays None, and the build aborts at "schema version check
+    conditional not found" -- an error that points at a missing conditional rather than at
+    the bump one build earlier. Expressing all three from the constants below is what stops
+    them drifting apart again.
     """
     _, inner = _state_template(actions)
-    if '"schema_version": 1,' in inner["string"]:
-        _replace_in_token(inner, '"schema_version": 1,', '"schema_version": 2,')
+    previous = f'"schema_version": {SCHEMA_VERSION_PREVIOUS},'
+    current = f'"schema_version": {SCHEMA_VERSION},'
+    if previous in inner["string"]:
+        _replace_in_token(inner, previous, current)
+    if current not in inner["string"]:
+        raise SystemExit(
+            f"the bootstrap template carries neither {previous!r} nor {current!r} -- the "
+            "schema bump cannot be applied or confirmed, and a template whose version the "
+            "runtime gate does not accept fails its own validity check on every device")
     version_check = None
     for item in actions:
         if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
             continue
         parameters = item.get("WFWorkflowActionParameters", {})
         descriptor = parameters.get("WFInput", {}).get("Variable", {}).get("Value", {})
-        if descriptor.get("VariableName") == "State Schema Text" and parameters.get("WFConditionalActionString") in ("1", "2"):
+        if descriptor.get("VariableName") == "State Schema Text" \
+                and parameters.get("WFConditionalActionString") in SCHEMA_VERSION_ACCEPTED:
             version_check = parameters
             break
     if version_check is None:
         raise SystemExit("schema version check conditional not found")
-    version_check["WFConditionalActionString"] = "2"
+    version_check["WFConditionalActionString"] = SCHEMA_VERSION
     for index, item in enumerate(actions):
         if not (item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setvariable"
                 and item.get("WFWorkflowActionParameters", {}).get("WFVariableName") == "Default State JSON"):
@@ -3337,6 +3682,9 @@ def main():
     normalize_open_apps(actions)
     seed_settings_snapshot(actions)
     seed_pending_exit(actions)
+    # Must run BEFORE fix_state_rebind(): the rebind pass also edits the same template
+    # token, and seeding a new field is the reason the schema_version bump below exists.
+    seed_panic_escape(actions)
     fix_state_rebind(actions)
     fix_date_format_key(actions)
     fix_shownote_key(actions)
@@ -3369,6 +3717,7 @@ def main():
     verify_numeric_operands(actions)
     verify_state_seed(actions)
     verify_pending_exit_seed(actions)
+    verify_panic_escape_seed(actions)
     verify_restore_gates(actions)
     verify_sentinel_gates(actions)
     verify_compound_value_reads(actions)

@@ -68,16 +68,33 @@ DEVICE_DETAILS = "is.workflow.actions.getdevicedetails"
 #   restore_managed_settings() is expanded at FOUR call sites -- close_pipeline(),
 #   live_ice_redirect(), ice_expiry() and manual_emergency_restore() -- and each expansion
 #   emits exactly one Set Brightness and one Set Volume.            -> 4 + 4
-#   primitive_dispatch() is rendered TEN times -- once on the OPEN path and nine times by
-#   the Test-a-Circle submenu -- and each rendering emits dimming() once and silence()
-#   once.  dimming() emits one Set Brightness and one Get Device Details ("Current
-#   Brightness"); silence() emits one Set Volume and one Get Device Details ("Current
-#   Volume").                                                       -> 10 + 10
-#   Totals: 14 Set Brightness, 14 Set Volume, 20 Get Device Details.
+#   primitive_dispatch() is rendered ELEVEN times, and each rendering emits dimming() once
+#   and silence() once.  dimming() emits one Set Brightness and one Get Device Details
+#   ("Current Brightness"); silence() emits one Set Volume and one Get Device Details
+#   ("Current Volume").                                             -> 11 + 11
+#   Totals: 15 Set Brightness, 15 Set Volume, 22 Get Device Details.
+#
+# WHERE THE ELEVEN RENDERINGS ARE, and why the count moved.  Nine are the Test-a-Circle
+# submenu in the MANUAL arm, unchanged.  The other TWO are both in universal_leaving(), and
+# the second of them is new in PHASE 11 (plan 11-05, Build Addendum 01 §3): Panic Escape --
+# the `Leaving` case of the Leaving/Continue menu -- became removable, gated on the flat
+# state field `panic_escape_enabled`.  Mechanism A gates the WHOLE menu, so the enabled arm
+# renders the dispatch inside the Continue case as before and the otherwise arm renders it
+# directly, verbatim.  That preserves verify_circle_zero_silence()'s "exactly one
+# Leaving/Continue menu" invariant at the price of one extra rendering, and the otherwise
+# arm renders primitive_dispatch() unmodified, so no capture-and-restore gate is skipped on
+# the no-bypass path.
+#
+# MEASURED, not projected.  Before 11-05: 14 / 14 / 20 at ten renderings.  After: 15 / 15 /
+# 22, each delta exactly one rendering's worth (+1 Set Brightness, +1 Set Volume, +2 Get
+# Device Details -- one per primitive).  11-RESEARCH.md §8.2 projected these same three
+# numbers; they were re-measured against the rebuilt artifact rather than transcribed.
+#
 # A change to the number of restore call sites or to the number of dispatch renderings is a
-# legitimate reason for these to move.  A change caused by deleting dimming() or silence()
-# is the regression this file exists to catch.
-EXPECTED_SITES = {SET_BRIGHTNESS: 14, SET_VOLUME: 14, DEVICE_DETAILS: 20}
+# legitimate reason for these to move -- but only by exactly what that change explains.  A
+# larger delta, or a change caused by deleting dimming() or silence(), is the regression
+# this file exists to catch; investigate it rather than editing the table to match.
+EXPECTED_SITES = {SET_BRIGHTNESS: 15, SET_VOLUME: 15, DEVICE_DETAILS: 22}
 
 # The only two device properties this Shortcut is permitted to read.  Anything else is an
 # unaudited read of the user's device and is not covered by BD-02/BD-03's evidence.
@@ -245,11 +262,12 @@ def artifact_check(actions) -> None:
             "safety.allow_volume_increase is not false; SAFE-02 forbids ever raising volume")
 
     # DELIBERATELY NOT ASSERTED: a count of numeric coercion aggrandizements.
-    # Measured at this artifact: 14 of 14 Set Brightness sites carry an explicit
-    # WFCoercionVariableAggrandizement, and 4 of 14 Set Volume sites do.  The other 10
-    # volume sites are fed by "Silence Target", which number() already emits Number-typed,
-    # so normalise_numeric_operands()'s _already_numeric() check deliberately leaves them
-    # alone.  That 18/28 split is an artifact of how the emitter sources each operand, not a
+    # Measured at this artifact (PHASE 11, eleven dispatch renderings): 15 of 15 Set
+    # Brightness sites carry an explicit WFCoercionVariableAggrandizement, and 4 of 15 Set
+    # Volume sites do.  The other 11 volume sites are fed by "Silence Target", which
+    # number() already emits Number-typed, so normalise_numeric_operands()'s
+    # _already_numeric() check deliberately leaves them alone.  That 19/30 split is an
+    # artifact of how the emitter sources each operand, not a
     # safety property, and docs/phase9_self_check.py already pins it where it belongs.
     # Pinning it here too would make every future operand-sourcing change a false failure.
     # This note exists so a reader does not mistake the 10 uncoerced sites for a gap.
