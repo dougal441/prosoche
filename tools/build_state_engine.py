@@ -1830,8 +1830,8 @@ def ice_expiry():
 
 def manual_emergency_restore():
     group = uid()
-    choices = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore", "Setup Check"]
-    a = [comment(MANUAL_MARKER + "\n\n- Manual control is the only path that refreshes the Control Room or reads its proforma.\n- OPEN and CLOSE never enter this menu or parse the Note.\n- Test Circle copies recorded values into test variables and never writes Pressure.\n- CYCLE 14 (checkpoint decision): Status and Open Control Room are read-only. Neither sets Manual Refresh Requested; only explicit state-changing choices (Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Reset Today, Emergency Restore) append to the Note."),
+    choices = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore", "Setup Check", "Panic Escape"]
+    a = [comment(MANUAL_MARKER + "\n\n- Manual control is the only path that refreshes the Control Room or reads its proforma.\n- OPEN and CLOSE never enter this menu or parse the Note.\n- Test Circle copies recorded values into test variables and never writes Pressure.\n- CYCLE 14 (checkpoint decision): Status and Open Control Room are read-only. Neither sets Manual Refresh Requested; only explicit state-changing choices (Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Reset Today, Emergency Restore) append to the Note.\n- PHASE 11 (11-05): Panic Escape reads its own setting line out of the Note and writes its own one-line ledger entry, so it sets no Manual Refresh Requested and appends no settings snapshot."),
          # PHASE 10 (10-02): the prompt was the bare product name, which told a user who
          # arrived here unintentionally nothing at all.  A plain str is correct for
          # WFMenuPrompt when nothing is interpolated -- the "Choose profile" and "Choose
@@ -1897,6 +1897,13 @@ def manual_emergency_restore():
     # its WFMenuItems order is CONTROL_FLOW.md's top documented real-world failure mode.
     # Read-only, like Status: it sets no Manual Refresh Requested and appends nothing.
     a += [menu(group, 1, title="Setup Check"), *number(1, "Manual Setup Check Requested")]
+    # PHASE 11 (11-05): the eleventh item, emitted last for the same order rule.  It only
+    # RAISES A FLAG here; the Note read, the comparison, the confirmation and the write all
+    # live in manual_note_refresh(), because `Control Room Note` is not bound until AFTER
+    # this whole menu block (the Find Notes / Create Note pair sits between the two).  That
+    # is exactly how Sync My Profile is wired -- the menu case sets Manual Sync Requested,
+    # and the gettext -> text.match -> set_value chain runs later, once the Note exists.
+    a += [menu(group, 1, title="Panic Escape"), *number(1, "Manual Panic Escape Requested")]
     a += [menu(group, 2), comment("--- PHASE 5 MANUAL EMERGENCY RESTORE END ---")]
     return a
 
@@ -1958,7 +1965,140 @@ def manual_note_refresh():
           otherwise(setup_g), action("is.workflow.actions.nothing"), end_if(setup_g)]
     sync_g, sync_if = if_block("Manual Sync Requested", 2, number=0)
     text_id, match_id = uid(), uid()
-    a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The extracted text is saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), set_value("profile_snapshot.proforma", output(match_id, "Matched Text")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g), comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH END ---")]
+    a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The extracted text is saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), set_value("profile_snapshot.proforma", output(match_id, "Matched Text")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g)]
+    a += panic_escape_branch()
+    a += [comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH END ---")]
+    return a
+
+
+# The one editable line in the Note's `## PANIC ESCAPE` section, in its REMOVED position.
+# The leading "- " and the exact capitals are load-bearing: the branch below tests for this
+# literal with condition 99 ("contains") over the bounded section text, and no other line of
+# that section may reproduce it.  The section's prose deliberately says "change the word ON
+# ... to OFF" rather than quoting the whole line, for exactly this reason.
+PANIC_ESCAPE_OFF_LINE = "- Panic Escape: OFF"
+# The section is bounded by the heading that follows it.  `## PANIC ESCAPE` is inserted once,
+# immediately before `## MY PHONE, ON PURPOSE`, in a region manual_note_refresh() never
+# appends to -- so unlike `## CURRENT SETTINGS`, which accumulates a duplicate on every
+# state-changing manual run, there is exactly one of it and the lazy match is unambiguous.
+PANIC_ESCAPE_SECTION_PATTERN = "(?s)## PANIC ESCAPE.*?(?=## MY PHONE, ON PURPOSE)"
+
+
+def panic_escape_branch():
+    """The deliberate, reversible Panic Escape removal-and-restore path.  MANUAL arm only.
+
+    PHASE 11 (11-05), Build Addendum 01 §3.  Removal takes TWO deliberate acts and neither
+    one alone does anything: the user edits the setting line in the Note by hand, and then
+    confirms explicitly here.  The same two acts, with the word put back, restore it -- the
+    restore direction is required, not optional, because a bypass a user cannot get back is
+    not a choice they made, it is a door that locked behind them.
+
+    WHY IT LIVES HERE AND NOT IN THE MENU.  `Control Room Note` is bound by the Find Notes /
+    Create Note pair that sits BETWEEN manual_emergency_restore() and this function, so the
+    menu case cannot read the Note at all; it raises Manual Panic Escape Requested and this
+    branch does the work.  Identical wiring to Sync My Profile.
+
+    WHY IT IS NOT ON THE OPEN OR CLOSE ARM.  docs/BUILD-NOTES.md §10 makes it binding that
+    OPEN and CLOSE never parse the Note, on both cost and Notes-permission-prompt grounds,
+    and docs/router_ui_census.py would fail any new OPEN-arm surface outside the Circle-0
+    silent band.  A confirmation dialog on an app open is both.
+
+    EMERGENCY RESTORE IS NOT TOUCHED.  Nothing here reads, writes or encloses it, and the
+    copy below never implies it is being removed -- it is named as unaffected, in the Note
+    and in the confirmation prompt, because a user removing their bypass needs to know the
+    safety hatch is still there (T-11-22).
+
+    COPY DISCIPLINE.  Neither confirmation recommends an answer.  Each states what the
+    chosen option does and nothing else.
+    """
+    a = [comment("--- PHASE 11 PANIC ESCAPE SETTING ---\n\n"
+                 "- Runs only when the manual menu's Panic Escape item was chosen.\n"
+                 "- Reads one bounded section out of the Control Room Note; parses nothing else from it.\n"
+                 "- Writes panic_escape_enabled only after an explicit confirmation, in either direction.\n"
+                 "- Emergency Restore is neither read nor written here and is not enclosed by any of these blocks.")]
+    requested_g, requested_if = if_block("Manual Panic Escape Requested", 2, number=0)
+    note_id, match_id, section_id = uid(), uid(), uid()
+    a += [requested_if,
+          action("is.workflow.actions.gettext", UUID=note_id,
+                 WFTextActionText=variable("Control Room Note")),
+          action("is.workflow.actions.text.match", UUID=match_id,
+                 WFMatchTextPattern=PANIC_ESCAPE_SECTION_PATTERN,
+                 text=output(note_id, "Text")),
+          # Coerce the match to Text before comparing it: a Matched Text value compared
+          # directly renders blank, the same gotcha read_value() exists to avoid for
+          # dictionary values.
+          action("is.workflow.actions.gettext", UUID=section_id,
+                 WFTextActionText=output(match_id, "Matched Text")),
+          set_var("Panic Escape Section", output(section_id, "Text"))]
+    a += read_value("panic_escape_enabled", variable("State"), "Panic Escape Stored")
+
+    off_g, off_if = if_block("Panic Escape Section", 99, string=PANIC_ESCAPE_OFF_LINE)
+    a += [comment("Read what the Note's setting line now says:\n"
+                  "- Input is the bounded PANIC ESCAPE section read directly above.\n"
+                  "- Condition 99 (contains) over one short section, against the exact removed-position line.\n"
+                  "- Anything else -- ON, a reworded line, or no section at all -- takes the otherwise arm and can only ever restore, never remove."),
+          off_if]
+
+    # --- The Note asks for removal. -------------------------------------------------
+    still_on_g, still_on_if = if_block("Panic Escape Stored", 2, number=0)
+    remove_menu = uid()
+    a += [comment("Only offer the removal confirmation if the bypass is still present:\n"
+                  "- Input is the stored flag, compared numerically against zero.\n"
+                  "- If the Note and the stored flag already agree, nothing is written and nothing is recorded."),
+          still_on_if,
+          menu(remove_menu, 0,
+               prompt="The Note now says Panic Escape is OFF. Removing it means PROSOCHĒ stops offering Leaving before an intervention: an open at Circle 1 or deeper goes straight to that Circle's intervention. Emergency Restore is not affected and stays on this menu. You can put this back by setting the line to ON and choosing Panic Escape again.",
+               items=["Keep Panic Escape", "Remove Panic Escape"]),
+          menu(remove_menu, 1, title="Keep Panic Escape"),
+          action("is.workflow.actions.nothing"),
+          menu(remove_menu, 1, title="Remove Panic Escape"),
+          *number(0, "Panic Escape Next"),
+          set_value("panic_escape_enabled", variable("Panic Escape Next")),
+          *save_state()]
+    removed_id = uid()
+    a += [action("is.workflow.actions.gettext", UUID=removed_id,
+                 WFTextActionText=text_token([("\n- Panic Escape removed at ", "Now Epoch"),
+                                              (". Leaving is no longer offered before an intervention. Emergency Restore is unaffected.", None)])),
+          action("is.workflow.actions.appendnote", operation="append",
+                 entity=variable("Control Room Note"), text=output(removed_id, "Text")),
+          menu(remove_menu, 2),
+          otherwise(still_on_g),
+          alert("Panic Escape", "The Note says OFF and Panic Escape is already removed. Nothing was changed."),
+          end_if(still_on_g),
+          otherwise(off_g)]
+
+    # --- The Note says ON (or carries no readable setting). -------------------------
+    stored_off_g, stored_off_if = if_block("Panic Escape Stored", 2, number=0)
+    restore_menu = uid()
+    a += [comment("The Note does not ask for removal, so the only change available is a restore:\n"
+                  "- Input is the stored flag, compared numerically against zero.\n"
+                  "- Greater than zero means the Note and the stored flag already agree; nothing is written.\n"
+                  "- Otherwise the bypass is currently removed and the user is asked whether to put it back."),
+          stored_off_if,
+          alert("Panic Escape", "The Note says ON and Panic Escape is already available. Nothing was changed."),
+          otherwise(stored_off_g),
+          menu(restore_menu, 0,
+               prompt="The Note now says Panic Escape is ON, and it is currently removed. Restoring it means PROSOCHĒ offers Leaving again before an intervention, so an open at Circle 1 or deeper shows the Leaving or Continue choice first. Emergency Restore is not affected either way. You can remove it again by setting the line to OFF and choosing Panic Escape again.",
+               items=["Leave Panic Escape removed", "Restore Panic Escape"]),
+          menu(restore_menu, 1, title="Leave Panic Escape removed"),
+          action("is.workflow.actions.nothing"),
+          menu(restore_menu, 1, title="Restore Panic Escape"),
+          *number(1, "Panic Escape Next"),
+          set_value("panic_escape_enabled", variable("Panic Escape Next")),
+          *save_state()]
+    restored_id = uid()
+    a += [action("is.workflow.actions.gettext", UUID=restored_id,
+                 WFTextActionText=text_token([("\n- Panic Escape restored at ", "Now Epoch"),
+                                              (". Leaving is offered again before an intervention. Emergency Restore is unaffected.", None)])),
+          action("is.workflow.actions.appendnote", operation="append",
+                 entity=variable("Control Room Note"), text=output(restored_id, "Text")),
+          menu(restore_menu, 2),
+          end_if(stored_off_g),
+          end_if(off_g),
+          otherwise(requested_g),
+          action("is.workflow.actions.nothing"),
+          end_if(requested_g),
+          comment("--- PHASE 11 PANIC ESCAPE SETTING END ---")]
     return a
 
 

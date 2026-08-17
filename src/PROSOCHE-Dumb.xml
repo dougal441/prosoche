@@ -36797,7 +36797,8 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 - Manual control is the only path that refreshes the Control Room or reads its proforma.
 - OPEN and CLOSE never enter this menu or parse the Note.
 - Test Circle copies recorded values into test variables and never writes Pressure.
-- CYCLE 14 (checkpoint decision): Status and Open Control Room are read-only. Neither sets Manual Refresh Requested; only explicit state-changing choices (Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Reset Today, Emergency Restore) append to the Note.</string>
+- CYCLE 14 (checkpoint decision): Status and Open Control Room are read-only. Neither sets Manual Refresh Requested; only explicit state-changing choices (Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Reset Today, Emergency Restore) append to the Note.
+- PHASE 11 (11-05): Panic Escape reads its own setting line out of the Note and writes its own one-line ledger entry, so it sets no Manual Refresh Requested and appends no settings snapshot.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -36823,6 +36824,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>Reset Today</string>
 					<string>Emergency Restore</string>
 					<string>Setup Check</string>
+					<string>Panic Escape</string>
 				</array>
 			</dict>
 		</dict>
@@ -100152,6 +100154,53 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>GroupingIdentifier</key>
 				<string>571D1C72-4932-59E0-BBD4-D9FF90894A5B</string>
 				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+				<key>WFMenuItemTitle</key>
+				<string>Panic Escape</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.number</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>5CBF215E-7D41-519E-AC40-4663A8BFBDA9</string>
+				<key>WFNumberActionNumber</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>5CBF215E-7D41-519E-AC40-4663A8BFBDA9</string>
+						<key>OutputName</key>
+						<string>Number</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Manual Panic Escape Requested</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.choosefrommenu</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>571D1C72-4932-59E0-BBD4-D9FF90894A5B</string>
+				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
 		</dict>
@@ -100561,6 +100610,21 @@ PROSOCHĒ measures how automatic your reaching has become and places each open a
 
 The name tells you how deep you are. It does not tell you what will happen. Which interruption fires at a given depth is decided by the sequence you chose — Classic, BlackMirror and Ambient order the same interruptions differently — so the same Circle number is a different experience under a different sequence.
 
+## PANIC ESCAPE
+
+- Panic Escape: ON
+
+Panic Escape is the option to leave instead of continuing. When PROSOCHĒ interrupts an open it offers two things: Leaving, where it suggests somewhere better to go and takes you there, and Continue, where you go into the app after that Circle's intervention. Panic Escape is the Leaving half — the way out offered before every intervention.
+
+You can remove it. Doing so takes two deliberate steps, and neither one on its own changes anything:
+
+1. Change the word ON on the setting line above to OFF, in capitals, here in the Notes app.
+2. Run PROSOCHĒ by hand and choose Panic Escape from its menu. It shows you the change and asks you to confirm it.
+
+Emergency Restore is a different thing and this setting does not affect it. Emergency Restore stays on PROSOCHĒ's manual menu, and it stays available inside a cool-down, whatever this line says. If a run has left your screen dim or your media volume down, Emergency Restore is what puts them back.
+
+Putting the word back to ON and choosing the same menu item restores Panic Escape. The route is the same in both directions, and PROSOCHĒ asks you to confirm that too.
+
 ## MY PHONE, ON PURPOSE
 
 This section is yours. Write in it directly, here in the Notes app. Nothing here has to be tidy, and you can write naturally.
@@ -100617,14 +100681,14 @@ Reserved. Nothing is measured here yet.
 Reserved. Nothing is asked for here yet.</string>
 						<key>attachmentsByRange</key>
 						<dict>
-							<key>{6982, 1}</key>
+							<key>{8139, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
 								<key>VariableName</key>
 								<string>Import Descent</string>
 							</dict>
-							<key>{7013, 1}</key>
+							<key>{8170, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
@@ -100794,7 +100858,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>5CBF215E-7D41-519E-AC40-4663A8BFBDA9</string>
+				<string>091C4AE4-936E-5F20-8C70-567B904B20FC</string>
 				<key>WFDictionaryKey</key>
 				<string>fork</string>
 				<key>WFInput</key>
@@ -100817,7 +100881,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>091C4AE4-936E-5F20-8C70-567B904B20FC</string>
+				<string>9BAE1667-542B-5D31-8FA6-D7504FA6A451</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -100829,7 +100893,7 @@ Reserved. Nothing is asked for here yet.</string>
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>5CBF215E-7D41-519E-AC40-4663A8BFBDA9</string>
+								<string>091C4AE4-936E-5F20-8C70-567B904B20FC</string>
 								<key>OutputName</key>
 								<string>Dictionary Value</string>
 								<key>Type</key>
@@ -100852,7 +100916,7 @@ Reserved. Nothing is asked for here yet.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>091C4AE4-936E-5F20-8C70-567B904B20FC</string>
+						<string>9BAE1667-542B-5D31-8FA6-D7504FA6A451</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -100871,7 +100935,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>9BAE1667-542B-5D31-8FA6-D7504FA6A451</string>
+				<string>63B90B62-9F04-5FD6-8259-95FA939CEFF3</string>
 				<key>WFDictionaryKey</key>
 				<string>profile</string>
 				<key>WFInput</key>
@@ -100894,7 +100958,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>63B90B62-9F04-5FD6-8259-95FA939CEFF3</string>
+				<string>7CC64452-66BA-5692-B783-39ADFA5F4E7A</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -100906,7 +100970,7 @@ Reserved. Nothing is asked for here yet.</string>
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>9BAE1667-542B-5D31-8FA6-D7504FA6A451</string>
+								<string>63B90B62-9F04-5FD6-8259-95FA939CEFF3</string>
 								<key>OutputName</key>
 								<string>Dictionary Value</string>
 								<key>Type</key>
@@ -100929,7 +100993,7 @@ Reserved. Nothing is asked for here yet.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>63B90B62-9F04-5FD6-8259-95FA939CEFF3</string>
+						<string>7CC64452-66BA-5692-B783-39ADFA5F4E7A</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -100948,7 +101012,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>7CC64452-66BA-5692-B783-39ADFA5F4E7A</string>
+				<string>23961AA9-7DCC-54E0-83EA-3605A8E57FD4</string>
 				<key>WFDictionaryKey</key>
 				<string>sequence</string>
 				<key>WFInput</key>
@@ -100971,7 +101035,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>23961AA9-7DCC-54E0-83EA-3605A8E57FD4</string>
+				<string>5BA08683-0C56-511B-88E4-B3602D27458B</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -100983,7 +101047,7 @@ Reserved. Nothing is asked for here yet.</string>
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>7CC64452-66BA-5692-B783-39ADFA5F4E7A</string>
+								<string>23961AA9-7DCC-54E0-83EA-3605A8E57FD4</string>
 								<key>OutputName</key>
 								<string>Dictionary Value</string>
 								<key>Type</key>
@@ -101006,7 +101070,7 @@ Reserved. Nothing is asked for here yet.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>23961AA9-7DCC-54E0-83EA-3605A8E57FD4</string>
+						<string>5BA08683-0C56-511B-88E4-B3602D27458B</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -101025,7 +101089,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>5BA08683-0C56-511B-88E4-B3602D27458B</string>
+				<string>7A874527-6D9B-5D15-B42B-A164EA8943AA</string>
 				<key>WFDictionaryKey</key>
 				<string>voice_enabled</string>
 				<key>WFInput</key>
@@ -101048,7 +101112,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>7A874527-6D9B-5D15-B42B-A164EA8943AA</string>
+				<string>017D77C8-973D-5FE0-89EF-AB8E06A314E6</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -101060,7 +101124,7 @@ Reserved. Nothing is asked for here yet.</string>
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>5BA08683-0C56-511B-88E4-B3602D27458B</string>
+								<string>7A874527-6D9B-5D15-B42B-A164EA8943AA</string>
 								<key>OutputName</key>
 								<string>Dictionary Value</string>
 								<key>Type</key>
@@ -101083,7 +101147,7 @@ Reserved. Nothing is asked for here yet.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>7A874527-6D9B-5D15-B42B-A164EA8943AA</string>
+						<string>017D77C8-973D-5FE0-89EF-AB8E06A314E6</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -101102,7 +101166,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>017D77C8-973D-5FE0-89EF-AB8E06A314E6</string>
+				<string>6E31CD22-BBE6-5CF8-A64A-0F0F56B4D147</string>
 				<key>WFDictionaryKey</key>
 				<string>pressure</string>
 				<key>WFInput</key>
@@ -101125,7 +101189,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>6E31CD22-BBE6-5CF8-A64A-0F0F56B4D147</string>
+				<string>3C4A4C76-92AB-516E-B704-0F278770E7EC</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -101137,7 +101201,7 @@ Reserved. Nothing is asked for here yet.</string>
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>017D77C8-973D-5FE0-89EF-AB8E06A314E6</string>
+								<string>6E31CD22-BBE6-5CF8-A64A-0F0F56B4D147</string>
 								<key>OutputName</key>
 								<string>Dictionary Value</string>
 								<key>Type</key>
@@ -101160,7 +101224,7 @@ Reserved. Nothing is asked for here yet.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>6E31CD22-BBE6-5CF8-A64A-0F0F56B4D147</string>
+						<string>3C4A4C76-92AB-516E-B704-0F278770E7EC</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -101179,7 +101243,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>3C4A4C76-92AB-516E-B704-0F278770E7EC</string>
+				<string>D27FA83B-28C2-5BF0-86BF-AEBC770FC95B</string>
 				<key>WFDictionaryKey</key>
 				<string>circle</string>
 				<key>WFInput</key>
@@ -101202,7 +101266,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>D27FA83B-28C2-5BF0-86BF-AEBC770FC95B</string>
+				<string>DA13CAAA-0830-5C06-B515-750B00020ADB</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -101214,7 +101278,7 @@ Reserved. Nothing is asked for here yet.</string>
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>3C4A4C76-92AB-516E-B704-0F278770E7EC</string>
+								<string>D27FA83B-28C2-5BF0-86BF-AEBC770FC95B</string>
 								<key>OutputName</key>
 								<string>Dictionary Value</string>
 								<key>Type</key>
@@ -101237,7 +101301,7 @@ Reserved. Nothing is asked for here yet.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>D27FA83B-28C2-5BF0-86BF-AEBC770FC95B</string>
+						<string>DA13CAAA-0830-5C06-B515-750B00020ADB</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -101256,7 +101320,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>DA13CAAA-0830-5C06-B515-750B00020ADB</string>
+				<string>3182B8C3-B7B5-504A-B918-12A7DE01FA68</string>
 				<key>WFDictionaryKey</key>
 				<string>cooldown_until</string>
 				<key>WFInput</key>
@@ -101279,7 +101343,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>3182B8C3-B7B5-504A-B918-12A7DE01FA68</string>
+				<string>161FD3C6-9924-5DA1-BBF4-A60A3F27090D</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -101291,7 +101355,7 @@ Reserved. Nothing is asked for here yet.</string>
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>DA13CAAA-0830-5C06-B515-750B00020ADB</string>
+								<string>3182B8C3-B7B5-504A-B918-12A7DE01FA68</string>
 								<key>OutputName</key>
 								<string>Dictionary Value</string>
 								<key>Type</key>
@@ -101314,7 +101378,7 @@ Reserved. Nothing is asked for here yet.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>3182B8C3-B7B5-504A-B918-12A7DE01FA68</string>
+						<string>161FD3C6-9924-5DA1-BBF4-A60A3F27090D</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -101333,7 +101397,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>161FD3C6-9924-5DA1-BBF4-A60A3F27090D</string>
+				<string>10D6AD67-93EB-5D38-8A5E-DF458CBAED28</string>
 				<key>WFDictionaryKey</key>
 				<string>profile_snapshot.enabled_exits</string>
 				<key>WFInput</key>
@@ -101356,7 +101420,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>10D6AD67-93EB-5D38-8A5E-DF458CBAED28</string>
+				<string>7064C005-5EFE-511F-9C7C-B47387892C5F</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -101368,7 +101432,7 @@ Reserved. Nothing is asked for here yet.</string>
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>161FD3C6-9924-5DA1-BBF4-A60A3F27090D</string>
+								<string>10D6AD67-93EB-5D38-8A5E-DF458CBAED28</string>
 								<key>OutputName</key>
 								<string>Dictionary Value</string>
 								<key>Type</key>
@@ -101391,7 +101455,7 @@ Reserved. Nothing is asked for here yet.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>10D6AD67-93EB-5D38-8A5E-DF458CBAED28</string>
+						<string>7064C005-5EFE-511F-9C7C-B47387892C5F</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -101410,7 +101474,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>7064C005-5EFE-511F-9C7C-B47387892C5F</string>
+				<string>E77AA3F5-C413-5D96-8BFC-D95E13FFEFE7</string>
 				<key>WFDictionaryKey</key>
 				<string>last_open_at</string>
 				<key>WFInput</key>
@@ -101433,7 +101497,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>E77AA3F5-C413-5D96-8BFC-D95E13FFEFE7</string>
+				<string>4EEB439B-AA8C-5BED-AFC5-3643E4452283</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -101445,7 +101509,7 @@ Reserved. Nothing is asked for here yet.</string>
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>7064C005-5EFE-511F-9C7C-B47387892C5F</string>
+								<string>E77AA3F5-C413-5D96-8BFC-D95E13FFEFE7</string>
 								<key>OutputName</key>
 								<string>Dictionary Value</string>
 								<key>Type</key>
@@ -101468,7 +101532,7 @@ Reserved. Nothing is asked for here yet.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>E77AA3F5-C413-5D96-8BFC-D95E13FFEFE7</string>
+						<string>4EEB439B-AA8C-5BED-AFC5-3643E4452283</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -101487,7 +101551,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>4EEB439B-AA8C-5BED-AFC5-3643E4452283</string>
+				<string>35B91076-B7E5-53A1-B71E-4B69DBC8FED3</string>
 				<key>WFDictionaryKey</key>
 				<string>last_close_at</string>
 				<key>WFInput</key>
@@ -101510,7 +101574,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>35B91076-B7E5-53A1-B71E-4B69DBC8FED3</string>
+				<string>6B51E18D-C9FC-5D6B-80D0-1600E099F576</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -101522,7 +101586,7 @@ Reserved. Nothing is asked for here yet.</string>
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>4EEB439B-AA8C-5BED-AFC5-3643E4452283</string>
+								<string>35B91076-B7E5-53A1-B71E-4B69DBC8FED3</string>
 								<key>OutputName</key>
 								<string>Dictionary Value</string>
 								<key>Type</key>
@@ -101545,7 +101609,7 @@ Reserved. Nothing is asked for here yet.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>35B91076-B7E5-53A1-B71E-4B69DBC8FED3</string>
+						<string>6B51E18D-C9FC-5D6B-80D0-1600E099F576</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -101576,7 +101640,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6B51E18D-C9FC-5D6B-80D0-1600E099F576</string>
+				<string>0601A102-1308-5414-97F3-9F378FCF5A7C</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -101608,7 +101672,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>0601A102-1308-5414-97F3-9F378FCF5A7C</string>
+				<string>1F94A103-9EB5-5291-AED6-64BCFCF47803</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -101733,7 +101797,7 @@ Reserved. Nothing is asked for here yet.</string>
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>0601A102-1308-5414-97F3-9F378FCF5A7C</string>
+								<string>1F94A103-9EB5-5291-AED6-64BCFCF47803</string>
 								<key>OutputName</key>
 								<string>Text</string>
 								<key>Type</key>
@@ -101752,7 +101816,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6B51E18D-C9FC-5D6B-80D0-1600E099F576</string>
+				<string>0601A102-1308-5414-97F3-9F378FCF5A7C</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -101769,7 +101833,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6B51E18D-C9FC-5D6B-80D0-1600E099F576</string>
+				<string>0601A102-1308-5414-97F3-9F378FCF5A7C</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -101792,7 +101856,7 @@ Reserved. Nothing is asked for here yet.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>1F94A103-9EB5-5291-AED6-64BCFCF47803</string>
+				<string>0461CF15-2E7B-5189-9E62-926A2899AF2C</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -101912,7 +101976,7 @@ Cool-down until: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>1F94A103-9EB5-5291-AED6-64BCFCF47803</string>
+				<string>0461CF15-2E7B-5189-9E62-926A2899AF2C</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -101929,7 +101993,7 @@ Cool-down until: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>1F94A103-9EB5-5291-AED6-64BCFCF47803</string>
+				<string>0461CF15-2E7B-5189-9E62-926A2899AF2C</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -101952,7 +102016,7 @@ Cool-down until: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>1A37BD33-4A40-53CA-9882-AB43BB0A08CF</string>
+				<string>AC15F487-37E2-5DB5-88E2-D45C65968DA6</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -101993,54 +102057,9 @@ Cool-down until: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>0461CF15-2E7B-5189-9E62-926A2899AF2C</string>
-				<key>WFTextActionText</key>
-				<string>seen</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.setvariable</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>OutputUUID</key>
-						<string>0461CF15-2E7B-5189-9E62-926A2899AF2C</string>
-						<key>OutputName</key>
-						<string>Text</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFVariableName</key>
-				<string>Setup Open Verdict</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.conditional</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>1A37BD33-4A40-53CA-9882-AB43BB0A08CF</string>
-				<key>WFControlFlowMode</key>
-				<integer>1</integer>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.gettext</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
 				<string>13745B2D-DB4B-5859-B1B6-450ED343AEB8</string>
 				<key>WFTextActionText</key>
-				<string>not seen yet</string>
+				<string>seen</string>
 			</dict>
 		</dict>
 		<dict>
@@ -102072,7 +102091,52 @@ Cool-down until: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
+				<string>AC15F487-37E2-5DB5-88E2-D45C65968DA6</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
 				<string>1A37BD33-4A40-53CA-9882-AB43BB0A08CF</string>
+				<key>WFTextActionText</key>
+				<string>not seen yet</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>1A37BD33-4A40-53CA-9882-AB43BB0A08CF</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Setup Open Verdict</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>AC15F487-37E2-5DB5-88E2-D45C65968DA6</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -102095,7 +102159,7 @@ Cool-down until: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>67EE2D4A-D97B-5332-95EF-EA0446009251</string>
+				<string>37C54914-5033-572D-8637-F42AE54ECF60</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -102136,54 +102200,9 @@ Cool-down until: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>AC15F487-37E2-5DB5-88E2-D45C65968DA6</string>
-				<key>WFTextActionText</key>
-				<string>seen</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.setvariable</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>OutputUUID</key>
-						<string>AC15F487-37E2-5DB5-88E2-D45C65968DA6</string>
-						<key>OutputName</key>
-						<string>Text</string>
-						<key>Type</key>
-						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFVariableName</key>
-				<string>Setup Close Verdict</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.conditional</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>GroupingIdentifier</key>
-				<string>67EE2D4A-D97B-5332-95EF-EA0446009251</string>
-				<key>WFControlFlowMode</key>
-				<integer>1</integer>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.gettext</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
 				<string>3DFB12D9-560B-5211-8925-3FB5A2A1DB01</string>
 				<key>WFTextActionText</key>
-				<string>not seen yet</string>
+				<string>seen</string>
 			</dict>
 		</dict>
 		<dict>
@@ -102215,7 +102234,52 @@ Cool-down until: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
+				<string>37C54914-5033-572D-8637-F42AE54ECF60</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
 				<string>67EE2D4A-D97B-5332-95EF-EA0446009251</string>
+				<key>WFTextActionText</key>
+				<string>not seen yet</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>67EE2D4A-D97B-5332-95EF-EA0446009251</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Setup Close Verdict</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>37C54914-5033-572D-8637-F42AE54ECF60</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -102238,7 +102302,7 @@ Cool-down until: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>37C54914-5033-572D-8637-F42AE54ECF60</string>
+				<string>DB659329-ACE2-5D3B-8F78-9D3DBFB7BECC</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -102321,7 +102385,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>37C54914-5033-572D-8637-F42AE54ECF60</string>
+				<string>DB659329-ACE2-5D3B-8F78-9D3DBFB7BECC</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -102338,7 +102402,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>37C54914-5033-572D-8637-F42AE54ECF60</string>
+				<string>DB659329-ACE2-5D3B-8F78-9D3DBFB7BECC</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -102361,7 +102425,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>DB659329-ACE2-5D3B-8F78-9D3DBFB7BECC</string>
+				<string>C453F178-3424-5E23-8D16-19083501447D</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -102405,7 +102469,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>C453F178-3424-5E23-8D16-19083501447D</string>
+				<string>BAF75E46-6033-5E82-A114-71AD1B1A4041</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -102434,7 +102498,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>BAF75E46-6033-5E82-A114-71AD1B1A4041</string>
+				<string>196FE5D7-9624-59AE-AD01-887D4BAD89FB</string>
 				<key>WFMatchTextPattern</key>
 				<string>(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)</string>
 				<key>text</key>
@@ -102448,7 +102512,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>C453F178-3424-5E23-8D16-19083501447D</string>
+								<string>BAF75E46-6033-5E82-A114-71AD1B1A4041</string>
 								<key>OutputName</key>
 								<string>Text</string>
 								<key>Type</key>
@@ -102467,7 +102531,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>196FE5D7-9624-59AE-AD01-887D4BAD89FB</string>
+				<string>FC1CB640-F652-52FE-ADE2-99014D106C2E</string>
 				<key>WFDictionaryKey</key>
 				<string>profile_snapshot.proforma</string>
 				<key>WFDictionary</key>
@@ -102493,7 +102557,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>BAF75E46-6033-5E82-A114-71AD1B1A4041</string>
+								<string>196FE5D7-9624-59AE-AD01-887D4BAD89FB</string>
 								<key>OutputName</key>
 								<string>Matched Text</string>
 								<key>Type</key>
@@ -102516,7 +102580,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>196FE5D7-9624-59AE-AD01-887D4BAD89FB</string>
+						<string>FC1CB640-F652-52FE-ADE2-99014D106C2E</string>
 						<key>OutputName</key>
 						<string>Dictionary</string>
 						<key>Type</key>
@@ -102535,7 +102599,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>FC1CB640-F652-52FE-ADE2-99014D106C2E</string>
+				<string>520F1DFB-48D9-5E44-8835-CD55E740DF4F</string>
 				<key>WFDictionaryKey</key>
 				<string>profile_snapshot.synced_at</string>
 				<key>WFDictionary</key>
@@ -102582,7 +102646,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>FC1CB640-F652-52FE-ADE2-99014D106C2E</string>
+						<string>520F1DFB-48D9-5E44-8835-CD55E740DF4F</string>
 						<key>OutputName</key>
 						<string>Dictionary</string>
 						<key>Type</key>
@@ -102601,7 +102665,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>520F1DFB-48D9-5E44-8835-CD55E740DF4F</string>
+				<string>36DB81FA-840F-5EF8-9EFB-C27CDAC2FD01</string>
 				<key>WFName</key>
 				<string>state.json</string>
 				<key>WFInput</key>
@@ -102628,7 +102692,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>520F1DFB-48D9-5E44-8835-CD55E740DF4F</string>
+						<string>36DB81FA-840F-5EF8-9EFB-C27CDAC2FD01</string>
 						<key>OutputName</key>
 						<string>Renamed Item</string>
 						<key>Type</key>
@@ -102651,7 +102715,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>DB659329-ACE2-5D3B-8F78-9D3DBFB7BECC</string>
+				<string>C453F178-3424-5E23-8D16-19083501447D</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -102668,9 +102732,1114 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>DB659329-ACE2-5D3B-8F78-9D3DBFB7BECC</string>
+				<string>C453F178-3424-5E23-8D16-19083501447D</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>--- PHASE 11 PANIC ESCAPE SETTING ---
+
+- Runs only when the manual menu's Panic Escape item was chosen.
+- Reads one bounded section out of the Control Room Note; parses nothing else from it.
+- Writes panic_escape_enabled only after an explicit confirmation, in either direction.
+- Emergency Restore is neither read nor written here and is not enclosed by any of these blocks.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>DD89D499-31D8-5561-86AA-0C5AD776CD7B</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>2</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Manual Panic Escape Requested</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>67E22F09-2416-5113-98C4-23B4F8137C8B</string>
+				<key>WFTextActionText</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Control Room Note</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.text.match</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>B33D1FD1-A924-5841-8005-1DF5FDE342D1</string>
+				<key>WFMatchTextPattern</key>
+				<string>(?s)## PANIC ESCAPE.*?(?=## MY PHONE, ON PURPOSE)</string>
+				<key>text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>OutputUUID</key>
+								<string>67E22F09-2416-5113-98C4-23B4F8137C8B</string>
+								<key>OutputName</key>
+								<string>Text</string>
+								<key>Type</key>
+								<string>ActionOutput</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>2DFA3DEA-7317-5A88-BC08-824230ED4312</string>
+				<key>WFTextActionText</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>OutputUUID</key>
+								<string>B33D1FD1-A924-5841-8005-1DF5FDE342D1</string>
+								<key>OutputName</key>
+								<string>Matched Text</string>
+								<key>Type</key>
+								<string>ActionOutput</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>2DFA3DEA-7317-5A88-BC08-824230ED4312</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Panic Escape Section</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>D13AE058-2A54-5032-9BC3-5D750657B6FC</string>
+				<key>WFDictionaryKey</key>
+				<string>panic_escape_enabled</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>State</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>AAE89995-72A2-5A1C-B3FF-3D41CABEF007</string>
+				<key>WFTextActionText</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>OutputUUID</key>
+								<string>D13AE058-2A54-5032-9BC3-5D750657B6FC</string>
+								<key>OutputName</key>
+								<string>Dictionary Value</string>
+								<key>Type</key>
+								<string>ActionOutput</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>AAE89995-72A2-5A1C-B3FF-3D41CABEF007</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Panic Escape Stored</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Read what the Note's setting line now says:
+- Input is the bounded PANIC ESCAPE section read directly above.
+- Condition 99 (contains) over one short section, against the exact removed-position line.
+- Anything else -- ON, a reworded line, or no section at all -- takes the otherwise arm and can only ever restore, never remove.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>79BBF6C5-D55E-58B1-9F9C-62AC96970B49</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>99</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Panic Escape Section</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFConditionalActionString</key>
+				<string>- Panic Escape: OFF</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Only offer the removal confirmation if the bypass is still present:
+- Input is the stored flag, compared numerically against zero.
+- If the Note and the stored flag already agree, nothing is written and nothing is recorded.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>0D406932-8F37-52E7-9316-BF699D2F8F0E</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>2</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Panic Escape Stored</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Control-flow check:
+- Use the named value prepared directly above.
+- Keep each branch or iteration balanced.
+- Continue with the full State dictionary unchanged unless this branch explicitly updates it.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.choosefrommenu</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>033F3F2A-1AA8-560D-B611-F06C5FA3D6DD</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFMenuPrompt</key>
+				<string>The Note now says Panic Escape is OFF. Removing it means PROSOCHĒ stops offering Leaving before an intervention: an open at Circle 1 or deeper goes straight to that Circle's intervention. Emergency Restore is not affected and stays on this menu. You can put this back by setting the line to ON and choosing Panic Escape again.</string>
+				<key>WFMenuItems</key>
+				<array>
+					<string>Keep Panic Escape</string>
+					<string>Remove Panic Escape</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.choosefrommenu</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>033F3F2A-1AA8-560D-B611-F06C5FA3D6DD</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+				<key>WFMenuItemTitle</key>
+				<string>Keep Panic Escape</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.nothing</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict/>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.choosefrommenu</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>033F3F2A-1AA8-560D-B611-F06C5FA3D6DD</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+				<key>WFMenuItemTitle</key>
+				<string>Remove Panic Escape</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.number</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>9F20B339-1BC7-54DB-83EC-D7740A66CD12</string>
+				<key>WFNumberActionNumber</key>
+				<integer>0</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>9F20B339-1BC7-54DB-83EC-D7740A66CD12</string>
+						<key>OutputName</key>
+						<string>Number</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Panic Escape Next</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>5DBE0AE1-352A-52A7-A576-944A58E4A89D</string>
+				<key>WFDictionaryKey</key>
+				<string>panic_escape_enabled</string>
+				<key>WFDictionary</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>State</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFDictionaryValue</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Panic Escape Next</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>5DBE0AE1-352A-52A7-A576-944A58E4A89D</string>
+						<key>OutputName</key>
+						<string>Dictionary</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>State</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setitemname</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>D6BA4613-9DCB-57AC-B5D8-CA023F82B3E7</string>
+				<key>WFName</key>
+				<string>state.json</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>State</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.documentpicker.save</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>D6BA4613-9DCB-57AC-B5D8-CA023F82B3E7</string>
+						<key>OutputName</key>
+						<string>Renamed Item</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFAskWhereToSave</key>
+				<false/>
+				<key>WFFileDestinationPath</key>
+				<string>PROSOCHE/state.json</string>
+				<key>WFSaveFileOverwrite</key>
+				<true/>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>69C71E87-916C-5E52-8BCF-6DCD8B0156D8</string>
+				<key>WFTextActionText</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>
+- Panic Escape removed at ￼. Leaving is no longer offered before an intervention. Emergency Restore is unaffected.</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{27, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Now Epoch</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.appendnote</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>operation</key>
+				<string>append</string>
+				<key>entity</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Control Room Note</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>OutputUUID</key>
+								<string>69C71E87-916C-5E52-8BCF-6DCD8B0156D8</string>
+								<key>OutputName</key>
+								<string>Text</string>
+								<key>Type</key>
+								<string>ActionOutput</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.choosefrommenu</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>033F3F2A-1AA8-560D-B611-F06C5FA3D6DD</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>0D406932-8F37-52E7-9316-BF699D2F8F0E</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFAlertActionTitle</key>
+				<string>Panic Escape</string>
+				<key>WFAlertActionMessage</key>
+				<string>The Note says OFF and Panic Escape is already removed. Nothing was changed.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>0D406932-8F37-52E7-9316-BF699D2F8F0E</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>79BBF6C5-D55E-58B1-9F9C-62AC96970B49</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>The Note does not ask for removal, so the only change available is a restore:
+- Input is the stored flag, compared numerically against zero.
+- Greater than zero means the Note and the stored flag already agree; nothing is written.
+- Otherwise the bypass is currently removed and the user is asked whether to put it back.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>05E94B4F-3E79-586A-89B5-1689F19698E6</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>2</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Panic Escape Stored</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.alert</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFAlertActionTitle</key>
+				<string>Panic Escape</string>
+				<key>WFAlertActionMessage</key>
+				<string>The Note says ON and Panic Escape is already available. Nothing was changed.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>05E94B4F-3E79-586A-89B5-1689F19698E6</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Control-flow check:
+- Use the named value prepared directly above.
+- Keep each branch or iteration balanced.
+- Continue with the full State dictionary unchanged unless this branch explicitly updates it.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.choosefrommenu</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>0F441F67-1374-54DB-9977-76819C569980</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFMenuPrompt</key>
+				<string>The Note now says Panic Escape is ON, and it is currently removed. Restoring it means PROSOCHĒ offers Leaving again before an intervention, so an open at Circle 1 or deeper shows the Leaving or Continue choice first. Emergency Restore is not affected either way. You can remove it again by setting the line to OFF and choosing Panic Escape again.</string>
+				<key>WFMenuItems</key>
+				<array>
+					<string>Leave Panic Escape removed</string>
+					<string>Restore Panic Escape</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.choosefrommenu</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>0F441F67-1374-54DB-9977-76819C569980</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+				<key>WFMenuItemTitle</key>
+				<string>Leave Panic Escape removed</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.nothing</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict/>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.choosefrommenu</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>0F441F67-1374-54DB-9977-76819C569980</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+				<key>WFMenuItemTitle</key>
+				<string>Restore Panic Escape</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.number</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>2412B6D3-C35F-5EA8-A399-A95C0BD4E965</string>
+				<key>WFNumberActionNumber</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>2412B6D3-C35F-5EA8-A399-A95C0BD4E965</string>
+						<key>OutputName</key>
+						<string>Number</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Panic Escape Next</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>73EE2A11-DF51-5AB2-9517-CAB08A27036F</string>
+				<key>WFDictionaryKey</key>
+				<string>panic_escape_enabled</string>
+				<key>WFDictionary</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>State</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFDictionaryValue</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Panic Escape Next</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>73EE2A11-DF51-5AB2-9517-CAB08A27036F</string>
+						<key>OutputName</key>
+						<string>Dictionary</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>State</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setitemname</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>CC8A9FEF-4826-5111-867D-C8379B4D02B4</string>
+				<key>WFName</key>
+				<string>state.json</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>State</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.documentpicker.save</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>CC8A9FEF-4826-5111-867D-C8379B4D02B4</string>
+						<key>OutputName</key>
+						<string>Renamed Item</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFAskWhereToSave</key>
+				<false/>
+				<key>WFFileDestinationPath</key>
+				<string>PROSOCHE/state.json</string>
+				<key>WFSaveFileOverwrite</key>
+				<true/>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>1DC5053B-45C7-5D54-A778-8922E0975BED</string>
+				<key>WFTextActionText</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>
+- Panic Escape restored at ￼. Leaving is offered again before an intervention. Emergency Restore is unaffected.</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{28, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Now Epoch</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.appendnote</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>operation</key>
+				<string>append</string>
+				<key>entity</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Control Room Note</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>OutputUUID</key>
+								<string>1DC5053B-45C7-5D54-A778-8922E0975BED</string>
+								<key>OutputName</key>
+								<string>Text</string>
+								<key>Type</key>
+								<string>ActionOutput</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.choosefrommenu</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>0F441F67-1374-54DB-9977-76819C569980</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>05E94B4F-3E79-586A-89B5-1689F19698E6</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>79BBF6C5-D55E-58B1-9F9C-62AC96970B49</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>DD89D499-31D8-5561-86AA-0C5AD776CD7B</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.nothing</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict/>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>DD89D499-31D8-5561-86AA-0C5AD776CD7B</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>--- PHASE 11 PANIC ESCAPE SETTING END ---</string>
 			</dict>
 		</dict>
 		<dict>

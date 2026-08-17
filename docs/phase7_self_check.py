@@ -12,7 +12,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src/PROSOCHE-Dumb.xml"
 BUILDER = ROOT / "tools/build_state_engine.py"
-MENU = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore", "Setup Check"]
+# ORDER-SENSITIVE, and it mirrors manual_emergency_restore()'s `choices` list exactly.  A
+# choosefrommenu's mode-1 case titles must equal its WFMenuItems element for element AND in
+# the same order (.claude/CLAUDE.md §4: the top documented real-world failure mode), so this
+# list and the generator's must be edited in the same commit.
+# PHASE 11 (11-05) added the eleventh item, "Panic Escape" -- the deliberate, reversible
+# removal-and-restore path for the Leaving bypass.  It is NOT Emergency Restore, which keeps
+# its own separate item at position nine and is never gated on the Panic Escape flag.
+MENU = ["Status", "Open Control Room", "Sync My Profile", "Change Profile", "Change Sequence", "Toggle Voice", "Test a Circle", "Reset Today", "Emergency Restore", "Setup Check", "Panic Escape"]
 
 
 def require(value: bool, message: str) -> None:
@@ -28,7 +35,7 @@ def main() -> None:
     actions = plistlib.loads(SOURCE.read_bytes())["WFWorkflowActions"]
     params = [item.get("WFWorkflowActionParameters", {}) for item in actions]
     menus = [value["WFMenuItems"] for value in params if value.get("WFMenuItems") == MENU]
-    require(len(menus) == 1, "manual menu is not the exact ten required items")
+    require(len(menus) == 1, "manual menu is not the exact eleven required items, in order")
     # PHASE 10 (10-02) -- the Control Room Note must open only on request.  Before the
     # gate, the single shownote sat at depth 0 in the MANUAL arm, so all nine menu items
     # ended by launching the Notes app.  Pin the gate structurally, not by action index.
