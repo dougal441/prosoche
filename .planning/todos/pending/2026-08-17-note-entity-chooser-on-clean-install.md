@@ -1,8 +1,8 @@
 ---
 created: 2026-08-17T13:25:00.000Z
-title: Manual run on a clean install summons the iOS Note chooser — cycle-16 filter fix shipped but does not hold
+title: Manual state-changing runs leave Control Room Note unresolved — iOS raises entity+text AppIntent prompts
 area: general
-severity: blocker
+severity: major
 files:
   - tools/build_state_engine.py:2073
   - tools/build_state_engine.py:4144
@@ -192,6 +192,59 @@ Downgraded in confidence, not yet re-tagged. The `blocker` tag is retained for n
 observed consequence — an arbitrary personal note bound to `Control Room Note`, which all four
 `appendnote` sites write to — is unchanged and is silent user-data corruption if it recurs. If the
 Recently Deleted hypothesis is confirmed and the trigger is that narrow, `major` is the fairer tag.
+
+## FINAL CHARACTERISATION (2026-08-18, fresh install) — supersedes everything above
+
+Both earlier hypotheses are dead. The behaviour is now pinned by four observations on a wiped
+device with the Note **present**:
+
+| path chosen | Note existed? | chooser? | then? |
+|---|---|---|---|
+| `Open Control Room` (first action, purged slate) | no → created during the run | **yes**, PROSOCHĒ first row | bare `Text` prompt |
+| next run, `Test a Circle` | yes | **no** | — |
+| `Toggle Voice` | yes | **yes**, PROSOCHĒ first row | bare `Text` prompt |
+| `Status` (previous session, no Note) | no | **yes** | — |
+
+**What this rules out.** Not "Status first" (fires on Open Control Room and Toggle Voice too).
+Not "the Note is missing" (fires with the Note present and offered as row 1). Not the
+`filter.notes` predicate (well-formed, and `Open Control Room` resolves the right note).
+
+**What it points at.** The chooser appears on **state-changing manual runs** — exactly the runs
+where `manual_note_refresh()` appends the settings block — and does **not** appear on a run that
+changes no state. The prompt pair is always the same and always in this order:
+
+1. a **`Note` entity chooser** → `appendnote`'s `entity` could not resolve;
+2. a **bare text box whose placeholder is the parameter's own name, `Text`** → `appendnote`'s
+   `text` could not resolve.
+
+These are iOS **AppIntent parameter-resolution prompts**, not project UI. iOS asks the user to
+supply whatever an AppIntent parameter could not resolve, in parameter order. That is why the
+second box has no prompt copy — there is none to have. **Both surfaces are one defect.**
+
+Confirmed NOT an axis-2 Ask defect: all **26** `is.workflow.actions.ask` sites in the decrypted
+artifact carry real prompts (`'What are you reaching for? (optional)'`, `'How many minutes?'`,
+`'Where should Create open?'`, `'What are you trying to find?'`). None is blank.
+
+**So the defect is: on the manual state-changing path, the variable `Control Room Note` is empty
+when `manual_note_refresh()`'s `appendnote` runs.** It is populated on the `Open Control Room`
+branch (which is why that one opens the right note) but not on the shared manual path. Localise
+by tracing where `Control Room Note` is set relative to `manual_note_refresh()` — a source-level
+question needing no device.
+
+**Severity settles at `major`, not `blocker`.** The user-data-corruption risk that justified
+`blocker` assumed an arbitrary note would be bound silently. In practice iOS *asks*, the correct
+note is offered as the first row, and cancelling aborts cleanly without writing. It is intrusive
+and confusing, not silently destructive.
+
+## Second, unrelated finding from the same session — the file-save permission prompt
+
+Every state-changing run raises the iOS prompt **"Allow 'PROSOCHĒ — Nine Circles — Core' to save
+1 dictionary to a file?"** with `Don't Allow` / `Allow Once` / `Always Allow`, and the prompt body
+renders the raw `state.json` to the user. Until `Always Allow` is chosen this recurs on **every**
+save, which on the OPEN path would mean a permission dialog in front of the very interruption the
+product exists to deliver. Worth an explicit onboarding step in the Control Room Note telling the
+user to choose `Always Allow` on first run — otherwise the automation path is unusable and the
+failure looks like PROSOCHĒ not firing.
 
 ## Solution
 
