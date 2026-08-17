@@ -2615,8 +2615,9 @@ confirming empirically what its placement asserted.
 
 ### Deviations and open assumptions
 
-No deviation rule was invoked in either implementation plan; no auto-fix was required. Four
-assumptions remain **open**, each with its risk:
+No deviation rule was invoked in either implementation plan; no auto-fix was required. **Five**
+assumptions remain **open**, each with its risk — A1 through A4 from plan 13-03, and **A5 added
+by the phase code review (CR-02)**, which also **restates A3**:
 
 - **A1 — the cause of the 2026-08-14 red render.** `[ASSUMED]` that it was a then-current
   binding since changed by cycles 14–16 and Phases 9–12. **Unprovable now:** the build is not
@@ -2655,6 +2656,26 @@ assumptions remain **open**, each with its risk:
   untouched, and no arithmetic and no `uid()` call was introduced. Risk: **medium** — if iOS
   treats a wrapped row differently on extraction, the Mirror text could change shape. **Device-
   only; owned by Phase 19 UAT,** which must assert "Mirror renders non-empty text".
+
+- **A5 — the numeric conditional's right-hand slot, `WFNumberValue`. Added by the phase code
+  review (CR-02); BD-08 previously recorded this as CONFIRMED and that confirmation is
+  RETRACTED.** Two axes are `UNVERIFIED`, both re-measured independently. (i) **Encoding:**
+  `if_block()` assigns the raw Python value, so `plistlib` emits an `<integer>` at **90 (Core) /
+  97 (Aware)** sites; re-decrypting `.planning/debug/Donor 4.1.shortcut` reads
+  `<key>WFNumberValue</key>` → `<string>10</string>`. The generator diverges from the donor.
+  (ii) **A fourth, uncovered case:** **32** conditionals per fork hold a *dict* in
+  `WFNumberValue` — a bare `WFTextTokenAttachment` variable reference over eleven distinct
+  variables (`Best Average`, `Dim Target`, `Exploit Minimum`, `Exploration Threshold`, `Gravity
+  Cap`, `Heat Cap`, `Heat Floor`, `Now Epoch`, `Overrun Minimum`, `Silence Target`,
+  `Threshold`). **No donor covers a variable in `WFNumberValue` at all.** Risk: **medium** —
+  this project's recorded failure mode for a non-literal comparison slot is "Please choose a
+  value for each parameter in this action", which is a hard runtime stop, not a degradation.
+  **The artifact was deliberately NOT changed:** moving 90/97 live operands on a build no
+  device can run would settle nothing and would close at best half the finding, since the 32
+  dict sites stay unevidenced either way. **Device-only; owned by the outstanding device UAT,**
+  which must observe a numeric-gated Circle actually firing — the `> 0` panic-escape gate and
+  any Heat/Pressure threshold comparison are the cheapest witnesses. A donor exercising a
+  *variable* right-hand operand would settle (ii) at rung 4 without a full UAT.
 
 **Installed-base note for Phase 19.** A user who already imported the previous signed build
 keeps the blank-row Mirror until they **re-import**. That is inherent to Shortcuts distribution

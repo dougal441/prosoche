@@ -1016,8 +1016,43 @@ right-hand operand does **not** use `WFConditionalActionString` at all — it us
 `<integer>2`. The two right-hand slots are **mutually exclusive**, and an existence-family
 condition (Donor 4, condition 100) carries **neither**. In the numeric case the **left** operand
 carries the coercion aggrandizement (`WFCoercionVariableAggrandizement` /
-`WFNumberContentItem`). `if_block()` already implements all three cases correctly via its
-optional `number=` / `string=` keywords — recorded here as **confirmation, not a change
-request**.
+`WFNumberContentItem`).
+
+**THE GENERATOR DIVERGES FROM THAT DONOR, AND THE RIGHT-HAND SLOT IS `UNVERIFIED` ON TWO AXES.**
+This paragraph previously closed with "`if_block()` already implements all three cases correctly
+via its optional `number=` / `string=` keywords — recorded here as **confirmation, not a change
+request**." That sentence is **RETRACTED** by the phase code review (CR-02). It is refuted by
+the donor this very record cites, on two counts, both re-measured independently:
+
+1. **Serialization type.** `if_block()` assigns the raw Python value to `WFNumberValue`, so
+   `plistlib` emits an `<integer>`. Measured at the shipped sources: **90 (Core) / 97 (Aware)**
+   `WFNumberValue` parameters hold a Python `int`. Re-decrypting `.planning/debug/Donor
+   4.1.shortcut` through the §8 AEA1 recipe reads, verbatim, `<key>WFNumberValue</key>` →
+   `<string>10</string>` beside `<key>WFCondition</key>` → `<integer>2`. So the generator
+   diverges from the donor on the exact axis the retracted sentence claimed to confirm.
+2. **A fourth case the "three cases" framing does not mention.** **32** conditionals per fork
+   hold a **dict** in `WFNumberValue` — a bare `WFTextTokenAttachment` variable reference. The
+   eleven distinct variables are `Best Average`, `Dim Target`, `Exploit Minimum`, `Exploration
+   Threshold`, `Gravity Cap`, `Heat Cap`, `Heat Floor`, `Now Epoch`, `Overrun Minimum`,
+   `Silence Target` and `Threshold`. **No donor covers a variable in `WFNumberValue` at all**,
+   so the record silently implied coverage it does not have. Given this project's history with
+   non-literal comparison slots ("Please choose a value for each parameter in this action"),
+   this is the highest-value unaudited operand shape currently shipping.
+
+**Verdict: `UNVERIFIED` for both the integer encoding and the variable case.** Only the *slot
+choice* (`WFNumberValue` vs `WFConditionalActionString` vs neither) and the left-operand
+coercion are settled by Donor 4.1.
+
+**Why the artifact was NOT changed to match the donor.** Emitting `str(number)` would move 90 /
+97 live comparison operands on a build no one can run on a device — `xcrun devicectl list
+devices` reports none — to settle a question only a device can settle, and it would close at
+best half of the finding: the 32 dict-valued sites stay unevidenced either way. `.claude/CLAUDE.md`'s
+escalation rule for an unverifiable capability is the safest fallback plus a recorded deviation,
+and §9's ladder forbids spending an unevidenced artifact change on a question a rung-3 probe
+answers directly. The divergence is therefore recorded as an **open assumption owned by device
+UAT** (`docs/BUILD-NOTES.md` §28, assumption **A5**), not silently accepted and not silently
+"fixed". Recording a false confirmation is worse than recording nothing, because this file is a
+decision record future agents treat as settled and the evidence hierarchy makes a donor claim
+authoritative.
 
 **Requirement:** CIRC-07, DIST-01
