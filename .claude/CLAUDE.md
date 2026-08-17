@@ -380,12 +380,28 @@ imported shortcut on device is a first-class evidence channel here, not a fallba
 
 When sources disagree, prefer in this order:
 
-1. **User-built donor shortcuts**, decrypted — device ground truth from the target iPhone
-2. **The golden-shortcut corpus** — real-world shipped plists
-3. **The ToolKit catalog** — incomplete; carries no required/optional bit, and the
+1. **Device ground truth** — user-built donor shortcuts, decrypted, and probe results
+   observed on the real iPhone (§9 rungs 3–4)
+2. **Simulator observation** — a probe the agent built and ran itself (§9 rung 2).
+   Authoritative for runtime behaviour the simulator can actually exercise, and **never
+   above `UNVERIFIED`** for anything inside §9's "Rung 2's ceiling" list
+3. **The golden-shortcut corpus** — real-world shipped plists
+4. **Apple's `.intentdefinition` files on the build Mac** —
+   `/System/Library/PrivateFrameworks/<Framework>.framework/Versions/A/Resources/Base.lproj/Intents.intentdefinition`,
+   read via `plutil -convert xml1`, then `INIntents` / `INEnums`. Authoritative for **what
+   exists** — exact parameter names, types, enum case ids and their integer indices — but
+   **not for plist encoding**: Shortcuts serializes through its own UI rendering and the two
+   do not match. Use a donor to learn what actually gets written
+5. **The ToolKit catalog** — incomplete; carries no required/optional bit, and the
    control-flow identifiers (`conditional`, `choosefrommenu`, `repeat.*`) are absent from
    it entirely, so catalog-driven sweeps are blind to them
-4. Inference — last resort, and record it as a deviation
+6. Inference — last resort, and record it as a deviation
+
+This list and §9's ladder are complements, not rivals: **this hierarchy ranks authority when
+sources conflict; §9's ladder ranks cost and reach when a question is open.** A donor outranks
+a simulator probe here, while a simulator probe is reached for first there — both are correct.
+A donor is evidence the user already happens to have; a probe is evidence we manufacture, so it
+can be aimed at precisely the open question (§9, "Probes and donors").
 
 ### Signed `.shortcut` files ARE recoverable
 
