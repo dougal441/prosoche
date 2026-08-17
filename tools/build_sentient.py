@@ -393,7 +393,9 @@ def main() -> None:
     # too: an inserted Sentient block must never land between the OPEN/CLOSE tests and the
     # MANUAL arm, and the absence gate must not reappear through a stale fork.
     verify_router_shape(actions)
-    # BD-06 Decision 5's eighth class, enforced PER FORK rather than inferred for Sentient
+    # BD-06 Decision 5's TENTH class (renumbered by the phase 13 code review, WR-06; it read
+    # "eighth" when .claude/CLAUDE.md carried seven axes), enforced PER FORK rather than
+    # inferred for Sentient
     # from Dumb.  Sentient inherits both halves of the dispatch surface -- the Config literal
     # and the branches -- from the built Dumb source, so a fork that dropped or rewrote
     # either would produce a Circle that dispatches nothing, with no error anywhere.

@@ -409,8 +409,10 @@ which an unmatched entry is a build-time failure rather than a silent runtime no
 
 **Binding build guard.** Every distinct primitive name appearing in any `sequences` array in
 `src/CONFIG-BLOCK.md` must have exactly one matching dispatch branch in the generated
-actions, and every dispatch branch must be named by at least one sequence entry. This is an
-eighth class alongside the seven parameter-defect axes in `.claude/CLAUDE.md`, and it is
+actions, and every dispatch branch must be named by at least one sequence entry. This is a
+**tenth** class alongside the **nine** parameter-defect axes in `.claude/CLAUDE.md` (recorded
+here as "an eighth class alongside the seven" when that file carried seven; renumbered by the
+phase 13 code review, WR-06, after axes 8 and 9 were added), and it is
 invisible to the validator, the ToolKit catalog, and the signed-artifact decrypt. It is
 written **during the rename**, not after it, because a mass rename across three sequence
 arrays and ten dispatch branches is exactly the operation it exists to catch.

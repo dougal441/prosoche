@@ -1747,8 +1747,12 @@ def verify_circle_zero_silence(actions):
 
 
 # ---------------------------------------------------------------------------
-# BD-06 Decision 5 -- the EIGHTH defect class, alongside the seven parameter-defect axes
-# recorded in .claude/CLAUDE.md.  Each of those seven is a parameter whose SHAPE is wrong.
+# BD-06 Decision 5 -- the TENTH defect class, alongside the NINE parameter-defect axes
+# recorded in .claude/CLAUDE.md.  (Renumbered by the phase 13 code review, WR-06: this was
+# written as "the EIGHTH ... alongside the seven" when .claude/CLAUDE.md carried seven axes.
+# It has since gained axis 8, the WFItems row wrapper, and axis 9, compound value.  Three
+# different things were briefly called "the eighth", so a debugger grepping "axis 8" landed
+# on the wrong defect class.)  Each of those nine is a parameter whose SHAPE is wrong.
 # This one is different in kind: two independently well-formed halves that no longer agree
 # with each other.  The name primitive_dispatch() writes into the Selected Primitive
 # variable, and the name it compares that variable against, are produced by two different
@@ -3631,7 +3635,9 @@ def verify_sentinel_gates(actions):
 
 
 # ---------------------------------------------------------------------------
-# CYCLE 15 -- the eighth axis, STRUCTURED VALUE (compound state fields).  Confirmed by
+# CYCLE 15 -- axis 9, STRUCTURED VALUE (compound state fields).  (Renumbered by the phase 13
+# code review, WR-06: written as "the eighth axis" before .claude/CLAUDE.md gained axis 8, the
+# WFItems row wrapper.)  Confirmed by
 # device error: "Get Dictionary Value failed because Shortcuts couldn't convert Text to
 # Dictionary", traced to recent_sessions being read through read_value(), which
 # gettext-coerces every value it touches into a Text scalar.  That coercion is exactly
