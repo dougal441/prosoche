@@ -134,11 +134,35 @@ The container/leaf discipline is visible in the file and is exactly as
 (`last_open_at`, `last_close_at`, `last_app`, `cooldown_until`, `note_content_hash`,
 `last_model_message`) carry **real JSON `null`**. That asymmetry is deliberate and correct here.
 
-**NOT CONFIRMED — the part of this test that needs a real OPEN.** The run was a *manual*
-invocation, not an App-Is-Opened automation, so no session was started. `active_session` is
-therefore still the four-leaf sentinel, which is the correct state for what was actually done
-but is **not** the "live object with a non-null `id`" this test asks for. That assertion stays
-open and needs a genuine OPEN through the Personal Automation.
+**NOW CONFIRMED — a real OPEN was driven through the Personal Automation (2026-08-18 08:16).**
+`AliExpress` (one of the two tracked apps, read out of the automation's own app list) was launched
+from Spotlight. The `App Is Opened` automation fired, PROSOCHĒ ran, and `state.json` afterwards
+reads:
+
+- `active_session.id: "session-1787041019-63888487"` — a **live, non-null session id** ✓
+- `active_session.started_at: 1787041019` ✓
+- `active_session.declared_duration_seconds: null` (correct — no contract was declared) ✓
+- `last_open_at: 1787041019`, `last_app: "tracked"` ✓
+- `pressure: 0.3333…`, `gravity: 0.3333…` — Pressure accumulated from the open ✓
+- `circle: 0` — the **silent band**, so nothing was shown ✓
+- **No** "no value was found for dictionary key" alert, **no** "could not evaluate the key path"
+  alert ✓
+
+So `active_session` is no longer the four-leaf sentinel: it is a live object, which is precisely
+the assertion that was outstanding. **Test 1 is now a full PASS.**
+
+TWO ANOMALIES observed in the same file, recorded rather than swept:
+
+1. **`opens_today: 2` after a single app launch.** Only one deliberate open occurred. Either the
+   `App Is Opened` automation fired twice for one launch, or the open was double-counted. This is
+   adjacent to the secondary candidate already flagged in `04-UAT.md` gap G-04-3 — that OPEN's
+   debounce keys off a single global `last_open_at` rather than per-tracked-app. Worth settling,
+   because every Pressure figure downstream inherits the error.
+2. **`heat` serialises as the STRING `"0"`** while `pressure` and `gravity` are numbers. Same
+   axis-6 boolean/number/string coercion family as the `voice_enabled` defect recorded in
+   `07-UAT.md` Test 6, and dangerous for the same reason: a numeric comparison against a
+   text-typed operand renders red in the editor, is structurally valid in the file, and fails at
+   runtime.
 
 Recorded caveat: `panic_escape_enabled` serialises as the number `1` while `voice_enabled`
 serialises as the boolean `true`. Both are readable, so this is not a defect on its face, but

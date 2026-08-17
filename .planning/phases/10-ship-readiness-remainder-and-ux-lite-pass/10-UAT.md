@@ -183,6 +183,21 @@ outcome:
 
 ---
 
+outcome: **PASS.** Device, 2026-08-18 08:16, Core `b07497ba`, automations wired and verified
+(`Is Opened` ✓, `Run Immediately` ✓, `Notify When Run` off, Text `OPEN` → Run
+`PROSOCHĒ — Nine Circles — Core`). `AliExpress` — one of the two tracked apps, read out of the
+automation's own app list — was launched. The automation fired and PROSOCHĒ ran.
+
+**No intervention of any kind was presented.** The app came to the foreground normally.
+`state.json` immediately afterwards shows `circle: 0` — the silent band — alongside
+`pressure: 0.3333…`, `last_open_at: 1787041019` and a live `active_session.id`. So the open was
+**recorded but not acted on**, which is exactly what the silent band specifies: the arithmetic ran,
+state advanced, and the user saw nothing.
+
+
+
+---
+
 ### 2. Band exit — how many opens does it take?
 
 **Setup.** Continue directly from Test 1 without resetting. Note the current `Status` Pressure.
@@ -240,6 +255,20 @@ expected behaviour.
 which open number of Test 2 it appeared on.
 
 outcome:
+
+---
+
+outcome: **PASS, with one caveat worth recording.** Same run as Test 1. No notification was posted
+on the OPEN path — the app foregrounded with nothing from PROSOCHĒ.
+
+CAVEAT: roughly a minute later iOS presented **"Allow 'PROSOCHĒ — Nine Circles — Core' to display
+notifications?"**. So the shortcut does hold a notification capability that iOS gated on first use
+(the CLOSE path's "Session closed · N sec" notification is the likely owner). The permission was
+granted, so a re-run of this test now has a *different* precondition — notifications are permitted
+— and should be repeated to confirm OPEN still posts nothing when it is actually allowed to. The
+pass above is therefore honest but not yet the strongest form of the claim.
+
+
 
 ---
 
