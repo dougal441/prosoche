@@ -2978,6 +2978,14 @@ ACTIVE_SESSION_SEED = {
 # seed_active_session()'s docstring.  This literal was formerly PENDING_EXIT_ANCHOR; see
 # the re-pointing note beside that constant.
 ACTIVE_SESSION_ANCHOR = '"active_session": null,'
+# A build-j tree (built before the WR-01 fix) carries a double-indented active_session
+# line, because the original seeder re-prepended `indent` onto a replacement whose
+# anchor already retained its own leading whitespace. Since this generator's SOURCE is
+# itself (main() re-parses the previous build's output), a tree seeded with the bug is
+# idempotent-locked into staying wrong forever unless this repair runs first -- same
+# shape as SNAPSHOT_SEEDED_EMPTY's "right shape, wrong sentinel" correction below.
+ACTIVE_SESSION_DOUBLE_INDENT = '\n    "active_session": {'
+ACTIVE_SESSION_SINGLE_INDENT = '\n  "active_session": {'
 
 
 def seed_active_session(actions):
@@ -2988,9 +2996,11 @@ def seed_active_session(actions):
     template is located by content (_state_template() anchors on '"schema_version"', never
     an index), the idempotency guard is the collision-free token '"active_session": {'
     (NOT '"active_session"', which already matches the un-seeded "active_session": null,
-    line and would make this seeder a permanent no-op), indent is derived from the anchor
-    line rather than hard-coded, and the edit goes through _replace_in_token(), never
-    str.replace -- it shifts every attachmentsByRange offset that sits after the edit and
+    line and would make this seeder a permanent no-op), the anchor's own leading whitespace
+    is left untouched by _replace_in_token() so the replacement text must NOT re-prepend it
+    (seed_settings_snapshot()'s _snapshot_seed_text() is the mechanics analog for this rule
+    too), and the edit goes through _replace_in_token(), never str.replace -- it shifts
+    every attachmentsByRange offset that sits after the edit and
     re-asserts each still lands on a U+FFFC placeholder (.claude/CLAUDE.md §5: an
     out-of-bounds range can crash Shortcuts on import).
 
@@ -3002,15 +3012,20 @@ def seed_active_session(actions):
     container must never again be replaced wholesale.
 
     Idempotent: a second run finds '"active_session": {' already in the template and
-    returns; verify_active_session_seed() re-proves the shape either way.
+    returns; verify_active_session_seed() re-proves the shape either way. A tree built
+    before this WR-01 fix carries a double-indented line (the original bug); that shape
+    is repaired in place before the idempotency check, the same "right shape, wrong
+    sentinel" pattern seed_settings_snapshot() already uses for SNAPSHOT_SEEDED_EMPTY.
     """
     _, inner = _state_template(actions)
+    if ACTIVE_SESSION_DOUBLE_INDENT in inner["string"]:
+        # A pre-WR-01-fix tree: right shape, wrong indent. Correct the indentation in
+        # place; the leaf sentinels are untouched.
+        _replace_in_token(inner, ACTIVE_SESSION_DOUBLE_INDENT, ACTIVE_SESSION_SINGLE_INDENT)
     if '"active_session": {' in inner["string"]:
         return  # already seeded; verify_active_session_seed() proves it is the right shape
-    line = next(text for text in inner["string"].splitlines() if ACTIVE_SESSION_ANCHOR in text)
-    indent = line[:len(line) - len(line.lstrip())]
     leaves = ", ".join(f'"{leaf}": "{value}"' for leaf, value in ACTIVE_SESSION_SEED.items())
-    _replace_in_token(inner, ACTIVE_SESSION_ANCHOR, f'{indent}"active_session": {{{leaves}}},')
+    _replace_in_token(inner, ACTIVE_SESSION_ANCHOR, f'"active_session": {{{leaves}}},')
 
 
 def verify_active_session_seed(actions):
