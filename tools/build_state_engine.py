@@ -514,9 +514,30 @@ def clear_snapshot(key: str, dictionary_name="State"):
     container gates at 100 while the leaf gates change -- the split is enforced by
     verify_sentinel_gates(), not asserted.
     Same action count as clearing the container: one Set Dictionary Value, deeper key.
-    changed_at / changed_by_session_id are deliberately left: they are written at 20 sites
-    and READ AT NONE in either fork (the ownership check does not exist -- DEV-06, deferred
-    to the user as a design change), so stale values there have no consumer.
+    DEV-06 -- DECIDED BY THE USER 2026-08-18 AS REMOVAL (decision D-02, LOCKED).  The
+    paragraph that stood here is preserved rather than deleted, because the history of the
+    deferral is worth more than the space it costs.  It read: "changed_at /
+    changed_by_session_id are deliberately left: they are written at 20 sites and READ AT
+    NONE in either fork (the ownership check does not exist -- DEV-06, deferred to the user
+    as a design change), so stale values there have no consumer."
+    Two of its three claims held and one did not.  READ AT NONE was and is true -- that is
+    exactly what licensed the removal.  "20 sites" was STALE: measured 2026-08-18 against
+    both built forks, the true figure is 44 write sites per fork (2 leaves x 2 groups x 11
+    primitive_dispatch() renderings); docs/BUILD-NOTES.md section 17 carries the correction
+    and its derivation.  And "deliberately left" is now false: the leaves are gone from the
+    writes, from the bootstrap seed (SNAPSHOT_SEED) and from
+    docs/phase5_self_check.py's state-safety-key loop, in one coordinated generator change.
+    WHY REMOVAL RATHER THAN AN OWNERSHIP CHECK: the overlapping-session case DEV-06 named is
+    already guarded without consulting identity or time.  if_block("<group> Snapshot", 100)
+    short-circuits a second session on snapshot PRESENCE, and every restore gates on
+    original_value > 0.  A naive field-equality check would additionally BLOCK the
+    legitimate last-close-restores-the-first-capture case.  The decision became timely only
+    after plan 16-01: before it, these fields were written into a dictionary that was never
+    saved, so they did not survive the run that wrote them; persisting the capture is
+    precisely what would have given them consequences for the first time.
+    The removal is safe ONLY because there is no reader -- a dotted read of a missing
+    segment is a HARD runtime error here (.claude/CLAUDE.md, verified runtime semantics).
+    verify_no_removed_snapshot_leaf_reads() is what keeps that property true.
     """
     return set_value(f"settings_snapshot.{key}.original_value", cleared_value(), dictionary_name)
 
@@ -704,9 +725,10 @@ def dimming():
     a += [snapshot_if, action("is.workflow.actions.nothing"), otherwise(snapshot_g)]
     a += device_detail("Current Brightness", "Captured Brightness")
     capture_g, capture_if = if_block("Captured Brightness", 2, number=0)
-    a += [capture_if, set_value("settings_snapshot.brightness.original_value", variable("Captured Brightness")),
-          set_value("settings_snapshot.brightness.changed_at", variable("Now Epoch")),
-          set_value("settings_snapshot.brightness.changed_by_session_id", variable("Session ID"))]
+    # PHASE 16 (16-04), D-02: the .changed_at and .changed_by_session_id writes that stood
+    # here are GONE.  See D02_REMOVED_SNAPSHOT_LEAVES and clear_snapshot()'s docstring for
+    # the decision; verify_no_removed_snapshot_leaf_reads() is what keeps the removal safe.
+    a += [capture_if, set_value("settings_snapshot.brightness.original_value", variable("Captured Brightness"))]
     a += config("safety.dim_target", "Dim Target")
     already_dim_g, already_dim_if = if_block("Captured Brightness", 1, number=variable("Dim Target"))
     a += [already_dim_if, action("is.workflow.actions.nothing"), otherwise(already_dim_g)]
@@ -759,9 +781,10 @@ def silence():
     a += [snapshot_if, action("is.workflow.actions.nothing"), otherwise(snapshot_g)]
     a += device_detail("Current Volume", "Captured Volume")
     capture_g, capture_if = if_block("Captured Volume", 2, number=0)
-    a += [capture_if, set_value("settings_snapshot.volume.original_value", variable("Captured Volume")),
-          set_value("settings_snapshot.volume.changed_at", variable("Now Epoch")),
-          set_value("settings_snapshot.volume.changed_by_session_id", variable("Session ID"))]
+    # PHASE 16 (16-04), D-02: the .changed_at and .changed_by_session_id writes that stood
+    # here are GONE.  See D02_REMOVED_SNAPSHOT_LEAVES and clear_snapshot()'s docstring for
+    # the decision; verify_no_removed_snapshot_leaf_reads() is what keeps the removal safe.
+    a += [capture_if, set_value("settings_snapshot.volume.original_value", variable("Captured Volume"))]
     target = number(0.10, "Silence Target")
     a += target
     quiet_g, quiet_if = if_block("Captured Volume", 1, number=variable("Silence Target"))
@@ -2892,9 +2915,17 @@ def verify_list_item_wrappers(actions):
 #
 # This is a TEXT edit to the existing template action, not new actions, so it adds nothing
 # to the artifact and every breadcrumb keeps its build-i position.
+#
+# PHASE 16 (16-04), D-02 -- changed_at and changed_by_session_id are REMOVED from the seed.
+# Only LEAVES may go.  The settings_snapshot CONTAINER and both group sub-dictionaries stay,
+# and original_value stays seeded under each: clear_snapshot()'s docstring records the
+# cycle-10 finding that replacing a group with a string makes the next dotted read of
+# .original_value run against a string parent and hard-error.  Removing a leaf nothing reads
+# is safe; removing a group is that defect.
+D02_REMOVED_SNAPSHOT_LEAVES = ("changed_at", "changed_by_session_id")
 SNAPSHOT_SEED = {
-    "brightness": ("original_value", "changed_at", "changed_by_session_id"),
-    "volume": ("original_value", "changed_at", "changed_by_session_id"),
+    "brightness": ("original_value",),
+    "volume": ("original_value",),
 }
 SNAPSHOT_EMPTY = '"settings_snapshot": {},'
 
@@ -2912,7 +2943,31 @@ def _snapshot_seed_text(indent: str) -> str:
 # that a present-but-empty value passes `has any value`, so the leaf gate read TRUE and the
 # restore wrote an empty value into Set Brightness.  Recognise that shape and correct it in
 # place, so a re-run over a build-j tree converges instead of silently keeping "".
+#
+# PHASE 16 (16-04), D-02 -- THE DECISION ABOUT THIS CONSTANT, STATED RATHER THAN GUESSED.
+# It is a RECOGNISER, not a seed: it holds the literal text an OLD tree carries, so a re-run
+# detects that shape and corrects it in place.  Getting it wrong does not fail the build --
+# it silently stops old trees converging -- so the reasoning is recorded here.
+#
+# DECISION: the recogniser literal is LEFT EXACTLY AS IT WAS.  Build j is a finished
+# historical fact and it wrote THREE empty leaves; editing this string to two would simply
+# stop it matching the only shape it exists to match, and the build-j convergence path would
+# silently die.  Its REPLACEMENT text, by contrast, is derived from SNAPSHOT_SEED rather than
+# written out, so it followed the seed down to one leaf on its own -- which is the wanted
+# behaviour: a build-j tree now converges straight to the post-D-02 shape in a single step,
+# rather than to an intermediate shape a second recogniser would then have to re-correct.
+#
+# BUT THAT IS NOT SUFFICIENT ON ITS OWN, and this is the part a "just shrink SNAPSHOT_SEED"
+# reading misses.  main() re-parses its OWN previous output as SOURCE, and
+# seed_settings_snapshot() is idempotent on SNAPSHOT_EMPTY -- so on every tree built since
+# the seed first landed, the template is ALREADY seeded, SNAPSHOT_EMPTY is absent, the seeder
+# returns early, and shrinking SNAPSHOT_SEED would change NOTHING in the artifact.  The
+# already-shipped three-leaf SENTINEL shape needs its own recogniser, so D-02 gets one.
+# It is derived from the same two constants it must agree with, so it cannot drift from them.
 SNAPSHOT_SEEDED_EMPTY = '"original_value": "", "changed_at": "", "changed_by_session_id": ""'
+SNAPSHOT_SEEDED_D02 = ", ".join(
+    f'"{leaf}": "{CLEARED_SENTINEL}"'
+    for leaf in ("original_value",) + D02_REMOVED_SNAPSHOT_LEAVES)
 
 
 def _state_template(actions):
@@ -2961,11 +3016,17 @@ def _replace_in_token(inner: dict, old: str, new: str):
 def seed_settings_snapshot(actions):
     """Establish the complete settings_snapshot subtree in the bootstrap template."""
     _, inner = _state_template(actions)
+    current = ", ".join(f'"{leaf}": "{CLEARED_SENTINEL}"' for leaf in SNAPSHOT_SEED["brightness"])
     while SNAPSHOT_SEEDED_EMPTY in inner["string"]:
         # A build-j tree: right shape, wrong sentinel.  Correct the leaves in place.
-        _replace_in_token(inner, SNAPSHOT_SEEDED_EMPTY,
-                          ", ".join(f'"{leaf}": "{CLEARED_SENTINEL}"'
-                                    for leaf in SNAPSHOT_SEED["brightness"]))
+        # Post-D-02 this also drops the two retired leaves in the same step, because
+        # `current` is derived from SNAPSHOT_SEED -- see the note beside the constant.
+        _replace_in_token(inner, SNAPSHOT_SEEDED_EMPTY, current)
+    while SNAPSHOT_SEEDED_D02 in inner["string"]:
+        # A pre-D-02 tree: right container, right sentinel, two retired leaves.  Drop them
+        # in place.  Without this pass the removal would never reach the artifact at all:
+        # the template is already seeded, so the SNAPSHOT_EMPTY branch below returns early.
+        _replace_in_token(inner, SNAPSHOT_SEEDED_D02, current)
     if SNAPSHOT_EMPTY not in inner["string"]:
         return  # already seeded; verify_state_seed() proves it is the right shape
     line = next(text for text in inner["string"].splitlines() if SNAPSHOT_EMPTY in text)
