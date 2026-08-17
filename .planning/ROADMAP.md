@@ -548,7 +548,7 @@ session, so treat it as new-risk surface.
 **Severity:** major
 **Requirements**: SESS-07, STATE-12, EXIT-01, EXIT-02, SAFE-01
 **Depends on:** Phase 11
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 **Wave 1**
@@ -565,7 +565,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 12-04-PLAN.md — Decide and close `profile_snapshot.create_target_url`; generalise `verify_state_seed()` to every state read
+- [x] 12-04-PLAN.md — Decide and close `profile_snapshot.create_target_url`; generalise `verify_state_seed()` to every state read
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
