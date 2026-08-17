@@ -352,6 +352,13 @@ def main() -> None:
     # family (CIRC-07) with no error anywhere, and neither validator gate can see it.
     # The 172/175 raw-literal targets stay unasserted on BOTH forks, for the reason the
     # guard's own docstring records: no donor covers the pure-literal case.
+    #
+    # PHASE 13 CODE REVIEW (WR-02).  The "flattened" half of the sentence above was, until
+    # now, a claim the guard could not back: the shape pin only runs `if isinstance(value,
+    # dict)`, and a flattened target is a plain str it skips -- probed, and it PASSED.  The
+    # guard now also pins the CENSUS (EXPECTED_VARIABLE_TARGETS = 20, measured on both
+    # forks), which is what makes a flattened Aware target detectable at all.  Still no new
+    # touch point here: the guard was already imported and already invoked.
     verify_pending_exit_seed(actions)
     verify_panic_escape_seed(actions)
     verify_compound_value_reads(actions)

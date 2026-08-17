@@ -2448,6 +2448,14 @@ def verify_conditional_inputs(actions):
                          + f" ({len(offenders)} total)")
 
 
+# The MEASURED size of the Donor 5 family -- mode-0 conditionals whose
+# WFConditionalActionString is a variable-bearing WFTextTokenString.  20 on BOTH forks
+# (19 x WFCondition 4, 1 x WFCondition 99), measured by plistlib walk over the phase-13
+# artifacts and recorded in docs/BUILD-NOTES.md section 28 and BD-07.  The remaining
+# 172 (Core) / 175 (Aware) targets are raw literals and are deliberately NOT asserted.
+EXPECTED_VARIABLE_TARGETS = 20
+
+
 def verify_conditional_action_string(actions):
     """Fail the build if a conditional's comparison target is the abandoned bare placeholder.
 
@@ -2498,9 +2506,21 @@ def verify_conditional_action_string(actions):
     as a build gate -- exactly what the project's do-not-fabricate rule forbids.  Settling it
     needs a one-action donor with a literal comparison: a rung-4 request, not a rung-1
     inference.
+
+    THE CENSUS IS PINNED TOO, BECAUSE THE SHAPE CHECK ALONE CANNOT SEE A FLATTENED SITE.
+    The pin above only runs `if isinstance(value, dict)`.  FLATTENING a variable-bearing
+    target -- replacing token("Circle Next") with the raw literal "Circle Next" -- produces a
+    plain str, so the pin skips it entirely, and the guard has no notion of WHICH sites are
+    supposed to be variable-bearing: a flattened site is indistinguishable from one of the
+    172/175 legitimate literals.  Probed: that mutation PASSED the shape check.  So the count
+    itself is asserted.  EXPECTED_VARIABLE_TARGETS is a MEASURED figure (20, identical on both
+    forks, 19 x code 4 + 1 x code 99), not a chosen one; if a future phase deliberately adds or
+    removes a variable-bearing comparison, update it in the same commit and say why -- an
+    unexplained edit to this constant is the same defect as the flatten it exists to catch.
     """
     offenders = []
     unpinned = []
+    variable_bearing = 0
     for index, item in enumerate(actions):
         if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
             continue
@@ -2517,6 +2537,7 @@ def verify_conditional_action_string(actions):
         # the check above compares against the raw placeholder STRING, the pin below only
         # ever runs on the DICT case.  Neither can see the other's subject.
         if isinstance(value, dict):
+            variable_bearing += 1
             # THE PIN FAILS CLOSED.  `Value` is a dict only while the envelope is intact.  A
             # flatten-in-place regression that leaves `Value` a plain string used to kill this
             # guard with `AttributeError: 'str' object has no attribute 'get'` -- a traceback
@@ -2545,6 +2566,16 @@ def verify_conditional_action_string(actions):
                          "the defect, not the shape: actions "
                          + ", ".join(str(i) for i in unpinned[:5])
                          + f" ({len(unpinned)} total)")
+    # THIRD RAISE, APPENDED LAST DELIBERATELY.  docs/BUILD-NOTES.md section 28 records that
+    # the first raise MASKS the second; appending here adds no new mask over either and leaves
+    # the recorded ordering untouched, which this phase's prohibitions require.
+    if variable_bearing != EXPECTED_VARIABLE_TARGETS:
+        raise SystemExit("variable-bearing conditional comparison targets: expected "
+                         f"{EXPECTED_VARIABLE_TARGETS} (the measured Donor 5 family, BD-07), "
+                         f"found {variable_bearing} -- a target was FLATTENED to a raw literal, "
+                         "which the shape pin above cannot see because a flattened target is "
+                         "indistinguishable from one of the legitimate literals; or a new "
+                         "variable-bearing target appeared unreviewed")
 
 
 def verify_list_item_wrappers(actions):
