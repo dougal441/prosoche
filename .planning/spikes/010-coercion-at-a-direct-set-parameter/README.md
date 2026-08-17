@@ -387,13 +387,66 @@ Per §6, "no error" is consistent with a silently defaulted 50%.
 
 ### Disposition of the 11 uncoerced `setvolume` sites
 
-Recorded in `docs/BUILD-NOTES.md` alongside the name-scoped measurement that backs it. In short:
-**correctly left uncoerced**, on a name-scoped check of every assignment of the silence-target
-variable in both built forks — not by analogy to brightness. The 15/15-brightness vs 4/15-volume
-asymmetry is a **sourcing artifact, not a gap**: brightness operands are `gettext`-sourced (Text) and
-need the coercion; the silence target is `number()`-sourced and is already Number-typed, so the
-generator correctly skips it. `docs/environmental_restore_check.py` deliberately asserts no coercion
-count for exactly this reason. **Do not "fix" the asymmetry by pattern-matching brightness.**
+**They are CORRECTLY left uncoerced.** This is a rung-1 result that needed no probe, and it is
+recorded here and in `docs/BUILD-NOTES.md`.
+
+#### The measurement, and why the existing evidence was not enough
+
+`16-RESEARCH.md` assumption **A2** — *"the `Silence Target` sites are genuinely Number-sourced and
+need no coercion"* — carried its own risk note: *"`phase9_self_check.py`'s `site_audit()` currently
+pins 4-of-15 and passes, which is evidence but not a name-scoped grep."* That distinction is the
+whole point. A **count-based** audit proves the split is **stable**; it cannot prove the split is
+**correct**, because it never asks where the operand's value comes from.
+
+`drafts/audit_silence_target_sourcing.py` asks exactly that: it resolves every
+`Set Variable "Silence Target"` in **both built forks** back through its `OutputUUID` to the action
+that produced it. Measured 2026-08-18, read-only, against the shipped artifacts:
+
+| | `PROSOCHE-Dumb.xml` | `PROSOCHE-Sentient.xml` |
+|---|---:|---:|
+| `Set Variable "Silence Target"` assignments | **11** | **11** |
+| …of which **Number-sourced** (`is.workflow.actions.number`) | **11** | **11** |
+| …of which **NOT** Number-sourced | **0** | **0** |
+| `setvolume` sites | 15 | 15 |
+| …fed by `Silence Target` | **11** | **11** |
+| …carrying a coercion | 4 | 4 |
+
+**The arithmetic closes exactly, and that is the result.** 11 fed by `Silence Target` + 4 coerced =
+15. The 11 sites that lack the coercion are precisely the 11 fed by a variable that **every one of
+its 11 definitions** sources from `is.workflow.actions.number`. There is no site that is uncoerced
+for any other reason, and no definition of that name anywhere in either fork that is text-sourced.
+
+**A2 HOLDS.** It is now backed by a name-scoped provenance check rather than by a count.
+
+#### The failure mode this rules out is one the project has already been bitten by
+
+Shortcuts variables are global to a run and last-write-wins, so **one** `Set Variable "Silence
+Target"` fed by a Text source anywhere in either fork would make every uncoerced `setvolume` operand
+text-typed — and nothing in the current checker suite would notice. That is exactly how `Circle Next`
+became mixed-typed and produced 30 real offenders (`tools/build_state_engine.py`, the CYCLE 14 note:
+*"one Text definition anywhere poisons every numeric use of that name"*). The check above is scoped
+to catch that class, not to re-count sites.
+
+#### The asymmetry is a sourcing artifact, not a gap — say so where a future reader will look
+
+15/15 brightness coerced against 4/15 volume looks like a hole. It is not:
+
+- **Brightness** operands are `gettext`-sourced (`read_value()` = get + gettext → **Text**), so
+  `normalise_numeric_operands()` must attach the coercion.
+- **The silence target** is `number()`-sourced and therefore **already Number-typed**, so the
+  generator correctly *skips* it — `_already_numeric()` leaves such operands byte-identical, which is
+  what keeps device-proven sites unchanged.
+- The four coerced `setvolume` sites are the **restore** operands, which come back out of state
+  through `read_value()` and are therefore Text — the same reason brightness needs it.
+
+`docs/environmental_restore_check.py` **deliberately asserts no coercion count** for exactly this
+reason, and says so in its own comments. **Do not "fix" the asymmetry by pattern-matching brightness.**
+Adding a coercion to an already-Number operand would change 11 device-untested sites for no benefit,
+in a build whose whole safety argument rests on not disturbing what already works.
+
+Both `python3 docs/phase9_self_check.py` and `python3 docs/environmental_restore_check.py` exit 0
+after this plan, which changed no code — `site_audit: passed (30/30 sites audited, 19 coerced, 11
+correctly not)`.
 
 ### Free-ride: spike 007's App Picker Probe
 

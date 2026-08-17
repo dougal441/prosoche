@@ -2873,3 +2873,190 @@ import is `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` at 
 **`b07497ba…`** (the `365937e` re-ship); anything else is the wrong build. **SUPERSEDED:** an
 earlier revision of this sentence named `fe1bafdf…`, the `737ce07` build that carried the CR-01
 defect. Importing that one would test the defect rather than the fix.
+
+---
+
+## 29. Phase 16 — the coercion probe: a rung-2 channel opened, a chip gate retired, and an inference refuted (plan 16-02, 2026-08-18)
+
+**Channel: SIMULATOR, rung 2.** iPhone 17 Pro, iOS 26.5 (23F77), udid
+`79A84C29-DB62-40A2-AC3F-CCB5F8192F86`. **None of this is device evidence.** No physical-device
+tunnel was live; nothing below may be read as device ground truth, and every claim inside
+`.claude/CLAUDE.md` §9's "Rung 2's ceiling" is recorded **UNVERIFIED** regardless of how clean the
+observation looked. Spike: `.planning/spikes/010-coercion-at-a-direct-set-parameter/`, verdict
+**PARTIAL**, 14 archived screenshots.
+
+### 29.1 The rung-2 import channel is real — spike 007's claim is RETIRED
+
+`xcrun simctl openurl <udid> "file:///abs/path.shortcut"` renders the Shortcuts import sheet, and
+**one synthesized tap on "Add Shortcut" completes the import.** Measured this session; the editor
+opened on the imported probe. This closes `16-RESEARCH.md` assumption **A5** — the open half was
+whether the tap lands, and the answer is **yes**.
+
+Spike 007 recorded, and the `spike-findings-prosoche` skill repeated as a standing constraint, that
+*"the booted simulator cannot import a signed `.shortcut` through any channel."* That generalisation
+was drawn from five failed channels **without the sixth having been tried**: its `file://` row was
+measured against the **MCP simulator tool's scheme allowlist**, not against `simctl`. Every other row
+stands — re-measured 2026-08-18, `shortcuts://import-shortcut?url=file://…&silent=true` still returns
+*"Import Failed. The shortcut URL provided was invalid."*, because the `shortcuts://` scheme wants an
+iCloud link and rejects the URL before `silent=true` is ever consulted. `openurl` with a plain file
+URL does not go through that scheme at all.
+
+**Consequence for the ladder:** `.claude/CLAUDE.md` §9's original rung-2 row was **right**, and spike
+007's narrowing of it was wrong. Rung 2 reaches the **editor and the runtime**, not merely the build.
+Both §9 and the skill's `evidence-and-probes.md` are corrected accordingly, each citing
+`010-coercion-at-a-direct-set-parameter` as the measuring spike.
+
+Instrument, preserved with every dead end recorded so nobody re-walks them:
+`.planning/spikes/010-coercion-at-a-direct-set-parameter/drafts/sim_input.py`. What did **not** work:
+the tap tool §9 names (`mcp__Claude_Code_iOS_Simulator__control`) is not exposed to a subagent with a
+restricted tool list; `osascript` is refused assistive access (`-1728`); `idb` and `cliclick` are not
+installed; `simctl` has no tap verb. What works is `CGEventPost` straight to the window server, which
+needed no Accessibility grant. Two preconditions that cost real time: a `simctl`-booted simulator has
+**no on-screen window** until `open -a Simulator`, and coordinates must be **fractions of the device
+screen mapped through the window rect measured at run time**, never pixels.
+
+### 29.2 CAP-06 addendum — the chip gate CANNOT discriminate at a direct Set-action parameter
+
+§15 (CAP-06) established that operator/operand type validity is a UI-only signal: a numeric
+conditional on a text-typed operand renders **red**, is structurally valid in the file, and fails at
+runtime. That remains true **for conditionals**. It does **not** generalise to a direct Set-action
+parameter, and this is the finding that matters most here.
+
+Measured: a `Set Brightness` fed by a named variable **with** the Number coercion, and an otherwise
+identical one **without** it, **render identically** in the editor. Neither is red. Neither is
+degraded.
+
+The mechanism is simple once seen. A conditional's operator picker is populated **from the operand's
+static type**, so a mismatch has no case to render and the chip goes red. **`Set Brightness` has no
+operator picker.** There is nothing for a type mismatch to break in the UI.
+
+**Therefore `09-UAT.md` Test 1 — "the coercion chip does not render red" — is not a valid instrument
+for `WFBrightness`/`WFVolume`.** Its single recorded pass was never evidence about these sites. A
+green chip at a direct Set parameter is not weak evidence; it is **no** evidence. The uncoerced
+control leg is what exposed this — without it, "leg A rendered fine" would have been recorded as a
+pass, and the pass would have been vacuous.
+
+### 29.3 CAP-08 — `setbrightness.WFBrightness` is OPTIONAL and defaults to 50%
+
+**New capability finding, and it is a safety finding.** A `Set Brightness` authored with
+`WFBrightness` **entirely absent** renders in the editor as **"Set brightness to 50%"**. The
+parameter is optional with a default; omitting it does **not** produce an unfilled-parameter state.
+
+**Why this matters for SAFE-01 / CIRC-05.** If the coercion were ever wrong in a way that left the
+operand unresolved, `Set Brightness` would **not** halt and would **not** report *"Please choose a
+value for each parameter in this action."* It would silently apply **50% brightness** — an
+unrequested environmental change, with no capture, and no error to attribute it to. That is strictly
+worse than a halt, because Shortcuts has no try/catch and a halt is at least visible.
+
+**Direct requirement on the device instrument:** the eventual device test must verify **the
+brightness value actually applied**, not merely that the action did not error. A "no error" device
+result is fully consistent with a completely broken operand.
+
+### 29.4 The refuted inference — recorded because the refutation is the useful part
+
+Running the coerced leg on the simulator produced **"Could Not Run Set Brightness — There was a
+problem setting the brightness."** That is a **capability** failure, not the **parameter** failure
+§15 names as the signature of an operand-type defect. The tempting inference was: *Shortcuts got past
+parameter validation and reached the OS call, so the coerced operand resolved.*
+
+**A negative control refuted it.** A one-action probe holding a `Set Brightness` with no operand at
+all produced **the same** message. Both reach the OS call; both fail identically because the
+simulator has no backlight. **The channel cannot distinguish a resolved operand from an absent one**,
+so no run on a simulator can show whether the coerced operand was consumed.
+
+This is `.claude/CLAUDE.md`'s *"read the error text, not just the letter"* doing its job, and the
+negative-control idiom from `docs/phase9_self_check.py::negative_control()` doing its job. The
+control cost one small artifact and overturned the conclusion the spike was about to record.
+
+### 29.5 What this probe did NOT settle — the negative record, stated in full
+
+A record that only holds successes is not a record. **Recorded UNVERIFIED, all inside §9's rung-2
+ceiling:**
+
+- **Whether `Set Brightness` actually CONSUMES a Number-coerced named-variable operand at run time.**
+  `Set Brightness` cannot succeed on a simulator at all. This is not partially answered — it is
+  **untouched, and now known to be unreachable at rung 2**, which is worth recording because it means
+  no further simulator effort will help and the device session must carry it.
+- **Whether `Get Device Details → Current Brightness` returns a usable, correctly typed value on real
+  hardware.** The simulator returns **`0`**. Informative for probe design, **not promotable**.
+- **Real-hardware environmental behaviour** — whether the screen physically dims and un-dims, and
+  what `WFBrightness = 0.0` looks like. Untouched. Personal Automations, the Control Room Note path
+  and Apple Intelligence likewise untouched.
+
+**`WFNumberContentItem` is neither confirmed nor refuted at this position.** Nothing observed
+contradicts it; the fresh-donor protocol is **NOT** triggered; no replacement `CoercionItemClass`
+appears anywhere in the spike, and `drafts/assert_probe_shape.py` fails if one ever does.
+
+### 29.6 A2 CONFIRMED by name-scoped provenance — the 11 uncoerced `setvolume` sites are correct
+
+`16-RESEARCH.md` assumption **A2** is the claim the volume disposition rests on, and its own risk
+note said the existing evidence was a count, not a name-scoped check. Run properly, read-only, on
+both shipped forks (`drafts/audit_silence_target_sourcing.py`, 2026-08-18):
+
+| | Dumb | Sentient |
+|---|---:|---:|
+| `Set Variable "Silence Target"` assignments | **11** | **11** |
+| …**Number-sourced** (`is.workflow.actions.number`) | **11** | **11** |
+| …**not** Number-sourced | **0** | **0** |
+| `setvolume` sites | 15 | 15 |
+| …fed by `Silence Target` | **11** | **11** |
+| …carrying a coercion | 4 | 4 |
+
+**The arithmetic closes exactly:** 11 fed by `Silence Target` + 4 coerced = 15. The 11 uncoerced
+sites are precisely the 11 fed by a variable whose **every** definition is `number()`-sourced. **A2
+holds**, now on provenance rather than on a count.
+
+**The asymmetry — 15/15 brightness coerced vs 4/15 volume — is a SOURCING ARTIFACT, not a gap.**
+Brightness operands are `gettext`-sourced (`read_value()` = get + gettext → Text) and need the
+coercion; the silence target is `number()`-sourced and already Number-typed, so
+`normalise_numeric_operands()` correctly skips it via `_already_numeric()`, leaving device-proven
+sites byte-identical. The four coerced `setvolume` sites are the **restore** operands, which come
+back out of state through `read_value()` and are therefore Text — the same reason brightness needs
+it. `docs/environmental_restore_check.py` deliberately asserts **no** coercion count for exactly this
+reason and says so in its own comments.
+
+**Do not "fix" the asymmetry by pattern-matching brightness.** Coercing an already-Number operand
+would change 11 device-untested sites for no benefit, in a build whose safety argument rests on not
+disturbing what already works.
+
+The failure mode the name-scoped check rules out is one this project has already paid for: Shortcuts
+variables are global to a run and last-write-wins, so **one** text-sourced `Set Variable "Silence
+Target"` anywhere in either fork would poison all 11 operands, and the count-based `site_audit()`
+would still pass. That is exactly how `Circle Next` became mixed-typed and produced 30 real
+offenders (the CYCLE 14 note above `NUMERIC_OPERAND_FIELDS`).
+
+**This plan changed no generator or checker code.** `python3 docs/phase9_self_check.py` and
+`python3 docs/environmental_restore_check.py` both exit 0 — `site_audit: passed (30/30 sites audited,
+19 coerced, 11 correctly not)`. Acting on the probe's verdict in the generator belongs to a later
+phase, with its own guard.
+
+### 29.7 Free-ride — spike 007 resolved, PARTIAL → VALIDATED
+
+The channel was open and the recording duty applies to whatever is observed, so spike 007's
+still-unrun `App Picker Probe` was imported and inspected. Recorded in **spike 007**; summarised here
+because leg E is a general lesson about fabricated values, which is this project's central discipline.
+
+| leg | authored | renders as |
+|---|---|---|
+| A | Calendar, donor-exact complete descriptor | **"Open [Calendar]"** — normal, control passes |
+| B | Reminders — **first-party, INSTALLED**, `WFSelectedApp` **omitted** | **"Open [App]"** — EMPTY |
+| C | Contacts — correct bundle id, **fabricated** name + nonsense team id | **"Open [ZZZ WRONG NAME ZZZ]"** — the editor **trusts the stored Name** and never re-resolves it |
+| D | Instagram — third-party, not installed, bare identifier | **"Open [App]"** — empty, identical to B |
+| E | TikTok — third-party, not installed, **fabricated** descriptor | **"Open [AirDrop]"** in **RED** — mis-resolved to a different, real app |
+
+**An unresolvable picker renders silently EMPTY, and a fabricated one renders silently WRONG.**
+Nothing fails at import; nothing warns. Leg E produces a confident, fully-populated chip naming an app
+the author never mentioned. That is the silent-wrong-behaviour class the do-not-fabricate rule exists
+to prevent, now demonstrated end to end rather than argued — and it generalises spike 005's lesson
+from parameter literals to **entity descriptors**: a plausible-looking fabricated descriptor is not a
+degraded correct one, it is a *different* one.
+
+**Leg B is the one that touches this project's code:** `WFAppIdentifier` alone is **not** sufficient
+even for an installed first-party app. **PROSOCHĒ is unaffected** — `open_app()` emits the full
+`WFSelectedApp` triple for all six apps, which is leg A's shape exactly — but spike 006's Class-A
+verdict for `Open App` holds **because the descriptor is written**, not because the bundle id would
+have carried it. Leg C adds the cost of a wrong Name: the editor would display it indefinitely.
+
+**Still not settled:** launch behaviour. Every observation is authoring-time render, which is what the
+probe was built for. What legs D and E do when actually launched is untouched, and is off PROSOCHĒ's
+critical path.

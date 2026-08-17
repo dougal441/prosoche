@@ -267,6 +267,18 @@ Which evidence channel to reach for when a runtime question is open, and which r
 |---|---|---|---|
 | 1 | File-level analysis — validator, ToolKit catalog, golden corpus, decrypted plist | Structure, identifier presence, parameter shape | Nothing |
 | 2 | Simulator probe — the agent builds, signs, imports, runs and observes it itself | Import success, runtime variable resolution, control flow, operator/operand type validity, most parameter-key questions | Agent time only |
+
+**The rung-2 row above is CONFIRMED, and its 2026-08-17 narrowing is RETIRED — measured by spike `010-coercion-at-a-direct-set-parameter`, 2026-08-18.** Spike 007 had concluded the booted simulator cannot import a signed `.shortcut` through any channel, and narrowed "import success" out of this row. It was wrong, and this row as originally written was right. The working channel:
+
+```bash
+open -a Simulator                                          # a simctl-booted sim has NO window until this
+xcrun simctl openurl <udid> "file:///abs/path.shortcut"    # → the Shortcuts import sheet
+# then ONE synthesized tap on "Add Shortcut" completes the import
+```
+
+Spike 007's `file://` row was measured against the **MCP simulator tool's scheme allowlist**, not against `simctl`. Its other four rows stand: `shortcuts://import-shortcut` genuinely does require an iCloud link (re-measured 2026-08-18 — a `file://` URL with `silent=true` is still rejected, because the URL is refused before the flag is consulted), Files never surfaces "On My iPhone", iCloud Drive needs an Apple Account. `openurl` with a plain file URL never goes through the `shortcuts://` scheme at all.
+
+Two things that cost real time and are invisible until hit: coordinates must be **fractions of the device screen mapped through the window rect measured at run time**, never pixels; and **`Show Alert` modals accept neither a synthesized tap nor a hardware Return** — the run wedges permanently at the first one, while ordinary in-app UI (buttons, scrolling) takes taps normally. Build simulator-bound probes with **no blocking UI**. Instrument and every dead end: `.planning/spikes/010-coercion-at-a-direct-set-parameter/drafts/sim_input.py`.
 | 3 | Device probe over iPhone Mirroring — the agent drives the user's iPhone | Everything the simulator cannot | One connected session, requested from the user |
 | 4 | User-run probe or donor export on the real device | Anything mirroring cannot reach, or that needs the user's own hands | The user's time — the scarcest input |
 
@@ -281,7 +293,12 @@ A rung-2 pass may **not** raise a verdict on any of the following. Each is devic
 - **The Control Room Note path, in full.** `com.apple.mobilenotes` is absent from the booted simulator's 25 apps, measured above — so every `com.apple.mobilenotes.SharingExtension`, `appendnote`, `filter.notes` and `shownote` behaviour needs rung 3+.
 - **Apple Intelligence.** The simulator is not Apple-Intelligence-capable hardware, so the Sentient `Use Model` / On-Device path (CAP-26, BD-04-R2) needs rung 3+.
 - **Personal Automation triggers** (App Is Opened / Is Closed). They are user-created on the device and cannot be exercised on a simulator at any effort.
-- **Real-hardware environmental behaviour** — brightness and volume capture-and-restore.
+- **Real-hardware environmental behaviour** — brightness and volume capture-and-restore. **Sharpened 2026-08-18 by spike `010-coercion-at-a-direct-set-parameter`: `Set Brightness` cannot succeed on a simulator AT ALL** — it returns *"There was a problem setting the brightness"* — and `Get Device Details → Current Brightness` reads **`0`** there. So whether an operand is actually *consumed* by these actions is device-gated no matter how good the import channel is. A simulator brightness/volume reading is never promotable above `UNVERIFIED`.
+
+Two findings from the same spike that change how these questions must be asked:
+
+- **The "coercion chip does not render red" gate does NOT work at a direct Set-action parameter.** A conditional's operator picker is populated from the operand's static type, so a mismatch renders red; **`Set Brightness` has no operator picker**, so coerced and uncoerced operands render **identically**. A green chip there is not weak evidence, it is *no* evidence. The gate remains valid for conditionals (`## Conventions`, "Operator/operand type validity is invisible in the plist") and only there.
+- **`setbrightness.WFBrightness` is OPTIONAL and defaults to 50%.** An absent operand renders as "Set brightness to 50%" and does **not** raise the unfilled-parameter error. So an unresolved operand fails **silently**, applying an unrequested 50% rather than halting. Any device test of these actions must verify **the value applied**, never merely the absence of an error.
 
 ### Probes and donors
 
