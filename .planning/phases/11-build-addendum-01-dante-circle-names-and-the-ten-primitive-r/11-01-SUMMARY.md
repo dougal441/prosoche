@@ -254,6 +254,16 @@ None — no external service configuration required.
 - **Plan 11-03's Note rename is now a one-line edit** to `EXPECTED_TITLE`, with the predicate `Operator` pinned so the `contains` → `is` decision has to be made explicitly.
 - **Blocker, unchanged:** DIST-03 is open. Everything this phase produces is structural until a device is available.
 
+## Self-Check: PASSED
+
+- `tools/plist_text_edit.py` — FOUND (10,060 B)
+- `docs/note_identity_check.py` — FOUND (12,195 B)
+- `.planning/phases/11-.../11-01-SUMMARY.md` — FOUND
+- `.planning/phases/11-.../deferred-items.md` — FOUND
+- Commit `3a30b15` (Task 1, feat) — FOUND in `git log`
+- Commit `7d7d7f1` (Task 2, test) — FOUND in `git log`
+- Working tree clean; `docs/note_identity_check.py` and `docs/manifest_check.py` re-run green after the final commit.
+
 ---
 *Phase: 11-build-addendum-01-dante-circle-names-and-the-ten-primitive-r*
 *Completed: 2026-08-17*
