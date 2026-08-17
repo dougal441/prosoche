@@ -1,5 +1,13 @@
 # Shortcut Distribution Manifest
 
+**This table's six hash/size rows describe the phase 12 plan 05 refresh (commit `ea7a0f4`,
+2026-08-17), not the phase 11 plan 06 rebuild.** That refresh re-signed both forks under their
+live display names after phase 12's state-shape work landed; see the **Phase 12** paragraph
+and closing `⚠` bullet below for what that work actually changed in the signed artifact. The
+paragraph immediately below is retained as the phase 11 plan 06 rebuild's own record — it
+describes the rename, not the current table — and is superseded where it conflicts with the
+Phase 12 paragraph that follows it.
+
 Rebuilt 2026-08-17 by phase 11 plan 06: **the two variants ship under their new names.**
 `Dumb` becomes **`Core`** and `Sentient` becomes **`Aware`**, at every site where the name is
 load-bearing — the root `WFWorkflowName`, the bootstrap `"fork"` seed, the Control Room Note's
@@ -29,12 +37,24 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Core source | `src/PROSOCHE-Dumb.xml` | 2831994 | `e0c151c14fd4bd56818d4822889e4a3f211bb8598ef0c5e308f301855512d48d` |
+| Core source | `src/PROSOCHE-Dumb.xml` | 2831992 | `589ee1211bc66071d25fed4834ca3041df71d400874909e6c428a422ee891190` |
 | Core archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-161458.xml` | 2831994 | `e0c151c14fd4bd56818d4822889e4a3f211bb8598ef0c5e308f301855512d48d` |
 | Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 229903 | `d1377102f6ad45a084a4467ae72d82d5dc27fbb1e1d31bda30d47bb124750a59` |
-| Aware source | `src/PROSOCHE-Sentient.xml` | 2868675 | `f33ca7a000ac0ab0f4cc9a74aa281396de0f415f4766b12a5add880b6b3dcf8a` |
+| Aware source | `src/PROSOCHE-Sentient.xml` | 2868673 | `ff50b4532df0867790444fbebc2e6be02598347859a0ff8bfcfd26ff03c741ec` |
 | Aware archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Aware-161508.xml` | 2868675 | `f33ca7a000ac0ab0f4cc9a74aa281396de0f415f4766b12a5add880b6b3dcf8a` |
 | Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 234118 | `e2a56bf2b6bc76ef57aa7013d267b77e33172a65dae1d9eca2d20540b6618719` |
+
+**The two source rows above were corrected out-of-band by this repository's WR-01 code-review
+fix** (commit `5f55edc`, `/gsd-code-review --fix` against `12-REVIEW.md`): `seed_active_session()`
+double-indented the `active_session` bootstrap line by 2 bytes per fork; the fix re-seeds it
+flush with its siblings and this table's Core/Aware **source** rows now reflect the corrected
+`src/*.xml`. The **archive and signed** rows below still describe the pre-fix `ea7a0f4` build
+byte-for-byte — the archive is therefore no longer byte-identical to its `src/` counterpart,
+contradicting the "byte-identical" claim two paragraphs down — because re-archiving and
+re-signing is a separate build-and-release step this fix did not perform. `docs/manifest_check.py`
+still passes: it verifies each row against its own file independently and asserts no
+archive-equals-source invariant. A future rebuild that re-archives and re-signs both forks
+should refresh the archive/signed rows and remove this note.
 
 **The two old-named signed artifacts were DELETED, not retained**, per
 `docs/CAPABILITY-DECISIONS.md` BD-06-A3 Decision 2. `artifacts/shortcuts/` now holds exactly
@@ -57,7 +77,34 @@ notice. No control flow moved, no action was added or removed, and the environme
 site-count tables are unchanged from the preceding rebuild at their measured values — 15 Set
 Brightness, 15 Set Volume, 22 Get Device Details, with 15 of 15 brightness sites coerced and
 4 of 15 volume sites coerced. All twelve static checks passed at this commit,
-`manifest_check` included once this table was refreshed.
+`manifest_check` included once this table was refreshed. **This paragraph describes the phase
+11 plan 06 rebuild only** — see the **Phase 12** paragraph immediately below for the structural
+changes phase 12 subsequently made to the artifact this table's rows now describe.
+
+**Phase 12 — state-shape sentinel gaps: `exit_events`, `active_session`, `create_target_url`
+(plans 12-01 through 12-05, 2026-08-17).** Both of the claims in the paragraph above are now
+**false** for the artifact this table describes: this was a structural rebuild, not a copy-only
+one, and `schema_version` moved **3 → 4**, not 2 → 3 (the 2→3 bump was phase 11 plan 05's, a
+rebuild earlier than the one the paragraph above narrates). Phase 12 closed three state-shape
+sentinel gaps in `tools/build_state_engine.py`: seeded `exit_events` (an array) and
+`exit_selection_counter` (a flat counter) into the bootstrap template where neither previously
+existed; converted `active_session` from a bare `null` into a permanent four-leaf sentinel
+container (`id`, `started_at`, `declared_duration_seconds`, `intention`), removing a class of
+dotted-read hard-error that could stall `restore_managed_settings("Reloaded State")` mid-close
+and strand the user dimmed or silenced; and seeded `profile_snapshot.create_target_url`,
+closing the single most likely first-exit crash surface this phase found (`T-12-18`) — choosing
+Create on a clean install previously hard-errored on an unseeded dotted read. Roughly a dozen
+condition-100 (has-any-value) gates converted to condition-5 (string-is-not) gates across
+`persist_contract()`, `record_exit_and_route()`, `close_pipeline()`, and `route_exit()`'s Create
+branch, consistent with the sentinel-seeded invariant these three fields now guarantee; see
+`docs/BUILD-NOTES.md` §26-27 for the full decision record, including the option-A/B/C
+comparison for `create_target_url`'s seed shape and the assumptions this phase carried without
+a fresh device measurement (A1, A2, A5). **Structurally proven, device-unobserved**: all three
+changes are proven present and correctly gated in the generator, in both `src/*.xml` artifacts,
+and (per §27) in the decrypted signed payloads at commit `ea7a0f4`; none of it has run on a real
+iPhone — `12-UAT.md` recorded **BLOCKED** (`xcrun devicectl list devices` reported no devices,
+so no criterion in that file was exercised). Read `docs/BUILD-NOTES.md` §26-27 and
+`12-UAT.md` before treating any of this phase's behaviour as device-confirmed.
 
 **A signed artifact's filename is the only carrier of its display name — re-measured on this
 build.** Both containers were decrypted and neither recovered `Shortcut.wflow` contains a
@@ -272,6 +319,21 @@ and recomputes every size and hash above from the files themselves.
 > automation is **structurally proven and behaviourally unobserved** — the strings are proven
 > present in both decrypted payloads and nothing more. Read `docs/BUILD-NOTES.md` §25 and
 > `docs/CAPABILITY-DECISIONS.md` BD-06-A4.
+>
+> **⚠ This build additionally carries three phase 12 state-shape sentinel fixes, none of which
+> has ever run on a real iPhone.** `exit_events`/`exit_selection_counter` and a four-leaf
+> `active_session` container are now seeded in the bootstrap `state.json` template where
+> neither previously existed, and `profile_snapshot.create_target_url` is seeded with the
+> project's `CLEARED_SENTINEL` so a clean-install Create exit no longer hard-errors on an
+> unseeded dotted read. `schema_version` moved **3 → 4**. All three are proven present, in the
+> right shape, and correctly gated (roughly a dozen condition-100 gates converted to
+> condition-5 across `persist_contract()`, `record_exit_and_route()`, `close_pipeline()` and
+> `route_exit()`'s Create branch) in the generator, in both `src/*.xml` artifacts, and in the
+> decrypted payload of both signed containers at commit `ea7a0f4` — file-level structural proof
+> and nothing more. `12-UAT.md` recorded **BLOCKED**: no device was available, so none of this
+> is device-confirmed. As with the phase 11 plan 05 bump, installing this build over an
+> existing one discards that device's accumulated behavioural state. Read
+> `docs/BUILD-NOTES.md` §26-27 before distributing or relying on these builds.
 >
 > **DIST-03 — device verification — remains OPEN.** `xcrun devicectl list devices` reports
 > no devices, so no criterion in either UAT file has been exercised. Nothing in this manifest
