@@ -23,6 +23,24 @@ updated: 2026-08-17
 | Device requirement | An iPhone running **iOS 26.x**, with both Personal Automations already built by hand and both pointing at the Dumb fork **by its display name** `PROSOCHĒ — Nine Circles — Dumb` |
 | Apple Intelligence | **Not required.** No test in this file uses `Use Model`; the Dumb fork contains no model call. No test here needs an iPhone 15 Pro or later. |
 
+> ## ⚠ 2026-08-18 — a device became available, but THIS FILE'S HEADER IS STALE. Read before trusting any outcome below.
+>
+> Tests 1, 3, 6 and 7 now carry outcomes, recorded from a real iPhone. **They were observed against
+> a NEWER build than this file names**, and the drift is material enough to state up front:
+>
+> | This file says | What was actually tested |
+> |---|---|
+> | Fork `PROSOCHĒ — Nine Circles — Dumb`, 193,498 B, `47957dbf…6324` | Fork `PROSOCHĒ — Nine Circles — Core`, 233,802 B, `b07497ba…ac5b` |
+> | Control Room Note named `PROSOCHĒ — Control Room` | Note is named **`PROSOCHĒ`** |
+> | Default profile `Limbo` | Profiles are now `Paradise` / **`Purgatory`** / `Inferno` |
+>
+> The Dumb→Core rename and the Dante profile rename both landed in Build Addendum 01 after this
+> file was written. The four outcomes recorded below are still genuine device observations, but
+> anyone re-running this file should **update the header first** and re-derive the arithmetic
+> table, because the threshold values quoted here are keyed to the old profile names.
+>
+> The remaining six tests (2, 4, 5, 8, 9, 10) stay blank.
+
 **Every test in this file is blocked on DIST-03 while no device is connected.**
 `xcrun devicectl list devices` reports `No devices found.` as of 2026-08-17. That is the same
 blocker that has held DIST-03 open since Phase 8 and that stalled
