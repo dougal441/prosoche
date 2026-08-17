@@ -16,6 +16,7 @@ from build_state_engine import (
     normalise_string_envelopes,
     verify_conditional_inputs,
     verify_dispatch_coverage,
+    verify_exit_events_seed,
     verify_numeric_operands,
     verify_output_names,
     verify_required_pickers,
@@ -295,6 +296,12 @@ def main() -> None:
     # survived the fork, and it fails loudly if a future Sentient-only insertion ever adds
     # a settings_snapshot read that the shared bootstrap does not establish.
     verify_state_seed(actions)
+    # PHASE 12 (12-01).  Sentient INHERITS the seeded bootstrap template from the built Dumb
+    # source rather than re-seeding it, so the assertion is the whole point here: it proves
+    # exit_events and exit_selection_counter survived the fork.  Asserted per fork, never
+    # inferred from Dumb -- a fork that dropped the rolling window would leave STATE-12's
+    # "bounded, versioned document" claim false on the Aware artifact with no error anywhere.
+    verify_exit_events_seed(actions)
     # Cycle 12, axis 7 -- GATE SEMANTICS.  Sentient inherits the restore block and every
     # sentinel write from Dumb, so these assert the fork did not lose them; and because
     # Sentient adds its own conditionals, they also cover any Sentient-only gate that a

@@ -906,14 +906,15 @@ def record_exit_and_route(choice_name: str):
     event_text = text_token([('{"type":"', choice_name), ('","timestamp":', "Now Epoch"), (',"app":"', "Triggering App"), ('","circle":', "Circle Next"), (',"heat":', "Heat Final"), ('}', None)])
     event_json, event_dict = uid(), uid()
     # CYCLE 15: get_value(), not read_value(), for exit_events -- same compound-Array
-    # class as recent_sessions, consumed below by Repeat With Each. NOTE (recorded,
-    # not fixed this cycle): exit_events is also ABSENT from the bootstrap template
-    # entirely (grep of src/PROSOCHE-Dumb.xml's state.json seed confirms no
-    # "exit_events" key), a separate STATE-SHAPE gap in the same family as
-    # KNOWN_SENTINEL_EXISTENCE_GATES. A flat read of a missing key returns nothing
-    # (no error, per this session's verified iOS semantics), so this swap cannot
-    # regress the pre-fix behaviour; it is not device-confirmed to fully resolve
-    # this function, only to stop double-corrupting the type once a value exists.
+    # class as recent_sessions, consumed below by Repeat With Each. This read stays
+    # get_value(); routing it through read_value() would fail
+    # verify_compound_value_reads().
+    # PHASE 12 (12-01) CLOSED the STATE-SHAPE half cycle 15 recorded but did not fix:
+    # exit_events was then ABSENT from the bootstrap template entirely. It is now
+    # seeded [] by seed_exit_events() and asserted by verify_exit_events_seed(), so
+    # this read resolves against a declared key on a freshly built state file. What
+    # a Repeat With Each does over an EMPTY array remains [ASSUMED] (A1, rung 2);
+    # only the ABSENT case is now unreachable.
     a += [owner, action("is.workflow.actions.gettext", UUID=event_json, WFTextActionText=event_text),
           action("is.workflow.actions.detect.dictionary", UUID=event_dict, WFInput=output(event_json, "Text")),
           set_var("Exit Event", output(event_dict, "Dictionary")), *get_value("exit_events", variable("Reloaded State"), "Exit Events")]
@@ -2718,6 +2719,102 @@ def verify_panic_escape_seed(actions):
               "gate must be a numeric '> 0' test")
 
 
+# PHASE 12 (12-01) -- the per-exit rolling window and its selection counter.  Same STATE
+# SHAPE discipline as settings_snapshot, pending_exit and panic_escape_enabled above: a
+# seeder establishes the fields, a separate verifier asserts them against the SAME constant,
+# so the two cannot silently agree on being wrong.
+#
+# STATE-12 requires the persisted document to be "bounded, versioned ... with rolling windows
+# for sessions, contracts, and per-exit aggregates".  exit_events is the only member of
+# COMPOUND_STATE_KEYS that the bootstrap template does not declare -- recent_sessions and
+# recent_contracts are both already seeded [] on the two lines directly above the anchor.
+# exit_selection_counter is its companion: two condition-101 ("does not have any value")
+# guards stand over it, and with the field seeded 0 both take their Otherwise (Nothing) arm
+# on clean state, so the counter arithmetic proceeds from a declared zero rather than from an
+# undeclared key.
+#
+# The values are an Array and a Number, NOT strings.  Quoting either would make
+# verify_compound_value_reads()'s COMPOUND_STATE_KEYS claim about exit_events false at the
+# seed, and a quoted counter could not be gated numerically.
+EXIT_EVENTS_SEED = {"exit_events": [], "exit_selection_counter": 0}
+# Anchored on the neighbouring compound-key line -- the last of the two already-seeded
+# rolling windows -- never on a line number: the template is one long WFTextTokenString and
+# every offset in it moves on any edit.
+EXIT_EVENTS_ANCHOR = '"recent_contracts": [],'
+
+
+def seed_exit_events(actions):
+    """Establish exit_events and exit_selection_counter as flat top-level bootstrap fields.
+
+    MECHANISM.  Insert-after-anchor inside the bootstrap template token, exactly as
+    seed_panic_escape() does: the template is located by content (_state_template() anchors on
+    '"schema_version"', never an index), the indent is derived from the anchor line rather
+    than hard-coded, and every text edit goes through _replace_in_token(), never str.replace.
+    _replace_in_token() shifts every attachmentsByRange offset that sits after the edit and
+    re-asserts that each one still lands on a U+FFFC placeholder; .claude/CLAUDE.md §5 records
+    that an out-of-bounds range can crash Shortcuts on import, so an unshifted offset is not a
+    smaller change than a recomputed one, it is a corrupt one.
+
+    WHAT IT PREVENTS, stated at its honest severity.  This is a STATE-12 conformance gap, not
+    a confirmed crash.  Measured: exit_events has NO dotted read and NO gate anywhere --
+    record_exit_and_route() reads it flat through get_value(), and per .claude/CLAUDE.md's
+    device-verified runtime semantics a FLAT read of a missing key returns nothing with no
+    error.  So the pre-fix failure mode is a Repeat With Each handed nothing on the first exit
+    a device ever records, and whether that is a zero-iteration no-op or a type error is
+    [ASSUMED] (assumption A1) -- settleable only at evidence rung 2 (a simulator probe: this
+    path needs no Notes app, no Apple Intelligence, no Personal Automation and no real
+    hardware).  Do not upgrade that to a crash claim without a rung-2 observation.
+
+    Idempotent: a second run finds '"exit_events"' already in the template and returns --
+    a collision-free guard token, unlike a bare '"id"'.  verify_exit_events_seed() re-proves
+    the shape either way.
+    """
+    _, inner = _state_template(actions)
+    if '"exit_events"' in inner["string"]:
+        return  # already seeded; verify_exit_events_seed() proves it is the right shape
+    line = next(text for text in inner["string"].splitlines() if EXIT_EVENTS_ANCHOR in text)
+    indent = line[:len(line) - len(line.lstrip())]
+    # json.dumps keeps [] an Array and 0 a Number; a quoted "[]"/"0" would be neither.
+    added = "".join(f'\n{indent}"{key}": {json.dumps(value)},'
+                    for key, value in EXIT_EVENTS_SEED.items())
+    _replace_in_token(inner, EXIT_EVENTS_ANCHOR, EXIT_EVENTS_ANCHOR + added)
+
+
+def verify_exit_events_seed(actions):
+    """Fail the build unless exit_events and exit_selection_counter are seeded exactly.
+
+    Asserted AGAINST the constant seed_exit_events() writes from, so seeder and guard cannot
+    silently drift -- the same discipline verify_state_seed(), verify_pending_exit_seed() and
+    verify_panic_escape_seed() each state in their own docstrings.  SystemExit, never assert:
+    the message is the diagnostic, and asserts vanish under -O.
+
+    The type check is not redundant.  In Python `0 == False`, so a template that seeded the
+    counter as a JSON boolean would satisfy a bare equality test while being ungateable
+    numerically on the device.
+    """
+    _, inner = _state_template(actions)
+    # The template is a text template, so it is not valid JSON as written: quoted
+    # placeholders stand in for strings, and one bare placeholder for a boolean.
+    document = inner["string"].replace('"￼"', '"x"').replace("￼", "0")
+    try:
+        seed = json.loads(document)
+    except json.JSONDecodeError as error:
+        raise SystemExit(f"bootstrap state.json template is not valid JSON: {error}")
+    for key, value in EXIT_EVENTS_SEED.items():
+        found = seed.get(key)
+        if found != value or type(found) is not type(value):
+            raise SystemExit(
+                f"{key} is seeded as {found!r}; it must be exactly {value!r} -- STATE-12 "
+                "requires the versioned state document to DECLARE its rolling windows, and "
+                "exit_events is the only member of COMPOUND_STATE_KEYS the bootstrap template "
+                "leaves undeclared while its two siblings recent_sessions and recent_contracts "
+                "are both seeded []. Measured, exit_events has no dotted read and no gate, so "
+                "an absent key is not a hard error -- it leaves Repeat With Each iterating "
+                "over nothing, behaviour recorded [ASSUMED] (A1) and settleable only at "
+                "evidence rung 2. exit_selection_counter seeded 0 is what makes the two "
+                "condition-101 guards over it take their Otherwise arm on clean state")
+
+
 # ---------------------------------------------------------------------------
 # CYCLE 12 -- GATE SEMANTICS, the seventh axis.  Axis 6 (STATE SHAPE) asserted that every
 # key a read reaches EXISTS.  This asserts that the GATE standing over it can actually
@@ -3554,12 +3651,21 @@ def fix_date_format_key(actions):
 # A STRING, because site 3 is a WFConditionalActionString and the device compares its stored
 # schema_version as text; the template interpolates the same characters unquoted, which is
 # what makes the two halves comparable at all.
-SCHEMA_VERSION = "3"
-SCHEMA_VERSION_PREVIOUS = "2"
+SCHEMA_VERSION = "4"
+SCHEMA_VERSION_PREVIOUS = "3"
 # The RECOGNITION tuple.  It must admit every literal this transformer has ever written --
 # including the one it is about to write -- or the NEXT build fails to locate the
 # conditional and aborts, one build downstream of the change that caused it.
-SCHEMA_VERSION_ACCEPTED = ("1", "2", "3")
+#
+# PHASE 12 (12-01) -- the 3 -> 4 move is this phase's.  New bootstrap fields (exit_events and
+# exit_selection_counter here; active_session's leaves in a later plan of the same phase) only
+# reach a device that ALREADY holds a state.json by way of the bump: without it the
+# three-check validity gate accepts the old file forever and the corrected template never
+# lands.  BD-06-A1 Amendment 3's "there is no installed base to protect" record is what
+# licenses the unrecoverable loss the bump carries (heat, gravity, pressure, the rolling
+# windows, the session record, every exit_stats[*].samples); that same decision forbids a
+# migration, a dual-key alias and read-time normalisation by name.
+SCHEMA_VERSION_ACCEPTED = ("1", "2", "3", "4")
 
 
 def fix_state_rebind(actions):
@@ -3685,6 +3791,7 @@ def main():
     # Must run BEFORE fix_state_rebind(): the rebind pass also edits the same template
     # token, and seeding a new field is the reason the schema_version bump below exists.
     seed_panic_escape(actions)
+    seed_exit_events(actions)
     fix_state_rebind(actions)
     fix_date_format_key(actions)
     fix_shownote_key(actions)
@@ -3718,6 +3825,7 @@ def main():
     verify_state_seed(actions)
     verify_pending_exit_seed(actions)
     verify_panic_escape_seed(actions)
+    verify_exit_events_seed(actions)
     verify_restore_gates(actions)
     verify_sentinel_gates(actions)
     verify_compound_value_reads(actions)

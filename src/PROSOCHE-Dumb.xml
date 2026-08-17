@@ -864,7 +864,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<key>WFCondition</key>
 				<integer>4</integer>
 				<key>WFConditionalActionString</key>
-				<string>3</string>
+				<string>4</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -1457,7 +1457,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 					<dict>
 						<key>string</key>
 						<string>{
-  "schema_version": 3,
+  "schema_version": 4,
   "fork": "Core",
   "profile": "￼",
   "sequence": "Classic",
@@ -1477,6 +1477,8 @@ Guard against empty fields before reading anything nested inside them. Six field
   "pending_exit": {"type": "null", "timestamp": "null"},
   "recent_sessions": [],
   "recent_contracts": [],
+  "exit_events": [],
+  "exit_selection_counter": 0,
   "exit_stats": {
     "Capture": {"count": 0, "sum_return_seconds": 0, "samples": []},
     "Coordinate": {"count": 0, "sum_return_seconds": 0, "samples": []},
@@ -1524,7 +1526,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 								<key>VariableName</key>
 								<string>Behavioural Day</string>
 							</dict>
-							<key>{1395, 1}</key>
+							<key>{1447, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
