@@ -41,6 +41,9 @@ side by side, which is this project's definition of done.
 - [ ] **Phase 18: Persist state when CLOSE fires from a locked screen** - A locked-screen CLOSE stops stranding sessions and unrestored environmental changes
 - [ ] **Phase 19: Device UAT — nine Circles and sequence switching** - The intervention layer converts from structurally-proven to actually-working on real hardware
 - [ ] **Phase 20: UX optimisation — onboarding and in-run interaction cost** - The heavy UX round: funnel instrumentation, nine-Circle interaction cost, §29 voice, Note restructure
+- [ ] **Phase 22: Cumulative state — lifetime and windowed attention aggregates** - The honest data layer under the receipt; metric definitions are the real work
+- [ ] **Phase 23: The Attention Receipt** - A disposable, regenerated, screenshotable local Note — a receipt, not a scoreboard
+- [ ] **Phase 24: Impact and reciprocity — sharing, then support** - Share first, pay-what-it-was-worth later; no account, no referral, no tracking
 
 ## Phase Details
 
@@ -1024,3 +1027,170 @@ Aware has never been device-tested in this project at all.
 Plans:
 
 - [ ] TBD (run /gsd-plan-phase 21 to break down)
+
+### Phase 22: Cumulative state — lifetime and windowed attention aggregates
+
+**Goal:** Give PROSOCHĒ the ability to say what it has actually done — the data layer under the
+Attention Receipt and, later, under the support ask. **No user-facing display in this
+phase.** It exists so the numbers exist and are honest.
+
+**The engineering risk is not the arithmetic — it is the schema.** Canonical strategy §16
+mandates bounded rolling windows, so "just keep more history" is not available. Every new
+key must be seeded in the bootstrap template with a build guard: this project has hit the
+STATE-SHAPE axis **three separate times on device**, and a dotted read with a missing
+segment is a hard error, not a blank. **Hard prerequisite: Phase 12** (`exit_events` /
+`active_session`) — do not add keys on top of a schema whose sentinel gaps are still open.
+
+**Deliverables.** Audit what `state.json` already supports before adding anything —
+`exit_stats`, `recent_sessions` and the day counters may already carry more than expected.
+Then add what is genuinely missing, in two shapes: **bounded windows** for anything
+per-period, and **monotonic lifetime counters** for the "since installing" figures. A
+counter is O(1) and does not violate §16's bounded-history rule, but it is a *new* shape in
+this schema and needs its own seed and guard. Decide the `schema_version` bump and the
+migration path for existing installs deliberately — an existing user must not lose their
+history or hard-error on first read.
+
+**Metric definitions are the real work, and each one is a decision to record.** Three that
+are already load-bearing and easy to get wrong:
+
+- **"Automatic opens interrupted"** must mean *actually interrupted*. Since Phase 10, an
+  open inside the Circle 0 silent band is **observed, not interrupted** — nothing is shown.
+  Counting silent-band opens as interruptions would inflate the headline number and turn
+  the receipt into the self-congratulatory telemetry §29's voice forbids. Define it against
+  what the user actually saw.
+- **"Most effective exit"** needs an effectiveness definition and a confidence floor.
+  `select_exit()` already exploits lowest average return-time and already refuses to exploit
+  below `exits.exploit_min_observations` (10). Reuse that threshold: do not name a winner
+  from two samples.
+- **"Contracts kept"** already exists as contract outcome feeding Heat — confirm it is
+  recorded losslessly enough to report as a ratio, not just as a Heat delta.
+
+**Estimates are governed by §24 and are deliberately out of scope here.** Observed metrics
+may be stated directly. Any *estimated* attention reclaimed must be labelled an estimate,
+use a **personal rolling-median counterfactual baseline** rather than a global assumption,
+and be lower-bounded at zero. `100 blocked opens = X hours saved` is **explicitly
+forbidden** without evidence. Ship observed metrics first; the estimate is its own decision.
+
+Source: **SEED-004** (VALUE / LIFE RETURNED), whose trigger condition — "after the device-UAT
+backlog closes and state-shape discipline is settled" — this phase's position honours.
+
+**Severity:** major
+**Requirements**: VAL-01, VAL-02, STATE-12, SESS-07, SAFE-01
+**Depends on:** Phase 12
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 22 to break down)
+
+### Phase 23: The Attention Receipt
+
+**Goal:** Build the **Attention Receipt**: a separate, local, disposable Note the user asks for and
+PROSOCHĒ regenerates from `state.json` each time. Daily, 7-day, and lifetime views. It is
+the artifact a person might genuinely screenshot and send to someone.
+
+**Shape.** A distinct Note from the Control Room — the Control Room is durable and
+returned-to; the receipt is disposable and regenerated. Never accumulate receipts; regenerate
+one. Three cadences sharing one generator: `ATTENTION RECEIPT` + date, `7 DAYS OF ATTENTION`,
+`SINCE INSTALLING PROSOCHĒ`. Ends with `Spend your attention on purpose.` and two options,
+Share and Done.
+
+**It names the Circle in the Dante vocabulary** — `PEAK DEPTH — CIRCLE VII` — which is what
+makes it shareable in a way "4h12m screen time" is not. **Depends on Phase 11**, which
+settles those names; authoring receipt copy before the rename would mean writing it twice.
+
+**The design risk that must not be waved through: this inverts the incentive.**
+"How deep do you go?" is strong as a hook, and *I hit Circle VI today* is real social
+currency — but the product's entire purpose is that you **don't**. Peak Circle VII is a bad
+day. If the receipt renders depth as achievement, the user who wants an interesting receipt
+is the user who wants to fail more, and the mechanism quietly starts working against its own
+goal. SEED-004 already fixes the frame: **it is a receipt, not a scoreboard — no streaks, no
+scores, no shame.** A receipt records what something cost. Render peak depth as a fact and
+let it read as a confession, never as a trophy or a high score, and never with a
+congratulatory verb.
+
+**Sharing exports behavioural data by design, so the receipt's content is a privacy
+surface.** Generating locally preserves §27 for *generation*, but a shared screenshot is
+published. Therefore: **no app names, no timestamps, nothing that fingerprints a routine**.
+The mock this phase derives from is already clean on that — keep it that way, and treat any
+proposed field against the question "would the user knowingly publish this?"
+
+**The receipt must carry its own provenance** — what made it and where to get it — because it
+is the distribution artifact. That is a hard requirement, not decoration, and it is the same
+attribution question **SEED-008** raises. Keep it quiet and factual: a name and a source, not
+a watermark or an ad.
+
+**Honesty rules inherited from §24 and Phase 22.** Only observed metrics unless an estimate
+is explicitly labelled and personally baselined. Suppress any figure not yet supported by
+enough observations rather than printing a confident-looking number — a receipt that
+overclaims once is never trusted again.
+
+**Never shown while the user is being blocked.** An intervention is not a surface for
+displaying value (§25).
+
+Source: **SEED-004**'s second deliverable.
+
+**Severity:** major
+**Requirements**: VAL-03, VAL-04, ROOM-04, ROOM-05, CIRC-01, DIST-04
+**Depends on:** Phase 22
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 23 to break down)
+
+### Phase 24: Impact and reciprocity — sharing, then support
+
+**Goal:** Turn the receipt into the two loops that let PROSOCHĒ spread and sustain itself — **sharing
+first, support second** — without an account, a referral scheme, or a tracker.
+
+**Impact loop, after meaningful value:** *Someone you care about might want some of this time
+back too.* → Share PROSOCHĒ. No incentive, no tracking, no credit. **Reciprocity loop,
+later:** *PROSOCHĒ has helped you interrupt 500 automatic openings. It's free forever. If it
+has been worth something, pay what you think it was worth.* Same local evidence, different
+moment. **That order is the design** — sharing before payment states the project's priorities
+without having to claim them.
+
+**Growth is decentralised by construction.** Person A's copy helps them; they send a link;
+Person B downloads their own copy. No centralised ecosystem mediates the relationship, and
+there is no account to create. That is what earns the line *not another app* — and its
+stronger form: **no account, no feed, no subscription, not even an app.**
+
+**Never "refer a friend."** No referral credits, no incentive of any kind. The recommendation
+must stay uncorrupted by benefit to the recommender — that absence is precisely what makes it
+credible, and it is worth protecting as a product property rather than treating as a missing
+feature.
+
+**§25's four prohibitions are absolute:** never display the payment ask while the user is
+being blocked; never use guilt; never threaten loss of functionality; **never transmit
+attention history** — the trigger threshold is computed locally and the user only ever
+*chooses* to open a link. The ask is three options — Support / Not now / Never ask again —
+persisted with a build guard, and `Never ask again` must be permanent and honoured.
+
+**Blocked on a decision outside this phase: the licence.** *Pay what you think it was worth*
+presumes the author can be paid for value others derive, and the project is currently **MIT
+licensed on a public repo** — which grants commercial use and forks with no royalty and no
+product-facing attribution, irrevocably for everything already published. A voluntary
+tip-jar is compatible with MIT; anything stronger is not. **SEED-008** holds that analysis and
+the option map. Settle it before shipping a payment surface, and settle the outbound
+destination with the project owner rather than assuming one.
+
+**Removal must stay clean.** The product must remain forkable, so the whole support path
+should come out behind a single generator toggle.
+
+Source: **SEED-003** (low-salience support path), whose trigger — "after SEED-004 ships,
+because pay-after-value is meaningless with no value display" — this phase's position
+honours.
+
+**Successor:** the marketing and distribution phase, which uses shared receipts as its
+primary material. Not yet added — add it when the receipt's actual shape is known, rather
+than designing the campaign against a mock.
+
+**Severity:** major
+**Requirements**: PAY-01, PAY-02, DIST-04, DIST-05, DIST-06, ROOM-04
+**Depends on:** Phase 23
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 24 to break down)
