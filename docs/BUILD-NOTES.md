@@ -2483,6 +2483,24 @@ proven by a whole-tree sweep over six literal phrasings across `.planning/` and 
 an enumeration of remembered sites — a section-scoped edit measurably leaves sites uncorrected,
 which is precisely how a refuted count survives to be re-litigated.
 
+**Three exemptions, not two — and the third was found by the phase's own verifier, not by the
+sweep.** The declared exemptions are `.planning/todos/completed/` and `.planning/phases/13-*/`,
+where the historical wording must survive in order to *be* the tombstone. The verifier then found
+**nine** further assertions of the 14-site count in `.planning/debug/resolved/open-routing-sequence-error.md`
+— lines 810, 931, 1037, 1044, 1197, 1203, 1270, 1277, 4667 — phrased `THE 14 WFConditionalActionString
+SITES` and `at 14 sites`, which none of the six chosen literals matches. `.planning/debug/resolved/`
+is hereby the **third declared exemption**, on the same rationale as the first two: it holds closed,
+archived audit trails, and each of those nine lines is a per-cycle historical record of what was
+*believed at that cycle* ("carried forward unchanged from cycle 8"). Annotating them individually
+would rewrite the audit trail the refutation's credibility rests on. A single dated `REFUTED` banner
+has been added at the head of that file instead, so a cold reader meets the correction before the
+history.
+
+**The honest lesson, recorded because it cost nothing here and could cost a cycle later:** a
+literal-phrasing sweep closes only the phrasings it enumerates. Six literals left nine sites
+standing in a file the phase goal names by name. The sweep is a floor, not a proof of closure —
+which is exactly the failure mode it was built to prevent, reappearing one level up.
+
 ### The two guards
 
 | Guard | File | Asserts | Registered | Armed on |
@@ -2768,10 +2786,21 @@ supplements gate A and never replaces it.
 
 **Signing — the two canonical display names, no suffix.**
 
+> **SUPERSEDED — the digests, sizes and census in this plan-13-04 subsection describe the
+> `737ce07` build, which no longer exists on disk.** The code-review pass that followed execution
+> found CR-01: `_list_row()` discriminated on Python type, so 44 attachment-free
+> (literal-by-content) rows shipped inside the variable-row wrapper — a second unevidenced framing,
+> at row 8, the row selected at Circle VIII. The fix and full re-ship landed in `365937e`. The
+> **current** shipped artifacts are Core `233802 B` / `b07497ba…` and Aware `237842 B` /
+> `212598cf…`, and the census is **616 wrapped / 50 bare**, not 660/6. The figures below are
+> retained as the record of what was signed at 13-04 time; do not read them as current. The
+> authoritative live values are the six rows of `artifacts/shortcuts/MANIFEST.md`, proven against
+> disk by `python3 docs/manifest_check.py`.
+
 | Fork | Source | Signed basename | Bytes | SHA-256 |
 |---|---|---|---:|---|
-| Core | `src/PROSOCHE-Dumb.xml` | `PROSOCHĒ — Nine Circles — Core.shortcut` | 234830 | `fe1bafdf53f872a3e149734456899d1be0987706551d7b8fa7b50f81b8a913b7` |
-| Aware | `src/PROSOCHE-Sentient.xml` | `PROSOCHĒ — Nine Circles — Aware.shortcut` | 239184 | `bd1264d502891c9afeeccb66134dceaf66288a1da890133498605538aa75ba19` |
+| Core *(superseded)* | `src/PROSOCHE-Dumb.xml` | `PROSOCHĒ — Nine Circles — Core.shortcut` | 234830 | `fe1bafdf53f872a3e149734456899d1be0987706551d7b8fa7b50f81b8a913b7` |
+| Aware *(superseded)* | `src/PROSOCHE-Sentient.xml` | `PROSOCHĒ — Nine Circles — Aware.shortcut` | 239184 | `bd1264d502891c9afeeccb66134dceaf66288a1da890133498605538aa75ba19` |
 
 Both begin with the `AEA1` magic and both are non-zero. `artifacts/shortcuts/` holds exactly
 those two `.shortcut` files and no other basename of any kind. Neither known signer quirk fired:
@@ -2836,4 +2865,6 @@ Mirror until they **re-import**. That is inherent to Shortcuts distribution and 
 migration, but Phase 19 must therefore test a **re-imported** build rather than a stale install,
 or it will observe the old defect and attribute it to a fix that did land. The artifact to
 import is `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` at SHA-256
-`fe1bafdf…`; anything else is the wrong build.
+**`b07497ba…`** (the `365937e` re-ship); anything else is the wrong build. **SUPERSEDED:** an
+earlier revision of this sentence named `fe1bafdf…`, the `737ce07` build that carried the CR-01
+defect. Importing that one would test the defect rather than the fix.

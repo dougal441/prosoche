@@ -15,9 +15,9 @@ updated: 2026-08-17
 |---|---|
 | Phase | `13-red-operator-conditionals-and-the-wfitems-list-wrapper` |
 | Written | 2026-08-17 |
-| Commit artifacts were signed at | `737ce07` (this phase's plan 13-04 task 1) |
-| Fork 1 | **Core** — `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` — 234830 bytes — SHA-256 `fe1bafdf53f872a3e149734456899d1be0987706551d7b8fa7b50f81b8a913b7` |
-| Fork 2 | **Aware** — `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` — 239184 bytes — SHA-256 `bd1264d502891c9afeeccb66134dceaf66288a1da890133498605538aa75ba19` |
+| Commit artifacts were signed at | `365937e` — **the CR-01 re-ship**, which supersedes plan 13-04 task 1's `737ce07` |
+| Fork 1 | **Core** — `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` — 233802 bytes — SHA-256 `b07497ba1a66506aaaa9c48134f463ceefeac7f4a656e86dad48b0a76414ac5b` |
+| Fork 2 | **Aware** — `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` — 237842 bytes — SHA-256 `212598cff4dd349316aee93c872fb2fd2862eee11f0278d8d02f69a89f447533` |
 | Manifest row | `artifacts/shortcuts/MANIFEST.md`, the six "Core"/"Aware" rows — all six values above are copied from it, and `python3 docs/manifest_check.py` proves every row against disk |
 | Device requirement | An iPhone running **iOS 26.x** |
 | Personal Automations | **Not required for Tests 1–4.** Every test below is reachable from the shortcut's own manual menu, which is why this file can be run without first hand-building the two automations. Test 5 is the only one that needs them. |
@@ -28,8 +28,12 @@ recomputing both forks' SHA-256 and comparing against the two values above.
 
 ## ⚠ Re-import precondition — read this before anything else
 
-**You must import the artifact signed at commit `737ce07` and named in the header, and you must
-not test an install that predates it.** The defect this phase fixed lives in the *shipped
+**You must import the artifact signed at commit `365937e` and named in the header, and you must
+not test an install that predates it.** This supersedes an earlier revision of this file that
+named `737ce07`. That build shipped a second, unevidenced row framing — 44 attachment-free
+(literal-by-content) rows encoded as variable rows, all at row 8, the row selected at **Circle
+VIII** — found by this phase's own code-review pass as CR-01 and corrected in `365937e`. Importing
+the `737ce07` build would test the defect, not the fix. The defect this phase fixed lives in the *shipped
 artifact*, not in any on-device state: every `is.workflow.actions.list` row that carried a
 variable was emitted without its `{WFItemType: 0, WFValue: …}` row framing, which is predicted to
 render as an **empty Mirror body**. A device still holding any earlier build keeps that blank row
@@ -44,11 +48,17 @@ so two builds of the same name cannot be told apart in the library once both are
 
 ## What this phase changed, in one paragraph
 
-Every List row that carries a variable is now framed as `{WFItemType: 0, WFValue: <the token
-string>}`; **660** rows across **66** call sites. The **six** exit-name rows stay **bare string
-literals**, because Donors 4 and 4.1 show device-authored `WFItems` arrays using exactly that
-two-kind mix. The conditional-operand family — the other half of this phase's original
-hypothesis — was **refuted** by Donor 5 and deliberately left **unchanged**. Nothing else moved.
+Every List row that **carries an attachment** is now framed as `{WFItemType: 0, WFValue: <the
+token string>}`; **616** rows across 66 call sites. **50** rows stay **bare string literals** —
+the six exit-name rows plus 44 attachment-free template rows — because Donors 4 and 4.1 show
+device-authored `WFItems` arrays using exactly that two-kind mix, and a row with no attachment is
+a literal row whatever its Python type. The conditional-operand family — the other half of this
+phase's original hypothesis — was **refuted** by Donor 5 and deliberately left **unchanged**.
+Nothing else moved.
+
+*(Superseded figure: an earlier revision of this file said 660 wrapped / 6 bare. That was the
+`737ce07` build, which discriminated on Python type and so wrapped 44 attachment-free rows as
+variable rows. Corrected in `365937e` — see the re-import precondition above.)*
 
 ## Why device-only — no automated substitute exists
 
@@ -69,9 +79,11 @@ file. Per `.claude/CLAUDE.md` §9 ("Rung 2's ceiling") and the evidence hierarch
 - **The simulator cannot stand in.** It lacks `com.apple.mobilenotes` (measured 2026-08-17, 25
   installed apps) and cannot import a signed `.shortcut` at all.
 
-Plan 13-04 Task 1 decrypted both signed containers and measured 67 List actions, 660 wrapped
-rows, 6 bare rows and 0 unwrapped rows per fork. **That is structural proof that the right bytes
-shipped and nothing more.** It does not observe whether a Mirror renders.
+The shipped containers were decrypted and measured at **67 List actions, 616 wrapped rows, 50
+bare rows, 0 attachment-free wrapped rows and 0 unwrapped rows per fork** (re-measured at
+`365937e` after the CR-01 correction; plan 13-04 Task 1's original 660/6 reading describes the
+superseded `737ce07` build). **That is structural proof that the right bytes shipped and nothing
+more.** It does not observe whether a Mirror renders.
 
 ## Setup
 
@@ -100,8 +112,11 @@ Each test names an explicit expected observation and leaves its own result field
 ### 1. A Mirror renders non-empty text
 
 **Why this is the highest-priority test in this file.** It is the direct CIRC-07 assertion and
-the entire reason the phase exists. Every one of the 660 wrapped rows is a template row of this
-kind; if a wrapped row does not materialise, this is where it shows.
+the entire reason the phase exists. Every one of the 616 wrapped rows is a template row of this
+kind; if a wrapped row does not materialise, this is where it shows. Note that **row 8 is now a
+bare literal row** on both the success and lapse families (the 44 rows CR-01 moved), so a blank
+at Circle VIII would indict the *bare* path rather than the wrapper — record which row was
+showing, not just that it was blank.
 
 **Setup.** Complete the Setup section. No Pressure accumulation is needed — the `Test a Circle`
 menu item drives the primitive directly.
@@ -268,7 +283,7 @@ outcome:
 ### 6. Repeat Test 2 on the Aware fork
 
 **Why.** `tools/build_sentient.py` forks the built Core source and applies a deliberate string
-divergence through an offset-recomputing round trip. Both forks measure 660 wrapped rows in their
+divergence through an offset-recomputing round trip. Both forks measure 616 wrapped rows in their
 decrypted payloads, so this is a low-expectation regression check rather than a new question —
 but the fork step is the only place a correct Core artifact could become an incorrect Aware one.
 
@@ -327,9 +342,9 @@ it is not an oversight — it is this project's standing, deliberate policy that
 is worse than a blank.
 
 **Do not substitute a simulator run, a Mac import, or any inference from the decrypted artifact
-for a device observation.** Plan 13-04 Task 1 decrypted both signed containers and confirmed 67
-List actions, 660 wrapped rows, 6 bare rows and 0 unwrapped rows per fork. That is structural
-proof only. None of it observes whether a wrapped row renders, or which row `getitemfromlist`
+for a device observation.** Both signed containers were decrypted and confirmed at 67 List
+actions, 616 wrapped rows, 50 bare rows, 0 attachment-free wrapped rows and 0 unwrapped rows per
+fork (at `365937e`). That is structural proof only. None of it observes whether a wrapped row renders, or which row `getitemfromlist`
 returns, and the simulator cannot close the gap either — it lacks `com.apple.mobilenotes` and
 cannot import a signed `.shortcut` at all.
 
