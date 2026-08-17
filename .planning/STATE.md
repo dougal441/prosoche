@@ -248,6 +248,7 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 | 260817-2ng | Reconcile stale Use Model On-Device literal audit trail (CAP-26/DEV-03/UA-02/BD-04) | 2026-08-17 | 1732448 | [260817-2ng-use-model-literal-reconciliation](./quick/260817-2ng-use-model-literal-reconciliation/) |
 | 260817-au7 | Repair the iOS 26 Personal Automation onboarding in both forks; rebuild, re-sign, decrypt-verify | 2026-08-17 | c961af9 | [260817-au7-ios26-automation-onboarding](./quick/260817-au7-ios26-automation-onboarding/) |
 | 260817-d9m | Record agent-side tooling and the four-rung evidence-escalation ladder (CLAUDE.md §9); sync STACK.md AEA1 drift; admit simulator/probe evidence in BUILD-NOTES §3 | 2026-08-17 | 5e0a895 | [260817-d9m-record-agent-side-tooling-and-device-evi](./quick/260817-d9m-record-agent-side-tooling-and-device-evi/) |
+| 260817-ewg | Reconcile the validator-invocation rule across 7 standing-instruction sites; adopt the two-gate posture (26/all mandatory + 27/all advisory); no shipped defect found | 2026-08-17 | eb87f62 | [260817-ewg-reconcile-validator-invocation-rule](./quick/260817-ewg-reconcile-validator-invocation-rule/) |
 | 260817-fae | Downgrade spike 004 to PARTIAL — the ineligible-hardware leg was never tested; propagate to skill, CONVENTIONS, spike 008, wrap-up | 2026-08-17 | c7b834b | [260817-fae-downgrade-spike-004-to-partial-ineligibl](./quick/260817-fae-downgrade-spike-004-to-partial-ineligibl/) |
 
 ## Deferred Items
