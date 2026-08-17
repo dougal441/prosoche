@@ -2726,8 +2726,13 @@ validator gate and no signer. Plan 13-04 fills it with what it actually measured
 **Rebuild and provenance.** `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678
 HEAD` exited **0** before either generator ran. `tools/build_state_engine.py` and
 `tools/build_sentient.py` were then run in that order, and the rebuild was **byte-idempotent**:
-`git status --porcelain` was empty afterwards, so both sources still carry the wave-2 digests
-`99388cad…` (Core) and `d01154b3…` (Aware). That matters beyond tidiness — it means a re-run
+`git status --porcelain` was empty afterwards, so both sources carried the wave-2 digests
+`99388cad…` (Core) and `d01154b3…` (Aware) **as of this 13-04 run**. Those two source digests were
+superseded by the CR-01 re-ship at `365937e`; they are recorded here as the wave-2 measurement, not
+as current. (These are `src/*.xml` digests, not signed-artifact digests — nobody imports a source
+XML, and `artifacts/shortcuts/MANIFEST.md` remains the authoritative live record.) The operative
+claim is unaffected and was re-verified after the re-ship: the rebuild is byte-idempotent. That
+matters beyond tidiness — it means a re-run
 after an interruption converges on the same digests rather than producing a new set, so the
 hashes in `artifacts/shortcuts/MANIFEST.md` are reproducible rather than run-specific
 (threat T-13-26).

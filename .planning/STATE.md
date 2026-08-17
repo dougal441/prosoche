@@ -4,11 +4,11 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 13
 current_phase_name: Red-operator conditionals and the WFItems List wrapper
-status: ready-to-execute
-stopped_at: Phase 13 planned (4 plans, 4 waves); Phase 12 verification deferred to /gsd-verify-work 12 (device-blocked)
+status: verification-deferred
+stopped_at: Phase 13 executed + code-reviewed + gap-closed; verification human_needed (25/27, 0 failed) — deferred to /gsd-verify-work 13, device-blocked (DIST-03). Phase 12 likewise deferred.
 last_updated: "2026-08-17T08:08:52.852Z"
 last_activity: 2026-08-17
-last_activity_desc: Phase 13 execution started
+last_activity_desc: Phase 13 complete pending device UAT — code review found and fixed CR-01; both verification gaps closed
 progress:
   total_phases: 24
   completed_phases: 9
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 ## Current Position
 
-Phase: 13 (Red-operator conditionals and the WFItems List wrapper) — EXECUTING
-Plans: 4 (waves 1-4, fully sequential), plan-checker passed
+Phase: 13 (Red-operator conditionals and the WFItems List wrapper) — VERIFICATION DEFERRED (device-blocked)
+Plans: 4/4 complete; verifier 25/27, 0 failed; the 2 outstanding are device-gated and abstained
 
 **Phase 13 research rewrote the phase.** Donor 5 was decrypted for the first time and
 **refuted family 1**: iOS itself authors a variable in a conditional's TEXT slot as a
@@ -83,7 +83,7 @@ untested path in the product), Phase 4 UAT tests 1 and 3-6, Phase 8's real-iPhon
 Phase 19's full nine-Circle sweep. Report the opens-to-first-interruption count from
 `10-UAT.md` Test 2 — it decides whether Phase 10's raised entry thresholds need tuning.
 
-Last activity: 2026-08-17 — Phase 13 execution started
+Last activity: 2026-08-17 — Phase 13 executed, code-reviewed, gap-closed; awaiting device UAT
 
 Progress: [██████████] 100%
 
@@ -292,6 +292,25 @@ Items acknowledged and carried forward from previous milestone close:
 | Phase | State | Resume |
 |-------|-------|--------|
 | 12 | verification_deferred_human | /gsd-verify-work 12 |
+| 13 | verification_deferred_human | /gsd-verify-work 13 |
+
+Phase 13's verifier returned `human_needed` at **25/27 must-haves verified, 0 failed**. The only two
+outstanding are device-gated and were correctly abstained rather than promoted on structural
+evidence: whether a wrapped List row actually renders non-blank on device, and what `Item At Index`
+returns over a wrapped List (`verification: backstop`, research Open Question 1 / assumption A4).
+`xcrun devicectl list devices` was run and reported no connected iPhone; `13-UAT.md` records six
+tests, 0 passed, all BLOCKED. Same DIST-03 precedent as Phases 10 and 12. Resume with
+`/gsd-verify-work 13` once an iPhone is connected — and note `13-UAT.md` Test 1 now asks the tester
+to record *which* row was showing, because row 8 is a bare literal row after the CR-01 fix, so a
+blank at Circle VIII would indict the literal path rather than the wrapper.
+
+**Phase 13's code-review pass found a real defect in the phase's own fix — worth carrying forward.**
+`_list_row()` discriminated on Python type (`isinstance(item, str)`) rather than on
+attachment-bearing-ness, so 44 attachment-free (literal-by-content) rows shipped inside the
+variable-row wrapper — a *second* unevidenced framing, invisible to the guard, the validator and the
+decrypt, at row 8 / Circle VIII. Fixed and fully re-shipped at `365937e`; shipped census is now
+**616 wrapped / 50 bare** per fork, not the 660/6 the plan SUMMARYs record. Any doc still citing
+660/6 or artifacts `fe1bafdf…`/`bd1264d5…` is describing the superseded `737ce07` build.
 
 Phase 12's verifier returned `human_needed`: 7 device-only exit-recording tests (already recorded
 BLOCKED in `12-UAT.md` — `xcrun devicectl list devices` genuinely reported no connected iPhone, not a
