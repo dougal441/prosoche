@@ -3100,7 +3100,9 @@ def fix_notes_filter_limit(actions):
     iPhone) carries AppIntentDescriptor + WFContentItemLimitEnabled=true +
     WFContentItemLimitNumber=1 -- an explicit "exactly one result, never a chooser" bound;
     this artifact's site had none of the three. This artifact's own search predicate
-    (Name contains "PROSOCHĒ — Control Room") and its Get Item From List "First Item"
+    (Name contains the Note's user-facing title -- `PROSOCHĒ` since plan 11-03 shortened it
+    from `PROSOCHĒ — Control Room`; the Operator is still 99, pinned by
+    docs/note_identity_check.py) and its Get Item From List "First Item"
     consumer are unchanged and already correctly find the intended note (per the reported
     symptom itself) -- only the missing result bound is added, matching Donor 8's shape
     exactly rather than guessing which subset of the three fields matters.

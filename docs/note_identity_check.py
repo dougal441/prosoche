@@ -36,19 +36,33 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FORKS = ("Dumb", "Sentient")
 
-# The Note's USER-FACING title, and the single line plan 11-03 changes to the bare product
-# name.  "Control Room" remains the INTERNAL name everywhere in code and docs -- menu items,
+# The Note's USER-FACING title, shortened to the bare product name by plan 11-03.
+# "Control Room" remains the INTERNAL name everywhere in code and docs -- menu items,
 # variable names, comment markers, function names, prose -- settled by commit `e84ee77`
 # ("the codebase and docs continue to call it the Control Room").  Only the three sites
-# asserted below are user-facing, and only they move.
-EXPECTED_TITLE = "PROSOCHĒ — Control Room"
+# asserted below are user-facing, and only they moved.
+EXPECTED_TITLE = "PROSOCHĒ"
 
-# The Find Notes predicate's current comparison on the `Name` property.  99 is "contains".
-# Recorded as an assertion rather than ignored because RESEARCH §6.2 proposes moving it to 4
-# ("string is") in the same edit that shortens the title: under `contains`, a shortened title
-# would also match a leftover Note from an earlier install, and with a limit of 1 plus First
-# Item, PROSOCHĒ would bind to the wrong Note and append its ledger there forever.  Pinning
-# the value here makes that move a deliberate, visible edit instead of a silent one.
+# The Find Notes predicate's comparison on the `Name` property.  99 is "contains".
+#
+# PINNED, AND DELIBERATELY NOT 4.  RESEARCH §6.2 proposed moving it to 4 ("string is") in the
+# same edit that shortened the title, because under `contains` the bare product name also
+# matches a leftover Note from an earlier install, and with a limit of 1 plus First Item
+# PROSOCHĒ would bind to the wrong Note and append its ledger there forever.  It was NOT
+# moved:
+#
+#   * the current value is `docs/BUILD-NOTES.md`'s BOOT-08 decision, taken against the
+#     documented Find-Notes name-matching trap -- a recorded choice, not an oversight; and
+#   * whether `Operator: 4` is even accepted in a `WFContentPredicateTableTemplate` on the
+#     Notes `Name` property is UNVERIFIED in the bundled catalog, with no donor evidence.
+#     Changing it here would be inference against a recorded decision, which this project's
+#     capability rule forbids.
+#
+# The collision is mitigated in Note copy (the `## READ THIS FIRST` stale-note instruction)
+# and recorded as a deviation in `docs/CAPABILITY-DECISIONS.md` BD-06-A2, which also names
+# the donor export that would settle it.  Pinning the value HERE is what makes any future
+# move a deliberate, visible edit to this constant instead of a silent side effect of a
+# copy change.
 EXPECTED_NAME_OPERATOR = 99
 
 # Identifiers, matching `docs/router_ui_census.py:40-42`.

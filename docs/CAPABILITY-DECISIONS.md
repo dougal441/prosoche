@@ -570,3 +570,83 @@ a recording task and no longer carries a blocking one-way gate.
 amendment is device-verified; it is a naming and scope decision recorded before the work.
 
 **Requirement:** AUDIT-02 (extends), CIRC-02, ROOM-01, ROOM-02
+
+---
+
+## BD-06-A2 — the Find-Notes lookup operator is RETAINED at `contains` after the title shortened
+
+**Recorded 2026-08-17, plan 11-03 wave 3. This is a deviation record, not a new decision:**
+it records that a proposed change was **declined**, why, and what evidence would reverse it.
+
+### What changed, and what it widened
+
+Build Addendum 01 §4 shortens the Apple Note's user-facing title from
+`PROSOCHĒ — Control Room` to the bare product name `PROSOCHĒ`, at all three sites that
+decide the Note's identity — the Find-Notes lookup predicate, the body's H1 heading, and the
+Create Note `name` parameter. All three moved in one commit; `docs/note_identity_check.py`
+asserts them against a single `EXPECTED_TITLE` constant so they cannot drift apart.
+
+The lookup predicate is a `WFContentPredicateTableTemplate` row on the Notes `Name` property
+with `Operator: 99` — **"contains"** — bounded by `WFContentItemLimitEnabled: true` /
+`WFContentItemLimitNumber: 1` and consumed by a Get Item From List "First Item".
+
+Shortening the title **widens what that substring lookup can match**. `contains "PROSOCHĒ"`
+matches *any* note whose name contains the product name — including a leftover
+`PROSOCHĒ — Control Room` from an earlier install, and including anything a user has named
+e.g. `PROSOCHĒ (old)`. With a limit of 1 plus First Item, PROSOCHĒ would bind to whichever
+such note the store returned first and append its ledger there **permanently and silently**.
+
+### Why the operator was retained rather than tightened
+
+`.planning/phases/11-.../11-RESEARCH.md` §6.2 recommended moving the operator to `4`
+("string is") in the same edit. **It was not moved.** Two independent reasons, either
+sufficient on its own:
+
+1. **The current value is a recorded decision, not an oversight.** `docs/BUILD-NOTES.md`'s
+   BOOT-08 row records the Find-Notes lookup shape as a deliberate choice made against the
+   documented Notes name-matching trap. Reversing a recorded decision requires evidence, not
+   a preference.
+2. **The alternative is UNVERIFIED for this filter template.** The condition-code table in
+   `.claude/CLAUDE.md` §4 documents `4` = "string is" for `WFCondition` on **conditionals**.
+   Whether `Operator: 4` is accepted in a `WFContentPredicateTableTemplate` on the Notes
+   `Name` property specifically is **not** established anywhere in the bundled catalog, the
+   golden corpus, or any donor this project holds. This project's capability rule is
+   explicit: when something cannot be verified, use the safest fallback, record the
+   deviation, and keep the Shortcut runnable. Writing `4` here would be inference against a
+   recorded decision — the exact move the rule forbids.
+
+### The evidence that would settle it
+
+**A donor export of a Find Notes action configured by hand on the owner's iPhone with the
+`Name` filter set to "is" rather than "contains"**, exported as a signed `.shortcut` and
+recovered via the `aea decrypt` + `aa extract` procedure in `.claude/CLAUDE.md` §8. Read back
+the `Operator` literal the device actually writes. That is tier-1 device evidence and it
+would settle the question in one round trip. Until it exists, the operator does not move.
+
+This is a rung-3/4 question by `.claude/CLAUDE.md` §9's ladder — it needs the Notes app, and
+`com.apple.mobilenotes` is absent from the booted simulator, so rung 2 cannot reach it.
+
+### Interim mitigation, in copy
+
+A paragraph was added to the Note body's `## READ THIS FIRST` section instructing the user to
+delete or rename any note left under the old two-part title before continuing, and stating
+that PROSOCHĒ finds its note by name. That is the whole mitigation; it is a user instruction,
+not a mechanism, and it is recorded here as such.
+
+The operator itself is **pinned** by `docs/note_identity_check.py`'s `EXPECTED_NAME_OPERATOR`
+constant, whose comment names BOOT-08 and this record. Any future change to it is therefore a
+deliberate, visible edit to a named constant rather than a silent side effect of a copy change.
+
+### Second-order collision, pre-existing
+
+**Both forks create a note with the same title.** This is not introduced here — Dumb and
+Sentient both wrote `PROSOCHĒ — Control Room` before this change — but it is **sharper now**,
+because a shorter title under a `contains` operator has a wider match surface. A user who
+installs both forks has one note and two writers. Recorded, not fixed: fixing it means giving
+the two forks different note titles, which is a product decision that belongs with the
+Dumb→Core / Sentient→Aware rename in plan `11-06`, not with a copy change.
+
+**No behavioural claim.** DIST-03 is open, no iPhone is connected, and nothing above has been
+observed running. Every statement here is about what the file says, not what the device does.
+
+**Requirement:** ROOM-01, ROOM-02
