@@ -548,7 +548,7 @@ session, so treat it as new-risk surface.
 **Severity:** major
 **Requirements**: SESS-07, STATE-12, EXIT-01, EXIT-02, SAFE-01
 **Depends on:** Phase 11
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans executed
 
 Plans:
 **Wave 1**
@@ -569,7 +569,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 12-05-PLAN.md — Sign both forks, refresh MANIFEST, gate B advisory read, `12-UAT.md` device exit-path test
+- [x] 12-05-PLAN.md — Sign both forks, refresh MANIFEST, gate B advisory read, `12-UAT.md` device exit-path test
 
 ### Phase 13: Red-operator conditionals and the WFItems List wrapper
 
