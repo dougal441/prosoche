@@ -364,14 +364,23 @@ def main() -> None:
     verify_compound_value_reads(actions)
     verify_conditional_action_string(actions)
     # PHASE 13 (13-01).  Sentient forks the BUILT Dumb XML, so it inherits all 67
-    # is.workflow.actions.list actions and every one of their rows -- including the 660
-    # Mirror rows this phase wrapped in the donor-confirmed {WFItemType, WFValue} envelope.
-    # Asserted per fork, never inferred from the Dumb run: a fork that dropped, re-serialized
-    # or unwrapped a row would ship a BLANK Mirror on the Aware artifact with no error
-    # anywhere in the pipeline -- the validator sees a structurally perfect plist and the
-    # ToolKit catalog has no entry for WFItems row shape at all.  Phase 12 already recorded
-    # what site-by-site arming costs here (four inherited guards imported by Dumb and never
-    # run on Aware); the phase rule is "fix whole classes, never site-by-site".
+    # is.workflow.actions.list actions and every one of their 666 rows -- the 616 Mirror rows
+    # this phase wrapped in the donor-confirmed {WFItemType, WFValue} envelope and the 50 that
+    # are bare <string> literals by the same donor rule.  Asserted per fork, never inferred
+    # from the Dumb run: a fork that dropped, re-serialized or unwrapped a row would ship a
+    # BLANK Mirror on the Aware artifact with no error anywhere in the pipeline -- the
+    # validator sees a structurally perfect plist and the ToolKit catalog has no entry for
+    # WFItems row shape at all.  Phase 12 already recorded what site-by-site arming costs here
+    # (four inherited guards imported by Dumb and never run on Aware); the phase rule is "fix
+    # whole classes, never site-by-site".
+    #
+    # PHASE 13 CODE REVIEW (WR-01).  The sentence above used to claim more than the guard
+    # delivered: it tested only for a dict row missing WFItemType, so a DROPPED row, a
+    # FLATTENED row, a missing WFItems key, a malformed payload and a DOUBLE-WRAPPED row all
+    # passed it silently -- every drop/flatten direction this comment advertises.  The guard
+    # now asserts the whole two-kind contract per row AND pins the census (67 / 616 / 50,
+    # measured identically on both forks), which is what makes "a fork that dropped a row"
+    # a claim rather than a hope.  No new touch point: already imported, already invoked.
     verify_list_item_wrappers(actions)
     # Cycle 12, axis 7 -- GATE SEMANTICS.  Sentient inherits the restore block and every
     # sentinel write from Dumb, so these assert the fork did not lose them; and because

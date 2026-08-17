@@ -2614,6 +2614,15 @@ def verify_conditional_action_string(actions):
                          "variable-bearing target appeared unreviewed")
 
 
+# The MEASURED WFItems census, post-CR-01, IDENTICAL on both forks -- Aware forks the BUILT
+# Core source, so it inherits the whole Mirror block unchanged.  616 wrapped rows are
+# attachment-bearing Mirror templates; the 50 bare rows are the six exit names plus the two
+# placeholder-free Mirror templates at 22 call sites each.
+EXPECTED_LIST_ACTIONS = 67
+EXPECTED_WRAPPED_ROWS = 616
+EXPECTED_BARE_ROWS = 50
+
+
 def verify_list_item_wrappers(actions):
     """Fail the build if a variable-bearing List row omits the iOS row wrapper.
 
@@ -2642,20 +2651,75 @@ def verify_list_item_wrappers(actions):
     Offenders are collected as (action index, row position) tuples rather than the flat
     action index every sibling guard uses: this defect is per row, and an action-level
     message would hide ten rows behind one number.
+
+    PHASE 13 CODE REVIEW (WR-01 and CR-01) -- THE GUARD ASSERTS THE WHOLE CONTRACT NOW.
+    The first cut tested only `isinstance(row, dict) and "WFItemType" not in row`, which is
+    ONE regression direction.  Probed directly against the shipped module, every one of these
+    PASSED SILENTLY while tools/build_sentient.py's arming comment claimed the guard caught
+    them: all rows dropped (WFItems: []); a wrapped row FLATTENED to a bare string; a wrapper
+    whose WFValue is MISSING; WFValue holding a plain string; a List action with no WFItems
+    key at all; a row that is an int; and a DOUBLE-WRAPPED row.  Each is now reported.
+
+    The INVERSE assertion is CR-01's other half: a WRAPPED row must be attachment-bearing.
+    Wrapping an attachment-free token is a literal row wearing the variable row's framing --
+    a shape no donor exhibits -- and it shipped at 44 sites per fork before CR-01.  Without
+    this half, _list_row() could regress to a Python-type discriminator and the guard would
+    once again see a structurally perfect artifact.
+
+    THE CENSUS IS PINNED because no per-row shape test can see a row that is not there.  The
+    three constants below are MEASURED post-CR-01, identical on both forks (Aware inherits
+    the whole Mirror block from the built Core source): 67 List actions, 616 wrapped rows,
+    50 bare rows.  They are deliberately brittle -- editing the Mirror template roster or
+    adding a List action MUST come with a deliberate, explained update here in the same
+    commit.  An unexplained edit to these numbers is the same defect as the drop they exist
+    to catch.
     """
     offenders = []
+    wrapped = bare = lists = 0
     for index, item in enumerate(actions):
         if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.list":
             continue
+        lists += 1
         parameters = item.get("WFWorkflowActionParameters", {})
-        for position, row in enumerate(parameters.get("WFItems", [])):
-            if isinstance(row, dict) and "WFItemType" not in row:
-                offenders.append((index, position))
+        if "WFItems" not in parameters:
+            offenders.append((index, "no WFItems key at all"))
+            continue
+        for position, row in enumerate(parameters["WFItems"]):
+            # KIND ONE -- a literal row is a bare string and carries no framing.
+            if isinstance(row, str):
+                bare += 1
+                continue
+            # KIND TWO -- an attachment-bearing row is the wrapper dict, and nothing else is
+            # a row at all.  WFItemType's VALUE stays unasserted: unaudited beyond 0.
+            if not isinstance(row, dict) or "WFItemType" not in row:
+                offenders.append((index, f"row {position} is neither a bare string nor a "
+                                         f"{{WFItemType, WFValue}} wrapper: {type(row).__name__}"))
+                continue
+            wrapped += 1
+            body = row.get("WFValue")
+            if not isinstance(body, dict) or body.get("WFSerializationType") != "WFTextTokenString":
+                offenders.append((index, f"row {position} wrapper's WFValue is not a "
+                                         "WFTextTokenString envelope"))
+                continue
+            if not (isinstance(body.get("Value"), dict) and body["Value"].get("attachmentsByRange")):
+                offenders.append((index, f"row {position} is WRAPPED but ATTACHMENT-FREE -- a "
+                                         "literal row wearing the variable row's framing, a "
+                                         "shape no donor exhibits (CR-01)"))
     if offenders:
-        raise SystemExit("List rows carry a raw WFTextTokenString instead of the iOS "
-                         "{WFItemType, WFValue} wrapper (renders blank on device): "
-                         + ", ".join(f"action {i} row {p}" for i, p in offenders[:5])
+        raise SystemExit("List rows violate the donor-observed two-kind rule (a literal row is "
+                         "a bare string; an attachment-bearing row is {WFItemType, WFValue} "
+                         "around a WFTextTokenString) -- the wrong kind renders BLANK on "
+                         "device: "
+                         + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
                          + f" ({len(offenders)} total)")
+    if (lists, wrapped, bare) != (EXPECTED_LIST_ACTIONS, EXPECTED_WRAPPED_ROWS, EXPECTED_BARE_ROWS):
+        raise SystemExit(
+            "List row census moved: expected "
+            f"{EXPECTED_LIST_ACTIONS} list actions / {EXPECTED_WRAPPED_ROWS} wrapped rows / "
+            f"{EXPECTED_BARE_ROWS} bare rows, found {lists} / {wrapped} / {bare} -- rows were "
+            "DROPPED, added or changed kind, which no per-row shape test can see. If a Mirror "
+            "template or a List action was changed on purpose, update these constants in the "
+            "same commit and say why.")
 
 
 # ---------------------------------------------------------------------------
