@@ -963,17 +963,45 @@ catalog can see it — the catalog has no entry for `WFItems` row shape at all.
 
 **Measured defect inventory at the phase-start artifact, per fork (Core / Aware):** 67 / 67
 `is.workflow.actions.list` actions, of which **1 / 1** were correct (bare-string rows only) and
-**66 / 66** were defective, carrying **660 / 660** unwrapped variable-bearing rows and 6 / 6
-correct bare-string rows, with 0 / 0 already wrapped. The recorded "2 confirmed instances" is
+**66 / 66** were defective, carrying **660 / 660** unwrapped rows and 6 / 6
+correct bare-string rows, with 0 / 0 already wrapped. (Those 660 are **not** all
+variable-bearing, and calling them that is the wording CR-01 corrects: 616 of them bear an
+attachment and 44 do not.) The recorded "2 confirmed instances" is
 therefore **REFUTED**: it under-counted actions by 33× and rows by 330×.
 
 **Fix and guard.** All 66 defective actions originate from **one** emitter, `mirror_text()` in
-`tools/build_state_engine.py`; the fix is a per-row type branch (`_list_row()`: a bare `str`
-stays bare, anything else is nested under the wrapper), never an expression-level sweep — the
-correct sibling `list_items()` emits a byte-identical `WFItems=` expression and its six literal
-rows must stay bare. Post-fix: **660 wrapped + 6 bare per fork, 0 unwrapped.** Build guard:
-`verify_list_item_wrappers()`, armed on both forks, raising `SystemExit` before the single
-`SOURCE.write_bytes()`.
+`tools/build_state_engine.py`; the fix is a per-row branch in `_list_row()`, never an
+expression-level sweep — the correct sibling `list_items()` emits a byte-identical `WFItems=`
+expression and its six literal rows must stay bare.
+
+**The branch tests CONTENT, not Python type — corrected by the phase code review (CR-01).**
+The first cut branched on `isinstance(item, str)`: a bare `str` stayed bare, *anything else*
+was nested under the wrapper. That over-wraps in the other direction. `text_token()` returns a
+`WFTextTokenString` even for a template carrying **no** `￼` placeholder, whose
+`attachmentsByRange` is therefore **empty** — a literal row by content, encoded as a variable
+row, which is the shape this record's own two-kind rule says a literal must not carry.
+Measured in `src/*.xml` and in the decrypted payload of both signed containers: **44 of the 660
+wrapped rows per fork**. Those 44 were `MIRROR_SUCCESSES[7]` / `MIRROR_LAPSES[7]` at 22 call
+sites each — **row 8**, the row `getitemfromlist`'s `Item At Index` selects at **Circle VIII**
+on both the success and the lapse family, so a device mishandling it would have presented as a
+blank Mirror at a high circle: indistinguishable from the defect this record exists to close.
+Shipping a second unevidenced row framing to fix the first is exactly what the do-not-fabricate
+rule forbids. `_list_row()` therefore tests whether the token bears an attachment, and an
+attachment-free token goes out as the bare `<string>` both donors show.
+
+**Post-fix census, identical on both forks and confirmed on the decrypted signed payloads:**
+67 `is.workflow.actions.list` actions, 666 rows — **616 wrapped + 50 bare, 0 unwrapped, 0
+wrapped-but-attachment-free.** Per-array shapes: 1 × (0 wrapped, 6 bare) — the exit names;
+22 × (10, 0) — the baseline family, whose ten templates all carry placeholders; and 44 × (9, 1)
+— the success and lapse families, which now ship the **mixed** array both donors exhibit.
+(13-01's interim figure of "660 wrapped + 6 bare" described the over-wrapped artifact and is
+superseded.)
+
+Build guard: `verify_list_item_wrappers()`, armed on both forks, raising `SystemExit` before
+the single `SOURCE.write_bytes()`. It asserts the whole two-kind contract per row — including
+the **inverse** rule, that a wrapped row's `WFValue.Value.attachmentsByRange` must be non-empty
+— and pins the census (67 / 616 / 50), because no per-row shape test can see a row that is not
+there.
 
 **Boundary — deliberately unaudited.** Only `WFItemType` `0`, a **text** row, is
 donor-observed. Neither donor exercises a number, dictionary or file row. The guard therefore

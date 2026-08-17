@@ -2414,17 +2414,33 @@ would have been a failure of plan 13-02 rather than evidence of its success.
 | Sites failing the Donor-5 shape | **0 → 0** | **0 → 0** |
 
 **Family 2 — the `WFItems` List row wrapper.** One emitter changed; every figure below moved as
-a consequence of that single branch.
+a consequence of that single branch. The figures are identical on both forks at every stage,
+because Aware forks the *built* Core source and inherits the whole Mirror block unchanged.
 
-| Measure | Core (pre → post) | Aware (pre → post) |
-|---|---|---|
-| `is.workflow.actions.list` actions | 67 → 67 | 67 → 67 |
-| …correct (bare-string rows only) | 1 → 67 | 1 → 67 |
-| …**defective** (unwrapped dict rows) | **66 → 0** | **66 → 0** |
-| Bare-string literal rows | 6 → 6 | 6 → 6 |
-| **Unwrapped variable-bearing rows** | **660 → 0** | **660 → 0** |
-| **Wrapped rows** | **0 → 660** | **0 → 660** |
-| Per-action row counts | `[6] + [10]*66` — unchanged | `[6] + [10]*66` — unchanged |
+**Three stages, not two.** 13-01 fixed the missing wrapper; the phase code review (CR-01) then
+found that 13-01's `isinstance(item, str)` discriminator had over-wrapped in the other
+direction, and a third stage corrected it. Reporting only "pre → post" is what made CR-01
+invisible to a reader auditing the record rather than the artifact, so all three stages are
+carried here.
+
+| Measure | phase start | after 13-01 | after CR-01 (**what ships**) |
+|---|---|---|---|
+| `is.workflow.actions.list` actions | 67 | 67 | 67 |
+| `WFItems` rows, total | 666 | 666 | 666 |
+| …**raw `WFTextTokenString`** rows (no framing at all) | **660** | **0** | **0** |
+| …rows wrapped `{WFItemType: 0, WFValue: …}` | 0 | 660 | **616** |
+| …of those, **attachment-bearing** (correctly wrapped) | 0 | 616 | **616** |
+| …of those, **attachment-free** (wrongly wrapped, CR-01) | 0 | **44** | **0** |
+| …bare `<string>` literal rows | 6 | 6 | **50** |
+| Per-action row counts | `[6] + [10]*66` | unchanged | unchanged |
+
+**The 660 figure was described as "variable-bearing" and it was not.** 44 of the 660 rows 13-01
+wrapped carry an **empty** `attachmentsByRange` — they are literal rows by content, and Donors 4
+and 4.1 write a literal row as a bare `<string>`. The inventory was numerically right and
+semantically wrong. The correct statement of what 13-01 did is **"660 rows wrapped, of which 616
+were attachment-bearing and 44 were attachment-free literals"**; the correct statement of what
+ships is **"616 wrapped + 50 bare"**. The 44 all sat at row position 8 — the row
+`getitemfromlist` selects at **Circle VIII** on both the success and the lapse family.
 
 ### The refutation, stated plainly
 
@@ -2612,11 +2628,27 @@ assumptions remain **open**, each with its risk:
   are emitted. The guard asserts only that the key is *present*, never that it equals `0`,
   because asserting `== 0` would encode the same unaudited claim one level down. Do not infer
   any other value from `0`.
-- **A3 — an all-wrapped array is a configuration no donor exhibits.** Donors 4 and 4.1 show
-  bare and wrapped rows **mixed** in one device-authored array, which is close to VERIFIED for
-  the mix; this phase's fix nonetheless produces arrays that are entirely wrapped. Risk:
-  **low**, listed only because the exact configuration shipped is not the exact configuration
-  observed.
+- **A3 — an all-wrapped array is a configuration no donor exhibits. RESTATED AND PARTLY CLOSED
+  by the phase code review (CR-01); the original wording is preserved below because it is the
+  reason the defect survived the plan.** As written in 13-03, A3 noticed the adjacent fact and
+  framed it as a *mix* question rated low risk: "Donors 4 and 4.1 show bare and wrapped rows
+  **mixed** in one device-authored array, which is close to VERIFIED for the mix; this phase's
+  fix nonetheless produces arrays that are entirely wrapped. Risk: **low**, listed only because
+  the exact configuration shipped is not the exact configuration observed."
+
+  **What that wording missed.** The arrays were not merely all-wrapped; **44 of the wrapped rows
+  were literal by content** — an empty `attachmentsByRange` — so the shipped encoding
+  contradicted axis 8's own stated rule rather than merely going beyond the donors' observed
+  configuration. A reader auditing the record could not have learned that from A3. This is a
+  *stronger* claim than "no donor exhibits it": a donor exhibits the **opposite**.
+
+  **Status now.** CR-01 moved those 44 rows to the bare `<string>` form both donors show, so the
+  two Mirror families (success and lapse) now ship **mixed** arrays — 9 wrapped rows and 1 bare
+  row each — which is exactly the donor-observed configuration. The 22 baseline arrays remain
+  entirely wrapped, because all ten baseline templates genuinely carry placeholders; that
+  residue is the only part of A3 still open, and it is open for the original, weaker reason
+  (an all-wrapped array is unobserved, not contradicted). Risk: **low**. Device-only, owned by
+  Phase 19 UAT alongside A4.
 - **A4 — wrapping does not change what `getitemfromlist` returns.** No donor chains a *wrapped*
   List into `getitemfromlist`. The file-level half **is** verified: row count and ordering per
   List action are unchanged (`[6] + [10]*66`), `WFItemSpecifier` and `WFItemIndex` are

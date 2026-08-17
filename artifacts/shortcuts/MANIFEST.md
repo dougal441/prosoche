@@ -158,9 +158,14 @@ non-literal row must be wrapped as `{WFItemType: 0, WFValue: <the token string>}
 plain literal row is a bare string. An unwrapped row is not a wrong *envelope*; it is a missing
 *container*, which is why a type-scoped sweep for a wrong string envelope was structurally
 blind to it for three cycles and why it is recorded as its own defect axis (**8**) in
-`.claude/CLAUDE.md` rather than filed under axis 2. **66** call sites and **660** rows were
-wrapped; the **6** exit-name rows stayed bare literals by design, and Donors 4 and 4.1 show
-exactly that mix in a single device-authored array. A new build guard,
+`.claude/CLAUDE.md` rather than filed under axis 2. **66** call sites were fixed. Of the 666
+rows, the **616** that are attachment-bearing are wrapped and the **50** that are not —
+the six exit names, plus the two placeholder-free Mirror templates at 22 call sites each —
+stay bare `<string>` literals, and Donors 4 and 4.1 show exactly that mix in a single
+device-authored array. **The interim "660 wrapped + 6 bare" figure carried by plans 13-01
+through 13-04 described 44 rows per fork as "variable-bearing" when their
+`attachmentsByRange` was empty; it is corrected here and in `docs/BUILD-NOTES.md` §28 and
+BD-08, and the artifact itself was corrected by CR-01.** A new build guard,
 `verify_list_item_wrappers()`, raises before any write in both builders. The visible symptom
 this predicts is a **Mirror alert whose body is empty** — the phase exists so that a blank
 Circle in Phase 19 device testing is a real finding rather than a known artifact. The
