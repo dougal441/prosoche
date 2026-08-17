@@ -911,3 +911,81 @@ fire would have to be written twice.
 Plans:
 
 - [ ] TBD (run /gsd-plan-phase 20 to break down)
+
+### Phase 21: One product or two — Core/Aware fork decision and device eligibility
+
+**Goal:** Settle whether PROSOCHĒ ships as **one** product or **two** (Core / Aware, formerly
+Dumb / Sentient), and — if two — make choosing between them require no knowledge the user
+doesn't have.
+
+**This phase closes a question that has been open since SEED-006 was planted (2026-08-16)
+and is now largely answered by evidence already in the repository.** Three spikes and one
+generator design bear on it directly:
+
+- **Spike 003 (INVALIDATED)** — automatic hardware-capability detection is impossible.
+  `Get Device Details → Device Model` returns the bare literal `"iPhone"` on every device;
+  no other `WFDeviceDetail` case (all 12 confirmed) disambiguates hardware. Apple's real
+  check (`SystemLanguageModel.default.availability`) is a Swift API, unreachable without a
+  companion app. Shortcuts has no try/catch, so "attempt and recover" is also closed.
+- **Spike 004 (VALIDATED, on real hardware)** — the merge is safe by **ordering**, not
+  detection. Tested on an iPhone 15 Pro *and* an iPhone SE: with the toggle on ineligible
+  hardware, `Use Model` fails with a graceful native OS error and the core deterministic
+  escalation, ordered first, had already completed. A single artifact with an opt-in
+  import question is buildable.
+- **Spike 008 (VALIDATED, donor ground truth)** — `WFLLMModel = "Apple Intelligence on
+  Device"`. SEED-006's blocker #2 ("the On-Device literal is unrecovered, and in a merged
+  world it blocks everyone") is closed.
+- **`tools/build_sentient.py`** — the Aware delta is already *one* additive insertion
+  (~56 actions) plus two toggle actions and one import question, all gated on
+  `Import AI == "yes"`. Structurally, a merged product is close to what already exists.
+
+**What this phase must actually decide and do:**
+
+1. **Amend or uphold the canonical strategy.** §35 (`AI | Two product forks`), §5.7 (split
+   justified on hardware capability), §31 (two signed `.shortcut` files as the deliverable)
+   and §13 (Core must not be a degraded afterthought). Per §38 the document wins unless
+   amended — so the first deliverable is a **recorded decision**, not code. §13/§33 Q4 want
+   Core as a scientific control baseline; a recorded, stable runtime toggle preserves that
+   comparison, and that argument must be made explicitly rather than assumed.
+2. **Resolve SEED-006's blocker #3 — determinism must be provably untouched.** In a merged
+   artifact both paths live in one graph, which makes the "additive, non-mutating wrap"
+   claim harder to assert. `docs/sentient_core_check.py` and the shared build guards are
+   the existing lever; decide what replaces the fork-skew check when there is no fork.
+3. **Audit the Aware block's ordering against spike 004's fail-safe.** The audit block is
+   inserted immediately *before* `persist_contract()`'s reload-and-save, so a `Use Model`
+   halt there costs the contract write. The core arithmetic save
+   (`build_state_engine.py:1116`) happens earlier in `open_pipeline()`, so the core loop
+   looks protected — **confirm this on device before merging**, because under two forks
+   only opt-in capable users could ever reach that halt, and under one product any user who
+   answers the toggle wrongly can.
+4. **If the answer is TWO products: make the choice trivial.** The user's own framing —
+   *a list of iPhone models, classified by a rule.* The rule from spike 003's research:
+   **A17 Pro or A18-class chip and ≥8 GB RAM** → iPhone 15 Pro, 15 Pro Max, and the entire
+   iPhone 16 and later family. Note the trap that makes a bare rule insufficient: the plain
+   **iPhone 15 / 15 Plus do NOT qualify** (A16, 6 GB) despite the shared generation and
+   identical iOS. So the deliverable is an explicit **model list**, not a chip rule the user
+   has to apply. Include the one-tap self-check the user *can* perform (Settings → Apple
+   Intelligence & Siri present, or `Use Model` greyed out in the Shortcuts editor per
+   Apple's support docs).
+5. **If the answer is ONE product:** SEED-005 (re-fork/rebuild Aware) is a hard prerequisite
+   — merging a stale Aware would fold known-broken code into the artifact everyone gets.
+   Then: onboarding import-question wording, fork-aware build-guard rework, and a **full
+   re-run of the device-UAT set in both AI-on and AI-off modes** — a merged build inherits
+   none of Core's device confirmation for free.
+
+**Naming note:** Build Addendum 01 §2 renames Dumb → **Core** and Sentient → **Aware**. If
+the merge happens, those stop being product names and become **mode** names — decide which
+before Phase 20 writes any user-facing copy against them.
+
+**Standing blocker either way:** DIST-03 (both forks import onto a real iPhone and complete
+a first manual run) is still unchecked — no qualifying device was reachable on 2026-08-13.
+Aware has never been device-tested in this project at all.
+
+**Severity:** major
+**Requirements**: DIST-03, DIST-04, DIST-07, BOOT-01, ROOM-01
+**Depends on:** Phase 20 (and SEED-005 if the merge is chosen)
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 21 to break down)
