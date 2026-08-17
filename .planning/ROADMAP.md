@@ -809,12 +809,25 @@ finding); its single recorded pass does not carry forward. Two user decisions lo
 **Plans:** 6 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 16-01-PLAN.md — TRACER: persist the captured original before the device is changed; build guard + negative control (wave 1)
 - [ ] 16-02-PLAN.md — Aimed rung-2 coercion probe at a direct Set parameter; disposition the 11 uncoerced volume sites (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 16-03-PLAN.md — D-01 code half: floor and dim target to zero; six measured code sites, incl. the 11×/fork emitted comment (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 16-04-PLAN.md — D-02: remove the two dead snapshot leaves as one coordinated change; no-reader guard (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 16-05-PLAN.md — D-01 record half: 21 measured record sites, the BD-02 §21 supersession note, and the repo-scoped gate (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
 - [ ] 16-06-PLAN.md — Rebuild, re-sign, refresh manifest, author 16-UAT.md; device session BLOCKED-or-proceed (wave 5)
 
 **Split 2026-08-18, user decision.** D-01's blast radius was under-counted four times (6 → 8 → 9 →

@@ -64,7 +64,7 @@ decisions.
 
 ### LOCKED — decided by the user 2026-08-17, after research, before planning
 
-**D-01 — BD-02 brightness floor on main: the floor is 0, and the dim target follows it down.**
+- **D-01 — BD-02 brightness floor on main: the floor is 0, and the dim target follows it down.**
 `safety.brightness_floor` `0.10 → 0` and `safety.dim_target` `0.12 → 0`. Dimming reaches the
 device's true minimum (which iOS renders dim, not black — the on-device observation that
 prompted the Phase 9 addendum). This makes the correction observable rather than inert: a
@@ -178,7 +178,7 @@ Re-measuring during this revision found **four sites appearing in no prior enume
 `.planning/ROADMAP.md`, and one in `.planning/STATE.md`. That is the fifth undercount, caught
 before execution rather than after. The gate is what makes a sixth **visible** rather than silent.
 
-**D-02 — DEV-06: remove `changed_at` and `changed_by_session_id` entirely.** Decided by the
+- **D-02 — DEV-06: remove `changed_at` and `changed_by_session_id` entirely.** Decided by the
 user via `ponytail`, on the standard "if the functionality doesn't need it, get rid of it".
 
 The trace behind the decision, so it is not re-litigated: there are **zero** consumers. No
