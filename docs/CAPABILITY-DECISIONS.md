@@ -496,3 +496,77 @@ guarantee it has not demonstrated, and a literal that validates while silently r
 would be worse than making no claim at all. This is **not** to be described as verified.
 
 **Requirement:** AUDIT-06 (now satisfied by its primary branch, not only the permitted alternative)
+
+---
+
+## BD-06-A1 — Purgatory replaces Limbo as the middle profile; Circle 0 is named The Indifferent
+
+**User decision, 2026-08-17, taken mid-Phase-11 (wave 3 not yet dispatched).** This is an
+**amendment to BD-06**, not a re-litigation of it. BD-06's five load-bearing decisions —
+positional names, canonical Dante order, ten primitives for nine slots, combined entries
+abolished with dispatch at condition 4, and the routed Exile landing directly — all stand
+unchanged. Waves 1 and 2 shipped against them and are not revisited.
+
+### Amendment 1 — the middle profile is renamed `Limbo` → `Purgatory`
+
+**Why this is a correction and not a preference.** BD-06 made `Limbo` the positional name of
+**Circle 1**. `Limbo` was already the name of the **middle profile**. One word therefore named
+two different things at two different levels of the model — a depth and a pace — and BD-06
+created that collision rather than inheriting it.
+
+Renaming the profile dissolves the collision at the root instead of mitigating it in copy,
+and it makes the three profiles the three *canticles* of the Commedia — **Paradise /
+Purgatory / Inferno** — which is the more faithful reading. `Limbo` is a circle, not a
+canticle; it was doing double duty. Circle 1 keeps the name `Limbo` per BD-06 Decision 4.
+
+**Scope: rename everywhere.** The profile menu, both threshold key sets
+(`thresholds.Limbo` → `thresholds.Purgatory`), both cooldown keys
+(`cooldown_seconds.Limbo` → `cooldown_seconds.Purgatory`), the import-question prompt and
+its default, the bootstrap normalisation fallback, `src/CONFIG-BLOCK.md`,
+`docs/state_engine_self_check.py`'s threshold table, and `docs/BUILD-NOTES.md`. Both forks.
+
+**Supersedes the plan-11-03 mitigation.** Plan `11-03` was authored to *disambiguate the two
+Limbos in user copy and rename neither*, with an acceptance criterion asserting the profile
+menu still read `['Paradise','Limbo','Inferno']`, and threat `T-11-16` mitigated by labelling.
+That approach is withdrawn. The menu must now read `['Paradise','Purgatory','Inferno']` and
+`T-11-16` is **eliminated rather than mitigated** — the two names no longer collide, so there
+is nothing left to disambiguate.
+
+### Amendment 2 — Circle 0 is named **The Indifferent**, in documentation only
+
+Circle 0 is PROSOCHĒ's silent band: state accumulates, nothing is shown. It had no name.
+It is now named **The Indifferent**, after Dante's *ignavi* — the uncommitted, who are
+refused by both Heaven and Hell and are placed in the vestibule of the Inferno, **before**
+Circle 1. That is exactly Circle 0's position in this model, so the name is positionally
+correct in the same sense BD-06 Decision 1 requires of Circles 1–9.
+
+**Scope: this decision record and build documentation only.** The name does **not** reach any
+user-facing surface this phase — not the Control Room Note, not the Mirror or status
+telemetry, not the Test-a-Circle menu. `verify_circle_zero_silence()` in
+`tools/build_state_engine.py` structurally enforces that Circle 0 shows nothing at all on the
+OPEN path, and that guard stays green and unmodified. Naming the band is not the same as
+surfacing it.
+
+### Amendment 3 — there is no installed base to protect
+
+**User statement, 2026-08-17:** PROSOCHĒ is to be treated as a **new, as-yet-undeployed
+product**. The only existing installs are the owner's own testing. Old `state.json` files are
+explicitly not a consideration.
+
+**Why this is recorded here rather than assumed.** Renaming a profile changes live Config key
+paths, and this project's verified runtime semantics are that a **dotted read with any missing
+segment is a hard error**, not a silent miss (`.claude/CLAUDE.md`). A device holding
+`profile: "Limbo"` would therefore hard-error on `thresholds.Purgatory` at its next OPEN. That
+consequence is real; it is **accepted** because there is no population it can harm.
+
+**Consequence for plan `11-04`.** `11-04` exists to stop on the `schema_version` 2→3 question,
+rated `one-way` because a bump discards every installed device's accumulated heat, gravity,
+pressure, rolling windows and exit-learning record. That premise no longer holds: there is no
+accumulated record to discard. The question is **answered by this amendment** — a bump is free,
+and no migration, dual-key alias, or read-time normalisation is to be built. `11-04` remains as
+a recording task and no longer carries a blocking one-way gate.
+
+**No behavioural claim.** DIST-03 is still open and no iPhone is connected. Nothing in this
+amendment is device-verified; it is a naming and scope decision recorded before the work.
+
+**Requirement:** AUDIT-02 (extends), CIRC-02, ROOM-01, ROOM-02
