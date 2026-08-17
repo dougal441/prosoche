@@ -2556,15 +2556,47 @@ def seed_settings_snapshot(actions):
     _replace_in_token(inner, SNAPSHOT_EMPTY, _snapshot_seed_text(indent))
 
 
-def verify_state_seed(actions):
-    """Fail the build if any settings_snapshot READ has no bootstrap counterpart.
+# PHASE 12 (12-04) -- the generalisation of verify_state_seed()'s read-side scan from
+# settings_snapshot-rooted keys to EVERY literal key read from State or Reloaded State.
+# The obvious framing -- "just delete the settings_snapshot root filter" -- is INCOMPLETE
+# and a literal deletion breaks the build: that filter was doing two jobs at once, scoping
+# to a key family AND, incidentally, scoping to reads of the state dictionary. Measured
+# against the current src/PROSOCHE-Dumb.xml, getvalueforkey actions read from FOUR
+# different source variables: State (141 literal, 6 composite), Reloaded State (44
+# literal), Config (30 literal, 23 composite) and Previous Session (3 literal). Config and
+# Previous Session are DIFFERENT DICTIONARIES -- their keys were never expected to resolve
+# against the bootstrap state.json seed -- so the exclusion below is by DICTIONARY
+# IDENTITY, not by convenience: a bare deletion of the old filter would test all 74 of
+# those foreign-dictionary keys against the seed and fail the build on every one.
+STATE_READ_SOURCE_VARIABLES = ("State", "Reloaded State")
+# Widening the composite-key branch (below): today it raises for ANY composite read of
+# State/Reloaded State that cannot be resolved statically, EXCEPT the six legitimate
+# exit_stats.<type>.<field> composites complete_pending_exit() and select_exit() build with
+# text_token() -- one .samples, three .count, two .sum_return_seconds. Every possible value
+# of the runtime-resolved middle segment (Capture, Coordinate, Create, Connect, Consult,
+# Close) IS seeded under exit_stats in the bootstrap template, which is what makes the
+# composite provably safe despite being unresolvable by this static scan.
+STATE_SEED_COMPOSITE_PREFIXES = ("exit_stats.",)
 
-    Reads are the authority: a key that restore_managed_settings() reads must resolve in
-    the seeded template, at the full depth it is read at, or the read is a hard runtime
-    error on any path that reaches it before a write created the key.  This is the
-    invariant that seed_settings_snapshot() establishes, asserted separately so the two
-    cannot drift -- the same discipline as the five axes before it (KEY NAME, VALUE
+
+def verify_state_seed(actions):
+    """Fail the build if any State/Reloaded State READ has no bootstrap counterpart.
+
+    Reads are the authority: a key that any generator function reads from State or
+    Reloaded State must resolve in the seeded template, at the full depth it is read at,
+    or the read is a hard runtime error on any path that reaches it before a write created
+    the key.  This is the invariant that seed_settings_snapshot(), seed_pending_exit(),
+    seed_exit_events(), seed_active_session() and seed_create_target_url() each establish
+    for their own subtree, asserted here in one place so no future seeder needs its own
+    read-side guard -- the same discipline as the five axes before it (KEY NAME, VALUE
     ENVELOPE, PICKER LITERAL, VARIABLE SLOT, OPERAND TYPE; this is STATE SHAPE).
+
+    PHASE 12 (12-04) GENERALISATION.  Originally scoped to settings_snapshot-rooted keys
+    only, via a `key.split(".")[0] == "settings_snapshot"` filter -- which is why
+    verify_panic_escape_seed()'s docstring used to record that this scan did NOT cover
+    panic_escape_enabled.  That note is now historical: the scope is by SOURCE VARIABLE
+    IDENTITY (STATE_READ_SOURCE_VARIABLES), not by key root, so every literal key read from
+    State or Reloaded State is covered, permanently, for every future field.
     """
     _, inner = _state_template(actions)
     # The template is a text template, so it is not valid JSON as written: quoted
@@ -2580,13 +2612,25 @@ def verify_state_seed(actions):
     for item in actions:
         if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.getvalueforkey":
             continue
-        key = item.get("WFWorkflowActionParameters", {}).get("WFDictionaryKey")
-        # Composite keys are built from a token and cannot be resolved statically; none
-        # of them is rooted at settings_snapshot, and that is asserted rather than assumed.
-        if isinstance(key, str) and key.split(".")[0] == "settings_snapshot":
+        parameters = item.get("WFWorkflowActionParameters", {})
+        # The source dictionary a getvalueforkey action reads from -- measured accessor
+        # path for every getvalueforkey in the artifact -- filters by DICTIONARY IDENTITY,
+        # never by key root (see STATE_READ_SOURCE_VARIABLES above).
+        source_variable = (parameters.get("WFInput") or {}).get("Value", {}).get("VariableName")
+        if source_variable not in STATE_READ_SOURCE_VARIABLES:
+            continue
+        key = parameters.get("WFDictionaryKey")
+        if isinstance(key, str):
             read_keys.add(key)
-        elif not isinstance(key, str) and "settings_snapshot" in str(key):
-            raise SystemExit("a settings_snapshot read uses a composite key and cannot be verified")
+            continue
+        # Composite keys are built from a token and cannot be resolved statically, EXCEPT
+        # the named exit_stats composites, which are provably safe -- see
+        # STATE_SEED_COMPOSITE_PREFIXES above.
+        composite = _dictionary_key_string(parameters)
+        if not any(composite.startswith(prefix) for prefix in STATE_SEED_COMPOSITE_PREFIXES):
+            raise SystemExit(
+                "a State/Reloaded State read uses a composite key that cannot be resolved "
+                f"statically and is not a recognised exit_stats composite: {composite!r}")
     missing = []
     for key in sorted(read_keys) + wanted:
         node = seed
@@ -2597,7 +2641,7 @@ def verify_state_seed(actions):
             node = node[part]
     if missing:
         raise SystemExit(
-            "bootstrap state.json does not establish every settings_snapshot key that is "
+            "bootstrap state.json does not establish every state key that is "
             "read (Get Dictionary Value on a missing key is a HARD RUNTIME ERROR, so a "
             "condition-100 guard cannot protect the read): "
             + ", ".join(sorted(set(missing))))
@@ -2746,9 +2790,16 @@ def verify_panic_escape_seed(actions):
           existence gate reads TRUE for the string "null" and for "", so it could not
           express "the user removed the bypass".
 
-    NOTE, measured 2026-08-17: verify_state_seed() does NOT cover this field.  Its read-side
-    scan is scoped to keys rooted at `settings_snapshot`, so it would not have noticed an
-    unseeded panic_escape_enabled.  This verifier is why the seed is guarded at all.
+    HISTORICAL NOTE.  Until Phase 12 (12-04), verify_state_seed()'s read-side scan was
+    scoped to keys rooted at `settings_snapshot`, so it would not have noticed an unseeded
+    panic_escape_enabled -- this verifier was why the seed was guarded at all. Phase 12
+    generalised verify_state_seed()'s scan to every literal key read from State or Reloaded
+    State (STATE_READ_SOURCE_VARIABLES, scoped by source-variable identity rather than key
+    root), so that gap no longer exists: a flat top-level read like panic_escape_enabled's
+    would now be caught there too. This verifier's other two assertions -- that no read of
+    the field is dotted, and that every gate over it is numeric -- remain load-bearing and
+    are not subsumed by verify_state_seed(), which only proves a key EXISTS in the seed,
+    not that it is read or gated correctly.
     """
     _, inner = _state_template(actions)
     document = inner["string"].replace('"￼"', '"x"').replace("￼", "0")
