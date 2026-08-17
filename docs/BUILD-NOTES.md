@@ -2647,12 +2647,140 @@ regenerating the sources in plan 13-01. It was **not** silenced, and MANIFEST ro
 edited without re-signing, which is exactly the prohibition that forbids it. Plan 13-04 owns the
 re-sign.
 
-### PLACEHOLDER — gate B advisory read and signed-artifact provenance (plan 13-04 fills this)
+### Gate B advisory read and signed-artifact provenance (plan 13-04, 2026-08-17)
 
-Deliberately empty. Plan 13-04 owns the rebuild, the gate B advisory read (both forks, expected
-to show **exactly one** waived `com.apple.mobilenotes.SharingExtension` / `WFCreateNoteInput`
-line each, index-normalised so a future run can diff against it), the re-archive and re-sign
-under the live display names, the decrypt-verification of both signed containers, and the
-refreshed MANIFEST rows. **Its contents are not guessed here.** No plan in wave 3 ran a build,
-a validator gate or a signer, so nothing in this section is evidence about the shipped
-artifacts — only about the sources at the wave-2 digests recorded above.
+*This subsection was reserved and left deliberately empty by plan 13-03, which ran no build, no
+validator gate and no signer. Plan 13-04 fills it with what it actually measured.*
+
+**Rebuild and provenance.** `git merge-base --is-ancestor 7ca8ebbfe467da38e594bdd41687c094a1f0c678
+HEAD` exited **0** before either generator ran. `tools/build_state_engine.py` and
+`tools/build_sentient.py` were then run in that order, and the rebuild was **byte-idempotent**:
+`git status --porcelain` was empty afterwards, so both sources still carry the wave-2 digests
+`99388cad…` (Core) and `d01154b3…` (Aware). That matters beyond tidiness — it means a re-run
+after an interruption converges on the same digests rather than producing a new set, so the
+hashes in `artifacts/shortcuts/MANIFEST.md` are reproducible rather than run-specific
+(threat T-13-26).
+
+**Checker baseline before signing.** All eleven non-manifest checkers exited **0** *before*
+anything was signed, deliberately: a signed artifact built from a source that fails a checker is
+a false provenance claim. `docs/manifest_check.py` was the expected twelfth red at that point,
+failing with the byte-identical D-04 message plans 13-01 through 13-03 each recorded —
+`AssertionError: row 'Core source': MANIFEST declares 2831992 bytes, src/PROSOCHE-Dumb.xml is
+2916560 bytes`. It exits **0** at the end of this plan; D-04 is closed by re-signing and
+recomputing every row, **not** by editing byte counts to match a stale artifact.
+
+**Gate A — mandatory, clean on both forks.**
+
+| Command | Result |
+|---|---|
+| `validate-shortcut src/PROSOCHE-Dumb.xml --target-macos 26 --target-platform all` | `Validation passed.`, exit **0** |
+| `validate-shortcut src/PROSOCHE-Sentient.xml --target-macos 26 --target-platform all` | `Validation passed.`, exit **0** |
+
+**Gate B — advisory read only, run standalone per fork.** Each command below was issued on its
+own. Neither appears in any `&&` chain, in either task's `<verify>` block, or in any definition
+of done — gate B's waiver is permanent, so it can never exit 0 and is therefore structurally
+incapable of being a gate (`.claude/CLAUDE.md` §1). Both exited **1**, which is the expected
+outcome, and each reported **exactly one** finding line.
+
+Verbatim, `validate-shortcut src/PROSOCHE-Dumb.xml --target-macos 27 --target-platform all`:
+
+```
+Validation failed:
+
+First failing action: index 0 (is.workflow.actions.comment)
+Snippet: {'WFCommentActionText': 'PROSOCHE - Nine Circles (Dumb fork). This shortcut is the whole product: it reads two setup answers from import, checks for a saved setup file, creates one on first run along with a setup note, and opens that not...
+
+- Unknown AppIntent parameter key(s) for com.apple.mobilenotes.SharingExtension at index 4192: WFCreateNoteInput. ToolKit v78 expects: OpenWhenRun, contents, folder, interpretAsMarkdown, name.
+```
+
+Verbatim, `validate-shortcut src/PROSOCHE-Sentient.xml --target-macos 27 --target-platform all`:
+identical but for the action index, which reads `4260`.
+
+Index-normalised, so a future run can diff against it without the index churn every edit causes:
+
+```
+Unknown AppIntent parameter key(s) for com.apple.mobilenotes.SharingExtension at index N: WFCreateNoteInput. ToolKit v78 expects: OpenWhenRun, contents, folder, interpretAsMarkdown, name.
+```
+
+**Exactly one such line per fork, and nothing else.** That is the single permanent waiver
+recorded in `.claude/CLAUDE.md` §1 and in §14 — device-donor ground truth outranks the
+`macOS 27`-tagged catalog entry, and `STRING_ENVELOPE_PARAMS["com.apple.mobilenotes.SharingExtension"]`
+retains it on purpose. The `First failing action: index 0` line is the validator's own framing
+of *where it stopped*, not a second finding. **This was the run most likely to surface a real
+regression** — the phase moved 660 row serializations, and gate B is the only channel that
+checks parameter keys and picker literals at all. It surfaced none, so no finding was
+investigated because none was reported. Note gate B's own limit, unchanged: at
+`--target-macos 27` it may *accept* an OS27-only parameter key iOS 26 does not offer, so it
+supplements gate A and never replaces it.
+
+**Signing — the two canonical display names, no suffix.**
+
+| Fork | Source | Signed basename | Bytes | SHA-256 |
+|---|---|---|---:|---|
+| Core | `src/PROSOCHE-Dumb.xml` | `PROSOCHĒ — Nine Circles — Core.shortcut` | 234830 | `fe1bafdf53f872a3e149734456899d1be0987706551d7b8fa7b50f81b8a913b7` |
+| Aware | `src/PROSOCHE-Sentient.xml` | `PROSOCHĒ — Nine Circles — Aware.shortcut` | 239184 | `bd1264d502891c9afeeccb66134dceaf66288a1da890133498605538aa75ba19` |
+
+Both begin with the `AEA1` magic and both are non-zero. `artifacts/shortcuts/` holds exactly
+those two `.shortcut` files and no other basename of any kind. Neither known signer quirk fired:
+both `shortcuts sign` invocations succeeded on the first attempt, so `sign-shortcut`'s two
+auto-retries were not exercised. The dated pre-sign archives are
+`artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-184943.xml` and
+`— Aware-184954.xml`, each byte-identical to its `src/` counterpart, which is what makes an
+archive a pre-sign record rather than a copy of something else.
+
+**`.claude/CLAUDE.md` §8's filename-discipline examples are stale, and the rule is not.** §8
+names the forks `Dumb`/`Sentient`; Phase 11 renamed the *products* to `Core`/`Aware` and
+`docs/manifest_check.py` hard-codes the live names as DIST-04, so signing to the §8 example
+names would fail that checker. The *source* filenames deliberately remain `PROSOCHE-Dumb.xml`
+and `PROSOCHE-Sentient.xml`. The discipline itself is load-bearing rather than cosmetic and was
+re-confirmed on this build: neither recovered `Shortcut.wflow` contains a `WFWorkflowName` key
+at all (measured — `'WFWorkflowName' in plist` is `False` for both) even though both `src/*.xml`
+set it, so the signer strips it and **the filename is the sole carrier of the display name**. A
+suffixed file imports as a second, differently named library entry that the user's two Personal
+Automations do not reference — a silently dead install.
+
+**Decrypt-verification — what actually shipped.** Both containers were recovered through the
+full AEA1 workflow rather than inferred from the unsigned source plus a file mtime: the leaf
+certificate was extracted from the auth-data plist's `SigningCertificateChain` (779 DER bytes,
+both forks), its public key taken with `openssl x509`, then `aea decrypt` (exit 0), `aa extract`
+(exit 0) and `plutil -convert xml1` (exit 0). Measured on the **recovered** plists, not on
+`src/`:
+
+| Measurement | Core | Aware |
+|---|---:|---:|
+| Total actions | 4346 | 4414 |
+| `is.workflow.actions.list` actions | 67 | 67 |
+| `WFItems` rows, total | 666 | 666 |
+| Rows wrapped as `{WFItemType: 0, WFValue: …}` | **660** | **660** |
+| Bare-string rows (the six exit names) | **6** | **6** |
+| Dict rows missing `WFItemType` | **0** | **0** |
+| `WFWorkflowName` present | `False` | `False` |
+
+This is the only check that would catch a row altered between source and shipped artifact
+(threat T-13-23), and it is what licenses the claim that the wrapper fix *shipped* rather than
+merely *built*. `aea` and `aa` were both available at `/usr/bin`, so no tooling deviation was
+recorded.
+
+**MANIFEST.** All six rows — two sources, two new dated archives, two signed artifacts — were
+recomputed from disk in one pass rather than only the rows believed to have moved; Phase 10
+measured three of six wrong at once (threat T-13-22). `docs/manifest_check.py` exits **0**, and
+all twelve `docs/*.py` checkers are green at the end of this plan. `docs/phase5_self_check.py`
+(CIRC-04) and `docs/note_identity_check.py` (ROOM-03) are among them, which is the whole of what
+those two regression-protection requirements needed — proven unregressed against the artifact
+that actually ships, with no work invented for either.
+
+**Device verdict — BLOCKED, and recorded as observed.** `xcrun devicectl list devices` reported
+`No devices found.` on 2026-08-17, so nothing in this subsection is device evidence and
+**DIST-03 remains open**, unchanged since Phase 10. `13-UAT.md` is authored cold-runnable with
+six tests and every outcome left **blank** and marked `BLOCKED`. No simulator run, no decrypted-artifact
+inference and no plausible-looking pass was substituted for a device observation. The booted
+simulator could not settle these questions in any case — it lacks `com.apple.mobilenotes` and
+cannot import a signed `.shortcut` at all — and the plist is already proven correct at file
+level, which is exactly what a device observation neither adds to nor subtracts from.
+
+**Re-import note for Phase 19.** A user holding any previously signed build keeps the blank-row
+Mirror until they **re-import**. That is inherent to Shortcuts distribution and needs no
+migration, but Phase 19 must therefore test a **re-imported** build rather than a stale install,
+or it will observe the old defect and attribute it to a fix that did land. The artifact to
+import is `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` at SHA-256
+`fe1bafdf…`; anything else is the wrong build.
