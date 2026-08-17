@@ -139,7 +139,13 @@ execute Shortcuts itself.
 
 ## Tools & Libraries
 
+- **`Skill("spike-findings-prosoche")`** — the wrapped blueprint from spikes 001–009
+  (`.claude/skills/spike-findings-prosoche/`). Read its reference for the relevant feature
+  area before re-deriving anything a spike already settled; the decrypted donor XML and probe
+  sources are preserved under `sources/`.
 - `shortcuts-playground:shortcut-builder` agent for all build work — handles the Craig
-  Loop internally.
+  Loop internally. **Exception:** when a donor already gives the exact byte shape and the
+  spike's purpose is to *vary* it deliberately, author the plist directly — an agent will
+  tend to "correct" the very values under test (spike 007).
 - `aea decrypt` + `aa extract` (per `.claude/CLAUDE.md` §8) to recover plist XML from any
   signed `.shortcut`, including donor artifacts and this project's own probe outputs.

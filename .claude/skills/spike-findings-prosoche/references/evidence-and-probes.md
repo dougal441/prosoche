@@ -1,0 +1,159 @@
+# Evidence and Probes
+
+How to settle an open question about Shortcuts at the lowest cost that actually settles it.
+
+## Requirements
+
+- **Device ground truth beats guessing, every time.** Decrypt a real donor before guessing
+  any parameter literal.
+- **Never climb the evidence ladder higher than the open question requires, and never skip a
+  rung that would have caught a defect in the probe itself.** Both halves bite.
+- A probe's result is **recorded, not consumed** — into `docs/BUILD-NOTES.md` and
+  `docs/CAPABILITY-DECISIONS.md`. Probes are cheap to build and expensive to re-run.
+
+## How to Build It
+
+### The evidence hierarchy
+
+When sources disagree, prefer in this order:
+
+1. **User-built donor shortcuts, decrypted** — device ground truth from the target iPhone
+2. **Apple's own `.intentdefinition` files** on the build Mac — for *what parameters exist*
+   and *what a picker's cases are called*, never for the plist encoding
+3. **The golden-shortcut corpus** — 19 real-world shipped plists
+4. **The ToolKit catalog** — incomplete; carries no required/optional bit, and omits the
+   control-flow identifiers entirely
+5. **Inference** — last resort, and record it as a deviation
+
+### The evidence-escalation ladder
+
+| Rung | Channel | Settles | Costs |
+|---|---|---|---|
+| 1 | File-level analysis — validator, catalog, golden corpus, decrypted plist | Structure, identifier presence, parameter shape | Nothing |
+| 2 | Simulator — build, sign, **validate** | That the file is well-formed and signable | Agent time |
+| 3 | Device probe over iPhone Mirroring | Runtime behaviour, operand types, control flow | One connected session |
+| 4 | User-run probe or donor export | Anything mirroring cannot reach | The user's time — the scarcest input |
+
+**Rung 2 is narrower than `.claude/CLAUDE.md` §9 currently claims.** It lists "import
+success" as a rung-2 capability. Measured 2026-08-17 (iPhone 17 Pro, iOS 26.5, no iCloud
+account), **the booted simulator cannot import a signed `.shortcut` through any channel**:
+
+| channel | result |
+|---|---|
+| `shortcuts://import-shortcut?url=http://…` | "Import Failed — The shortcut URL provided was invalid." Requires an iCloud link. |
+| Safari → download the served file | Prompt appears and names the file correctly, but the Download button **ignores synthesized taps** (other taps in the same session worked). |
+| Files "On My iPhone" (`group.com.apple.FileProvider.LocalStorage`) | File lands on disk; Files **never surfaces the location**, even after seeding a subfolder and resspringing SpringBoard. |
+| iCloud Drive | Needs an Apple Account. |
+| `file://` URL | Blocked by the tool's scheme allowlist. |
+
+So rung 2 tests the **build** — validator, signer, byte shape — not the **import**.
+Signing the simulator into an Apple Account would likely unlock it; that is a user decision.
+
+Measured simulator inventory: one runtime, **iOS 26.5 (23F77)**, inside the project's
+declared iOS 26.x target. `com.apple.shortcuts` present, `com.apple.mobilenotes` **absent** —
+so no Notes behaviour can be exercised there at all. Re-derive with
+`xcrun simctl list runtimes`, `list devices available`, `listapps <udid>`.
+
+### Recovering a donor's plist (the AEA1 round-trip)
+
+Signed `.shortcut` files **are** recoverable. `plutil`/`xxd`/`file` see the AEA1 container,
+not the plist payload — that is not proof of opacity.
+
+```bash
+signed="/absolute/path/to/Signed.shortcut"
+dir="$(mktemp -d)"
+python3 -c 'import struct,plistlib,pathlib,sys; d=pathlib.Path(sys.argv[1]).read_bytes(); sz=struct.unpack_from("<I",d,8)[0]; pathlib.Path(sys.argv[2]).write_bytes(plistlib.loads(d[12:12+sz])["SigningCertificateChain"][0])' "$signed" "$dir/leaf.der"
+openssl x509 -inform DER -in "$dir/leaf.der" -noout -pubkey > "$dir/pub.pem"
+aea decrypt -i "$signed" -o "$dir/payload.aa" -sign-pub "$dir/pub.pem"
+mkdir -p "$dir/unwrapped" && aa extract -i "$dir/payload.aa" -d "$dir/unwrapped"
+plutil -convert xml1 -o "$dir/Shortcut.xml" "$dir/unwrapped/Shortcut.wflow"
+```
+
+All 16 donors in `.planning/debug/` decrypt cleanly with this, zero failures.
+`shortcut-remixer` refuses a signed `.shortcut` directly — give it the recovered XML.
+
+### Reading Apple's own schema
+
+For any `com.apple.*` AppIntent action, on the build Mac:
+
+```bash
+plutil -convert xml1 -o /tmp/ax.xml \
+  /System/Library/PrivateFrameworks/<Framework>.framework/Versions/A/Resources/Base.lproj/Intents.intentdefinition
+```
+
+Read `INIntents` / `INEnums`. It gives exact parameter names, types, enum cases, integer
+indices, and response parameters — for actions absent from every bundled snapshot. Read the
+caveat in `authoring-parameters.md` before trusting any value from it.
+
+### Sweeping the corpus for a parameter class
+
+`sources/006-picker-serialisation-taxonomy/sweep.py` walks every action's parameter tree
+across a donor directory and the golden corpus, flagging bare UUIDs outside structural
+slots, URI-shaped identifiers, app-identity fields, and binary/base64 blobs:
+
+```bash
+python3 sweep.py <donor-xml-dir> <golden-xml-dir>
+```
+
+### Building and validating a probe
+
+```bash
+R="$HOME/.claude/plugins/cache/shortcuts-playground/shortcuts-playground/1.2.1"
+"$R/bin/validate-shortcut" --target-macos 26 "Probe.xml"                          # generic v63 baseline
+"$R/bin/validate-shortcut" --target-macos 27 --target-platform ios "Probe.xml"    # loads the v78 enum catalog
+"$R/bin/sign-shortcut" "Probe.xml" --mode anyone --output-dir "<spike-dir>"
+```
+
+**Require both validator invocations to pass.** The second is the valuable one — it is the
+only mode that loads the enum-case catalog and can catch an invalid picker literal.
+
+Note the signer's argument form: positional input, `--output-dir`, **not** `--input/--output`.
+
+## What to Avoid
+
+- **Do not use `--target-macos 26 --target-platform ios`.** In Playground v1.2.1 that pair
+  is degenerate — it rejects every action including `is.workflow.actions.comment`, because
+  `toolkit-v63` is macOS-labelled (filtered out by `ios`) and the only iOS snapshot is
+  version-gated to 27 (filtered out by `26`), leaving an empty allowlist. Verified against a
+  control golden shortcut: 7 identical false rejections. A check that fails 100% of its
+  inputs carries zero signal.
+- **Do not treat a validator pass as done.** A valid XML draft without a signed `.shortcut`
+  is not a useful stopping point.
+- **Do not hand the user an untested probe.** A probe that fails on import, or fails for a
+  reason unrelated to the question it was built to answer, burns a device round trip and
+  teaches nothing. Misattributed failures have cost this project multiple cycles.
+- **Read the error text, not just the letter.** Three times in one session a correct fix
+  looked refuted because the bisection letter was unchanged while the error text had changed
+  completely.
+- **Any shortcut wired into a Personal Automation must have zero UI** — no Show Result, no
+  Show Alert. An automation that displays something interrupts the user on every trigger.
+  Log to a Note instead.
+- **Do not spend a device session on a rung-1 question.** Spike 003 found the complete
+  correct answer from the enum-cases catalog with zero device round trips, after two of three
+  guessed literals turned out wrong.
+- **Do not keep climbing when the question dissolves.** Spike 007 stopped mid-probe once a
+  five-line check of `tools/build_state_engine.py` showed the question was off the critical
+  path. That is the correct outcome, not a failure.
+
+## Constraints
+
+- The build Mac cannot execute Shortcuts. Signing is macOS-only and cannot be done on
+  Linux/CI without a Mac in the loop.
+- Personal Automation triggers (App Is Opened / Is Closed) are user-created on the device and
+  **cannot be exercised on a simulator at any effort**.
+- Apple Intelligence is unavailable on the simulator — the Sentient `Use Model` path needs
+  rung 3+.
+- Known signer quirks, both auto-retried by `sign-shortcut`: `Error: The file doesn't exist.`
+  for a file that does exist (retry from a clean copy); `Error: … isn't in the correct
+  format.` even when `validate-shortcut` and `plutil -lint` both pass (retry after
+  `plutil -convert binary1`).
+- The signed output filename must equal the intended display name — no `_signed` suffix.
+- **Breadcrumb bisection**: flag-gated alerts at control-flow base depth localise a failure to
+  one span per device run. Keep them in across cycles — a second defect then reports as a
+  *later letter* rather than an ambiguous repeat.
+
+## Origin
+
+Synthesized from spikes: 002, 003, 005, 007
+Source files: `sources/002-close-automation-vs-screen-lock/`, `sources/003-device-model-literal/`,
+`sources/005-ios-color-filters-identifier/`, `sources/007-unresolvable-picker-failure-mode/`
