@@ -820,7 +820,7 @@ finding); its single recorded pass does not carry forward. Two user decisions lo
 **Severity:** major
 **Requirements**: CIRC-03, CIRC-05, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-03
 **Depends on:** Phase 12
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans executed
 
 Plans:
 **Wave 1**
@@ -842,7 +842,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 16-06-PLAN.md — Rebuild, re-sign, refresh manifest, author 16-UAT.md; device session BLOCKED-or-proceed (wave 5)
+- [x] 16-06-PLAN.md — Rebuild, re-sign, refresh manifest, author 16-UAT.md; device session BLOCKED-or-proceed (wave 5)
 
 **Split 2026-08-18, user decision.** D-01's blast radius was under-counted four times (6 → 8 → 9 →
 13+), so the record sweep was split out of 16-03 into its own plan: the safety-critical code fix
