@@ -320,13 +320,48 @@ valid results. Only report a failure if a verdict **contradicts** `state.json`.
 **Failure evidence to capture.** A screenshot of the alert alongside the `last_open_at` and
 `last_close_at` values from `state.json` read within the same minute.
 
-outcome:
+outcome: **FAIL — the feature under test is not present on this build.** Device, 2026-08-18 08:07,
+Core `b07497ba`, fresh install. `Setup Check` is present as the tenth and last item of the manual
+menu and it does run. But the alert it produces is titled **`Panic Escape`**, not `Setup Check`,
+and its entire body reads:
+
+> *Panic Escape — The Note says ON and Panic Escape is already available. Nothing was changed.*
+
+The run then ended; no second alert followed. **No automation status is reported at all** — neither
+`Automation A — App Is Opened` nor `Automation B — App Is Closed`, and no `seen` / `not seen yet`
+verdict for either.
+
+This is not a wrong verdict that could be excused by the test's "only report a failure if a verdict
+contradicts `state.json`" clause — there are **no verdicts to contradict anything**. The menu item
+appears to be wired to a Panic-Escape availability check rather than to the automation-status
+reporter this test specifies.
+
+Worth noting the state context, since it makes the gap concrete: `state.json` on this device has
+`last_open_at: null` and `last_close_at: null`, so the correct output would have been
+`not seen yet` / `not seen yet` — a verdict the feature is currently incapable of producing.
 
 ---
 
 ### 7. The manual menu prompt explains itself
 
 A judgement test. There is no non-device substitute for a human comprehension claim.
+
+outcome: **PASS.** Device, 2026-08-18, observed on every manual run this session. The menu renders
+with a full explanatory prompt above the items, in complete non-empty text:
+
+> *This is PROSOCHĒ's manual control menu. You are here because the Shortcut was run by hand, or
+> because an automation passed it something other than OPEN or CLOSE. If you did not mean to be
+> here, choose Open Control Room — that Note has the setup instructions.*
+
+It states what the screen is, both reasons the user might be seeing it, and gives an explicit
+recovery route for the "I didn't mean to be here" case — which is the exact confusion recorded as
+gap G-04-4b (the user encountering a bare `PROSOCHĒ` prompt and being unable to tell what it
+signified). The shipped copy resolves that. Rendering is also evidence against the axis-2
+empty-display-parameter defect on this action.
+
+The full menu, in shipped order, was confirmed to be ten items: Status, Open Control Room, Sync My
+Profile, Change Profile, Change Sequence, Toggle Voice, Test a Circle, Reset Today, Emergency
+Restore, Setup Check.
 
 **Setup.** None.
 

@@ -140,7 +140,16 @@ note: "Device, 2026-08-18, fresh install. Immediately after selecting the Note f
 ### 3. Sync My Profile extracts correctly and stays scoped
 expected: extracts the `MY PHONE, ON PURPOSE` section and mirrors it into state.json
 (§7.3); confirm it does not parse the whole Note on this path.
-result: pending
+result: blocked
+note: "Device, 2026-08-18 08:12. The menu item runs, but the run is intercepted by the same
+  unresolved-appendnote prompt pair documented in Test 2 — the Note entity chooser, then the bare
+  `Text` box. Cancelling aborts the run, so the extraction never completes and the assertion
+  (does profile_snapshot pick up the MY PHONE, ON PURPOSE section, and only that section?) has no
+  observation attached.
+  Blocked BY a known defect rather than failing on its own terms. Re-run once the Note resolution
+  is fixed. Note that state.json's profile_snapshot currently holds empty strings for `goal`,
+  `phone_purpose`, `reclaim_for` and `deliberate_leisure_definition` with `note_content_hash:
+  null`, which is consistent with a sync that has never completed."
 
 ### 4. Change Profile persists and changes Circle mapping
 expected: persists, and demonstrably changes subsequent Circle mapping (cross-check
@@ -248,7 +257,32 @@ note: "Because Mirror is precisely the primitive that fails, 13-UAT.md Tests 1 a
 ### 8. Reset Today resets counters without destroying history
 expected: behavioural day's counters reset; historical data (contracts, sessions, etc.) is
 not destroyed.
-result: pending
+result: weak-pass
+note: "Device, 2026-08-18 08:11. Reset Today runs to completion without error and writes state
+  (the save dialog rendered the outgoing dictionary). Afterwards Status still reads Circle 1 /
+  Pressure 0, and the written state kept profile Inferno, sequence BlackMirror and all six
+  exit_stats containers intact.
+  WEAK because the precondition was degenerate: on this device opens_today, heat, gravity and
+  pressure were ALREADY 0 and recent_sessions / recent_contracts / exit_events were ALREADY
+  empty, so 'counters reset' and 'history not destroyed' are both trivially satisfied and the
+  test cannot distinguish a correct implementation from a no-op. A real assertion needs
+  accumulated counters and non-empty history first, which needs the OPEN/CLOSE automations.
+  Recorded as weak-pass, not pass."
+
+### 11. Idempotence across repeated manual runs
+expected: running the menu repeatedly never overwrites existing state or creates a second
+Control Room Note — exactly one Note exists afterward.
+result: partial
+note: "Device, 2026-08-18. NOTE HALF PASSES, and with a lot of exposure: the shortcut was run by
+  hand roughly fifteen times across this session (Status x3, Open Control Room x2, Test a Circle
+  x6, Toggle Voice x3, Change Sequence, Change Profile, Reset Today, Sync My Profile, Setup
+  Check). The iOS Note chooser raised on the state-changing runs enumerates the whole Notes
+  library each time, which makes it an unusually good census — and it showed **exactly one**
+  `PROSOCHĒ` note on every single occasion. No duplicate Control Room Note was ever created.
+  STATE HALF NOT PROVEN: 'never overwrites existing state' cannot be asserted from a session
+  whose state was 0/empty throughout. Settings did persist correctly across runs without
+  clobbering each other (Profile Inferno and Sequence BlackMirror survived together, confirmed by
+  Status), which is supporting evidence but not the full claim."
 
 ### 9. Emergency Restore — while in Ice
 expected: clears cooldown, clears active session, restores any managed setting — tested
@@ -257,11 +291,6 @@ result: pending
 
 ### 10. Emergency Restore — while a session is active
 expected: same guarantees hold when triggered mid-session.
-result: pending
-
-### 11. Idempotence across repeated manual runs
-expected: running the menu repeatedly never overwrites existing state or creates a second
-Control Room Note — exactly one Note exists afterward.
 result: pending
 
 ### 12. Recovery — deleted Control Room Note
@@ -298,9 +327,11 @@ result: pending
 
 total: 16
 passed: 3        # T1, T5, T15
-partial: 2       # T4 (persists; mapping half unproven), T6 (persists; gating half unproven)
-failed: 3        # T2 (stray Note prompts), T2b (unprompted text box, same root cause), T7 (Mirror axis-4)
-pending: 9       # T3, T8, T9, T10, T11, T12, T13, T14, T16
+weak-pass: 1     # T8 (ran clean, but precondition degenerate)
+partial: 3       # T4, T6, T11
+failed: 3        # T2, T2b, T7
+blocked: 1       # T3 (blocked BY T2's defect, not failing on its own terms)
+pending: 5       # T9, T10, T12, T13, T14, T16
 issues: 3
 
 ## Session log
