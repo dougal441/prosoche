@@ -455,12 +455,12 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 **Severity:** major
 **Requirements**: AUDIT-02, CIRC-02, CIRC-06, CIRC-08, ROOM-01, ROOM-02, DIST-01, DIST-02
 **Depends on:** Phase 10
-**Plans:** 6 plans
+**Plans:** 1/6 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 11-01-PLAN.md — Tracer: one primitive end to end, generator through plist to signed artifact; `tools/plist_text_edit.py` and `docs/note_identity_check.py` (wave 1)
+- [x] 11-01-PLAN.md — Tracer: one primitive end to end, generator through plist to signed artifact; `tools/plist_text_edit.py` and `docs/note_identity_check.py` (wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
