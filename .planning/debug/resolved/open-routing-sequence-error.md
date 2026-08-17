@@ -7,6 +7,29 @@ updated: 2026-08-15 (CLOSED — device confirms OPEN reaches Circle 1 end-to-end
 severity: blocker
 ---
 
+> **REFUTED — 2026-08-17, Phase 13. Read this before any cycle entry below.**
+> This file asserts, at nine places across cycles 8–16, that there are **14 defective
+> `WFConditionalActionString` sites** awaiting a by-class sweep. **That count is refuted: there are
+> ZERO defective sites.** `.planning/debug/Donor 5.shortcut` — captured to settle exactly this
+> question and left unopened through every cycle recorded here — was decrypted in Phase 13 and
+> shows iOS itself authoring the same shape `token()` already emits: a variable in a conditional's
+> TEXT slot as a `WFTextTokenString` template, with `WFInput` alongside taking the opposite
+> `WFTextTokenAttachment` envelope. Measured at HEAD: 192 (Core) / 195 (Aware) slot-carrying
+> conditionals, of which 20 are variable-bearing and **all 20 match the donor**. The deliverable
+> inverted from a sweep into a *pin* — `verify_conditional_action_string()` now positively asserts
+> the device-confirmed shape so a later pass cannot "fix" it into a guess.
+>
+> The companion `List`/`WFItems` wrapper claim was real but **under-counted 33×**: not 2 instances
+> but 66 List actions carrying 660 unwrapped rows per fork, fixed in Phase 13. (Of those, 44 turned
+> out to be literal-by-content and belong bare, so the shipped census is 616 wrapped / 50 bare.)
+> Also refuted here: `if_block("Previous Respected", 4, …)`, named below as the concrete example,
+> passes a raw literal and was never a member of the family.
+>
+> **The nine assertions below are left standing on purpose.** Each is a per-cycle record of what
+> was believed at that cycle; rewriting them would destroy the audit trail this correction depends
+> on. `.planning/debug/resolved/` is a declared exemption from Phase 13's refuted-count sweep for
+> that reason. Full account: `docs/BUILD-NOTES.md` §28 and `docs/CAPABILITY-DECISIONS.md` BD-07.
+
 > **RESOLVED — archived from [`HANDOFF.md`](HANDOFF.md)'s active-session slot.**
 > This is the full audit trail (~450 KB, 16 cycles + closure). All three original symptoms
 > from the 2026-08-13 todo are now CLOSED and device-verified. Symptom 1 (OPEN routing)

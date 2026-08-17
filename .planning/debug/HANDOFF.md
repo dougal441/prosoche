@@ -160,6 +160,16 @@ misunderstanding of the plist format. Each is now asserted by a build guard in
 | — | stale validity gate / missing rebind (cycle 14) | 1 gate + 2-action rebind | corrected template never reaches the device |
 | **9** | **CANDIDATE, cycle 16 — declared cardinality omitted on an App-Intent-backed content-item query** (`filter.notes`) | **1** | resolves silently in the source/validator, but iOS shows an interactive disambiguation UI on-device (a "list of every note") instead of the single deterministic result |
 
+> **SUPERSEDED 2026-08-17 (Phase 13) — axis 6's row above.** The tally `20 Dumb, 25 Sentient`
+> is retained above as history and is **not** a count of defective text-envelope sites. It
+> describes *operand type / coercion*, a different axis from the `WFConditionalActionString`
+> text-envelope question it was later read as authorising, and neither figure survives
+> measurement. Measured with `plistlib` against the artifacts at HEAD, per fork: **192 (Core) /
+> 195 (Aware)** mode-0 conditionals carry `WFConditionalActionString`, of which **20 / 20** are
+> variable-bearing and **all 20 match the device-authored Donor 5 shape exactly** — **zero**
+> defective sites, not fourteen and not twenty-five. Full record: `docs/BUILD-NOTES.md` §28;
+> settled shape: `docs/CAPABILITY-DECISIONS.md` `BD-07`.
+
 **The full rules are in `.claude/CLAUDE.md` § Conventions.** Read them before touching the
 generator. (Neither the cycle-15 axis nor the cycle-16 candidate axis 9 is yet folded into
 CLAUDE.md's own numbered list — see §9 as a candidate follow-up if this cycle is confirmed
@@ -242,6 +252,18 @@ the same hand-authored find-or-create block Donor 8 was originally built to mirr
 | `Donor 7` / `Donor 7.1` | **CLOSED cycle 14.** CLOCK block Date→Date chain; `format.date`'s real pattern key. |
 | `Donor 8` | **CLOSED cycle 14** (`shownote` reads `WFInput`, not `target`) **and cycle 16** (`filter.notes` needs `AppIntentDescriptor` + a declared result limit). |
 
+> **REFUTED 2026-08-17 (Phase 13) — the `Donor 5` row above.** Its wording ("still not
+> analysed, past breadcrumb J") is retained as history and is **no longer true**. Donor 5 was
+> decrypted in Phase 13 with the `.claude/CLAUDE.md` §8 recipe, first attempt, yielding a
+> 196-line plist — the first analysis it ever received. Its site-count framing is refuted too:
+> the family is **not defective**. Donor 5 shows iOS itself authoring a `WFTextTokenString`
+> comparison target with a bare `{Type, VariableName}` attachment, alongside a `WFInput`
+> carrying the opposite `WFTextTokenAttachment` envelope and no coercion aggrandizement on
+> either side — key for key what `token()` already emits. Measured: **0** defective sites;
+> **20 / 20** variable-bearing sites per fork all conform. Donors 4 and 4.1 were decrypted in
+> the same pass and settle the `WFItems` row wrapper. `docs/BUILD-NOTES.md` §28;
+> `docs/CAPABILITY-DECISIONS.md` `BD-07` and `BD-08`.
+
 ---
 
 ## 6. Open items, ranked — closure classification, 2026-08-15
@@ -295,12 +317,39 @@ paragraph in this now-closed session.
   referenced anywhere in the debug session, reviewed for the first time during this
   closure — shows this defect directly on-device (a 9-row List rendering entirely blank
   "Text" placeholders).
+
+  > **REFUTED 2026-08-17 (Phase 13), twice over.** The bullet above is retained as history.
+  > **(a) The count.** Direct `plistlib` measurement of both artifacts at HEAD found **66
+  > defective List actions carrying 660 unwrapped variable-bearing rows, per fork** — 33× more
+  > actions and 330× more rows than recorded. All 66 originate from one emitter,
+  > `mirror_text()`. **(b) The screenshot does not exist.** It is absent from the worktree,
+  > absent from the main checkout, and absent from git history — verified three ways — and its
+  > recorded filename carries a `U+2060` word joiner, so this is not a quoting problem. The
+  > defect was established independently and more precisely without it, and no Phase 13 task
+  > depended on reading it. The "nine consecutive blank rows" description is consistent with a
+  > 10-row action viewed with one row scrolled off. Fixed and guarded in plan 13-01;
+  > `docs/BUILD-NOTES.md` §28, `docs/CAPABILITY-DECISIONS.md` `BD-08`.
 - **Donor 5 / 14 `WFConditionalActionString` sites** — still unopened, past breadcrumb
   J, Donor 5 on disk since cycle 14. The SAME reviewed screenshot also shows a concrete,
   previously-unnamed site: an `If` testing `Previous Respected` `is`, rendered fully
   red — corresponding to `if_block("Previous Respected", 4, ...)` in
   `tools/build_state_engine.py:649-650`/`:1069`, giving the todo a concrete starting
   point instead of an abstract count of 14.
+
+  > **REFUTED 2026-08-17 (Phase 13), on every clause.** The bullet above is retained as
+  > history. **(a) Donor 5 is analysed** — decrypted first attempt, 196-line plist.
+  > **(b) The count is zero, not fourteen** — 192 / 195 slots per fork, 20 / 20
+  > variable-bearing, all conforming to Donor 5, 0 offenders. **(c) The named site is NOT a
+  > member of the family.** `if_block("Previous Respected", 4, ...)` passes a **raw Python
+  > literal** (`string="true"`/`"false"`), never a `token()`, so it has no variable in the text
+  > slot at all; its left operand is genuinely Text-typed and condition 4 is the valid pairing,
+  > and `Previous Respected` is set at action index 368 with all 44 uses at index 375 or later,
+  > so there is no dangling reference either. This is a **corrected attribution**, not a
+  > second defect discovered. **(d) The screenshot does not exist** (see the annotation above).
+  > The cause of the 2026-08-14 red render is therefore **unprovable and stays open** — the
+  > build is not retained — and is owned by Phase 19 device UAT, where a red chip would be a
+  > *new* finding with a live artifact to inspect. `docs/BUILD-NOTES.md` §28,
+  > `docs/CAPABILITY-DECISIONS.md` `BD-07`.
 - **`If [Audit Token] contains` renders red** (Sentient-only) — likely the SAME family;
   cross-referenced from `2026-08-15-fork-sentient-post-openpath-fix.md` rather than
   duplicated as its own item, so it isn't investigated twice in parallel.
@@ -470,6 +519,18 @@ content-item actions with an undeclared cardinality bound has not been run.)
   this closure) + the `WFItems` List wrapper (2 sites, same screenshot shows the blank
   rows directly). Includes folding both axes into `.claude/CLAUDE.md`'s numbered axis
   list once fixed.
+
+  > **REFUTED and CLOSED 2026-08-17 (Phase 13).** The filing entry above is retained as
+  > history. The todo moved to
+  > `.planning/todos/completed/2026-08-15-fix-red-operator-and-list-wrapper-defects.md`
+  > carrying its own standalone tombstone. Its counts are refuted: the conditional family has
+  > **0** defective sites (not 14) and the `WFItems` family has **66 actions / 660 rows per
+  > fork** (not 2). Its named starting site is a false lead, and the screenshot it cites does
+  > not exist. Its documentation step was discharged in full: `.claude/CLAUDE.md`'s numbered
+  > axis list now runs 1–9, with the `WFItems` row wrapper added as a **container** axis
+  > distinct from the string-envelope axis, the `read_value()`/`get_value()` distinction added
+  > alongside it, and axis 7 extended with the `pending_exit` container/leaf pattern.
+  > `docs/BUILD-NOTES.md` §28.
 - `.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md` — strip debug
   scaffolding, add `.gitignore`, refresh `MANIFEST.md`, device-confirm the Control Room
   open flow (Finding 2, not covered by the closing device report), and execute the

@@ -20,6 +20,7 @@ from build_state_engine import (
     verify_conditional_inputs,
     verify_dispatch_coverage,
     verify_exit_events_seed,
+    verify_list_item_wrappers,
     verify_numeric_operands,
     verify_output_names,
     verify_panic_escape_seed,
@@ -335,10 +336,52 @@ def main() -> None:
     #                                      directly at risk from this phase's exit_events work.
     #   verify_conditional_action_string -- the ownership-compare WFConditionalActionString
     #                                      shape that plan 12-03 must preserve at four sites.
+    #
+    # PHASE 13 (13-02).  verify_conditional_action_string now carries a SECOND, POSITIVE
+    # assertion, so this already-armed call asserts more than it did in Phase 12 -- and this
+    # plan adds NO new touch point here, which is a genuine exception to the two-touch-point
+    # rule and is recorded rather than left to inference: the guard was ALREADY in the
+    # `from build_state_engine import (...)` list above AND already invoked below, armed by
+    # Phase 12 (12-01, PD-3).  What it now also asserts on this fork: the Aware artifact's 20
+    # inherited variable-bearing comparison targets still carry the Donor-5 envelope after
+    # the fork -- a WFTextTokenString whose Value.string holds a "￼" and whose
+    # Value.attachmentsByRange is non-empty.  Asserted per fork, never inferred from the Dumb
+    # run: Sentient forks the BUILT Dumb XML and re-serializes it, so a fork that flattened
+    # or re-enveloped one of those operands would ship an Aware conditional that can never
+    # match a real value -- the Mirror's fact gates would silently select the wrong template
+    # family (CIRC-07) with no error anywhere, and neither validator gate can see it.
+    # The 172/175 raw-literal targets stay unasserted on BOTH forks, for the reason the
+    # guard's own docstring records: no donor covers the pure-literal case.
+    #
+    # PHASE 13 CODE REVIEW (WR-02).  The "flattened" half of the sentence above was, until
+    # now, a claim the guard could not back: the shape pin only runs `if isinstance(value,
+    # dict)`, and a flattened target is a plain str it skips -- probed, and it PASSED.  The
+    # guard now also pins the CENSUS (EXPECTED_VARIABLE_TARGETS = 20, measured on both
+    # forks), which is what makes a flattened Aware target detectable at all.  Still no new
+    # touch point here: the guard was already imported and already invoked.
     verify_pending_exit_seed(actions)
     verify_panic_escape_seed(actions)
     verify_compound_value_reads(actions)
     verify_conditional_action_string(actions)
+    # PHASE 13 (13-01).  Sentient forks the BUILT Dumb XML, so it inherits all 67
+    # is.workflow.actions.list actions and every one of their 666 rows -- the 616 Mirror rows
+    # this phase wrapped in the donor-confirmed {WFItemType, WFValue} envelope and the 50 that
+    # are bare <string> literals by the same donor rule.  Asserted per fork, never inferred
+    # from the Dumb run: a fork that dropped, re-serialized or unwrapped a row would ship a
+    # BLANK Mirror on the Aware artifact with no error anywhere in the pipeline -- the
+    # validator sees a structurally perfect plist and the ToolKit catalog has no entry for
+    # WFItems row shape at all.  Phase 12 already recorded what site-by-site arming costs here
+    # (four inherited guards imported by Dumb and never run on Aware); the phase rule is "fix
+    # whole classes, never site-by-site".
+    #
+    # PHASE 13 CODE REVIEW (WR-01).  The sentence above used to claim more than the guard
+    # delivered: it tested only for a dict row missing WFItemType, so a DROPPED row, a
+    # FLATTENED row, a missing WFItems key, a malformed payload and a DOUBLE-WRAPPED row all
+    # passed it silently -- every drop/flatten direction this comment advertises.  The guard
+    # now asserts the whole two-kind contract per row AND pins the census (67 / 616 / 50,
+    # measured identically on both forks), which is what makes "a fork that dropped a row"
+    # a claim rather than a hope.  No new touch point: already imported, already invoked.
+    verify_list_item_wrappers(actions)
     # Cycle 12, axis 7 -- GATE SEMANTICS.  Sentient inherits the restore block and every
     # sentinel write from Dumb, so these assert the fork did not lose them; and because
     # Sentient adds its own conditionals, they also cover any Sentient-only gate that a
@@ -350,7 +393,9 @@ def main() -> None:
     # too: an inserted Sentient block must never land between the OPEN/CLOSE tests and the
     # MANUAL arm, and the absence gate must not reappear through a stale fork.
     verify_router_shape(actions)
-    # BD-06 Decision 5's eighth class, enforced PER FORK rather than inferred for Sentient
+    # BD-06 Decision 5's TENTH class (renumbered by the phase 13 code review, WR-06; it read
+    # "eighth" when .claude/CLAUDE.md carried seven axes), enforced PER FORK rather than
+    # inferred for Sentient
     # from Dumb.  Sentient inherits both halves of the dispatch surface -- the Config literal
     # and the branches -- from the built Dumb source, so a fork that dropped or rewrote
     # either would produce a Circle that dispatches nothing, with no error anywhere.

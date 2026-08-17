@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 12
-current_phase_name: State-shape sentinel gaps — exit_events and active_session
-status: ready-to-plan
-stopped_at: Phase 10 executed (10-05 parked at human-verify on DIST-03); phases 11-20 scoped and queued, none planned yet
-last_updated: "2026-08-17T03:24:18.541Z"
+current_phase: 13
+current_phase_name: Red-operator conditionals and the WFItems List wrapper
+status: verification-deferred
+stopped_at: Phase 13 executed + code-reviewed + gap-closed; verification human_needed (25/27, 0 failed) — deferred to /gsd-verify-work 13, device-blocked (DIST-03). Phase 12 likewise deferred.
+last_updated: "2026-08-17T08:08:52.852Z"
 last_activity: 2026-08-17
-last_activity_desc: Phase 12 execution started
+last_activity_desc: Phase 13 complete pending device UAT — code review found and fixed CR-01; both verification gaps closed
 progress:
   total_phases: 24
   completed_phases: 9
-  total_plans: 38
-  completed_plans: 33
+  total_plans: 46
+  completed_plans: 38
 ---
 
 # Project State
@@ -23,12 +23,40 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 12 — State-shape sentinel gaps — exit_events and active_session
+**Current focus:** Phase 13 — Red-operator conditionals and the WFItems List wrapper
 
 ## Current Position
 
-Phase: 12 (State-shape sentinel gaps — exit_events and active_session) — EXECUTING
-Plan: 1 of 5
+Phase: 13 (Red-operator conditionals and the WFItems List wrapper) — VERIFICATION DEFERRED (device-blocked)
+Plans: 4/4 complete; verifier 25/27, 0 failed; the 2 outstanding are device-gated and abstained
+
+**Phase 13 research rewrote the phase.** Donor 5 was decrypted for the first time and
+**refuted family 1**: iOS itself authors a variable in a conditional's TEXT slot as a
+`WFTextTokenString` template with `WFInput` alongside taking the opposite
+`WFTextTokenAttachment` envelope — key-for-key identical to what `token()` emits. There are
+**0 defective conditional sites, not 14**; the sites are already correct and must not be swept.
+Family 1 becomes record-the-refutation plus a *pinning* guard so a later pass cannot "fix" a
+device-confirmed shape.
+
+**Family 2 is real and 33× larger than recorded** — **66 defective List actions carrying 660
+unwrapped rows per fork, not 2**, all from one function, `mirror_text()`. Donors 4/4.1 confirm
+the `{"WFItemType": 0, "WFValue": <WFTextTokenString>}` wrapper *and* that literal rows stay
+bare strings, so the fix branches per row; a blanket sweep would corrupt `list_items(EXIT_NAMES, …)`.
+
+Two further ROADMAP premises did not hold: the named "concrete starting site"
+`if_block("Previous Respected", 4, …)` passes a raw literal and was never a family member, and
+the cited `Screenshot 2026-08-14 at 11.55.12 pm.png` does not exist in the worktree, the main
+checkout, or git history — no task depends on it.
+
+**Stale constraint corrected before planning:** the forks were renamed Dumb/Sentient → **Core/Aware**
+in Phase 11. `.claude/CLAUDE.md` §8 still names the old ones; signing to them would fail
+`docs/manifest_check.py`'s DIST-04 assertion. Source XMLs and generator filenames are unchanged.
+
+**Baseline measured green before execution:** 12/12 `docs/*.py` checkers pass, gate A clean on
+both forks, gate B showing exactly the one permitted waived line each. Any red during execution
+is therefore caused by the phase. `docs/manifest_check.py` is *deliberately* red in waves 1-3
+(rebuilding stales the MANIFEST) and closed in 13-04 — stated as constraint D-04 in every
+affected plan objective so an executor does not "fix" it by editing rows without re-signing.
 
 **Phase 10 is executed.** Waves 1-4 landed; 10-05 is parked at its `checkpoint:human-verify`
 resolved to the `blocked` branch (DIST-03, no connected iPhone). `10-UAT.md` is authored and
@@ -55,7 +83,7 @@ untested path in the product), Phase 4 UAT tests 1 and 3-6, Phase 8's real-iPhon
 Phase 19's full nine-Circle sweep. Report the opens-to-first-interruption count from
 `10-UAT.md` Test 2 — it decides whether Phase 10's raised entry thresholds need tuning.
 
-Last activity: 2026-08-17 — Phase 12 execution started
+Last activity: 2026-08-17 — Phase 13 executed, code-reviewed, gap-closed; awaiting device UAT
 
 Progress: [██████████] 100%
 
@@ -264,6 +292,25 @@ Items acknowledged and carried forward from previous milestone close:
 | Phase | State | Resume |
 |-------|-------|--------|
 | 12 | verification_deferred_human | /gsd-verify-work 12 |
+| 13 | verification_deferred_human | /gsd-verify-work 13 |
+
+Phase 13's verifier returned `human_needed` at **25/27 must-haves verified, 0 failed**. The only two
+outstanding are device-gated and were correctly abstained rather than promoted on structural
+evidence: whether a wrapped List row actually renders non-blank on device, and what `Item At Index`
+returns over a wrapped List (`verification: backstop`, research Open Question 1 / assumption A4).
+`xcrun devicectl list devices` was run and reported no connected iPhone; `13-UAT.md` records six
+tests, 0 passed, all BLOCKED. Same DIST-03 precedent as Phases 10 and 12. Resume with
+`/gsd-verify-work 13` once an iPhone is connected — and note `13-UAT.md` Test 1 now asks the tester
+to record *which* row was showing, because row 8 is a bare literal row after the CR-01 fix, so a
+blank at Circle VIII would indict the literal path rather than the wrapper.
+
+**Phase 13's code-review pass found a real defect in the phase's own fix — worth carrying forward.**
+`_list_row()` discriminated on Python type (`isinstance(item, str)`) rather than on
+attachment-bearing-ness, so 44 attachment-free (literal-by-content) rows shipped inside the
+variable-row wrapper — a *second* unevidenced framing, invisible to the guard, the validator and the
+decrypt, at row 8 / Circle VIII. Fixed and fully re-shipped at `365937e`; shipped census is now
+**616 wrapped / 50 bare** per fork, not the 660/6 the plan SUMMARYs record. Any doc still citing
+660/6 or artifacts `fe1bafdf…`/`bd1264d5…` is describing the superseded `737ce07` build.
 
 Phase 12's verifier returned `human_needed`: 7 device-only exit-recording tests (already recorded
 BLOCKED in `12-UAT.md` — `xcrun devicectl list devices` genuinely reported no connected iPhone, not a

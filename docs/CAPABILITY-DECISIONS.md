@@ -12,6 +12,8 @@ Decisions in this document are numbered `BD-NN` ("blocker decision"). They are *
 | BD-04 | Use Model On-Device literal | 01-05 |
 | BD-05 | Notes actions on the iOS target | 01-04 |
 | BD-06 | Circle naming, primitive roster, and slot allocation | Addendum 01 design pass (2026-08-16) |
+| BD-07 | Conditional TEXT-slot operand envelope — settled ALREADY CORRECT by Donor 5 | 13-03 |
+| BD-08 | `WFItems` List row wrapper — the two-kind rule, from Donors 4 and 4.1 | 13-03 |
 
 ---
 
@@ -407,8 +409,10 @@ which an unmatched entry is a build-time failure rather than a silent runtime no
 
 **Binding build guard.** Every distinct primitive name appearing in any `sequences` array in
 `src/CONFIG-BLOCK.md` must have exactly one matching dispatch branch in the generated
-actions, and every dispatch branch must be named by at least one sequence entry. This is an
-eighth class alongside the seven parameter-defect axes in `.claude/CLAUDE.md`, and it is
+actions, and every dispatch branch must be named by at least one sequence entry. This is a
+**tenth** class alongside the **nine** parameter-defect axes in `.claude/CLAUDE.md` (recorded
+here as "an eighth class alongside the seven" when that file carried seven; renumbered by the
+phase 13 code review, WR-06, after axes 8 and 9 were added), and it is
 invisible to the validator, the ToolKit catalog, and the signed-artifact decrypt. It is
 written **during the rename**, not after it, because a mass rename across three sequence
 arrays and ten dispatch branches is exactly the operation it exists to catch.
@@ -859,3 +863,198 @@ observation of a device failing, and no one has yet followed the renamed automat
 to end. Every claim in this record is structural.
 
 **Requirement:** ROOM-02, DIST-01, DIST-02
+
+---
+
+## BD-07 — the conditional TEXT-slot operand envelope is ALREADY CORRECT (Donor 5)
+
+**Recorded 2026-08-17, plan `13-03`, on evidence produced by plans `13-01`/`13-02`.**
+
+**Question:** The ROADMAP and `.planning/debug/HANDOFF.md` both carried an unsettled claim that
+a variable placed into a conditional's TEXT-slot operand (`WFConditionalActionString =
+token(...)`) was a defect class — recorded as 14 `WFConditionalActionString` sites needing a
+by-class sweep, with `if_block("Previous Respected", 4, ...)` named as a concrete starting
+site. That claim is **REFUTED**; the figures below supersede it, and the original wording is
+preserved at its asserting sites rather than deleted. The real question the donor answers is:
+what shape does iOS itself author for a variable in a conditional's comparison-target slot?
+
+**Evidence:** `.planning/debug/Donor 5.shortcut`, device-authored on the owner's iPhone, on
+disk since cycle 14 and **never analysed until Phase 13**. Decrypted with the
+`.claude/CLAUDE.md` §8 recipe (`aea decrypt` → `aa extract` → `plutil -convert xml1`), first
+attempt, yielding a 196-line plist. It is device ground truth, which tops this project's
+evidence hierarchy. Its single `is.workflow.actions.conditional` mode-0 action is quoted
+verbatim in `.planning/phases/13-red-operator-conditionals-and-the-wfitems-list-wrapper/13-RESEARCH.md`.
+
+**What the donor settles — six answers, all from the literal XML:**
+
+| Question | Answer |
+|---|---|
+| Does the operand live in `WFConditionalActionString`? | **Yes**, for a string-family comparison |
+| With what envelope? | **`WFTextTokenString`** — `string: "￼"` plus `attachmentsByRange` keyed `{0, 1}`. Not a bare `WFTextTokenAttachment`, not a plain string |
+| What is the inner attachment shape? | A **bare** `{Type: "Variable", VariableName: ...}` dict — **not** re-wrapped in a `Value`/`WFSerializationType` envelope |
+| What `WFCondition` accompanies it? | `<integer>4</integer>` — an **integer**, the string-family "is" code |
+| Is `WFInput` present alongside? | **Yes, simultaneously.** `WFInput` is the LEFT operand and takes the *opposite* envelope: a `WFTextTokenAttachment` |
+| Any coercion aggrandizement? | **None** on either side — both operands are text and code 4 is the string comparator |
+
+**Cross-check.** `token()` in `tools/build_state_engine.py` emits a **key-for-key identical**
+shape. The generator has been emitting the device-correct construct all along.
+
+**Measured inventory at the phase-start artifact, per fork (Core / Aware):** 192 / 195 mode-0
+conditionals carry `WFConditionalActionString`; **20 / 20** of those are variable-bearing (the
+Donor 5 family), split 19 at `WFCondition` 4 and 1 at 99; 172 / 175 are raw literals; **0 / 0**
+carry the already-guarded bare abandoned placeholder; **0 / 0** fail the Donor-5 shape.
+
+**Decision: REFUTED — zero defective sites. The deliverable inverted from a sweep into a pin.**
+Plan `13-02` swept nothing and instead extended `verify_conditional_action_string()` with a
+**positive** assertion that a variable-bearing comparison target *is* a `WFTextTokenString`
+with a `￼` in its string and a non-empty `attachmentsByRange`. If that assertion ever fires,
+the change that tripped it is the defect, not the shape. The refutation is carried in the
+guard's own docstring so it travels with the code rather than only with planning prose —
+because the standing risk was never that the shape is wrong, it is that a future pass reads a
+stale record and "repairs" 20 correct sites.
+
+**Left explicitly OPEN — not resolved by this record:**
+
+- **What caused the red operator observed on 2026-08-14.** Not reproducible at HEAD: the
+  named site `if_block("Previous Respected", 4, ...)` passes a **raw Python literal**, never a
+  `token()`, so it is **not a member of this family at all** — the "concrete starting site" was
+  a false lead, and this is a corrected attribution rather than a second defect. The 2026-08-14
+  build is not retained and the cited screenshot does not exist in the worktree, the main
+  checkout or git history. Phase 19 device UAT observes the live artifact; a red chip there
+  would be a **new** finding with an inspectable artifact.
+- **Whether a pure-literal comparison target should be a `WFTextTokenString`.** Donor 5 covers
+  only the variable-bearing case; **no donor covers the pure literal**. The 172 / 175 raw
+  literals are device-proven working (the OPEN/CLOSE router compares against raw `"OPEN"` /
+  `"CLOSE"`) and were left untouched **and unasserted**, stated as such in the guard docstring.
+  This is **unsettled by decision, not resolved** — settling it needs a rung-4 one-action donor
+  with a literal comparison, and it must never be written up as closed.
+
+**Requirement:** CIRC-07, DIST-01
+
+---
+
+## BD-08 — the `WFItems` List row wrapper: the two-kind rule (Donors 4 and 4.1)
+
+**Recorded 2026-08-17, plan `13-03`, on evidence produced by plan `13-01`.**
+
+**Question:** iOS is known to wrap a variable-bearing List row, and this project's artifact
+omitted the wrapper so rows render blank on device. The shape had been "recovered" from donors
+since cycle 14 but was never applied, and the recorded scale — the ROADMAP's "2 confirmed
+instances", now **REFUTED** by direct measurement — was never re-measured. What is the exact
+row shape, and how many sites carry the defect?
+
+**Evidence:** `.planning/debug/Donor 4.shortcut` and `.planning/debug/Donor 4.1.shortcut`, both
+device-authored, both decrypted in Phase 13 with the §8 recipe on the first attempt (224- and
+235-line plists), and **byte-identical on the `is.workflow.actions.list` action**. Two
+independent device-authored donors agreeing on one action.
+
+**The two-kind rule.** A `WFItems` array mixes exactly two row kinds, and the donors show both
+in the *same* device-authored array:
+
+- A **literal** row is a bare `<string>` element sitting directly in the array (`"Circle"`,
+  `"follows"`). It takes **no** wrapper.
+- A **variable- or attachment-bearing** row is a dictionary:
+  `{"WFItemType": <integer>0, "WFValue": <the complete WFTextTokenString envelope, unchanged>}`.
+  `WFValue` holds the full `{Value: {string, attachmentsByRange}, WFSerializationType:
+  "WFTextTokenString"}` object verbatim — nesting it unchanged is what keeps every
+  `attachmentsByRange` offset valid.
+
+A raw `WFTextTokenString` placed directly into `WFItems` validates, signs and imports
+perfectly, then renders as an **empty row** on device. Neither the validator nor the ToolKit
+catalog can see it — the catalog has no entry for `WFItems` row shape at all.
+
+**Measured defect inventory at the phase-start artifact, per fork (Core / Aware):** 67 / 67
+`is.workflow.actions.list` actions, of which **1 / 1** were correct (bare-string rows only) and
+**66 / 66** were defective, carrying **660 / 660** unwrapped rows and 6 / 6
+correct bare-string rows, with 0 / 0 already wrapped. (Those 660 are **not** all
+variable-bearing, and calling them that is the wording CR-01 corrects: 616 of them bear an
+attachment and 44 do not.) The recorded "2 confirmed instances" is
+therefore **REFUTED**: it under-counted actions by 33× and rows by 330×.
+
+**Fix and guard.** All 66 defective actions originate from **one** emitter, `mirror_text()` in
+`tools/build_state_engine.py`; the fix is a per-row branch in `_list_row()`, never an
+expression-level sweep — the correct sibling `list_items()` emits a byte-identical `WFItems=`
+expression and its six literal rows must stay bare.
+
+**The branch tests CONTENT, not Python type — corrected by the phase code review (CR-01).**
+The first cut branched on `isinstance(item, str)`: a bare `str` stayed bare, *anything else*
+was nested under the wrapper. That over-wraps in the other direction. `text_token()` returns a
+`WFTextTokenString` even for a template carrying **no** `￼` placeholder, whose
+`attachmentsByRange` is therefore **empty** — a literal row by content, encoded as a variable
+row, which is the shape this record's own two-kind rule says a literal must not carry.
+Measured in `src/*.xml` and in the decrypted payload of both signed containers: **44 of the 660
+wrapped rows per fork**. Those 44 were `MIRROR_SUCCESSES[7]` / `MIRROR_LAPSES[7]` at 22 call
+sites each — **row 8**, the row `getitemfromlist`'s `Item At Index` selects at **Circle VIII**
+on both the success and the lapse family, so a device mishandling it would have presented as a
+blank Mirror at a high circle: indistinguishable from the defect this record exists to close.
+Shipping a second unevidenced row framing to fix the first is exactly what the do-not-fabricate
+rule forbids. `_list_row()` therefore tests whether the token bears an attachment, and an
+attachment-free token goes out as the bare `<string>` both donors show.
+
+**Post-fix census, identical on both forks and confirmed on the decrypted signed payloads:**
+67 `is.workflow.actions.list` actions, 666 rows — **616 wrapped + 50 bare, 0 unwrapped, 0
+wrapped-but-attachment-free.** Per-array shapes: 1 × (0 wrapped, 6 bare) — the exit names;
+22 × (10, 0) — the baseline family, whose ten templates all carry placeholders; and 44 × (9, 1)
+— the success and lapse families, which now ship the **mixed** array both donors exhibit.
+(13-01's interim figure of "660 wrapped + 6 bare" described the over-wrapped artifact and is
+superseded.)
+
+Build guard: `verify_list_item_wrappers()`, armed on both forks, raising `SystemExit` before
+the single `SOURCE.write_bytes()`. It asserts the whole two-kind contract per row — including
+the **inverse** rule, that a wrapped row's `WFValue.Value.attachmentsByRange` must be non-empty
+— and pins the census (67 / 616 / 50), because no per-row shape test can see a row that is not
+there.
+
+**Boundary — deliberately unaudited.** Only `WFItemType` `0`, a **text** row, is
+donor-observed. Neither donor exercises a number, dictionary or file row. The guard therefore
+asserts only that the `WFItemType` **key is present**, never that it equals `0` — asserting
+`== 0` would silently encode the same unaudited claim one level down. Any other `WFItemType`
+value must be established from evidence and must never be inferred from `0`.
+
+**Bonus finding — Donor 4.1 settles the numeric-conditional right-hand slot.** Donor 4.1
+differs from Donor 4 in exactly one action: its conditional is numeric. It shows that a numeric
+right-hand operand does **not** use `WFConditionalActionString` at all — it uses
+`WFNumberValue`, serialized as a **`<string>`**, not an `<integer>`, alongside `WFCondition`
+`<integer>2`. The two right-hand slots are **mutually exclusive**, and an existence-family
+condition (Donor 4, condition 100) carries **neither**. In the numeric case the **left** operand
+carries the coercion aggrandizement (`WFCoercionVariableAggrandizement` /
+`WFNumberContentItem`).
+
+**THE GENERATOR DIVERGES FROM THAT DONOR, AND THE RIGHT-HAND SLOT IS `UNVERIFIED` ON TWO AXES.**
+This paragraph previously closed with "`if_block()` already implements all three cases correctly
+via its optional `number=` / `string=` keywords — recorded here as **confirmation, not a change
+request**." That sentence is **RETRACTED** by the phase code review (CR-02). It is refuted by
+the donor this very record cites, on two counts, both re-measured independently:
+
+1. **Serialization type.** `if_block()` assigns the raw Python value to `WFNumberValue`, so
+   `plistlib` emits an `<integer>`. Measured at the shipped sources: **90 (Core) / 97 (Aware)**
+   `WFNumberValue` parameters hold a Python `int`. Re-decrypting `.planning/debug/Donor
+   4.1.shortcut` through the §8 AEA1 recipe reads, verbatim, `<key>WFNumberValue</key>` →
+   `<string>10</string>` beside `<key>WFCondition</key>` → `<integer>2`. So the generator
+   diverges from the donor on the exact axis the retracted sentence claimed to confirm.
+2. **A fourth case the "three cases" framing does not mention.** **32** conditionals per fork
+   hold a **dict** in `WFNumberValue` — a bare `WFTextTokenAttachment` variable reference. The
+   eleven distinct variables are `Best Average`, `Dim Target`, `Exploit Minimum`, `Exploration
+   Threshold`, `Gravity Cap`, `Heat Cap`, `Heat Floor`, `Now Epoch`, `Overrun Minimum`,
+   `Silence Target` and `Threshold`. **No donor covers a variable in `WFNumberValue` at all**,
+   so the record silently implied coverage it does not have. Given this project's history with
+   non-literal comparison slots ("Please choose a value for each parameter in this action"),
+   this is the highest-value unaudited operand shape currently shipping.
+
+**Verdict: `UNVERIFIED` for both the integer encoding and the variable case.** Only the *slot
+choice* (`WFNumberValue` vs `WFConditionalActionString` vs neither) and the left-operand
+coercion are settled by Donor 4.1.
+
+**Why the artifact was NOT changed to match the donor.** Emitting `str(number)` would move 90 /
+97 live comparison operands on a build no one can run on a device — `xcrun devicectl list
+devices` reports none — to settle a question only a device can settle, and it would close at
+best half of the finding: the 32 dict-valued sites stay unevidenced either way. `.claude/CLAUDE.md`'s
+escalation rule for an unverifiable capability is the safest fallback plus a recorded deviation,
+and §9's ladder forbids spending an unevidenced artifact change on a question a rung-3 probe
+answers directly. The divergence is therefore recorded as an **open assumption owned by device
+UAT** (`docs/BUILD-NOTES.md` §28, assumption **A5**), not silently accepted and not silently
+"fixed". Recording a false confirmation is worse than recording nothing, because this file is a
+decision record future agents treat as settled and the evidence hierarchy makes a donor claim
+authoritative.
+
+**Requirement:** CIRC-07, DIST-01
