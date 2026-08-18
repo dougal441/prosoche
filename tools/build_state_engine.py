@@ -3960,6 +3960,31 @@ def _read_variable_keys(actions):
 
     read_value() emits getvalueforkey -> gettext -> setvariable, so the variable's key is
     recovered by walking that chain backwards through the two output UUIDs.
+
+    PROVENANCE IS TRANSITIVE, and PHASE 11'S CODE REVIEW (WR-16) is why.  Every
+    provenance-resolved guard in this file routes through this one helper --
+    verify_environmental_reachability(), verify_panic_escape_seed() and
+    verify_panic_escape_isolation() -- so whatever this function cannot see, none of them can
+    see either.  Until that review it saw exactly ONE emitted shape and had no transitive
+    step, which meant an ordinary `set_var("Copy", variable("Original"))` between the read and
+    the gate yielded NO provenance for `Copy` and silently orphaned every guard downstream of
+    it.  Two mutated builds measured it, 2026-08-18:
+
+      Control H -- CR-01 reintroduced verbatim (dimming()'s whole body back in the never-taken
+      arm of a permanently-true settings_snapshot CONTAINER gate, the exact defect 11-08 was
+      written to make unrepresentable) with the gate reading a one-hop copy: the build exited
+      0 and verify_environmental_reachability(), environmental_restore_check.py and
+      phase9_self_check.py all stayed green.
+
+      Control G -- universal_leaving()'s bypass gate, the one deciding whether the user is
+      offered the Leaving/Continue menu at all, moved onto a copy and flipped to condition
+      100: both builders exited 0 and every checker stayed green, with
+      _panic_escape_variables() still non-empty so neither vacuity raise fired.
+
+    A NAME is not a contract, which is why these guards resolve by provenance; the WR-16
+    correction is that ONE HOP is not a break in provenance either.  The fixpoint loop below
+    propagates the key set across variable-to-variable copies until the map stops growing, so
+    a chain of any length is followed rather than only a direct read.
     """
     key_by_uuid, text_by_uuid = {}, {}
     for item in actions:
@@ -3994,6 +4019,28 @@ def _read_variable_keys(actions):
         key = text_by_uuid.get(source.get("OutputUUID"))
         if key:
             keys.setdefault(parameters.get("WFVariableName"), set()).add(key)
+    # WR-16.  Propagate across variable -> variable copies until the map stops growing, so an
+    # intermediate `set_var("Copy", variable("Original"))` cannot orphan a guard.  The loop
+    # form (rather than a single pass) is what makes a chain of arbitrary length resolve; it
+    # terminates because each iteration that continues has strictly grown at least one key set
+    # and the key vocabulary is finite.
+    changed = True
+    while changed:
+        changed = False
+        for item in actions:
+            if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.setvariable":
+                continue
+            parameters = item.get("WFWorkflowActionParameters", {})
+            source = (parameters.get("WFInput") or {}).get("Value")
+            if not isinstance(source, dict) or source.get("Type") != "Variable":
+                continue
+            inherited = keys.get(source.get("VariableName"))
+            if not inherited:
+                continue
+            target = keys.setdefault(parameters.get("WFVariableName"), set())
+            if not inherited <= target:
+                target |= inherited
+                changed = True
     return keys
 
 
