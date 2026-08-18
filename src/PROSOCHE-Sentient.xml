@@ -22492,7 +22492,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>0C3CFFB4-2317-5EA1-925A-12327E77F1D0</string>
+				<string>10F86CEC-1600-5930-9F75-2B6C14910E2F</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -22535,7 +22535,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>876A8EC9-1956-5C1B-BB7F-B7DEB4D9F3CE</string>
+				<string>990A141C-FFAA-5DF6-B8F7-4B77C7516A7E</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -22587,7 +22587,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6451E1F2-BC26-5863-A92C-E4B641CA303F</string>
+				<string>A50191CA-802C-5E77-903E-3843089290BB</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -22628,7 +22628,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>8065153D-D990-5FCC-8708-F52733065A45</string>
+				<string>B715390B-684B-5705-823C-4AB396D3E3FD</string>
 				<key>WFTextActionText</key>
 				<string>specificity</string>
 			</dict>
@@ -22643,7 +22643,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>8065153D-D990-5FCC-8708-F52733065A45</string>
+						<string>B715390B-684B-5705-823C-4AB396D3E3FD</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -22662,7 +22662,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>C3CC53C1-61B9-59FB-B3E8-F87AEFF11C02</string>
+				<string>454CD5EA-B92A-5D75-96F2-1E4D6D364653</string>
 				<key>WFTextActionText</key>
 				<string>not supplied at this Circle</string>
 			</dict>
@@ -22677,7 +22677,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>C3CC53C1-61B9-59FB-B3E8-F87AEFF11C02</string>
+						<string>454CD5EA-B92A-5D75-96F2-1E4D6D364653</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -22708,7 +22708,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>2784414D-0629-590D-9038-F11FCFAF1C2A</string>
+				<string>FA653F80-C660-5FEF-9B57-5BF7594E3DEF</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -22749,7 +22749,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>92386F0D-7C55-5130-A9BA-68288C8840EC</string>
+				<string>E8B9EBAE-21F3-585D-8297-7C0EADF0F7FA</string>
 				<key>WFTextActionText</key>
 				<string>specificity and boundedness</string>
 			</dict>
@@ -22764,7 +22764,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>92386F0D-7C55-5130-A9BA-68288C8840EC</string>
+						<string>E8B9EBAE-21F3-585D-8297-7C0EADF0F7FA</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -22783,7 +22783,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>2784414D-0629-590D-9038-F11FCFAF1C2A</string>
+				<string>FA653F80-C660-5FEF-9B57-5BF7594E3DEF</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -22805,7 +22805,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>DEC7604F-1E63-56CB-9920-600109306182</string>
+				<string>60A4EF9C-CA4C-54F3-8D85-02FB9085EAF7</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -22846,7 +22846,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>7E398C76-6436-5CD8-81C1-E9B83334A814</string>
+				<string>410FCA76-D5E8-5ACA-8FAF-B4E22A6A6241</string>
 				<key>WFTextActionText</key>
 				<string>specificity, boundedness, and recorded consistency</string>
 			</dict>
@@ -22861,7 +22861,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>7E398C76-6436-5CD8-81C1-E9B83334A814</string>
+						<string>410FCA76-D5E8-5ACA-8FAF-B4E22A6A6241</string>
 						<key>OutputName</key>
 						<string>Text</string>
 						<key>Type</key>
@@ -22901,7 +22901,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>DEC7604F-1E63-56CB-9920-600109306182</string>
+				<string>60A4EF9C-CA4C-54F3-8D85-02FB9085EAF7</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -22912,7 +22912,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>3F9C2825-7D33-512E-A3BD-4DBA501522B0</string>
+				<string>503E05BF-51C3-55A7-A011-24892C1F1D58</string>
 				<key>WFDateActionMode</key>
 				<string>Current Date</string>
 			</dict>
@@ -22927,7 +22927,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>3F9C2825-7D33-512E-A3BD-4DBA501522B0</string>
+						<string>503E05BF-51C3-55A7-A011-24892C1F1D58</string>
 						<key>OutputName</key>
 						<string>Date</string>
 						<key>Type</key>
@@ -22946,7 +22946,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>47DF8761-3867-5E0C-AA7A-5CB41132CACA</string>
+				<string>E60063A4-472B-529F-B2E1-87F353E33FA6</string>
 				<key>WFLLMModel</key>
 				<string>Apple Intelligence on Device</string>
 				<key>WFGenerativeResultType</key>
@@ -23027,7 +23027,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>4C828CBF-1D37-5CF6-8DB6-47E9DA77EE7E</string>
+				<string>39EA1E0E-51D6-5B0A-8B13-C4E9E8F8EB29</string>
 				<key>WFDateActionMode</key>
 				<string>Current Date</string>
 			</dict>
@@ -23042,7 +23042,7 @@ Prior respected: ￼</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>4C828CBF-1D37-5CF6-8DB6-47E9DA77EE7E</string>
+						<string>39EA1E0E-51D6-5B0A-8B13-C4E9E8F8EB29</string>
 						<key>OutputName</key>
 						<string>Date</string>
 						<key>Type</key>
@@ -23061,7 +23061,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>19C4FDEB-2013-5AB1-AE2C-278BF6D9BD19</string>
+				<string>771F116F-0CCA-543E-BBC0-BBF22BA9267C</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -23116,7 +23116,7 @@ Prior respected: ￼</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>19C4FDEB-2013-5AB1-AE2C-278BF6D9BD19</string>
+						<string>771F116F-0CCA-543E-BBC0-BBF22BA9267C</string>
 						<key>OutputName</key>
 						<string>Time Between Dates</string>
 						<key>Type</key>
@@ -23146,7 +23146,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>F05BC2CA-D66A-5B6F-981A-46C0EE877F8E</string>
+				<string>B5B51EBC-1A08-5A9E-94E5-B6979AD1DEB6</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -23178,7 +23178,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>F746C1F1-A345-5782-AEDF-9D383D9160F0</string>
+				<string>554627B9-373E-5D36-8758-DACA426D51B4</string>
 				<key>text</key>
 				<dict>
 					<key>Value</key>
@@ -23190,7 +23190,7 @@ Prior respected: ￼</string>
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>47DF8761-3867-5E0C-AA7A-5CB41132CACA</string>
+								<string>E60063A4-472B-529F-B2E1-87F353E33FA6</string>
 								<key>OutputName</key>
 								<string>Model Result</string>
 								<key>Type</key>
@@ -23211,7 +23211,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>1B235B60-03A8-5B59-A6B6-2941EBD2A2B6</string>
+				<string>74D27859-0D3F-56D9-BCAE-2BDA1502EA7D</string>
 				<key>WFCountType</key>
 				<string>Items</string>
 				<key>WFInput</key>
@@ -23219,7 +23219,7 @@ Prior respected: ￼</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>F746C1F1-A345-5782-AEDF-9D383D9160F0</string>
+						<string>554627B9-373E-5D36-8758-DACA426D51B4</string>
 						<key>OutputName</key>
 						<string>Matches</string>
 						<key>Type</key>
@@ -23233,7 +23233,7 @@ Prior respected: ￼</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>F746C1F1-A345-5782-AEDF-9D383D9160F0</string>
+						<string>554627B9-373E-5D36-8758-DACA426D51B4</string>
 						<key>OutputName</key>
 						<string>Matches</string>
 						<key>Type</key>
@@ -23254,7 +23254,7 @@ Prior respected: ￼</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>1B235B60-03A8-5B59-A6B6-2941EBD2A2B6</string>
+						<string>74D27859-0D3F-56D9-BCAE-2BDA1502EA7D</string>
 						<key>OutputName</key>
 						<string>Count</string>
 						<key>Type</key>
@@ -23284,7 +23284,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>AFAF2AB1-E98E-5243-90D8-95E487044DC9</string>
+				<string>E6F0F845-9CF2-5ABB-89A4-78CC5CEFB72A</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -23316,7 +23316,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>2833FA86-36C2-5DA6-B51D-4F8C2F389F96</string>
+				<string>0CC49526-100F-50B6-99A0-FC7379EBD9DE</string>
 				<key>WFItemSpecifier</key>
 				<string>First Item</string>
 				<key>WFInput</key>
@@ -23324,7 +23324,7 @@ Prior respected: ￼</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>F746C1F1-A345-5782-AEDF-9D383D9160F0</string>
+						<string>554627B9-373E-5D36-8758-DACA426D51B4</string>
 						<key>OutputName</key>
 						<string>Matches</string>
 						<key>Type</key>
@@ -23345,7 +23345,7 @@ Prior respected: ￼</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>2833FA86-36C2-5DA6-B51D-4F8C2F389F96</string>
+						<string>0CC49526-100F-50B6-99A0-FC7379EBD9DE</string>
 						<key>OutputName</key>
 						<string>Item from List</string>
 						<key>Type</key>
@@ -23375,7 +23375,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>156C5BBC-2FF3-5F63-A0F1-B75A4D7BDD12</string>
+				<string>53B46FCA-8C2F-5F6C-84D2-EF948B8DF90B</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -23418,7 +23418,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>BF0E1621-3D90-5CAC-B602-02EC629067FB</string>
+				<string>A077A3FB-F6BD-5563-BF0F-6964221951B8</string>
 				<key>WFAskActionPrompt</key>
 				<string>Revise or continue your boundary? (optional)</string>
 				<key>WFInputType</key>
@@ -23435,7 +23435,7 @@ Prior respected: ￼</string>
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>BF0E1621-3D90-5CAC-B602-02EC629067FB</string>
+						<string>A077A3FB-F6BD-5563-BF0F-6964221951B8</string>
 						<key>OutputName</key>
 						<string>Provided Input</string>
 						<key>Type</key>
@@ -23454,7 +23454,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>156C5BBC-2FF3-5F63-A0F1-B75A4D7BDD12</string>
+				<string>53B46FCA-8C2F-5F6C-84D2-EF948B8DF90B</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -23476,7 +23476,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>146A04A4-7736-5E86-A8E8-EAB00C6D2F4C</string>
+				<string>4FCC0B45-71F8-5CA9-988C-F8D132285EE0</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -23519,7 +23519,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>DDC95494-7E43-5327-ABF1-41908BE37E93</string>
+				<string>C1AC91B7-EF9B-5647-8C3D-5DF75E40701D</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -23583,7 +23583,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>DDC95494-7E43-5327-ABF1-41908BE37E93</string>
+				<string>C1AC91B7-EF9B-5647-8C3D-5DF75E40701D</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -23600,7 +23600,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>DDC95494-7E43-5327-ABF1-41908BE37E93</string>
+				<string>C1AC91B7-EF9B-5647-8C3D-5DF75E40701D</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -23611,7 +23611,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>146A04A4-7736-5E86-A8E8-EAB00C6D2F4C</string>
+				<string>4FCC0B45-71F8-5CA9-988C-F8D132285EE0</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -23628,7 +23628,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>146A04A4-7736-5E86-A8E8-EAB00C6D2F4C</string>
+				<string>4FCC0B45-71F8-5CA9-988C-F8D132285EE0</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -23639,7 +23639,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>156C5BBC-2FF3-5F63-A0F1-B75A4D7BDD12</string>
+				<string>53B46FCA-8C2F-5F6C-84D2-EF948B8DF90B</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -23650,7 +23650,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>AFAF2AB1-E98E-5243-90D8-95E487044DC9</string>
+				<string>E6F0F845-9CF2-5ABB-89A4-78CC5CEFB72A</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -23661,7 +23661,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>F05BC2CA-D66A-5B6F-981A-46C0EE877F8E</string>
+				<string>B5B51EBC-1A08-5A9E-94E5-B6979AD1DEB6</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -23678,7 +23678,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>F05BC2CA-D66A-5B6F-981A-46C0EE877F8E</string>
+				<string>B5B51EBC-1A08-5A9E-94E5-B6979AD1DEB6</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -23689,7 +23689,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6451E1F2-BC26-5863-A92C-E4B641CA303F</string>
+				<string>A50191CA-802C-5E77-903E-3843089290BB</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -23700,7 +23700,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>876A8EC9-1956-5C1B-BB7F-B7DEB4D9F3CE</string>
+				<string>990A141C-FFAA-5DF6-B8F7-4B77C7516A7E</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -23711,7 +23711,7 @@ Prior respected: ￼</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>0C3CFFB4-2317-5EA1-925A-12327E77F1D0</string>
+				<string>10F86CEC-1600-5930-9F75-2B6C14910E2F</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -30129,6 +30129,1269 @@ Prior respected: ￼</string>
 				</dict>
 				<key>WFVariableName</key>
 				<string>Declared Duration Seconds</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>--- SENTIENT CONTRACT AUDIT ---
+
+- Audit only a voluntary contract after Confession and before its existing Dumb save.
+- The model receives compact recorded facts, never the Note or app contents.
+- Empty, malformed, or completed-slow output continues the unchanged Dumb path.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>AI preference gate:
+- A no response keeps this run entirely Dumb.
+- Only an explicit yes reaches the optional audit.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>C052D8FF-A534-5AAA-9965-EE9391131807</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>4</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Import AI</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFConditionalActionString</key>
+				<string>yes</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Circle gate:
+- Circle I remains deterministic.
+- Only Circle II and above may reach the audit.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>7030E8DD-B3CC-583A-B077-A510A7CD33FC</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>3</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Circle Next</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFNumberValue</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Circle ceiling:
+- Circle IX remains deterministic Ice.
+- Only Circles II through VIII may reach the audit.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>E9F686C8-85D8-57A0-B9F6-C27F6E1E68D8</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>0</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Circle Next</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFNumberValue</key>
+				<integer>9</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>D18D5E58-FF7E-5000-AD07-28DB282D2E36</string>
+				<key>WFTextActionText</key>
+				<string>specificity</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>D18D5E58-FF7E-5000-AD07-28DB282D2E36</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Audit Scope</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>A30B2F91-0FCF-554C-83EF-274E7EDB5890</string>
+				<key>WFTextActionText</key>
+				<string>not supplied at this Circle</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>A30B2F91-0FCF-554C-83EF-274E7EDB5890</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Audit Prior Fact</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Progressive audit scope:
+- Circles II–III assess specificity only.
+- Circles IV–VI add boundedness.
+- Circles VII–VIII additionally receive the recorded prior-contract result.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>8834C81E-C857-57AB-BA8E-D755D75297AB</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>3</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Circle Next</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFNumberValue</key>
+				<integer>4</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>A3F638B6-AF50-5BAD-95FB-FF0AD0D2CEB6</string>
+				<key>WFTextActionText</key>
+				<string>specificity and boundedness</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>A3F638B6-AF50-5BAD-95FB-FF0AD0D2CEB6</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Audit Scope</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>8834C81E-C857-57AB-BA8E-D755D75297AB</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>High-circle consistency gate:
+- Only Circles VII–VIII receive the existing Previous Respected fact.
+- Lower circles never receive that history.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>F7EE56D5-DCCD-5841-B4F8-8E19AC919C63</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>3</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Circle Next</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFNumberValue</key>
+				<integer>7</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>2BDA736C-27D9-5C42-915E-E435E2B00302</string>
+				<key>WFTextActionText</key>
+				<string>specificity, boundedness, and recorded consistency</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>2BDA736C-27D9-5C42-915E-E435E2B00302</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Audit Scope</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>Previous Respected</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Audit Prior Fact</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>F7EE56D5-DCCD-5841-B4F8-8E19AC919C63</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.date</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>CA97BAF9-0B5B-5A06-A866-AC623717B08A</string>
+				<key>WFDateActionMode</key>
+				<string>Current Date</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>CA97BAF9-0B5B-5A06-A866-AC623717B08A</string>
+						<key>OutputName</key>
+						<string>Date</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Audit Before</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.askllm</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>5D02B85F-9B50-5502-B8C2-F40FCDA24F26</string>
+				<key>WFLLMModel</key>
+				<string>Apple Intelligence on Device</string>
+				<key>WFGenerativeResultType</key>
+				<string>Text</string>
+				<key>WFLLMPrompt</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>You are a bounded contract auditor. Return exactly one first token: ALLOW, CHALLENGE, or DENY. ALLOW a clearly bounded deliberate leisure choice. Audit only this scope: ￼. Never claim lying, diagnosis, addiction, morality, feelings, or knowledge of app contents. Do not prescribe settings, arithmetic, timers, exits, or Ice.
+Intention: ￼
+Boundary minutes: ￼
+Circle: ￼
+Heat: ￼
+Open count: ￼
+Prior respected: ￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{169, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Audit Scope</string>
+							</dict>
+							<key>{336, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Confession Intention</string>
+							</dict>
+							<key>{356, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Declared Boundary Minutes</string>
+							</dict>
+							<key>{366, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Circle Next</string>
+							</dict>
+							<key>{374, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Heat Final</string>
+							</dict>
+							<key>{388, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Opens Today Next</string>
+							</dict>
+							<key>{407, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Audit Prior Fact</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.date</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>B688A06D-1275-573D-925D-A604ECD17AA6</string>
+				<key>WFDateActionMode</key>
+				<string>Current Date</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>B688A06D-1275-573D-925D-A604ECD17AA6</string>
+						<key>OutputName</key>
+						<string>Date</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Audit After</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettimebetweendates</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>97DDE1E4-97FA-541E-9E33-9DC5D759FCA9</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Audit After</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>WFTimeUntilFromDate</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>Type</key>
+								<string>Variable</string>
+								<key>VariableName</key>
+								<string>Audit Before</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>WFTimeUntilUnit</key>
+				<string>Seconds</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>97DDE1E4-97FA-541E-9E33-9DC5D759FCA9</string>
+						<key>OutputName</key>
+						<string>Time Between Dates</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Audit Seconds</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Completed latency gate:
+- Use the dates immediately around Use Model.
+- A result over eight seconds takes the Dumb path.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>998F54A5-F8C1-5182-9319-D1FE28A64B72</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>1</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Audit Seconds</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFNumberValue</key>
+				<integer>8</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.text.match</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>2740938A-5BC4-5B91-B415-C06C157F8D38</string>
+				<key>text</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>OutputUUID</key>
+								<string>5D02B85F-9B50-5502-B8C2-F40FCDA24F26</string>
+								<key>OutputName</key>
+								<string>Model Result</string>
+								<key>Type</key>
+								<string>ActionOutput</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+				<key>WFMatchTextPattern</key>
+				<string>(?i)^\s*(ALLOW|CHALLENGE|DENY)\b</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.count</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>6CA9F175-602F-506B-82D8-A9EDAB4408F2</string>
+				<key>WFCountType</key>
+				<string>Items</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>2740938A-5BC4-5B91-B415-C06C157F8D38</string>
+						<key>OutputName</key>
+						<string>Matches</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>Input</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>2740938A-5BC4-5B91-B415-C06C157F8D38</string>
+						<key>OutputName</key>
+						<string>Matches</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>6CA9F175-602F-506B-82D8-A9EDAB4408F2</string>
+						<key>OutputName</key>
+						<string>Count</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Audit Match Count</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Parsed-token gate:
+- Only a matched first token is considered.
+- Empty or malformed output takes the Dumb path.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>CE5F3436-1BEB-56CD-97C2-D131BBB2AFAE</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>2</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Audit Match Count</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getitemfromlist</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>D5AD52FF-508E-5C75-A0F7-68CF109AC300</string>
+				<key>WFItemSpecifier</key>
+				<string>First Item</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>2740938A-5BC4-5B91-B415-C06C157F8D38</string>
+						<key>OutputName</key>
+						<string>Matches</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>D5AD52FF-508E-5C75-A0F7-68CF109AC300</string>
+						<key>OutputName</key>
+						<string>Item from List</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Audit Token</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Challenge branch:
+- CHALLENGE may ask once for revision or continuation.
+- The revision does not create another model call.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>9A17D7ED-B3EE-5790-BF6B-F8E7FA354CDB</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>99</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Audit Token</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFConditionalActionString</key>
+				<string>CHALLENGE</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>One optional revision only:
+- The user may revise or continue the contract once.
+- This response is never sent to the model again.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.ask</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>26EE191F-D126-583A-B8AD-77343D6AF471</string>
+				<key>WFAskActionPrompt</key>
+				<string>Revise or continue your boundary? (optional)</string>
+				<key>WFInputType</key>
+				<string>Text</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>26EE191F-D126-583A-B8AD-77343D6AF471</string>
+						<key>OutputName</key>
+						<string>Provided Input</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
+				<string>Confession Intention</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>9A17D7ED-B3EE-5790-BF6B-F8E7FA354CDB</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>Deny branch:
+- Only a DENY token may redirect.
+- Lower circles continue Dumb without punishment.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>80940B68-8735-536A-988D-0A724B2AEBA2</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>99</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Audit Token</string>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFConditionalActionString</key>
+				<string>DENY</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>High-circle gate:
+- DENY redirects only at Circle VII or VIII.
+- It cannot alter deterministic state.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>4DDF383D-DA1F-51DE-AD77-373F81C87788</string>
+				<key>WFControlFlowMode</key>
+				<integer>0</integer>
+				<key>WFCondition</key>
+				<integer>3</integer>
+				<key>WFInput</key>
+				<dict>
+					<key>Type</key>
+					<string>Variable</string>
+					<key>Variable</key>
+					<dict>
+						<key>Value</key>
+						<dict>
+							<key>Type</key>
+							<string>Variable</string>
+							<key>VariableName</key>
+							<string>Circle Next</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
+						</dict>
+						<key>WFSerializationType</key>
+						<string>WFTextTokenAttachment</string>
+					</dict>
+				</dict>
+				<key>WFNumberValue</key>
+				<integer>7</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>High-circle DENY redirects without punishment:
+- Use the already offered Leaving route or return home.
+- No settings, arithmetic, timer, Ice, or exit selection changes here.</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.returntohomescreen</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict/>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.exit</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict/>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>4DDF383D-DA1F-51DE-AD77-373F81C87788</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.nothing</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict/>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>4DDF383D-DA1F-51DE-AD77-373F81C87788</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>80940B68-8735-536A-988D-0A724B2AEBA2</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.nothing</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict/>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>80940B68-8735-536A-988D-0A724B2AEBA2</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>9A17D7ED-B3EE-5790-BF6B-F8E7FA354CDB</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>CE5F3436-1BEB-56CD-97C2-D131BBB2AFAE</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>998F54A5-F8C1-5182-9319-D1FE28A64B72</string>
+				<key>WFControlFlowMode</key>
+				<integer>1</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.nothing</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict/>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>998F54A5-F8C1-5182-9319-D1FE28A64B72</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>E9F686C8-85D8-57A0-B9F6-C27F6E1E68D8</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>7030E8DD-B3CC-583A-B077-A510A7CD33FC</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.conditional</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>GroupingIdentifier</key>
+				<string>C052D8FF-A534-5AAA-9965-EE9391131807</string>
+				<key>WFControlFlowMode</key>
+				<integer>2</integer>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.comment</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFCommentActionText</key>
+				<string>--- SENTIENT CONTRACT AUDIT END ---</string>
 			</dict>
 		</dict>
 		<dict>

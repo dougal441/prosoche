@@ -11,10 +11,13 @@ from pathlib import Path
 
 from plist_text_edit import find_action, replace_in_token
 from build_state_engine import (
+    flow_index,
+    input_key_tests,
     normalise_numeric_operands,
     normalise_output_names,
     normalise_string_envelopes,
     verify_active_session_seed,
+    verify_circle_zero_silence,
     verify_capture_persistence,
     verify_compound_value_reads,
     verify_conditional_action_string,
@@ -28,6 +31,7 @@ from build_state_engine import (
     verify_numeric_operands,
     verify_output_names,
     verify_panic_escape_seed,
+    verify_parameter_keys,
     verify_pending_exit_seed,
     verify_required_pickers,
     verify_restore_gates,
@@ -41,6 +45,18 @@ SOURCE = Path("src/PROSOCHE-Dumb.xml")
 TARGET = Path("src/PROSOCHE-Sentient.xml")
 MODEL = "Apple Intelligence on Device"  # direct device-export evidence
 MARKER = "--- SENTIENT CONTRACT AUDIT ---"
+
+# persist_contract()'s own leading comment, in tools/build_state_engine.py.  Every
+# primitive_dispatch() rendering reaches Intention, which calls persist_contract(), so this
+# string marks exactly one place per rendering -- which is what makes "one audit per
+# OPEN-arm rendering" locatable at all.  Anchor on the comment, never on an action index.
+CONTRACT_MARKER = "Reload before writing a contract."
+
+# The second of the two frozen import preferences, by the variable it names.  WR-11: the
+# third import question used to be spliced at a hard-coded 6 and its ActionIndex repeated
+# that same integer, so an insertion anywhere upstream would silently move the question onto
+# an unrelated parameter.  Both are now derived from this anchor.
+IMPORT_ANCHOR_VARIABLE = "Import Voice"
 
 # The two canonical display names, phase 11 plan 06.  The source FILENAMES deliberately
 # still read `Dumb`/`Sentient`: renaming them is pure churn across ten code files and some
@@ -119,20 +135,49 @@ def end(group: str):
     return action("is.workflow.actions.conditional", GroupingIdentifier=group, WFControlFlowMode=2)
 
 
-def audit_block():
-    """One optional advisory call. Every non-ALLOW branch continues Dumb."""
-    before, model, after, elapsed, matches, count, first, revision, scope, prior = (uid(x) for x in (
+def audit_block(ordinal: int):
+    """One optional advisory call. Every non-ALLOW branch continues Dumb.
+
+    PHASE 11 (11-09).  This block is now emitted ONCE PER OPEN-ARM RENDERING rather than
+    once per artifact, so `ordinal` is what keeps two renderings' identifiers apart.  It is
+    REQUIRED, not defaulted, for the reason Phase 16 made `if_block()`'s `key` required:
+    a defaulted discriminator is a discriminator one call site can silently omit.
+
+    WHY ONE PARAMETER IS NOT ENOUGH ON ITS OWN.  `uid()` is a `uuid5` NAME HASH, so two
+    calls with the same literal produce a byte-identical UUID -- and `if_block()` derives
+    its `GroupingIdentifier` from `uid(key)` too.  Phase 16 closed the *omitted* key hole
+    by making the argument required; it did not and could not close the *repeated literal*
+    hole, because `audit_block()` passes fixed literals deliberately.  So the ordinal must
+    reach BOTH families: every `uid()` call AND every `if_block(key=)` argument.  Missing
+    either emits two structurally unrelated blocks under one GroupingIdentifier -- the #1
+    documented real-world mistake in this toolchain (.claude/CLAUDE.md §4), which validates,
+    signs and imports perfectly and then corrupts a block boundary at run time.
+
+    `aid()` is the single chokepoint that makes that unmissable: there is no route to an
+    identifier in this function that does not pass through it.  Build-time backstops, both
+    independent of this reasoning: verify_group_identifier_uniqueness() (armed on this fork
+    by Phase 16, for exactly this class) and the whole-artifact UUID uniqueness check.
+
+    Census, re-measured 2026-08-18 rather than transcribed: 14 uid() calls (10 in the tuple
+    unpacking below, 4 inline in the returned list) and 10 if_block() calls -- the plan's
+    "nine if_block() calls" was one short.
+    """
+    def aid(name: str) -> str:
+        """Every identifier this block derives, discriminated by rendering."""
+        return f"audit-{ordinal}/{name}"
+
+    before, model, after, elapsed, matches, count, first, revision, scope, prior = (uid(aid(x)) for x in (
         "before", "model", "after", "elapsed", "matches", "count", "first", "revision", "scope", "prior"))
-    enabled_g, enabled = if_block("Import AI", 4, string="yes", key="enabled")
-    min_g, minimum = if_block("Circle Next", 3, number=2, key="circle-min")
-    max_g, maximum = if_block("Circle Next", 0, number=9, key="circle-max")
-    fast_g, fast = if_block("Audit Seconds", 1, number=8, key="fast")
-    found_g, found = if_block("Audit Match Count", 2, number=0, key="found")
-    challenge_g, challenge = if_block("Audit Token", 99, string="CHALLENGE", key="challenge")
-    deny_g, deny = if_block("Audit Token", 99, string="DENY", key="deny")
-    high_g, high = if_block("Circle Next", 3, number=7, key="deny-high")
-    bounded_g, bounded = if_block("Circle Next", 3, number=4, key="scope-bounded")
-    consistency_g, consistency = if_block("Circle Next", 3, number=7, key="scope-consistency")
+    enabled_g, enabled = if_block("Import AI", 4, string="yes", key=aid("enabled"))
+    min_g, minimum = if_block("Circle Next", 3, number=2, key=aid("circle-min"))
+    max_g, maximum = if_block("Circle Next", 0, number=9, key=aid("circle-max"))
+    fast_g, fast = if_block("Audit Seconds", 1, number=8, key=aid("fast"))
+    found_g, found = if_block("Audit Match Count", 2, number=0, key=aid("found"))
+    challenge_g, challenge = if_block("Audit Token", 99, string="CHALLENGE", key=aid("challenge"))
+    deny_g, deny = if_block("Audit Token", 99, string="DENY", key=aid("deny"))
+    high_g, high = if_block("Circle Next", 3, number=7, key=aid("deny-high"))
+    bounded_g, bounded = if_block("Circle Next", 3, number=4, key=aid("scope-bounded"))
+    consistency_g, consistency = if_block("Circle Next", 3, number=7, key=aid("scope-consistency"))
     return [
         comment(MARKER + "\n\n- Audit only a voluntary contract after Confession and before its existing Dumb save.\n- The model receives compact recorded facts, never the Note or app contents.\n- Empty, malformed, or completed-slow output continues the unchanged Dumb path."),
         comment("AI preference gate:\n- A no response keeps this run entirely Dumb.\n- Only an explicit yes reaches the optional audit."), enabled,
@@ -143,12 +188,12 @@ def audit_block():
         action("is.workflow.actions.gettext", UUID=prior, WFTextActionText="not supplied at this Circle"),
         set_var("Audit Prior Fact", output(prior, "Text")),
         comment("Progressive audit scope:\n- Circles II–III assess specificity only.\n- Circles IV–VI add boundedness.\n- Circles VII–VIII additionally receive the recorded prior-contract result."), bounded,
-        action("is.workflow.actions.gettext", UUID=uid("scope-bounded-text"), WFTextActionText="specificity and boundedness"),
-        set_var("Audit Scope", output(uid("scope-bounded-text"), "Text")),
+        action("is.workflow.actions.gettext", UUID=uid(aid("scope-bounded-text")), WFTextActionText="specificity and boundedness"),
+        set_var("Audit Scope", output(uid(aid("scope-bounded-text")), "Text")),
         end(bounded_g),
         comment("High-circle consistency gate:\n- Only Circles VII–VIII receive the existing Previous Respected fact.\n- Lower circles never receive that history."), consistency,
-        action("is.workflow.actions.gettext", UUID=uid("scope-consistency-text"), WFTextActionText="specificity, boundedness, and recorded consistency"),
-        set_var("Audit Scope", output(uid("scope-consistency-text"), "Text")),
+        action("is.workflow.actions.gettext", UUID=uid(aid("scope-consistency-text")), WFTextActionText="specificity, boundedness, and recorded consistency"),
+        set_var("Audit Scope", output(uid(aid("scope-consistency-text")), "Text")),
         set_var("Audit Prior Fact", variable("Previous Respected")),
         end(consistency_g),
         action("is.workflow.actions.date", UUID=before, WFDateActionMode="Current Date"),
@@ -272,21 +317,84 @@ def main() -> None:
     if any(MARKER in a.get("WFWorkflowActionParameters", {}).get("WFCommentActionText", "") for a in actions):
         raise SystemExit("source is already a Sentient fork")
     # Add the third import preference after the two frozen import literals.
+    #
+    # WR-11, CLOSED HERE.  Both the slice bound and the import question's target index used
+    # to be the SAME hard-coded integer, written out twice and free to drift apart.  The
+    # generator's own module docstring forbids addressing an anchor by a mutable action
+    # index, and build_state_engine.main()'s pinned prologue covers only the first FIVE
+    # actions, so that position was pinned by nothing at all.
+    # Phases 12, 13 and 16 moved roughly 250 actions across the source this builder forks; an
+    # insertion upstream of 6 would have attached this question to an unrelated action's
+    # WFTextActionText, with no error from either builder, no validator finding at either
+    # gate, and a visible symptom only on a user's import sheet.  Both numbers now derive
+    # from one content anchor, so they cannot disagree with each other or drift from the
+    # source.
+    anchor = next((index for index, item in enumerate(actions)
+                   if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setvariable"
+                   and item.get("WFWorkflowActionParameters", {}).get("WFVariableName")
+                   == IMPORT_ANCHOR_VARIABLE), None)
+    if anchor is None:
+        raise SystemExit(
+            f"import-preference anchor not found: no set-variable names {IMPORT_ANCHOR_VARIABLE!r}. "
+            f"CONSEQUENCE: the third import question's ActionIndex cannot be derived, and a "
+            f"guessed index would silently retarget it onto an unrelated action's "
+            f"WFTextActionText -- the import sheet would prompt for the AI preference and "
+            f"write the answer into someone else's parameter.")
+    splice = anchor + 1
     import_id = uid("import-ai")
-    actions[6:6] = [action("is.workflow.actions.gettext", UUID=import_id, WFTextActionText="yes"),
-                    set_var("Import AI", output(import_id, "Text"))]
-    root["WFWorkflowImportQuestions"].append({"ActionIndex": 6, "Category": "Parameter", "DefaultValue": "yes",
+    actions[splice:splice] = [action("is.workflow.actions.gettext", UUID=import_id, WFTextActionText="yes"),
+                              set_var("Import AI", output(import_id, "Text"))]
+    root["WFWorkflowImportQuestions"].append({"ActionIndex": splice, "Category": "Parameter", "DefaultValue": "yes",
                                                "ParameterKey": "WFTextActionText",
                                                "Text": "Use Apple's on-device intelligence contract audit when available? Answer yes or no."})
     root["WFWorkflowName"] = AWARE_NAME
     root["WFWorkflowIcon"] = {"WFWorkflowIconGlyphNumber": 59856, "WFWorkflowIconStartColor": 431817727}
-    for index, item in enumerate(actions):
-        value = item.get("WFWorkflowActionParameters", {}).get("WFCommentActionText", "")
-        if value.startswith("Reload before writing a contract."):
-            actions[index:index] = audit_block()
-            break
-    else:
-        raise SystemExit("semantic Confession contract marker not found")
+    # PHASE 11 (11-09).  ONE AUDIT PER OPEN-ARM RENDERING, located structurally.
+    #
+    # This used to take the FIRST contract marker in document order and break.  Before Build
+    # Addendum 01 that was the same action as "the OPEN-arm marker"; plan 11-05 added a
+    # SECOND OPEN-arm dispatch rendering -- universal_leaving()'s otherwise arm, taken when
+    # the user has REMOVED the Panic Escape bypass -- and the audit did not follow it there.
+    # The consequence was a fork that silently became the other fork: remove an unrelated
+    # setting and your Aware install reaches Intention with no contract audit at all, with
+    # nothing observable on device to say so.  Auditing only the bypass-enabled path is not a
+    # statable product rule -- "give up your easy exit and you also lose the audit" -- and it
+    # inverts the escalation, removing the audit from precisely the harder path where it is
+    # most useful.  See docs/BUILD-NOTES.md and the plan's gap-3 resolution.
+    #
+    # The OPEN arm is derived exactly as verify_circle_zero_silence() derives it -- from the
+    # router's own OPEN literal test and its grouping identifier -- rather than by scanning
+    # every marker in the file.  Two reasons, both deliberate.  A future rendering added
+    # anywhere inside that arm is then covered with no further code change; and the other
+    # nine markers, the Test-a-Circle submenu renderings in the MANUAL arm, are excluded BY
+    # CONSTRUCTION rather than by an index, so a diagnostic menu item can never put a model
+    # call behind it (T-11-51).
+    #
+    # Indexes are into the ALREADY-SPLICED list -- the two import-preference actions went in
+    # above -- so the collection has to happen here, after that splice, never before.
+    open_test = next(((index, string) for index, condition, string in input_key_tests(actions)
+                      if condition == 4 and string == "OPEN"), None)
+    if open_test is None:
+        raise SystemExit(
+            "no conditional tests Input Key against the OPEN literal; the router has been "
+            "restructured and the audit's insertion point can no longer be located. "
+            "CONSEQUENCE: refusing to fall back to document order -- that is the exact defect "
+            "this derivation replaces.")
+    open_group = actions[open_test[0]]["WFWorkflowActionParameters"]["GroupingIdentifier"]
+    open_end = flow_index(actions, open_group, 1)
+    markers = [index for index in range(open_test[0], open_end)
+               if actions[index].get("WFWorkflowActionParameters", {})
+                                 .get("WFCommentActionText", "").startswith(CONTRACT_MARKER)]
+    if not markers:
+        raise SystemExit(
+            "no semantic Confession contract marker inside the OPEN arm. CONSEQUENCE: this "
+            "Aware fork would be built with no contract audit anywhere -- a byte-for-byte "
+            "Core fork under a different name and a different icon, presenting to its user as "
+            "the fork that has an on-device attention mirror.")
+    # Reverse order so each insertion leaves the earlier marker indexes valid.  The ordinal is
+    # the rendering's position in document order, so it is stable across the reversal.
+    for ordinal, index in reversed(list(enumerate(markers))):
+        actions[index:index] = audit_block(ordinal)
     # Phase 11 plan 06.  The fork's own name, in its own Note and its own state seed.  This
     # runs BEFORE the normalise/verify chain so the rewritten token strings are guarded like
     # every other string in the file, and it mutates the forked COPY only -- the frozen-source
@@ -447,6 +555,23 @@ def main() -> None:
     # conditionals on top of the forked Dumb source, and a collision between a Sentient-only
     # block and an inherited one exists on this artifact alone.
     verify_group_identifier_uniqueness(actions)
+    # PHASE 11 (11-09), WR-10.  Armed here for the first time, and DIRECTLY load-bearing for
+    # this plan rather than tidiness: its four properties are precisely the ones an OPEN-arm
+    # insertion can break, and this fork is the only artifact that performs such an insertion.
+    # (b) exactly one Leaving/Continue menu enclosed by the silent band, (c) every OPEN-arm
+    # dotted `sequences.` read inside that same band, (d) no OPEN-arm notification -- an audit
+    # block landing outside the band, or carrying a banner, is silent on device and invisible
+    # to both validator gates.  Measured CLEAN on the pre-change Aware fork (2026-08-18), so a
+    # raise after this change is a finding about the insertion and must be investigated,
+    # never suppressed.  Asserted per fork, never inferred from the Dumb run: Dumb has no
+    # audit block to misplace.
+    verify_circle_zero_silence(actions)
+    # PHASE 11 (11-09), WR-10, the same first-arming one axis over.  The audit block emits
+    # SENTIENT-ONLY actions -- askllm, text.match, count, getitemfromlist, gettimebetweendates
+    # -- that no Dumb run ever sees, and axis 1 says a key the action does not define is
+    # silently ignored and reads empty at run time.  Duplicating that block doubles the
+    # exposure.  Also measured clean on the pre-change Aware fork.
+    verify_parameter_keys(actions)
     payload = plistlib.dumps(root, fmt=plistlib.FMT_XML, sort_keys=False)
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=TARGET.parent, delete=False) as tmp:
