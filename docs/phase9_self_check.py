@@ -166,6 +166,43 @@ def _strip_persisting_save(actions):
     return pre_fix, removed
 
 
+def _nest_persisting_save(actions):
+    """A deep copy of `actions` with the persisting save pair sunk one IF arm deeper.
+
+    THE SECOND DEFECT SHAPE, added after 16-REVIEW CR-01.  _strip_persisting_save() above
+    removes the pair outright; that is only the crudest way to break the invariant.  The
+    subtler one -- and the one that actually got past the guard -- keeps the save in the
+    artifact but moves it inside a nested conditional, so it is still emitted, still sources
+    `State`, and still precedes the apply in ACTION ORDER, while sitting on a branch that
+    need not run.  The old unscoped `pending.clear()` accepted that shape silently.
+
+    Located BY CONTENT exactly as the stripper is, and built from the REAL generator output,
+    so it cannot drift from what dimming()/silence() emit.  The wrapper is a real
+    bse.if_block()/bse.end_if() pair, not a hand-rolled dict.
+
+    Returns (nested_actions, nested_pair_count).  A zero count means the fixture reproduced
+    nothing and the caller must treat that as a failure, not as a pass.
+    """
+    nested = copy.deepcopy(actions)
+    count = 0
+    for index in range(len(nested) - 1, -1, -1):
+        item = nested[index]
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.documentpicker.save":
+            continue
+        if index + 1 >= len(nested) or index == 0:
+            continue
+        applies = nested[index + 1].get("WFWorkflowActionIdentifier") in {
+            "is.workflow.actions.setbrightness", "is.workflow.actions.setvolume"}
+        namer = nested[index - 1]
+        names_state = (namer.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setitemname"
+                       and namer.get("WFWorkflowActionParameters", {}).get("WFName") == "state.json")
+        if applies and names_state:
+            group, opener = bse.if_block("Something Else", 2, number=0)
+            nested[index - 1:index + 1] = [opener, namer, item, bse.end_if(group)]
+            count += 1
+    return nested, count
+
+
 def capture_persistence_negative_control() -> None:
     """Prove bse.verify_capture_persistence() raises when the persisting save is removed.
 
@@ -198,6 +235,25 @@ def capture_persistence_negative_control() -> None:
             f"persisting save removed -- the negative control does not reproduce the P0 "
             f"(a capture written only into the State variable, then an apply), so it "
             f"cannot prove the guard is load-bearing")
+
+        # Second defect shape (16-REVIEW CR-01): the save is still emitted, still sources
+        # `State`, and still precedes the apply in action order -- but one IF arm deeper,
+        # so it need not run on the path that reaches the apply. The guard MUST raise.
+        # This is the case the unscoped pending.clear() accepted silently.
+        nested, count = _nest_persisting_save(post_fix)
+        assert count == 1, (
+            f"{name}(): expected to sink exactly one state.json save into a nested arm, "
+            f"sank {count} -- the fixture no longer reproduces the nested-save bypass")
+        raised = False
+        try:
+            bse.verify_capture_persistence(nested)
+        except SystemExit:
+            raised = True
+        assert raised, (
+            f"verify_capture_persistence() did NOT raise against {name}() with the "
+            f"persisting save sunk one arm deeper -- the arm-scoped clear is not "
+            f"load-bearing, and a save on an untaken branch can again vouch for a "
+            f"capture it never persisted")
 
         # Post-fix state: the real generator output. The same guard must stay silent.
         try:
