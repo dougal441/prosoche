@@ -104,7 +104,70 @@ error. Specifically:
 **Failure evidence to capture.** A screenshot of any alert text verbatim, plus the full
 `state.json` contents immediately after the open.
 
-outcome:
+outcome: **PARTIAL — the bootstrap/state-shape half is CONFIRMED PASSING; the OPEN half is not
+yet exercised.** Read this split literally; do not promote it to a full pass.
+
+Device, 2026-08-17 11:10–11:15, Core `b07497ba`. Precondition verified rather than assumed:
+Files → iCloud Drive → Shortcuts was observed **empty** (no `PROSOCHE` folder, no `state.json`)
+immediately before the run. A **manual** run then bootstrapped and reached the control menu.
+
+**CONFIRMED — every structural assertion this test makes about the written file.** The full
+`state.json` (2 KB) was read on device and holds:
+
+- `schema_version: 4` ✓
+- `exit_events: []` ✓ — the key `06-CONTEXT.md` recorded as "entirely absent from the bootstrap
+  template", the axis-7 gap this phase exists to close. It is present and seeded.
+- `exit_selection_counter: 0` ✓
+- `active_session` seeded as the **four-leaf sentinel container**
+  `{"id": "null", "started_at": "null", "declared_duration_seconds": "null", "intention": "null"}` ✓
+- `pending_exit` seeded as `{"type": "null", "timestamp": "null"}` ✓
+- `settings_snapshot.brightness` and `.volume` each seeded with all three leaves
+  (`original_value` / `changed_at` / `changed_by_session_id`, all `"null"`) ✓
+- `exit_stats` seeded for **all six** exits, each `{count: 0, sum_return_seconds: 0, samples: []}` ✓
+- `profile_snapshot.create_target_url: "null"` seeded ✓, `enabled_exits` holding all six ✓
+- **No** "no value was found for dictionary key" alert and **no** "could not evaluate the key
+  path" alert appeared ✓
+
+The container/leaf discipline is visible in the file and is exactly as
+`.claude/CLAUDE.md` axis 7 specifies: **container leaves carry the STRING sentinel `"null"`**
+(gatable by a condition-5 string-is-not test) while genuinely scalar top-level fields
+(`last_open_at`, `last_close_at`, `last_app`, `cooldown_until`, `note_content_hash`,
+`last_model_message`) carry **real JSON `null`**. That asymmetry is deliberate and correct here.
+
+**NOW CONFIRMED — a real OPEN was driven through the Personal Automation (2026-08-18 08:16).**
+`AliExpress` (one of the two tracked apps, read out of the automation's own app list) was launched
+from Spotlight. The `App Is Opened` automation fired, PROSOCHĒ ran, and `state.json` afterwards
+reads:
+
+- `active_session.id: "session-1787041019-63888487"` — a **live, non-null session id** ✓
+- `active_session.started_at: 1787041019` ✓
+- `active_session.declared_duration_seconds: null` (correct — no contract was declared) ✓
+- `last_open_at: 1787041019`, `last_app: "tracked"` ✓
+- `pressure: 0.3333…`, `gravity: 0.3333…` — Pressure accumulated from the open ✓
+- `circle: 0` — the **silent band**, so nothing was shown ✓
+- **No** "no value was found for dictionary key" alert, **no** "could not evaluate the key path"
+  alert ✓
+
+So `active_session` is no longer the four-leaf sentinel: it is a live object, which is precisely
+the assertion that was outstanding. **Test 1 is now a full PASS.**
+
+TWO ANOMALIES observed in the same file, recorded rather than swept:
+
+1. **`opens_today: 2` after a single app launch.** Only one deliberate open occurred. Either the
+   `App Is Opened` automation fired twice for one launch, or the open was double-counted. This is
+   adjacent to the secondary candidate already flagged in `04-UAT.md` gap G-04-3 — that OPEN's
+   debounce keys off a single global `last_open_at` rather than per-tracked-app. Worth settling,
+   because every Pressure figure downstream inherits the error.
+2. **`heat` serialises as the STRING `"0"`** while `pressure` and `gravity` are numbers. Same
+   axis-6 boolean/number/string coercion family as the `voice_enabled` defect recorded in
+   `07-UAT.md` Test 6, and dangerous for the same reason: a numeric comparison against a
+   text-typed operand renders red in the editor, is structurally valid in the file, and fails at
+   runtime.
+
+Recorded caveat: `panic_escape_enabled` serialises as the number `1` while `voice_enabled`
+serialises as the boolean `true`. Both are readable, so this is not a defect on its face, but
+the inconsistency is noted here because a boolean-vs-number coercion is exactly the sort of
+thing axis 6 turns into a runtime operand-type failure later.
 
 ---
 
