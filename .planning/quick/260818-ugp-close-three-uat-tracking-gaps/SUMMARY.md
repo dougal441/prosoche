@@ -81,3 +81,32 @@ The parser fix edits the installed GSD runtime, which is **global to this machin
 not scoped to this project. A `gsd-update` may overwrite it; `/gsd-reapply-patches`
 is the mechanism for re-merging, and the backup is at `uat.cjs.bak-20260818`. Worth
 upstreaming — both defects are generic, not project-specific.
+
+## Addendum — `audit-open` carried the same defect
+
+Running `gsd-tools audit-open` after the `uat.cjs` fix showed Phases 12 and 13 as
+"0 pending scenarios" while `audit-uat` reported 12 and 8. `lib/audit.cjs` counts
+open scenarios with its own independent regex:
+
+```js
+const pendingMatches = (content.match(/result:\s*(?:pending|\[pending\])/gi) || []).length;
+```
+
+Same blindness to the `outcome:` convention, in a second tool. Patched with the same
+empty-vs-filled outcome scan (backup `audit.cjs.bak-20260818`). The two tools now
+agree:
+
+| phase | audit-open before | after |
+|---|---:|---:|
+| 04 | 4 | 4 |
+| 05 | 13 | 13 |
+| 06 | 14 | 14 |
+| 07 | 6 | 6 |
+| 09 | 11 | 11 |
+| 10 | **0** | **6** |
+| 12 | **0** | **12** |
+| 13 | **0** | **8** |
+
+Worth noting for upstreaming: the defect is that *each* consumer re-implements
+outstanding-item detection with its own regex. A shared predicate would have made
+this a one-line fix instead of two.
