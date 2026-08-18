@@ -766,7 +766,7 @@ whitelist anything named `"Voice"` forever.
 **Severity:** major
 **Requirements**: CIRC-08, CIRC-09, CIRC-14, DIST-01
 **Depends on:** Phase 11
-**Plans:** 2/5 plans executed
+**Plans:** 3/5 plans executed
 
 Plans:
 **Wave 1**
@@ -776,7 +776,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 15-03-PLAN.md — normalise `voice_enabled` to numeric `1`/`0` at the bootstrap writer, bump `schema_version` 4→5, add `verify_voice_enabled_seed()` (D-05)
+- [x] 15-03-PLAN.md — normalise `voice_enabled` to numeric `1`/`0` at the bootstrap writer, bump `schema_version` 4→5, add `verify_voice_enabled_seed()` (D-05)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
