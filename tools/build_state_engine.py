@@ -2502,14 +2502,19 @@ def verify_voice_path_volume_silence(actions):
           device volume to make The Voice audible, which is exactly the startling, unrequested
           output SAFE-02 forbids.
 
-    NEGATIVE CONTROL (measured 2026-08-18 on this exact build; both mutations reverted after
-    the failure was observed):
-      (a) inserting a volume write immediately before the speaktext action in voice() ->
-          assertion (3) raised, naming the offending site and the startling-audio-output
-          failure it prevents;
-      (b) pointing the 'Loud Mirror' tuple entry at a function emitting no dispatchable branch
-          (Circle 8's dispatch resolves to zero branches) -> assertion (1) raised rather than
-          the build exiting 0 with a vacuous pass.
+    NEGATIVE CONTROL (measured 2026-08-18):
+      (a) inserting a volume write immediately before voice()'s speaktext action (temporarily
+          edited into voice() itself, then `python3 tools/build_state_engine.py` run for real
+          and reverted) -> exited non-zero, naming all 11 offending sites and the
+          startling-audio-output failure they cause;
+      (b) renaming every 'Loud Mirror' dispatch branch's tested literal so no branch resolves
+          to that name (measured against an IN-MEMORY deepcopy, calling this guard directly --
+          run through the real build this would first hit verify_dispatch_coverage()'s orphan
+          check on the resulting Config/branch mismatch, which is a different guard entirely;
+          the in-memory call isolates THIS guard's own vacuity assertion) -> raised naming
+          exactly assertion (1)'s failure: "no dispatch branch resolves to 'Loud Mirror' ...
+          this guard cannot tell whether the Voice path ever writes device volume", rather
+          than the build exiting 0 with a vacuous pass.
 
     DELIBERATE NON-COVERAGE.  This guard covers volume only.  Brightness is owned by
     verify_restore_gates() and verify_capture_persistence() and is deliberately out of scope
