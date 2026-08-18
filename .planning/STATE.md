@@ -315,9 +315,20 @@ Items acknowledged and carried forward from previous milestone close:
 
 | Phase | State | Resume |
 |-------|-------|--------|
+| 11 | verification_deferred_human | /gsd-verify-work 11 |
 | 12 | verification_deferred_human | /gsd-verify-work 12 |
 | 13 | verification_deferred_human | /gsd-verify-work 13 |
 | 16 | verification_deferred_human | /gsd-verify-work 16 |
+
+**Phase 11 (added 2026-08-18).** Gap-closure waves 7-10 executed, code-reviewed and fix-passed
+twice; re-verification scored **18/21, `human_needed`**, with all five original gaps CLOSED and each
+closure negative-controlled. It is not `passed` for one reason, and it is a good reason: plan 11-08
+made **44 environmental actions per fork reachable for the first time**, and none has executed on
+hardware — `Set Brightness` cannot run on a simulator at all, and the Note path needs an app the
+simulator lacks. Structural fixes were deliberately not promoted into behavioural passes.
+`11-UAT.md` records 6 items: 5 BLOCKED on DIST-03, 1 resolved without a device (the stale
+`16-UAT.md` pin, re-pinned in `7352886`). Tests 1-2 overlap `16-UAT.md` and should be run in the
+same session — run `16-UAT.md` first, it is the fuller instrument.
 
 Phase 13's verifier returned `human_needed` at **25/27 must-haves verified, 0 failed**. The only two
 outstanding are device-gated and were correctly abstained rather than promoted on structural
