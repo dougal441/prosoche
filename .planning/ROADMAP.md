@@ -466,7 +466,7 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 **Severity:** major
 **Requirements**: AUDIT-02, CIRC-02, CIRC-06, CIRC-08, ROOM-01, ROOM-02, DIST-01, DIST-02
 **Depends on:** Phase 10
-**Plans:** 9/10 plans executed
+**Plans:** 10/10 plans executed
 
 **Gap closure (waves 7–10).** `11-VERIFICATION.md` scored 13/18 with three failed truths and two
 partials. Plans `11-07` … `11-10` close all five and are strictly sequential, because every one of
@@ -517,7 +517,7 @@ Plans:
 
 **Wave 10** *(blocked on Wave 9 completion)*
 
-- [ ] 11-10-PLAN.md — GAP 4 + GAP 5: the Panic Escape gate guard resolved by provenance; two decorative floors moved to measured values; both interim stand-ins recorded where the prohibition requires (wave 10)
+- [x] 11-10-PLAN.md — GAP 4 + GAP 5: the Panic Escape gate guard resolved by provenance; two decorative floors moved to measured values; both interim stand-ins recorded where the prohibition requires (wave 10)
 
 ### Phase 12: State-shape sentinel gaps — exit_events and active_session
 
