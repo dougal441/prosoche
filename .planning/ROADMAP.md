@@ -769,12 +769,28 @@ whitelist anything named `"Voice"` forever.
 **Plans:** 5 plans
 
 Plans:
+**Wave 1**
 
 - [ ] 15-01-PLAN.md — TRACER: split `mirror_and_voice()` into `mirror()` (Circle 7 shows) and `voice()` (Circle 8 speaks), retarget the dispatch tuple, add `verify_speaktext_placement()`, rebuild and gate-A both forks
 - [ ] 15-02-PLAN.md — rung-2 simulator probe discriminating the inherited axis-4 unfilled picker across `list` / `getitemfromlist` / `speaktext`, then route the verdict per D-04
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 15-03-PLAN.md — normalise `voice_enabled` to numeric `1`/`0` at the bootstrap writer, bump `schema_version` 4→5, add `verify_voice_enabled_seed()` (D-05)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 15-04-PLAN.md — `verify_voice_gates()`, `verify_voice_path_volume_silence()`, and the "no two entry names are action-equal" assertion in `docs/sequence_dispatch_check.py`
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
 - [ ] 15-05-PLAN.md — rebuild, sign and payload-assert both forks, re-derive MANIFEST, discharge the recording duty into BUILD-NOTES §36, author `15-UAT.md`
+
+**Cross-cutting constraints:**
+
+- Circle 9 still dispatches `Frozen` in all three sequences and `ice_start()` is untouched (CIRC-09).
+- Two distinct sequence-entry names never resolve to action-equal dispatch branch bodies, so an escalation on paper is an escalation in emitted actions (CIRC-14, edge: adjacency).
+- Every Mirror template list carries at least 9 rows so `WFItemIndex = Circle Next` (1..9) is always in range, and no user-facing surface — alert or speech — is reachable from a Circle-0 OPEN.
 
 ### Phase 16: Dimming and Silence as distinct device-proven Circles
 

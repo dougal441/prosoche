@@ -49,47 +49,41 @@ whitelist anything named `"Voice"` forever.
 
 ### Locked Decisions
 
-**D-01 — Circle 8 with `voice_enabled = 0` degrades to a Mirror-equivalent alert; it never
-skips.** Confirmed by the user 2026-08-18, after `15-RESEARCH.md` surfaced it as decision
-D-15-A. The alert is emitted before the speech gate, so the `otherwise` arm is
-`is.workflow.actions.nothing`. Rationale: a Circle that renders the menu, takes `Continue`,
-and does nothing is precisely the defect this phase exists to close — the cause being a user
-setting rather than a dispatch miss does not change what the user experiences. The import
-question ("May PROSOCHĒ speak to you at the highest circles?") is consent to be spoken to,
-not consent to have Circle 8. **Accepted cost, recorded rather than papered over:** with voice
-off, Circles 7 and 8 become indistinguishable to the user — CIRC-14 is satisfied by
-construction but not experienced. Distinct voice-off copy for Circle 8 was offered and
-declined; no requirement asks for it.
+All six were confirmed with the user on 2026-08-18, after `15-RESEARCH.md` surfaced them. They are
+not open.
 
-**D-02 — Speech is removed from Circle 7 (Mirror).** Confirmed by the user 2026-08-18.
-Circle 7 shows the reflection; Circle 8 speaks the same reflection. Grounded in canonical
-strategy §11 Primitive G (no speech in the Mirror's description) and §11 Primitive H ("the
-Mirror becomes spoken once"). This is what satisfies CIRC-14 and what makes Circle 8 an
-escalation at all. **This is a visible behaviour change** for existing `voice_enabled = 1`
-users — Circle 7 goes quiet. Accepted knowingly.
-
-**D-03 — The escalation is the modality, not the words.** Circle 8 uses the same 30
-fact-gated Mirror templates as Circle 7. No new copy, no longer copy.
-
-**D-04 — The inherited axis-4 unfilled-picker defect: discriminate early, then branch.**
-Confirmed by the user 2026-08-18. The rung-2 alert-free simulator probe (shape in
-`15-RESEARCH.md` § Code Examples) runs early in the phase to identify which of
-`is.workflow.actions.list` / `getitemfromlist` / `speaktext` carries it. If the result is a
-one-line class fix, absorb it into this phase. If it is larger, record the finding and mark
-CIRC-08 **device-unproven** rather than silently implying otherwise. Doing the rewrite blind
-guarantees a rework, which is why the discrimination belongs here even if the fix does not.
-
-**D-05 — `voice_enabled` is normalised to numeric `1`/`0` at the writer, with a
-`schema_version` bump.** Bootstrap currently emits the unquoted JSON boolean `true`/`false`
-while `Toggle Voice` emits `1`/`0`, and boolean→`WFNumberContentItem` coercion is unaudited
-(nine-axes rule 6). Normalising the writer makes the open question moot rather than spending
-a device session to answer it.
-
-**D-06 — The `Spoken This Run` guard stays verbatim.** The ROADMAP's warning about it is
-retired: the two OPEN-arm `primitive_dispatch()` renderings are mutually exclusive arms of the
-Panic Escape conditional, the nine MANUAL renderings are menu cases, and condition 4 matches
-exactly one branch — so Mirror and Loud Mirror can never both fire in one run. The guard *is*
-CIRC-08's "at most once per run".
+- **D-01 — Voice-off Circle 8 degrades, never skips** When `voice_enabled = 0`, Circle 8 shows a
+  Mirror-equivalent alert. The alert is emitted before the speech gate, so the `otherwise` arm is
+  `is.workflow.actions.nothing`. Rationale: a Circle that renders the menu, takes `Continue`, and does
+  nothing is precisely the defect this phase exists to close — the cause being a user setting rather
+  than a dispatch miss does not change what the user experiences. The import question ("May PROSOCHĒ
+  speak to you at the highest circles?") is consent to be spoken to, not consent to have Circle 8.
+  Accepted cost, recorded rather than papered over: with voice off, Circles 7 and 8 become
+  indistinguishable to the user — CIRC-14 is satisfied by construction but not experienced. Distinct
+  voice-off copy for Circle 8 was offered and declined; no requirement asks for it.
+- **D-02 — Speech is removed from Circle 7** Circle 7 shows the reflection; Circle 8 speaks the same
+  reflection. Grounded in canonical strategy §11 Primitive G (no speech in the Mirror's description)
+  and §11 Primitive H ("the Mirror becomes spoken once"). This is what satisfies CIRC-14 and what
+  makes Circle 8 an escalation at all. This is a visible behaviour change for existing
+  `voice_enabled = 1` users — Circle 7 goes quiet. Accepted knowingly.
+- **D-03 — The escalation is the modality, not the words** Circle 8 uses the same 30 fact-gated
+  Mirror templates as Circle 7. No new copy, no longer copy.
+- **D-04 — Axis-4 defect: discriminate early, then branch** The rung-2 alert-free simulator probe
+  (shape in `15-RESEARCH.md` § Code Examples) runs early in the phase to identify which of
+  `is.workflow.actions.list` / `getitemfromlist` / `speaktext` carries the unfilled picker. If the
+  result is a one-line class fix, absorb it into this phase. If it is larger, record the finding and
+  mark CIRC-08 device-unproven rather than silently implying otherwise. Doing the rewrite blind
+  guarantees a rework, which is why the discrimination belongs here even if the fix does not.
+- **D-05 — voice_enabled normalised to numeric, with a schema bump** The writer emits `1`/`0` and
+  `schema_version` bumps. Bootstrap currently emits the unquoted JSON boolean `true`/`false` while
+  `Toggle Voice` emits `1`/`0`, and boolean-to-`WFNumberContentItem` coercion is unaudited (nine-axes
+  rule 6). Normalising the writer makes the open question moot rather than spending a device session
+  to answer it.
+- **D-06 — The Spoken This Run guard stays verbatim** The ROADMAP's warning about it is retired: the
+  two OPEN-arm `primitive_dispatch()` renderings are mutually exclusive arms of the Panic Escape
+  conditional, the nine MANUAL renderings are menu cases, and condition 4 matches exactly one branch —
+  so Mirror and Loud Mirror can never both fire in one run. The guard *is* CIRC-08's "at most once per
+  run".
 
 ### Claude's Discretion
 All remaining implementation choices are at Claude's discretion — the discuss phase was
