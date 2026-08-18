@@ -84,6 +84,15 @@ REQUIRED_SYMBOLS = (
     # Listed here for the same reason as the three above: deleting the guard is invisible at
     # runtime and every count in this file would stay green.
     "verify_panic_escape_isolation",  # build guard: no Panic Escape gate encloses Emergency Restore
+    # PHASE 11 CODE REVIEW (WR-22).  The isolation guard above and this one are ONE GUARD
+    # PAIR -- isolation asks whether a Panic Escape gate encloses Emergency Restore, this asks
+    # whether the flag those gates read is seeded and numerically tested at all -- and only
+    # one of them was listed.  It is also the home of half the WR-19 fix (the zero-gates
+    # raise).  Measured 2026-08-18: with verify_panic_escape_seed(actions) deleted from main()
+    # in BOTH builders, both builds exited 0 and all 13 checkers exited 0, so that half of
+    # WR-19 was protected by nothing at all.  Listed here for the same reason as the four
+    # above, and now covered by CALLED_GUARDS by construction rather than by remembering.
+    "verify_panic_escape_seed",  # build guard: the Panic Escape flag is seeded and numerically gated
 )
 
 # PHASE 11 CODE REVIEW (WR-17).  REQUIRED_SYMBOLS above proves each guard is DEFINED and
@@ -96,16 +105,18 @@ REQUIRED_SYMBOLS = (
 # from main() in BOTH builders and both function definitions left untouched, both builds exited
 # 0 and all 13 checkers exited 0.
 #
-# These five are the guards among REQUIRED_SYMBOLS, and both builders call all five today.  A
-# guard listed here must be CALLED, not merely importable; a guard that genuinely cannot apply
-# to a fork should be excluded by name with a written reason rather than dropped silently.
-CALLED_GUARDS = (
-    "verify_state_seed",
-    "verify_restore_gates",
-    "verify_capture_persistence",
-    "verify_environmental_reachability",
-    "verify_panic_escape_isolation",
-)
+# DERIVED, NEVER COPIED -- PHASE 11 CODE REVIEW (WR-22).  The first version of this tuple was
+# a hand-typed duplicate of exactly this comprehension, with nothing reconciling the two.  That
+# is this archive's own recurring defect class (WR-04, WR-05, WR-06, WR-14: coupled literals
+# with no reconciliation), reintroduced by the fix for a finding about vacuous guards: adding a
+# sixth entry to REQUIRED_SYMBOLS -- which plans 11-08 and 11-10 each did -- would land it in
+# the symbol check, silently miss the call-site check, and quietly falsify the promise below
+# for it.  Deriving the list makes a future entry covered by construction.
+#
+# A guard listed here must be CALLED, not merely importable; a guard that genuinely cannot
+# apply to a fork should be excluded by name with a written reason rather than dropped
+# silently.  There are no such exclusions today: both builders call all six.
+CALLED_GUARDS = tuple(name for name in REQUIRED_SYMBOLS if name.startswith("verify_"))
 
 SET_BRIGHTNESS = "is.workflow.actions.setbrightness"
 SET_VOLUME = "is.workflow.actions.setvolume"
