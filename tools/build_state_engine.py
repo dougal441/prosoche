@@ -997,6 +997,20 @@ def primitive_dispatch(circle_name: str | None = None):
     # that does not exist yet: mirror_and_voice() already carries the once-per-run and
     # voice-enabled gates CIRC-08 requires.  PHASE 15 replaces it with the designed Voice
     # primitive; until then Circle 8 is a real dispatch, not the designed one.
+    #
+    # "Eject" (Circle 6 in all three sequences) is the SECOND DELIBERATE INTERIM, and in
+    # Classic and Ambient only.  BD-06 gives that slot to `Redirect` there and to `Eject` in
+    # BlackMirror; `Redirect` -- Exile routed INTO a deterministically selected exit rather
+    # than straight to the Home Screen -- has no implementation, and a branch no sequence names
+    # is a build failure under verify_dispatch_coverage(), so a `Redirect` branch cannot be
+    # emitted before a sequence can name it and a sequence cannot name it before the branch
+    # exists.  All three sequences therefore hold `Eject` at Circle 6 until PHASE 17, which
+    # emits the `Redirect` branch and flips exactly two cells, `Classic[5]` and `Ambient[5]`;
+    # `BlackMirror[5]` is already correct and does not move.  Recorded here as well as in
+    # docs/BUILD-NOTES.md §34 because plan 11-02's prohibition requires an interim to be named
+    # as interim in the generator's OWN comment text -- §34 previously filled this cell with an
+    # absence ("emits no `Redirect` branch at all"), which left a reader working from the
+    # generator alone with no way to learn that this tuple entry is temporary.
     for name, implementation in (("Pause", knock), ("Black and White", ash), ("Silence", silence),
                                  ("Intention", confession), ("Dim", dimming), ("Eject", exile),
                                  ("Mirror", mirror_and_voice), ("Loud Mirror", mirror_and_voice),
