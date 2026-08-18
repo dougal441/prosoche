@@ -3314,6 +3314,28 @@ def seed_panic_escape(actions):
                       PANIC_ESCAPE_ANCHOR + f'\n{indent}"{PANIC_ESCAPE_KEY}": {PANIC_ESCAPE_SEED},')
 
 
+def _panic_escape_variables(actions):
+    """Every named variable whose PROVENANCE resolves to the Panic Escape state key.
+
+    The one shared resolver behind both Panic Escape guards.  It exists so that neither
+    guard has to name a variable, because a NAME is not a contract: the emitter and the
+    guard sat forty lines apart in this same file and shared no constant, so renaming the
+    emitter silently disconnected the guard (see verify_panic_escape_isolation() and
+    verify_panic_escape_seed() assertion (3) for the negative control that proved it).
+    PANIC_ESCAPE_KEY is the shared constant; the emitted variable name is an implementation
+    detail that either emitter may change freely.
+
+    Resolution runs through _read_variable_keys(), which walks read_value()'s emitted
+    getvalueforkey -> gettext -> setvariable chain backwards, accepting BOTH the bare
+    descriptor and the attachmentsByRange form normalise_string_envelopes() rewrites it
+    into.  Reading only the bare form returns no provenance, and a guard resolved from an
+    empty set is decoration -- which is why both callers assert the set is non-empty rather
+    than iterating over nothing and reporting success.
+    """
+    return {name for name, keys in _read_variable_keys(actions).items()
+            if PANIC_ESCAPE_KEY in keys}
+
+
 def verify_panic_escape_seed(actions):
     """Fail the build unless the Panic Escape flag is seeded flat and read flat and numerically.
 
@@ -3323,9 +3345,33 @@ def verify_panic_escape_seed(actions):
           is simply not there;
       (2) no read of it is DOTTED -- a dotted read is unnecessary for a top-level field and
           would hard-error on the very state.json shapes the flat form tolerates;
-      (3) every conditional gating it uses a NUMERIC condition code, never 100/101 -- an
-          existence gate reads TRUE for the string "null" and for "", so it could not
-          express "the user removed the bypass".
+      (3) every conditional gating a variable READ FROM THIS KEY uses a NUMERIC condition
+          code, never 100/101 -- an existence gate reads TRUE for the string "null" and for
+          "", so it could not express "the user removed the bypass".  The guarded set is
+          resolved BY PROVENANCE (_panic_escape_variables) and the set itself is asserted
+          non-empty, so neither a rename nor a disconnection can make this pass vacuously.
+
+    WHY (3) IS RESOLVED BY PROVENANCE, and the negative control that forced the change.
+    Until this plan (11-10) assertion (3) matched a single bare literal, `"Panic Escape
+    Enabled"`, held nowhere as a shared constant -- universal_leaving() carried its own copy
+    of that string forty lines away.  The original review ran the precise drift the assertion
+    exists to catch: rename ONLY the emitter's variable and flip its gate to the exact
+    existence test this assertion forbids, leave the guard's literal untouched -- and the
+    build exited 0 with every structural checker green.  The guard was vacuous under exactly
+    its own failure mode.
+
+    It was also INCOMPLETE.  The literal named one of three gates.  The two it did not cover
+    are panic_escape_branch()'s `still_on_g` and `stored_off_g`, which decide whether the
+    flag is WRITTEN, and an existence test there is strictly worse than one on the bypass
+    gate: it writes the flag on a run where the user changed nothing, in either direction.
+    Provenance covers all three without naming any of them.
+
+    NOT EVERY Panic-Escape-adjacent gate is in the set, and that is correct.
+    `Manual Panic Escape Requested` gates panic_escape_branch()'s outer block but is set from
+    a MENU SELECTION, never read from the Panic Escape state key, so it has no provenance
+    here and is legitimately absent.  Its numeric shape is not this assertion's business;
+    adding it back by a bare name literal would reintroduce precisely the coupling this
+    rewrite removes.
 
     HISTORICAL NOTE.  Until Phase 12 (12-04), verify_state_seed()'s read-side scan was
     scoped to keys rooted at `settings_snapshot`, so it would not have noticed an unseeded
@@ -3351,6 +3397,15 @@ def verify_panic_escape_seed(actions):
             "leaves universal_leaving()'s gate reading a key that is not there, so the "
             "removal path 11-05 builds is dead on every device")
 
+    guarded = _panic_escape_variables(actions)
+    if not guarded:
+        raise SystemExit(
+            f"no variable in the artifact resolves to {PANIC_ESCAPE_KEY!r} by provenance, so "
+            "assertion (3) below would inspect nothing and report success -- either this build "
+            "dropped the Panic Escape feature entirely, or a rename disconnected the guard from "
+            "the emitter.  The previous name-matched version of this guard reported BOTH of "
+            "those as a clean build")
+
     dotted, existence = [], []
     for index, item in enumerate(actions):
         identifier = item.get("WFWorkflowActionIdentifier")
@@ -3360,9 +3415,9 @@ def verify_panic_escape_seed(actions):
             if PANIC_ESCAPE_KEY in key and key != PANIC_ESCAPE_KEY:
                 dotted.append((index, key))
         if identifier == "is.workflow.actions.conditional" and parameters.get("WFControlFlowMode") == 0:
-            name = parameters.get("WFInput", {}).get("Variable", {}).get("Value", {}).get("VariableName")
-            if name == "Panic Escape Enabled" and parameters.get("WFCondition") not in NUMERIC_CONDITION_CODES:
-                existence.append((index, parameters.get("WFCondition")))
+            name = _tested_variable(parameters)
+            if name in guarded and parameters.get("WFCondition") not in NUMERIC_CONDITION_CODES:
+                existence.append((index, name, parameters.get("WFCondition")))
     if dotted:
         raise SystemExit(
             f"{PANIC_ESCAPE_KEY} is read through a composite or dotted key "
@@ -3372,10 +3427,140 @@ def verify_panic_escape_seed(actions):
     if existence:
         raise SystemExit(
             "a Panic Escape gate uses a non-numeric condition code "
-            + "; ".join(f"action {i}: condition {code}" for i, code in existence)
-            + " -- an existence test reads TRUE for the string \"null\" and for an empty "
-              "string, so it cannot distinguish a removed bypass from a present one; the "
-              "gate must be a numeric '> 0' test")
+            + "; ".join(f"action {i}: {name!r} at condition {code}" for i, name, code in existence)
+            + f" -- the variable is read from {PANIC_ESCAPE_KEY!r}, and an existence test reads "
+              "TRUE for the string \"null\" and for an empty string, so it cannot distinguish a "
+              "removed bypass from a present one; the gate must be a numeric '> 0' test.  On the "
+              "two gates inside panic_escape_branch() this also WRITES the flag on a run where "
+              "the user changed nothing")
+
+
+# The literal that names the safety hatch on every surface it appears on.  ONE constant, so
+# the guard below and any future emitter cannot drift apart the way the Panic Escape variable
+# name did -- that drift is the whole reason this file now resolves gates by provenance.
+EMERGENCY_RESTORE_SURFACE = "Emergency Restore"
+
+
+def _menu_row_text(value):
+    """The plain text of a WFMenuItems row or a WFMenuItemTitle, literal or wrapped.
+
+    Both shapes are accepted deliberately.  Today all four Emergency Restore surfaces are
+    bare-string literals, which is correct per parameter-defect axis 8 (a row carrying no
+    attachment is a LITERAL row and takes no wrapper).  But if a future edit ever gives one of
+    them a variable -- and therefore the {"WFItemType", "WFValue"} row framing -- a
+    literal-only reader would stop seeing that surface, and this guard would silently start
+    counting three where it should count four.  Under-counting a safety surface is exactly the
+    failure mode the no-surface-found branch below exists to prevent, so the reader refuses to
+    be the thing that causes it.
+    """
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        holder = value.get("WFValue", value)
+        inner = holder.get("Value") if isinstance(holder, dict) else None
+        if isinstance(inner, dict) and isinstance(inner.get("string"), str):
+            return inner["string"]
+    return None
+
+
+def _emergency_restore_surfaces(actions):
+    """Every menu surface that offers Emergency Restore: (index, what kind of surface).
+
+    Two kinds, and both are needed.  A mode-0 choosefrommenu DECLARES the option in its
+    WFMenuItems array -- that is what the user sees and can tap.  A mode-1 case carries the
+    matching WFMenuItemTitle and is where the work actually happens.  Enclosing either one in
+    a Panic Escape conditional strands the user: hiding the row removes the tap target, and
+    enclosing the case makes the tap do nothing.
+    """
+    surfaces = []
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.choosefrommenu":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        mode = parameters.get("WFControlFlowMode")
+        if mode == 0:
+            rows = parameters.get("WFMenuItems") or []
+            if any(_menu_row_text(row) == EMERGENCY_RESTORE_SURFACE for row in rows):
+                surfaces.append((index, "WFMenuItems"))
+        elif mode == 1 and _menu_row_text(parameters.get("WFMenuItemTitle")) == EMERGENCY_RESTORE_SURFACE:
+            surfaces.append((index, "case title"))
+    return surfaces
+
+
+def verify_panic_escape_isolation(actions):
+    """Fail the build if a Panic Escape conditional encloses an Emergency Restore surface.
+
+    THREAT T-11-22, the only `critical` this phase raises, stated as the user experiences it:
+    a user who removed the Panic Escape bypass and then cannot reach Emergency Restore is
+    STRANDED inside an intervention -- on a dimmed screen or a silenced device, with no way
+    back to the settings the intervention changed.  Panic Escape is a BEHAVIOURAL bypass and
+    is removable by design; Emergency Restore is a SAFETY mechanism and is not.  The whole
+    mitigation is that the two are separate, so a flag that removes the first must never be
+    able to remove the second.
+
+    WHY THIS IS A GUARD AND NOT A MEASUREMENT.  Until this plan (11-10) T-11-22's verification
+    was a hand-measurement recorded in artifacts/shortcuts/MANIFEST.md prose (11-VERIFICATION.md
+    item 12).  It was correct when taken and would not have been re-run by the next change to
+    universal_leaving() or panic_escape_branch() -- every other invariant of comparable weight
+    in this file has an executable guard.  Plan 11-08 made the stranding state materially more
+    reachable by re-gating dimming() and silence() onto the captured-original leaf: before it,
+    both bodies sat in a permanently-true gate's never-taken arm and no intervention could
+    actually dim a screen or quieten a device, so there was nothing to be stranded by.
+
+    WHAT IT ASSERTS, and both directions matter:
+      (1) at least one Emergency Restore surface EXISTS.  A guard that reports clean when the
+          safety hatch has been deleted is worse than no guard -- it converts a removal into a
+          green build.  Zero surfaces is a failure, not a vacuous pass;
+      (2) no surface's enclosure intersects the Panic-Escape grouping identifiers.
+
+    HOW THE PANIC-ESCAPE GROUPS ARE FOUND: from _panic_escape_variables(), the same
+    provenance-resolved set verify_panic_escape_seed() uses, mapped to the GroupingIdentifier
+    of every mode-0 conditional that tests one of them.  No variable name and no group UUID is
+    written down anywhere in this guard, so renaming either survives it.  Enclosure comes from
+    enclosing_groups(), which is structural (a stack walk over control-flow endpoints) rather
+    than index-based, so it does not drift when a rebuild shifts every action index.
+
+    FULL enclosure is used, not true-arm-only enclosure: a surface inside the OTHERWISE arm of
+    a Panic Escape conditional is just as unreachable to the users in the other arm, so both
+    arms are disqualifying.  This is the opposite choice from
+    verify_environmental_reachability(), which tests the ARM precisely because its defect is a
+    polarity error; here the defect is enclosure of any kind.
+    """
+    guarded = _panic_escape_variables(actions)
+    if not guarded:
+        raise SystemExit(
+            f"no variable resolves to {PANIC_ESCAPE_KEY!r} by provenance, so no Panic Escape "
+            "group could be located and this guard would report Emergency Restore isolated "
+            "without having tested anything -- see verify_panic_escape_seed()")
+
+    groups = {item["WFWorkflowActionParameters"].get("GroupingIdentifier")
+              for item in actions
+              if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+              and item.get("WFWorkflowActionParameters", {}).get("WFControlFlowMode") == 0
+              and _tested_variable(item.get("WFWorkflowActionParameters", {})) in guarded}
+    groups.discard(None)  # a group-less conditional cannot enclose anything; never format None
+
+    surfaces = _emergency_restore_surfaces(actions)
+    if not surfaces:
+        raise SystemExit(
+            f"no {EMERGENCY_RESTORE_SURFACE!r} menu surface exists anywhere in the artifact -- "
+            "SAFE-05's safety hatch has been removed, and a user inside an intervention that "
+            "dimmed the screen or silenced the device has no way to put either back.  This "
+            "guard fails rather than reporting the remaining zero surfaces as un-enclosed")
+
+    enclosing = enclosing_groups(actions)
+    offenders = [(index, kind, sorted(set(enclosing[index]) & groups))
+                 for index, kind in surfaces if set(enclosing[index]) & groups]
+    if offenders:
+        raise SystemExit(
+            f"an {EMERGENCY_RESTORE_SURFACE!r} surface is enclosed by a Panic Escape "
+            "conditional "
+            + "; ".join(f"action {i} ({kind}) inside group(s) {', '.join(g)}"
+                        for i, kind, g in offenders)
+            + " -- Panic Escape is a removable behavioural bypass and Emergency Restore is a "
+              "safety mechanism that is not removable; gating the second on the first strands "
+              "a user who removed the bypass inside an intervention, on a dimmed screen or a "
+              "silenced device, with no way back (T-11-22, this phase's only critical threat)")
 
 
 # PHASE 12 (12-01) -- the per-exit rolling window and its selection counter.  Same STATE
@@ -5167,6 +5352,13 @@ def main():
     verify_state_seed(actions)
     verify_pending_exit_seed(actions)
     verify_panic_escape_seed(actions)
+    # Beside the seed guard because both resolve their targets through the SAME
+    # provenance set (_panic_escape_variables) and neither implies the other: that one asks
+    # whether every gate over the flag can DISTINGUISH a removed bypass from a present one,
+    # this one asks whether those same gates enclose the safety hatch that must survive the
+    # bypass being removed.  T-11-22 -- the phase's only critical -- and previously a hand
+    # measurement in MANIFEST.md that no future change would have re-run.
+    verify_panic_escape_isolation(actions)
     verify_exit_events_seed(actions)
     verify_active_session_seed(actions)
     verify_restore_gates(actions)

@@ -70,6 +70,18 @@ REQUIRED_SYMBOLS = (
     # proves the arm holding both can actually be TAKEN.  Delete it and the primitives can
     # silently return to doing nothing at all, with every count in this file still green.
     "verify_environmental_reachability",  # build guard: no environmental action sits in a dead arm
+    # PHASE 11 (11-10): the fourth axis, and the only one that is not about the write itself.
+    # The three guards above make the environmental change happen correctly; this one keeps the
+    # WAY OUT of it reachable.  SAFE-05 -- named in this file's own docstring as one of the two
+    # requirements the cancelled cut would have broken -- is Emergency Restore, and it is only
+    # a safety mechanism while a user can still reach it.  T-11-22, this phase's only
+    # `critical`: a user who removed the removable Panic Escape bypass and finds Emergency
+    # Restore gone with it is stranded inside an intervention, on a dimmed screen or a silenced
+    # device.  Until 11-08 that state was unreachable because both primitives sat in a dead
+    # arm; it is reachable now, which is what turned a latent separation into a live one.
+    # Listed here for the same reason as the three above: deleting the guard is invisible at
+    # runtime and every count in this file would stay green.
+    "verify_panic_escape_isolation",  # build guard: no Panic Escape gate encloses Emergency Restore
 )
 
 SET_BRIGHTNESS = "is.workflow.actions.setbrightness"

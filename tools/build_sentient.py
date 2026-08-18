@@ -30,6 +30,7 @@ from build_state_engine import (
     verify_no_removed_snapshot_leaf_reads,
     verify_numeric_operands,
     verify_output_names,
+    verify_panic_escape_isolation,
     verify_panic_escape_seed,
     verify_parameter_keys,
     verify_pending_exit_seed,
@@ -480,6 +481,18 @@ def main() -> None:
     # touch point here: the guard was already imported and already invoked.
     verify_pending_exit_seed(actions)
     verify_panic_escape_seed(actions)
+    # PHASE 11 (11-10).  T-11-22, the only `critical` this phase raises, asserted per fork
+    # rather than inferred from the Dumb run.  Sentient inherits both Emergency Restore menu
+    # surfaces and every Panic Escape conditional from the built Dumb source, so this asserts
+    # the fork lost neither -- but the case Dumb's own run structurally CANNOT see is a
+    # Sentient-only insertion: this fork adds its own conditionals and its own menu work, and
+    # one that enclosed an inherited Emergency Restore surface inside a Panic Escape group
+    # would strand an Aware-fork user who had removed the bypass inside an intervention, on a
+    # dimmed screen or a silenced device.  Nothing about that is visible to either validator
+    # gate, and 11-08 made the dim/silence state reachable for the first time.  The guard also
+    # fails when NO surface is found at all, so a fork that dropped the safety hatch entirely
+    # cannot read as a clean build.
+    verify_panic_escape_isolation(actions)
     verify_compound_value_reads(actions)
     verify_conditional_action_string(actions)
     # PHASE 13 (13-01).  Sentient forks the BUILT Dumb XML, so it inherits all 67
