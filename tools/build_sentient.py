@@ -38,6 +38,7 @@ from build_state_engine import (
     verify_restore_gates,
     verify_router_shape,
     verify_sentinel_gates,
+    verify_speaktext_placement,
     verify_state_seed,
     verify_string_envelopes,
 )
@@ -618,6 +619,12 @@ def main() -> None:
     # and the branches -- from the built Dumb source, so a fork that dropped or rewrote
     # either would produce a Circle that dispatches nothing, with no error anywhere.
     verify_dispatch_coverage(actions)
+    # PHASE 15 (15-01).  Armed here for the first time, beside verify_dispatch_coverage() for
+    # the same reason it sits beside it on Dumb: Sentient inherits both the 'Mirror' and 'Loud
+    # Mirror' dispatch branches from the built Core source, so this asserts the fork lost
+    # neither the split nor its placement -- a fork that dropped voice()'s speech or let
+    # mirror() regain it is exactly as invisible to both validator gates as the Core case.
+    verify_speaktext_placement(actions)
     # PHASE 16 CODE REVIEW (WR-01).  Armed here for the first time: 16-01 created this guard
     # FOR the GroupingIdentifier defect class and armed it on Dumb only, with no per-fork
     # reasoning recorded either way -- an omission, not a decision.  It matters MORE here.
