@@ -84,6 +84,27 @@ REQUIRED_SYMBOLS = (
     "verify_panic_escape_isolation",  # build guard: no Panic Escape gate encloses Emergency Restore
 )
 
+# PHASE 11 CODE REVIEW (WR-17).  REQUIRED_SYMBOLS above proves each guard is DEFINED and
+# callable.  It has never proved that a builder RUNS it, and those are different properties --
+# what disarms a guard in this codebase is deleting its CALL, not its definition.  So the
+# comments beside the two entries added this phase ("delete it and the primitives can silently
+# return to doing nothing at all, with every count in this file still green") described a
+# failure this file could not actually see.  Measured 2026-08-18: with
+# verify_environmental_reachability(actions) and verify_panic_escape_isolation(actions) deleted
+# from main() in BOTH builders and both function definitions left untouched, both builds exited
+# 0 and all 13 checkers exited 0.
+#
+# These five are the guards among REQUIRED_SYMBOLS, and both builders call all five today.  A
+# guard listed here must be CALLED, not merely importable; a guard that genuinely cannot apply
+# to a fork should be excluded by name with a written reason rather than dropped silently.
+CALLED_GUARDS = (
+    "verify_state_seed",
+    "verify_restore_gates",
+    "verify_capture_persistence",
+    "verify_environmental_reachability",
+    "verify_panic_escape_isolation",
+)
+
 SET_BRIGHTNESS = "is.workflow.actions.setbrightness"
 SET_VOLUME = "is.workflow.actions.setvolume"
 DEVICE_DETAILS = "is.workflow.actions.getdevicedetails"
@@ -347,22 +368,51 @@ def artifact_check(actions) -> None:
     # This note exists so a reader does not mistake the 10 uncoerced sites for a gap.
 
 
-def cross_fork_check() -> None:
+def cross_fork_check():
     """Standing smoke test: build_sentient.py's verify_* imports all still resolve.
 
     build_sentient.py imports a dozen names from build_state_engine at module scope,
     including verify_restore_gates and verify_state_seed.  Deleting either as part of a cut
     would break the Sentient build at import time; importing the module here surfaces that
     immediately rather than at the next fork rebuild.
+
+    Returns the loaded module so call_site_check() can read its main() without a second load.
     """
-    load_module("environmental_restore_sentient", SENTIENT_BUILDER)
+    return load_module("environmental_restore_sentient", SENTIENT_BUILDER)
+
+
+def call_site_check(builder, sentient) -> None:
+    """Every CALLED_GUARDS entry is INVOKED by each builder's main(), not merely defined.
+
+    PHASE 11 CODE REVIEW (WR-17).  See CALLED_GUARDS for the measurement that forced this:
+    both guards this phase added can be removed from the build pipeline with every count in
+    this file still green, because REQUIRED_SYMBOLS only asks hasattr/callable.
+
+    The test is a source read of main() rather than a runtime trace, using the same
+    inspect.getsource() idiom source_check() already applies to manual_emergency_restore().
+    That is deliberate: this file is documented read-only and must never rebuild an artifact,
+    so it cannot observe a guard running.  The limit of a source read is recorded rather than
+    hidden -- it proves the NAME appears applied inside main(), so a call commented out or
+    moved behind a never-taken branch would still read as present.  It catches deletion, which
+    is the failure mode the cancelled cut and this phase's own negative control both take.
+    """
+    for module, label in ((builder, BUILDER.name), (sentient, SENTIENT_BUILDER.name)):
+        body = inspect.getsource(module.main)
+        for name in CALLED_GUARDS:
+            require(f"{name}(" in body,
+                    f"{label}'s main() no longer CALLS {name}() -- the function still exists, "
+                    "so the REQUIRED_SYMBOLS check above stays green while the guard is "
+                    "disarmed: the environmental primitives can silently return to a dead arm, "
+                    "or a Panic Escape gate can enclose Emergency Restore, with nothing in this "
+                    "file or any other checker able to see it")
 
 
 def main() -> None:
     builder = load_module("environmental_restore_builder", BUILDER)
     source_check(builder)
     artifact_check(plistlib.loads(SOURCE.read_bytes())["WFWorkflowActions"])
-    cross_fork_check()
+    sentient = cross_fork_check()
+    call_site_check(builder, sentient)
     print("environmental restore check: passed")
 
 
