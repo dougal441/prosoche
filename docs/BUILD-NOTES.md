@@ -3172,3 +3172,82 @@ have been found by reading the code.
 
 **Scope.** Brightness only. §17's DEV-06 record (closed by plan 16-04) is untouched, `allow_volume_increase`
 stays `false`, and Silence's Media-only scoping stands — SAFE-02 is unchanged by D-01.
+
+
+## 31. Phase 11 — the text.match consumption shape: a question left OPEN and a fallback adopted (plan 11-07 Task 2, 2026-08-18)
+
+**The question.** `is.workflow.actions.text.match` publishes a **list** ("Matches"). When that
+list-valued output is consumed, which shape yields the matched section as a usable string?
+
+- **Shape A** — what `panic_escape_branch()` did: `text.match` → `gettext` → the string.
+- **Shape B** — the in-repo precedent in `tools/build_sentient.py`'s `audit_block()`:
+  `text.match` → `getitemfromlist` with `WFItemSpecifier="First Item"` → the extracted item.
+
+**The corpus tally, re-taken this session over all 19 shipped golden XMLs rather than
+transcribed.** Every `ActionOutput` token was resolved back to its producing identifier:
+
+| measure | result |
+|---|---|
+| output name `Matches` | **15** occurrences, across 3 of the 19 files |
+| the label this engine used to guess | **0** |
+| consumer `text.match.getgroup` | 7 |
+| consumer `conditional` | 5 |
+| consumer `setvariable` | 1 |
+| consumer `count` | 1 |
+| consumer `detect.text` | 1 |
+| consumer `gettext` | **0** |
+| consumer `getitemfromlist` | **0** |
+
+The tally settles the **name** decisively (15 versus 0 — see §ACTION_OUTPUT_NAMES and the
+class fix recorded below). It does **not** settle the **shape**: the corpus contains zero
+observations of *either* candidate chain, so rung 1 is genuinely exhausted on this question.
+That is why a probe was built rather than an inference recorded.
+
+**The rung reached: 2, attempted and NOT completed.** A single-purpose probe was written to
+`.planning/debug/probes/text_match_consumption_probe.py`, holding its fixture inline (the
+`## PANIC ESCAPE` heading, the setting line in its removed position, and the bounding
+`## MY PHONE, ON PURPOSE` heading) and touching no Note, no model, no automation and no
+real-hardware behaviour — deliberately inside rung 2's competence per §9. It **built** (23
+actions), **validated clean at gate A** (`--target-macos 26 --target-platform all`), and
+**signed** to a 23,861-byte container. It could **not be installed**: `xcrun simctl openurl`
+against a `file://` URL hung indefinitely and produced no import sheet, on two attempts, from
+both a space-bearing and a space-free path. No alert, no clipboard payload, no readout of any
+kind was obtained.
+
+**Therefore the question is recorded OPEN. Nothing here is an observation.** No run happened,
+so no claim — device *or* simulator — is available to make, and none is made. This entry
+records an attempt and its failure, not a result.
+
+**The fallback adopted, and why — recorded as a deviation** per the plan's bounded-fallback
+clause and the do-not-fabricate protocol (§2). **Shape B is adopted at both sites**:
+
+- `panic_escape_branch()`'s section read, and
+- `manual_note_refresh()`'s Sync My Profile proforma extraction — the identical defect,
+  closed in the same pass rather than left as the next site to be found. Its consumer writes
+  straight into a state key, so Shape A there stored a **stringified list** rather than the
+  real extracted proforma.
+
+Three reasons Shape B is the safe fallback rather than a coin toss: it is the **in-repo
+precedent**, already shipping in `audit_block()`; it is **deterministic about which element
+is taken**, where a list-to-text coercion is not; and taking the first item of a one-element
+list **cannot be worse** than stringifying that list. The `WFItemSpecifier` picker carries the
+literal enum case `First Item` at both new sites, per axis 4 — an unfilled picker reports as
+"Please choose a value for each parameter in this action."
+
+**A second deviation, on the probe's own construction.** Plan 11-07 Task 2 specifies three
+`Show Alert` readouts. §9 records, from spike 010, that **Show Alert modals accept neither a
+synthesized tap nor a hardware Return** — the run wedges permanently at the first one — and
+directs that simulator-bound probes carry **no blocking UI**. Three alerts would have wedged
+three times and read out nothing. The probe therefore concatenates all three results into one
+clipboard payload recoverable with `xcrun simctl pbpaste`, which needs no synthesized input.
+This deviation is orthogonal to the install failure above and did not cause it.
+
+**Retained for re-running, not rebuilding.** The probe generator, its validated XML and its
+signed container all stay under `.planning/debug/probes/`. Whoever opens a working install
+channel can re-run it and close this question without re-deriving any of it; the fixture, the
+pattern and both candidate chains are already wired and validated.
+
+**What would settle it.** Any successful install-and-run of the retained probe — the readout
+is designed so an EMPTY result is distinguishable from a missing one via its `<<`/`>>`
+delimiters, and the third field reports the condition-99 contains test that the removal path
+actually depends on.

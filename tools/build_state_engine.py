@@ -2265,8 +2265,14 @@ def manual_note_refresh():
               ("\n\nThis reports whether PROSOCHĒ has ever recorded a genuine open or an owning close. A close that a newer open superseded, or an open during a cool-down, records nothing — so a \"not seen yet\" verdict can be wrong, but a \"seen\" verdict never is.", None)])),
           otherwise(setup_g), action("is.workflow.actions.nothing"), end_if(setup_g)]
     sync_g, sync_if = if_block("Manual Sync Requested", 2, number=0)
-    text_id, match_id = uid(), uid()
-    a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The extracted text is saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), set_value("profile_snapshot.proforma", output(match_id, "Matches")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g)]
+    text_id, match_id, proforma_id = uid(), uid(), uid()
+    # The proforma is extracted with the SAME first-item-then-consume shape as
+    # panic_escape_branch(), for the same reason: text.match publishes a LIST, and writing
+    # that list straight into a state key stores a stringified list rather than the real
+    # extracted proforma.  Identical defect, closed in the same pass rather than left as
+    # the next site to be found.  Shape adopted from build_sentient.py audit_block(); see
+    # docs/BUILD-NOTES.md for why the question is recorded OPEN rather than settled.
+    a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The first matched section is taken, then saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), action("is.workflow.actions.getitemfromlist", UUID=proforma_id, WFItemSpecifier="First Item", WFInput=output(match_id, "Matches")), set_value("profile_snapshot.proforma", output(proforma_id, "Item from List")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g)]
     a += panic_escape_branch()
     a += [comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH END ---")]
     return a
@@ -2318,20 +2324,34 @@ def panic_escape_branch():
                  "- Writes panic_escape_enabled only after an explicit confirmation, in either direction.\n"
                  "- Emergency Restore is neither read nor written here and is not enclosed by any of these blocks.")]
     requested_g, requested_if = if_block("Manual Panic Escape Requested", 2, number=0)
-    note_id, match_id, section_id = uid(), uid(), uid()
+    note_id, match_id, first_id, section_id = uid(), uid(), uid(), uid()
     a += [requested_if,
           action("is.workflow.actions.gettext", UUID=note_id,
                  WFTextActionText=variable("Control Room Note")),
           action("is.workflow.actions.text.match", UUID=match_id,
                  WFMatchTextPattern=PANIC_ESCAPE_SECTION_PATTERN,
                  text=output(note_id, "Text")),
-          # Coerce the match to Text before comparing it: a Matches value compared
-          # directly renders blank, the same gotcha read_value() exists to avoid for
-          # dictionary values.  The LABEL is "Matches" -- corpus-attested 15/0, see
-          # ACTION_OUTPUT_NAMES.  The coercion reasoning is unchanged and still correct;
-          # only the output name it resolves through was wrong.
+          # Take the FIRST item, then coerce to Text.  Two separate points:
+          #
+          # THE LABEL is "Matches" -- corpus-attested 15/0, see ACTION_OUTPUT_NAMES.
+          #
+          # THE SHAPE is first-item-then-Text, mirroring build_sentient.py audit_block()'s
+          # match -> count -> getitemfromlist[First Item] chain.  text.match publishes a
+          # LIST, and no golden shortcut feeds that list to gettext or to getitemfromlist,
+          # so neither shape is corpus-attested; the 11-07 probe that would have settled it
+          # built and signed but could not be installed on the simulator, so the question
+          # is recorded OPEN and the in-repo precedent adopted as the bounded fallback
+          # (docs/BUILD-NOTES.md, plan 11-07 Task 2).  Taking the first item of a
+          # one-element list is deterministic about WHICH element is taken and cannot be
+          # worse than stringifying that list.
+          # The Text coercion still follows, for the reason it always did: the value is
+          # compared by a condition-99 contains test below, and an uncoerced value
+          # compared directly renders blank -- the same gotcha read_value() avoids for
+          # dictionary values.
+          action("is.workflow.actions.getitemfromlist", UUID=first_id,
+                 WFItemSpecifier="First Item", WFInput=output(match_id, "Matches")),
           action("is.workflow.actions.gettext", UUID=section_id,
-                 WFTextActionText=output(match_id, "Matches")),
+                 WFTextActionText=output(first_id, "Item from List")),
           set_var("Panic Escape Section", output(section_id, "Text"))]
     a += read_value("panic_escape_enabled", variable("State"), "Panic Escape Stored")
 

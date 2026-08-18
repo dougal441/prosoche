@@ -101314,7 +101314,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 				<string>Sync My Profile parses only the editable proforma between its two headings:
 - Input is the selected Control Room Note from this manual run.
 - No OPEN action can enter this branch.
-- The extracted text is saved with its sync time.</string>
+- The first matched section is taken, then saved with its sync time.</string>
 			</dict>
 		</dict>
 		<dict>
@@ -101381,11 +101381,36 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.setvalueforkey</string>
+			<string>is.workflow.actions.getitemfromlist</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
 				<string>D1EAC186-E6D3-54D3-A665-F41B35048D2C</string>
+				<key>WFItemSpecifier</key>
+				<string>First Item</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>5DC6D475-7D2E-5D59-B3AE-CFB92EA23C1B</string>
+						<key>OutputName</key>
+						<string>Matches</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>D35F9D0F-D8B8-531F-BCC4-022EF87780A5</string>
 				<key>WFDictionaryKey</key>
 				<string>profile_snapshot.proforma</string>
 				<key>WFDictionary</key>
@@ -101411,9 +101436,9 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>5DC6D475-7D2E-5D59-B3AE-CFB92EA23C1B</string>
+								<string>D1EAC186-E6D3-54D3-A665-F41B35048D2C</string>
 								<key>OutputName</key>
-								<string>Matches</string>
+								<string>Item from List</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -101434,7 +101459,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>D1EAC186-E6D3-54D3-A665-F41B35048D2C</string>
+						<string>D35F9D0F-D8B8-531F-BCC4-022EF87780A5</string>
 						<key>OutputName</key>
 						<string>Dictionary</string>
 						<key>Type</key>
@@ -101453,7 +101478,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>D35F9D0F-D8B8-531F-BCC4-022EF87780A5</string>
+				<string>5EAB24FF-2F25-568F-961A-8981EDEF8AE7</string>
 				<key>WFDictionaryKey</key>
 				<string>profile_snapshot.synced_at</string>
 				<key>WFDictionary</key>
@@ -101500,7 +101525,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>D35F9D0F-D8B8-531F-BCC4-022EF87780A5</string>
+						<string>5EAB24FF-2F25-568F-961A-8981EDEF8AE7</string>
 						<key>OutputName</key>
 						<string>Dictionary</string>
 						<key>Type</key>
@@ -101519,7 +101544,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>5EAB24FF-2F25-568F-961A-8981EDEF8AE7</string>
+				<string>B5DD239A-2B82-5423-ADEB-B215676E18A6</string>
 				<key>WFName</key>
 				<string>state.json</string>
 				<key>WFInput</key>
@@ -101546,7 +101571,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>5EAB24FF-2F25-568F-961A-8981EDEF8AE7</string>
+						<string>B5DD239A-2B82-5423-ADEB-B215676E18A6</string>
 						<key>OutputName</key>
 						<string>Renamed Item</string>
 						<key>Type</key>
@@ -101611,7 +101636,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>B5DD239A-2B82-5423-ADEB-B215676E18A6</string>
+				<string>201D3325-581A-55AD-9065-BE3BC2BD32C5</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -101643,7 +101668,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>201D3325-581A-55AD-9065-BE3BC2BD32C5</string>
+				<string>B3D32842-47A2-5425-9785-96B792985873</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -101672,7 +101697,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>B3D32842-47A2-5425-9785-96B792985873</string>
+				<string>E76CE926-22B9-5C69-AE6C-39E5D6265208</string>
 				<key>WFMatchTextPattern</key>
 				<string>(?s)## PANIC ESCAPE.*?(?=## MY PHONE, ON PURPOSE)</string>
 				<key>text</key>
@@ -101686,7 +101711,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>201D3325-581A-55AD-9065-BE3BC2BD32C5</string>
+								<string>B3D32842-47A2-5425-9785-96B792985873</string>
 								<key>OutputName</key>
 								<string>Text</string>
 								<key>Type</key>
@@ -101701,40 +101726,13 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 		</dict>
 		<dict>
 			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.gettext</string>
+			<string>is.workflow.actions.getitemfromlist</string>
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>E76CE926-22B9-5C69-AE6C-39E5D6265208</string>
-				<key>WFTextActionText</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>string</key>
-						<string>￼</string>
-						<key>attachmentsByRange</key>
-						<dict>
-							<key>{0, 1}</key>
-							<dict>
-								<key>OutputUUID</key>
-								<string>B3D32842-47A2-5425-9785-96B792985873</string>
-								<key>OutputName</key>
-								<string>Matches</string>
-								<key>Type</key>
-								<string>ActionOutput</string>
-							</dict>
-						</dict>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenString</string>
-				</dict>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.setvariable</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
+				<string>EA8BC13A-1720-5B4A-8DA0-B3D241C63CDD</string>
+				<key>WFItemSpecifier</key>
+				<string>First Item</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -101742,34 +101740,9 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 						<key>OutputUUID</key>
 						<string>E76CE926-22B9-5C69-AE6C-39E5D6265208</string>
 						<key>OutputName</key>
-						<string>Text</string>
+						<string>Matches</string>
 						<key>Type</key>
 						<string>ActionOutput</string>
-					</dict>
-					<key>WFSerializationType</key>
-					<string>WFTextTokenAttachment</string>
-				</dict>
-				<key>WFVariableName</key>
-				<string>Panic Escape Section</string>
-			</dict>
-		</dict>
-		<dict>
-			<key>WFWorkflowActionIdentifier</key>
-			<string>is.workflow.actions.getvalueforkey</string>
-			<key>WFWorkflowActionParameters</key>
-			<dict>
-				<key>UUID</key>
-				<string>EA8BC13A-1720-5B4A-8DA0-B3D241C63CDD</string>
-				<key>WFDictionaryKey</key>
-				<string>panic_escape_enabled</string>
-				<key>WFInput</key>
-				<dict>
-					<key>Value</key>
-					<dict>
-						<key>Type</key>
-						<string>Variable</string>
-						<key>VariableName</key>
-						<string>State</string>
 					</dict>
 					<key>WFSerializationType</key>
 					<string>WFTextTokenAttachment</string>
@@ -101796,7 +101769,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 								<key>OutputUUID</key>
 								<string>EA8BC13A-1720-5B4A-8DA0-B3D241C63CDD</string>
 								<key>OutputName</key>
-								<string>Dictionary Value</string>
+								<string>Item from List</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -101827,6 +101800,83 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
+				<string>Panic Escape Section</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.getvalueforkey</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>6DE1CBD2-03FD-54CB-9D28-DBBA0D91DA8E</string>
+				<key>WFDictionaryKey</key>
+				<string>panic_escape_enabled</string>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>Type</key>
+						<string>Variable</string>
+						<key>VariableName</key>
+						<string>State</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.gettext</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>UUID</key>
+				<string>70183654-3F11-5D8E-8252-508FD101FDC4</string>
+				<key>WFTextActionText</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>string</key>
+						<string>￼</string>
+						<key>attachmentsByRange</key>
+						<dict>
+							<key>{0, 1}</key>
+							<dict>
+								<key>OutputUUID</key>
+								<string>6DE1CBD2-03FD-54CB-9D28-DBBA0D91DA8E</string>
+								<key>OutputName</key>
+								<string>Dictionary Value</string>
+								<key>Type</key>
+								<string>ActionOutput</string>
+							</dict>
+						</dict>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenString</string>
+				</dict>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.setvariable</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFInput</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>OutputUUID</key>
+						<string>70183654-3F11-5D8E-8252-508FD101FDC4</string>
+						<key>OutputName</key>
+						<string>Text</string>
+						<key>Type</key>
+						<string>ActionOutput</string>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFTextTokenAttachment</string>
+				</dict>
+				<key>WFVariableName</key>
 				<string>Panic Escape Stored</string>
 			</dict>
 		</dict>
@@ -101848,7 +101898,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6DE1CBD2-03FD-54CB-9D28-DBBA0D91DA8E</string>
+				<string>89EA722C-94E8-51F1-86BD-5B413C0AB12E</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -101891,7 +101941,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>70183654-3F11-5D8E-8252-508FD101FDC4</string>
+				<string>24E53F0B-D476-507E-9E13-F3AAFAEE6944</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -101944,7 +101994,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>89EA722C-94E8-51F1-86BD-5B413C0AB12E</string>
+				<string>402E4D09-D282-5F12-A6DA-48EF5B9C1FF4</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFMenuPrompt</key>
@@ -101962,7 +102012,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>89EA722C-94E8-51F1-86BD-5B413C0AB12E</string>
+				<string>402E4D09-D282-5F12-A6DA-48EF5B9C1FF4</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
@@ -101981,7 +102031,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>89EA722C-94E8-51F1-86BD-5B413C0AB12E</string>
+				<string>402E4D09-D282-5F12-A6DA-48EF5B9C1FF4</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
@@ -101994,7 +102044,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>24E53F0B-D476-507E-9E13-F3AAFAEE6944</string>
+				<string>BF1AE22C-516C-5036-973A-522E34A7A24F</string>
 				<key>WFNumberActionNumber</key>
 				<integer>0</integer>
 			</dict>
@@ -102009,7 +102059,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>24E53F0B-D476-507E-9E13-F3AAFAEE6944</string>
+						<string>BF1AE22C-516C-5036-973A-522E34A7A24F</string>
 						<key>OutputName</key>
 						<string>Number</string>
 						<key>Type</key>
@@ -102028,7 +102078,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>402E4D09-D282-5F12-A6DA-48EF5B9C1FF4</string>
+				<string>E710C1AF-1887-5791-9C37-630EFA563B71</string>
 				<key>WFDictionaryKey</key>
 				<string>panic_escape_enabled</string>
 				<key>WFDictionary</key>
@@ -102075,7 +102125,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>402E4D09-D282-5F12-A6DA-48EF5B9C1FF4</string>
+						<string>E710C1AF-1887-5791-9C37-630EFA563B71</string>
 						<key>OutputName</key>
 						<string>Dictionary</string>
 						<key>Type</key>
@@ -102094,7 +102144,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>BF1AE22C-516C-5036-973A-522E34A7A24F</string>
+				<string>600F0F07-EF00-554F-8394-55B0F5FA921E</string>
 				<key>WFName</key>
 				<string>state.json</string>
 				<key>WFInput</key>
@@ -102121,7 +102171,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>BF1AE22C-516C-5036-973A-522E34A7A24F</string>
+						<string>600F0F07-EF00-554F-8394-55B0F5FA921E</string>
 						<key>OutputName</key>
 						<string>Renamed Item</string>
 						<key>Type</key>
@@ -102144,7 +102194,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>E710C1AF-1887-5791-9C37-630EFA563B71</string>
+				<string>4A643EF5-258C-5728-A9C3-D6156E9A6475</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -102198,7 +102248,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>E710C1AF-1887-5791-9C37-630EFA563B71</string>
+								<string>4A643EF5-258C-5728-A9C3-D6156E9A6475</string>
 								<key>OutputName</key>
 								<string>Text</string>
 								<key>Type</key>
@@ -102217,7 +102267,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>89EA722C-94E8-51F1-86BD-5B413C0AB12E</string>
+				<string>402E4D09-D282-5F12-A6DA-48EF5B9C1FF4</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -102228,7 +102278,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>70183654-3F11-5D8E-8252-508FD101FDC4</string>
+				<string>24E53F0B-D476-507E-9E13-F3AAFAEE6944</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -102250,7 +102300,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>70183654-3F11-5D8E-8252-508FD101FDC4</string>
+				<string>24E53F0B-D476-507E-9E13-F3AAFAEE6944</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -102261,7 +102311,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6DE1CBD2-03FD-54CB-9D28-DBBA0D91DA8E</string>
+				<string>89EA722C-94E8-51F1-86BD-5B413C0AB12E</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -102284,7 +102334,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>600F0F07-EF00-554F-8394-55B0F5FA921E</string>
+				<string>7EAF7BAE-7319-50B9-8BC0-A7BC2555564A</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
@@ -102336,7 +102386,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>600F0F07-EF00-554F-8394-55B0F5FA921E</string>
+				<string>7EAF7BAE-7319-50B9-8BC0-A7BC2555564A</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -102359,7 +102409,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>4A643EF5-258C-5728-A9C3-D6156E9A6475</string>
+				<string>4244F306-14F6-5406-9A2F-974BCD511883</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFMenuPrompt</key>
@@ -102377,7 +102427,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>4A643EF5-258C-5728-A9C3-D6156E9A6475</string>
+				<string>4244F306-14F6-5406-9A2F-974BCD511883</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
@@ -102396,7 +102446,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>4A643EF5-258C-5728-A9C3-D6156E9A6475</string>
+				<string>4244F306-14F6-5406-9A2F-974BCD511883</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 				<key>WFMenuItemTitle</key>
@@ -102409,7 +102459,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>7EAF7BAE-7319-50B9-8BC0-A7BC2555564A</string>
+				<string>ADE696DE-4AE2-549A-AC96-E43054ECCECF</string>
 				<key>WFNumberActionNumber</key>
 				<integer>1</integer>
 			</dict>
@@ -102424,7 +102474,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>7EAF7BAE-7319-50B9-8BC0-A7BC2555564A</string>
+						<string>ADE696DE-4AE2-549A-AC96-E43054ECCECF</string>
 						<key>OutputName</key>
 						<string>Number</string>
 						<key>Type</key>
@@ -102443,7 +102493,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>4244F306-14F6-5406-9A2F-974BCD511883</string>
+				<string>50D61F31-73AD-5D31-BFC0-A6D783F4873E</string>
 				<key>WFDictionaryKey</key>
 				<string>panic_escape_enabled</string>
 				<key>WFDictionary</key>
@@ -102490,7 +102540,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>4244F306-14F6-5406-9A2F-974BCD511883</string>
+						<string>50D61F31-73AD-5D31-BFC0-A6D783F4873E</string>
 						<key>OutputName</key>
 						<string>Dictionary</string>
 						<key>Type</key>
@@ -102509,7 +102559,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>ADE696DE-4AE2-549A-AC96-E43054ECCECF</string>
+				<string>DF8A1E10-B3F9-5FEE-84B7-3A6D63155ED9</string>
 				<key>WFName</key>
 				<string>state.json</string>
 				<key>WFInput</key>
@@ -102536,7 +102586,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 					<key>Value</key>
 					<dict>
 						<key>OutputUUID</key>
-						<string>ADE696DE-4AE2-549A-AC96-E43054ECCECF</string>
+						<string>DF8A1E10-B3F9-5FEE-84B7-3A6D63155ED9</string>
 						<key>OutputName</key>
 						<string>Renamed Item</string>
 						<key>Type</key>
@@ -102559,7 +102609,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>UUID</key>
-				<string>50D61F31-73AD-5D31-BFC0-A6D783F4873E</string>
+				<string>816E7999-8B4C-5931-AD3F-FC066E66AD70</string>
 				<key>WFTextActionText</key>
 				<dict>
 					<key>Value</key>
@@ -102613,7 +102663,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 							<key>{0, 1}</key>
 							<dict>
 								<key>OutputUUID</key>
-								<string>50D61F31-73AD-5D31-BFC0-A6D783F4873E</string>
+								<string>816E7999-8B4C-5931-AD3F-FC066E66AD70</string>
 								<key>OutputName</key>
 								<string>Text</string>
 								<key>Type</key>
@@ -102632,7 +102682,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>4A643EF5-258C-5728-A9C3-D6156E9A6475</string>
+				<string>4244F306-14F6-5406-9A2F-974BCD511883</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -102643,7 +102693,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>600F0F07-EF00-554F-8394-55B0F5FA921E</string>
+				<string>7EAF7BAE-7319-50B9-8BC0-A7BC2555564A</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -102654,7 +102704,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>6DE1CBD2-03FD-54CB-9D28-DBBA0D91DA8E</string>
+				<string>89EA722C-94E8-51F1-86BD-5B413C0AB12E</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
@@ -102665,7 +102715,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>B5DD239A-2B82-5423-ADEB-B215676E18A6</string>
+				<string>201D3325-581A-55AD-9065-BE3BC2BD32C5</string>
 				<key>WFControlFlowMode</key>
 				<integer>1</integer>
 			</dict>
@@ -102682,7 +102732,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 			<key>WFWorkflowActionParameters</key>
 			<dict>
 				<key>GroupingIdentifier</key>
-				<string>B5DD239A-2B82-5423-ADEB-B215676E18A6</string>
+				<string>201D3325-581A-55AD-9065-BE3BC2BD32C5</string>
 				<key>WFControlFlowMode</key>
 				<integer>2</integer>
 			</dict>
