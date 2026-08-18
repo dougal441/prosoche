@@ -711,11 +711,16 @@ spike 005 step 5.
 **UI hint**: no
 **Requirements**: CIRC-02, SAFE-01, SAFE-02, SAFE-05, AUDIT-02
 **Depends on:** Phase 11
-**Plans:** 0 plans
+**Plans:** 6 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 14 to break down)
+- [ ] 14-01-PLAN.md — TRACER: emit the donor-exact Color Filters action, wire apply and restore, seed the third snapshot group, and let the reachability and capture-persistence guards see it (wave 1)
+- [ ] 14-02-PLAN.md — Spike 011: probe the `state` response parameter for accessibility read-back, and discharge the recording duty either way (wave 1, D-14-02)
+- [ ] 14-03-PLAN.md — Teach the three artifact checkers about grayscale, and prove the widened capture guard generalised rather than mislabelled (wave 2)
+- [ ] 14-04-PLAN.md — The gate-A disposition: the constitutional edit, the mechanical residue checker, and the deviation-log entry (wave 3, D-14-01)
+- [ ] 14-05-PLAN.md — Disclose the accessibility change in the Control Room Note, and stop the config mirror contradicting itself (wave 4)
+- [ ] 14-06-PLAN.md — Rebuild, re-sign, refresh the manifest, author `14-UAT.md`, and retire backlog 999.3 (wave 5, D-14-03)
 
 ### Phase 15: Circle 8 — the Voice primitive
 
