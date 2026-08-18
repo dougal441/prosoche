@@ -2164,6 +2164,163 @@ def verify_dispatch_coverage(actions):
             "dispatches nothing.  Name it in a sequence or stop emitting it")
 
 
+# Beside verify_dispatch_coverage() because both are statements about the dispatch surface,
+# and neither implies the other: that one asks whether every named sequence entry has a
+# receiving branch at all; this one asks whether two receivers that DO exist -- 'Mirror' and
+# 'Loud Mirror' -- actually differ in what they DO, not merely in name.
+def verify_speaktext_placement(actions):
+    """Fail the build if Circle 8 loses its speech, or Circle 7 regains it.
+
+    D-02 moved speech from Circle 7's mirror() to Circle 8's voice() specifically so the two
+    Circles would differ (CIRC-14).  A later pass that quietly retargets the dispatch tuple
+    back onto a non-speaking function, or re-adds a speaktext call to mirror(), produces a
+    structurally perfect plist that validate_shortcut.py, the ToolKit catalog and the
+    signed-artifact decrypt all see as fine -- exactly the failure mode that let Circle 8
+    dispatch mirror_and_voice() unnoticed for four phases.  Only a guard that inspects
+    PLACEMENT, not merely presence, can catch it.
+
+    Branches are located the same way verify_dispatch_coverage() does: mode-0 conditionals
+    whose WFInput variable is Selected Primitive.  Matching semantics are resolved PER SITE
+    from that site's own WFCondition, never from a hardcoded filter -- but unlike
+    verify_dispatch_coverage(), which is a general-purpose guard that must still classify a
+    condition-99 ("contains") branch as a recognised (if BD-06-violating) strategy for its
+    OWN purposes, this guard has nothing to do with "contains" at all: BD-06 Decision 5
+    abolished combined entries and the only strategy any 'Mirror'/'Loud Mirror' branch can
+    legitimately use post-abolition is condition 4 ("string is").  So this guard recognises
+    exactly one shape -- WFCondition == 4 against a plain string WFConditionalActionString --
+    and RAISES on anything else, including a resurrected condition-99 branch, rather than
+    special-casing it the way verify_dispatch_coverage() must.  Deliberately no equality test
+    against the literal 99 appears anywhere in this function: recognising exactly one shape
+    and raising on everything else achieves "never filter on a hardcoded code" without ever
+    naming the retired one.  Each branch's span is computed from enclosing_groups(actions)
+    over its own GroupingIdentifier -- structural, not index-based, so it survives a rebuild
+    that shifts every action index.
+
+    Five assertions, in this order, each with the failure it prevents:
+      (1) the resolved branch set is non-empty and contains at least one 'Mirror' branch and
+          at least one 'Loud Mirror' branch -- a guard that resolves nothing must fail, not
+          report a clean placement it never checked;
+      (2) the resolved is.workflow.actions.speaktext site set is non-empty -- zero speech
+          sites is a failure for the same reason zero surfaces is in
+          verify_panic_escape_isolation(): The Voice cannot speak on any device, and CIRC-08
+          is unsatisfiable by construction;
+      (3) every speech site is enclosed by a 'Loud Mirror' branch or a 'Mirror' branch -- a
+          site reachable from neither is orphaned relative to the dispatch surface entirely;
+      (4) exactly one speech site per 'Loud Mirror' branch span -- never zero (the Voice went
+          mute on that rendering), never two (the same utterance spoken twice in one run);
+      (5) zero speech sites enclosed by any 'Mirror' branch span -- the CIRC-14 clause: this
+          is what stops a later pass from quietly re-adding speech to Circle 7 and collapsing
+          the escalation D-02 removed it to create.
+
+    NEGATIVE CONTROL (project standard, plan 11-10), measured 2026-08-18 on this exact build,
+    both mutations reverted after the failure was observed:
+    (a) retargeting the 'Loud Mirror' tuple entry back onto mirror() removes voice()'s ONLY
+    caller, so is.workflow.actions.speaktext disappears from the artifact entirely -> assertion
+    (2) raises first, naming every resolved 'Loud Mirror' branch span as holding zero sites --
+    the vacuity check catches this mutation before per-branch counting (assertion 4) even runs,
+    which is a stronger and earlier catch of the same defect;
+    (b) appending a speaktext action to mirror()'s body adds a site enclosed by a 'Mirror'
+    branch span while every 'Loud Mirror' span is untouched -> assertion (5) raises, naming the
+    site and the 'Mirror' branch it was found inside.
+    """
+    branches = []
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("WFControlFlowMode") != 0:
+            continue
+        variable_name = (parameters.get("WFInput", {}).get("Variable", {})
+                         .get("Value", {}).get("VariableName"))
+        if variable_name != SELECTED_PRIMITIVE:
+            continue
+        code = parameters.get("WFCondition")
+        tested = parameters.get("WFConditionalActionString")
+        # Recognise exactly one shape -- condition 4 ("string is") against a plain literal --
+        # the only strategy BD-06 Decision 5 leaves any dispatch branch free to use.  Anything
+        # else RAISES; it is never excluded, so a resurrected combined-match branch cannot
+        # slip past this guard the way it slipped past dispatch for four phases.
+        if not (isinstance(tested, str) and code == 4):
+            raise SystemExit(
+                f"speaktext placement: dispatch branch at action {index} has unresolvable "
+                f"matching semantics (condition {code!r} against {tested!r}) -- guessing which "
+                "rule applies would let this guard report Circle 7/8's placement clean without "
+                "ever having checked it; see verify_dispatch_coverage() for the same rule")
+        branches.append((index, tested, parameters.get("GroupingIdentifier")))
+
+    if not branches:
+        raise SystemExit(
+            "speaktext placement: no dispatch branch resolves at all -- this guard would "
+            "report Circle 7 and Circle 8's speech placement as correct without having located "
+            "a single branch to check it against.  Zero resolved branches is a failure, not a "
+            "vacuous pass")
+
+    mirror_groups = {group for _, tested, group in branches if tested == "Mirror" and group}
+    loud_groups = {group for _, tested, group in branches if tested == "Loud Mirror" and group}
+    if not mirror_groups:
+        raise SystemExit(
+            "speaktext placement: no dispatch branch resolves to 'Mirror' -- assertion (5)'s "
+            "CIRC-14 clause could not be checked against anything, because Circle 7's actions "
+            "cannot be identified without knowing which branch is its own")
+    if not loud_groups:
+        raise SystemExit(
+            "speaktext placement: no dispatch branch resolves to 'Loud Mirror' -- Circle 8's "
+            "escalation could not be located, so this guard cannot tell whether The Voice can "
+            "speak on any device (CIRC-08)")
+
+    speech_sites = [index for index, item in enumerate(actions)
+                    if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.speaktext"]
+    if not speech_sites:
+        raise SystemExit(
+            "speaktext placement: zero is.workflow.actions.speaktext sites exist anywhere in "
+            "the artifact, including inside every resolved 'Loud Mirror' branch span -- The "
+            "Voice cannot speak on any device, which makes CIRC-08 unsatisfiable by "
+            "construction.  Zero sites is a failure for the same reason zero surfaces is in "
+            "verify_panic_escape_isolation(): a guard that reports clean because it resolved "
+            "nothing is worse than no guard.  Check that primitive_dispatch()'s tuple still "
+            "dispatches ('Loud Mirror', voice)")
+
+    enclosing = enclosing_groups(actions)
+
+    orphaned = [index for index in speech_sites
+                if not (set(enclosing[index]) & (loud_groups | mirror_groups))]
+    if orphaned:
+        raise SystemExit(
+            f"speaktext placement: {len(orphaned)} speaktext site(s) at action(s) {orphaned} "
+            "lie outside every 'Loud Mirror' branch AND every 'Mirror' branch -- an utterance "
+            "reachable from neither Circle's dispatch branch is not gated by the Circle-8 "
+            "dispatch at all, and could fire on a Circle the design never intended to speak")
+
+    per_loud_counts = {group: 0 for group in loud_groups}
+    for index in speech_sites:
+        for group in set(enclosing[index]) & loud_groups:
+            per_loud_counts[group] += 1
+
+    muted = sorted(group for group, count in per_loud_counts.items() if count == 0)
+    if muted:
+        raise SystemExit(
+            f"speaktext placement: {len(muted)} 'Loud Mirror' dispatch branch span(s) "
+            f"{muted} contain ZERO speaktext sites -- The Voice went mute on at least one "
+            "rendering of Circle 8, which satisfies CIRC-08's 'at most once per run' clause "
+            "by never speaking rather than by speaking exactly once.  Check that "
+            "primitive_dispatch()'s tuple still dispatches ('Loud Mirror', voice)")
+
+    doubled = sorted((group, count) for group, count in per_loud_counts.items() if count > 1)
+    if doubled:
+        raise SystemExit(
+            f"speaktext placement: {len(doubled)} 'Loud Mirror' dispatch branch span(s) hold "
+            f"MORE THAN ONE speaktext site {doubled} -- the same utterance would be spoken "
+            "twice in one run, violating CIRC-08's 'at most once per run' clause")
+
+    in_mirror = [index for index in speech_sites if set(enclosing[index]) & mirror_groups]
+    if in_mirror:
+        raise SystemExit(
+            f"speaktext placement: {len(in_mirror)} speaktext site(s) at action(s) {in_mirror} "
+            "lie inside a 'Mirror' dispatch branch (Circle 7) -- Circle 7 has regained speech, "
+            "which collapses the escalation D-02 removed it to create: CIRC-14 requires Circle "
+            "8 to differ from Circle 7, and a Mirror branch that speaks again makes it not")
+
+
 def install_cooldown_branches(actions):
     """Install Ice only in the true/otherwise arms of the named cooldown If."""
     # Removing both first repairs builds made by the earlier broad-anchor helpers.
@@ -5613,6 +5770,10 @@ def main():
     verify_router_shape(actions)
     verify_circle_zero_silence(actions)
     verify_dispatch_coverage(actions)
+    # Beside verify_dispatch_coverage() -- both are statements about the dispatch surface;
+    # that one asks whether every named entry has a receiver, this one asks whether two
+    # receivers ('Mirror' and 'Loud Mirror') actually differ in what they DO (CIRC-14).
+    verify_speaktext_placement(actions)
     # Declare that this shortcut consumes Shortcut Input.  The routing block reads the
     # ExtensionInput token, and PLIST_FORMAT.md defines this root key as "True if
     # shortcut uses input variables"; every modern golden shortcut that references
