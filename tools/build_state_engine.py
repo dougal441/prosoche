@@ -4008,66 +4008,145 @@ def _read_variable_keys(actions):
       _panic_escape_variables() still non-empty so neither vacuity raise fired.
 
     A NAME is not a contract, which is why these guards resolve by provenance; the WR-16
-    correction is that ONE HOP is not a break in provenance either.  The fixpoint loop below
-    propagates the key set across variable-to-variable copies until the map stops growing, so
-    a chain of any length is followed rather than only a direct read.
+    correction is that ONE HOP is not a break in provenance either.
+
+    WR-20 IS WHY THE HOP IS NO LONGER ENUMERATED AT ALL, and it is the third consecutive
+    round of the same defect.  WR-16's fix followed exactly one new edge --
+    `set_var(copy, variable(original))` -- so the re-review rebuilt CR-01 verbatim behind a
+    GET TEXT hop instead and measured the identical silence: build exit 0,
+    environmental_restore_check.py exit 0, phase9_self_check.py exit 0.  A Get Text is not
+    an exotic shape here; it is the second half of what read_value() itself emits and
+    .claude/CLAUDE.md axis 9's own scalar-coercion idiom.  Teaching this helper a second
+    blessed identifier would only have moved the hole to a third.  So the walk is now over
+    the EMITTED DATA-FLOW GRAPH, with no allowlist of hop identifiers anywhere in it: every
+    action that carries a reference to a variable or to another action's output propagates
+    the provenance of those references to whatever it publishes.  set_var and gettext are
+    two instances of that rule rather than two special cases, and an action nobody has
+    thought of yet is a third -- see _reference_descriptors() and _variable_provenance().
     """
-    key_by_uuid, text_by_uuid = {}, {}
+    return {name: {key for key, _ in pairs}
+            for name, pairs in _variable_provenance(actions).items()}
+
+
+def _stringified_variable_keys(actions):
+    """_read_variable_keys(), restricted to provenance that passed through a stringifier.
+
+    read_value()'s Get Text step COLLAPSES a compound value into one Text blob, which is
+    the whole subject of .claude/CLAUDE.md axis 9; get_value() deliberately omits that step
+    and is the CORRECT helper for a List-consumed key.  Both bind a variable to the same
+    dictionary key, so plain provenance cannot tell them apart -- and the WR-20 walk, unlike
+    the chain walk it replaces, now resolves get_value()'s two-action form as well.  Without
+    this split verify_compound_value_reads() would fire on every correct get_value() call
+    site.  Measured, not assumed: on the shipped forks the split is what keeps that guard at
+    zero offenders while the widened map reaches 104 (Core) / 107 (Aware) variables.
+    """
+    return {name: {key for key, stringified in pairs if stringified}
+            for name, pairs in _variable_provenance(actions).items()}
+
+
+def _reference_descriptors(node, found):
+    """Every variable / action-output reference reachable anywhere inside a parameter tree.
+
+    Deliberately walks the WHOLE tree rather than a named slot, because enumerating slots
+    is the failure WR-20 measured one level up.  A reference reaches this function wherever
+    Shortcuts permits one to sit: a bare WFTextTokenAttachment, a WFTextTokenString's
+    attachmentsByRange, if_block()'s nested WFInput.Variable wrapper, a WFItems row wrapper
+    (.claude/CLAUDE.md axis 8), a WFDictionaryFieldValueItems entry, or a shape this project
+    has not emitted yet.  Descent continues THROUGH a matched descriptor because if_block()
+    nests one inside another.
+    """
+    if isinstance(node, dict):
+        kind = node.get("Type")
+        if kind == "Variable" and isinstance(node.get("VariableName"), str):
+            found.add(("variable", node["VariableName"]))
+        elif kind == "ActionOutput" and isinstance(node.get("OutputUUID"), str):
+            found.add(("output", node["OutputUUID"]))
+        for value in node.values():
+            _reference_descriptors(value, found)
+    elif isinstance(node, list):
+        for value in node:
+            _reference_descriptors(value, found)
+    return found
+
+
+# WR-20.  The ONLY identifier-keyed table in the provenance walk, and it is a DENYLIST of
+# barriers rather than an allowlist of hops -- which is the whole point.  An action absent
+# from every table below propagates, so a hop nobody anticipated FAILS LOUD (provenance is
+# carried further than needed, and the guards get stricter) instead of FAILING QUIET (the
+# guard silently resolves nothing, which is the defect class of WR-16, WR-20 and half the
+# phase).  Only actions whose OUTPUT IS A CONTAINER, not the value that flowed in, belong
+# here:
+#   getvalueforkey  -- its output is the value AT a key, so it SEEDS {key} and must not also
+#                      inherit the source dictionary's own provenance.
+#   setvalueforkey  -- its output is the DICTIONARY, not the value just written into it.
+#   dictionary      -- its output is a freshly built dictionary literal.
+# Measured 2026-08-18: with these three removed the map explodes from 146 to 2325 key
+# assignments on Core, because State absorbs the provenance of everything ever written into
+# it and then hands it to every subsequent read.  That is conflation, not provenance.
+PROVENANCE_BARRIERS = {
+    "is.workflow.actions.getvalueforkey",
+    "is.workflow.actions.setvalueforkey",
+    "is.workflow.actions.dictionary",
+}
+# Actions whose output is a TEXT rendering of their input.  Consumed only by
+# _stringified_variable_keys(); see its docstring for why the distinction has to survive
+# the walk rather than being re-derived from the emitted chain shape.
+STRINGIFYING_IDENTIFIERS = {
+    "is.workflow.actions.gettext",
+    "is.workflow.actions.text",
+}
+
+
+def _variable_provenance(actions):
+    """Map each named variable to the {(dictionary key, stringified)} pairs reaching it.
+
+    One fixpoint over the emitted graph.  Nodes are action outputs (keyed by the action's
+    own UUID) and named variables; edges are every reference _reference_descriptors() finds.
+    A getvalueforkey SEEDS its literal key; everything else inherits.  Termination is by the
+    same argument as before -- each continuing iteration strictly grows at least one set,
+    and the vocabulary (literal keys x {stringified, not}) is finite -- and it converges in
+    3 iterations on both shipped forks.
+    """
+    provenance, nodes = {}, []
     for item in actions:
         identifier = item.get("WFWorkflowActionIdentifier")
-        parameters = item.get("WFWorkflowActionParameters", {})
-        if identifier == "is.workflow.actions.getvalueforkey":
-            if isinstance(parameters.get("WFDictionaryKey"), str) and "UUID" in parameters:
-                key_by_uuid[parameters["UUID"]] = parameters["WFDictionaryKey"]
-        elif identifier == "is.workflow.actions.gettext" and "UUID" in parameters:
-            # normalise_string_envelopes() rewrites this parameter into a WFTextTokenString
-            # TEXT TEMPLATE, so the producing action is reached through attachmentsByRange
-            # rather than through a bare descriptor.  Accept both forms: reading only the
-            # bare form silently returns no provenance and the guard becomes decoration.
-            holder = parameters.get("WFTextActionText")
-            source = holder.get("Value") if isinstance(holder, dict) else None
-            if not isinstance(source, dict):
-                continue
-            sources = [source] + list((source.get("attachmentsByRange") or {}).values())
-            for candidate in sources:
-                if isinstance(candidate, dict) and candidate.get("Type") == "ActionOutput" \
-                        and candidate.get("OutputUUID") in key_by_uuid:
-                    text_by_uuid[parameters["UUID"]] = key_by_uuid[candidate["OutputUUID"]]
-                    break
-    keys = {}
-    for item in actions:
-        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.setvariable":
+        parameters = item.get("WFWorkflowActionParameters", {}) or {}
+        targets = []
+        if isinstance(parameters.get("UUID"), str):
+            targets.append(("output", parameters["UUID"]))
+        # A nameless setvariable would otherwise publish to a None key, and _tested_variable()
+        # independently returns None for a conditional with no variable input -- so the two
+        # would meet and a variable-less gate would count as a resolved one (11-REVIEW IN-06).
+        if identifier == "is.workflow.actions.setvariable" \
+                and isinstance(parameters.get("WFVariableName"), str):
+            targets.append(("variable", parameters["WFVariableName"]))
+        if not targets:
             continue
-        parameters = item.get("WFWorkflowActionParameters", {})
-        source = (parameters.get("WFInput") or {}).get("Value")
-        if not isinstance(source, dict) or source.get("Type") != "ActionOutput":
-            continue
-        key = text_by_uuid.get(source.get("OutputUUID"))
-        if key:
-            keys.setdefault(parameters.get("WFVariableName"), set()).add(key)
-    # WR-16.  Propagate across variable -> variable copies until the map stops growing, so an
-    # intermediate `set_var("Copy", variable("Original"))` cannot orphan a guard.  The loop
-    # form (rather than a single pass) is what makes a chain of arbitrary length resolve; it
-    # terminates because each iteration that continues has strictly grown at least one key set
-    # and the key vocabulary is finite.
+        if identifier == "is.workflow.actions.getvalueforkey" \
+                and isinstance(parameters.get("WFDictionaryKey"), str):
+            for target in targets:
+                provenance.setdefault(target, set()).add((parameters["WFDictionaryKey"], False))
+        sources = frozenset() if identifier in PROVENANCE_BARRIERS \
+            else frozenset(_reference_descriptors(parameters, set()))
+        nodes.append((sources, tuple(targets), identifier in STRINGIFYING_IDENTIFIERS))
     changed = True
     while changed:
         changed = False
-        for item in actions:
-            if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.setvariable":
+        for sources, targets, stringifies in nodes:
+            reaching = set()
+            for source in sources:
+                reaching |= provenance.get(source, frozenset())
+            if stringifies:
+                reaching = {(key, True) for key, _ in reaching}
+            if not reaching:
                 continue
-            parameters = item.get("WFWorkflowActionParameters", {})
-            source = (parameters.get("WFInput") or {}).get("Value")
-            if not isinstance(source, dict) or source.get("Type") != "Variable":
-                continue
-            inherited = keys.get(source.get("VariableName"))
-            if not inherited:
-                continue
-            target = keys.setdefault(parameters.get("WFVariableName"), set())
-            if not inherited <= target:
-                target |= inherited
-                changed = True
-    return keys
+            for target in targets:
+                held = provenance.setdefault(target, set())
+                if not reaching <= held:
+                    held |= reaching
+                    changed = True
+    return {name: pairs for (kind, name), pairs in provenance.items()
+            if kind == "variable" and pairs}
 
 
 def _enclosing_if_arms(actions):
@@ -4650,7 +4729,12 @@ def verify_compound_value_reads(actions):
     Shortcuts couldn't convert Text to Dictionary"). get_value() is the correct helper
     for every key in COMPOUND_STATE_KEYS when the read feeds a List consumer.
     """
-    reads, consumed, offenders = _read_variable_keys(actions), _list_consumed_variables(actions), []
+    # _stringified_variable_keys(), NOT _read_variable_keys(): the defect is the Get Text
+    # step, so only provenance that actually passed through a stringifier belongs here.
+    # After WR-20 generalised the walk it also resolves get_value()'s two-action form, and
+    # get_value() is the CORRECT helper for these keys -- reading the unrestricted map here
+    # would fire on every correct call site.  See _stringified_variable_keys()'s docstring.
+    reads, consumed, offenders = _stringified_variable_keys(actions), _list_consumed_variables(actions), []
     for name, keys in reads.items():
         if name not in consumed:
             continue  # text-display-only reads of a compound key are legitimate
