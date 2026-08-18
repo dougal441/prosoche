@@ -42,6 +42,8 @@ from build_state_engine import (
     verify_state_seed,
     verify_string_envelopes,
     verify_voice_enabled_seed,
+    verify_voice_gates,
+    verify_voice_path_volume_silence,
 )
 
 SOURCE = Path("src/PROSOCHE-Dumb.xml")
@@ -636,6 +638,16 @@ def main() -> None:
     # neither the split nor its placement -- a fork that dropped voice()'s speech or let
     # mirror() regain it is exactly as invisible to both validator gates as the Core case.
     verify_speaktext_placement(actions)
+    # PHASE 15 (15-04).  Armed here for the first time, beside the speech-placement guard
+    # above for the same reason it sits beside it on Core: Sentient inherits voice()'s consent
+    # gate and once-per-run gate from the built Core source, so this asserts the fork lost
+    # neither -- a fork that dropped or partially enclosed either gate is exactly as invisible
+    # to both validator gates and to a decrypt of the signed container as the Core case.
+    verify_voice_gates(actions)
+    # Beside the consent-and-once-per-run guard above for the same reason it sits beside it on
+    # Core: Sentient inherits the whole Voice path from the built Core source, so this asserts
+    # the fork added no volume write inside a 'Loud Mirror' branch span.
+    verify_voice_path_volume_silence(actions)
     # PHASE 16 CODE REVIEW (WR-01).  Armed here for the first time: 16-01 created this guard
     # FOR the GroupingIdentifier defect class and armed it on Dumb only, with no per-fork
     # reasoning recorded either way -- an omission, not a decision.  It matters MORE here.
