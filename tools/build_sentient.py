@@ -311,6 +311,34 @@ def fix_fork_strings(actions) -> None:
                 f"and nothing any structural check downstream of here can see.") from failure
 
 
+def open_arm_contract_markers(actions):
+    """Indexes of every contract marker inside the router's OPEN arm, or None if unlocatable.
+
+    THE ONE DERIVATION, run over two inputs -- PHASE 11 CODE REVIEW (IN-04).  main() calls it
+    on the already-spliced Aware list to find the INSERTION POINTS, and again on a fresh parse
+    of the untouched Core bytes to find the EXPECTATION the insertion is then held to.  Two
+    call sites, one body: a second copy of "where the OPEN arm is" would be free to drift from
+    the builder, which is exactly the failure mode docs/sentient_core_check.py's own comment
+    records for its retired literal count.
+
+    The OPEN arm is bounded the same way verify_circle_zero_silence() bounds it -- from the
+    router's own OPEN literal test and its grouping identifier -- so a rendering added anywhere
+    inside that arm is covered with no further code change, and the nine Test-a-Circle
+    renderings in the MANUAL arm are excluded BY CONSTRUCTION rather than by an index (T-11-51).
+    Returns None (not []) when the OPEN test itself cannot be found, so "the router was
+    restructured" stays distinguishable from "the OPEN arm contains no marker".
+    """
+    open_test = next(((index, string) for index, condition, string in input_key_tests(actions)
+                      if condition == 4 and string == "OPEN"), None)
+    if open_test is None:
+        return None
+    open_group = actions[open_test[0]]["WFWorkflowActionParameters"]["GroupingIdentifier"]
+    open_end = flow_index(actions, open_group, 1)
+    return [index for index in range(open_test[0], open_end)
+            if actions[index].get("WFWorkflowActionParameters", {})
+                             .get("WFCommentActionText", "").startswith(CONTRACT_MARKER)]
+
+
 def main() -> None:
     original = SOURCE.read_bytes()
     root = plistlib.loads(original)
@@ -373,19 +401,13 @@ def main() -> None:
     #
     # Indexes are into the ALREADY-SPLICED list -- the two import-preference actions went in
     # above -- so the collection has to happen here, after that splice, never before.
-    open_test = next(((index, string) for index, condition, string in input_key_tests(actions)
-                      if condition == 4 and string == "OPEN"), None)
-    if open_test is None:
+    markers = open_arm_contract_markers(actions)
+    if markers is None:
         raise SystemExit(
             "no conditional tests Input Key against the OPEN literal; the router has been "
             "restructured and the audit's insertion point can no longer be located. "
             "CONSEQUENCE: refusing to fall back to document order -- that is the exact defect "
             "this derivation replaces.")
-    open_group = actions[open_test[0]]["WFWorkflowActionParameters"]["GroupingIdentifier"]
-    open_end = flow_index(actions, open_group, 1)
-    markers = [index for index in range(open_test[0], open_end)
-               if actions[index].get("WFWorkflowActionParameters", {})
-                                 .get("WFCommentActionText", "").startswith(CONTRACT_MARKER)]
     if not markers:
         raise SystemExit(
             "no semantic Confession contract marker inside the OPEN arm. CONSEQUENCE: this "
@@ -408,14 +430,33 @@ def main() -> None:
     # block plus one model is a clean run there by construction.  Only sentient_core_check.py
     # caught it, after the bad artifact had already been written.
     #
-    # The two counts are the same quantity measured two ways, so a mismatch is never cosmetic:
-    # Dumb emits no askllm at all (docs/sentient_core_check.py asserts that separately), so
-    # every Use Model action in this list came from an audit_block() inserted just above.
+    # PHASE 11 CODE REVIEW (IN-04) MADE THAT ASSERTION INDEPENDENT, and it needed to be.
+    # As first written it compared `inserted` against `len(markers)` -- two quantities that
+    # both descend from the SAME collection -- so it caught a defect in the INSERTION LOOP and
+    # was tautological with respect to a defect in the DERIVATION that feeds it.  Measured
+    # 2026-08-18 by truncating `markers` after collection with open_test/open_end intact:
+    # build_sentient.py exited 0, WROTE a 4372-action / 1-askllm fork to disk, and
+    # docs/sentient_audit_check.py passed it.  The expectation is therefore re-derived HERE
+    # from the CORE fork's own untouched bytes -- `original`, re-parsed, never the list this
+    # function has been splicing -- which is the same quantity docs/sentient_core_check.py
+    # computes and the reason that checker caught what the builder could not.
+    #
+    # NO THIRD DERIVATION, deliberately: open_arm_contract_markers() is the one function both
+    # call sites use, run over two different inputs.  A second copy of "where the OPEN arm is"
+    # would be free to drift from the builder, and the whole point is that it cannot.
+    #
+    # The three counts are the same quantity measured three ways, so a mismatch is never
+    # cosmetic: Dumb emits no askllm at all (docs/sentient_core_check.py asserts that
+    # separately), so every Use Model action in this list came from an audit_block() inserted
+    # just above.
+    core_markers = open_arm_contract_markers(plistlib.loads(original)["WFWorkflowActions"])
+    expected = len(core_markers or ())
     inserted = sum(1 for item in actions
                    if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.askllm")
-    if inserted != len(markers):
+    if not expected or inserted != expected or len(markers) != expected:
         raise SystemExit(
-            f"{len(markers)} OPEN-arm dispatch rendering(s) but {inserted} Use Model action(s). "
+            f"the Core fork's OPEN arm has {expected} dispatch rendering(s); this build "
+            f"collected {len(markers)} marker(s) and emitted {inserted} Use Model action(s). "
             f"CONSEQUENCE: a rendering reaches Intention with no contract audit, so an Aware "
             f"install silently behaves as Core on that path with nothing observable on device.")
     # Phase 11 plan 06.  The fork's own name, in its own Note and its own state seed.  This

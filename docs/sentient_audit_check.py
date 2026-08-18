@@ -14,6 +14,26 @@ Use Model per block" and "exactly one revision prompt per block" are the propert
 matter; an artifact-wide total of two would be satisfied just as well by two model calls
 inside one block and none in the other, which is precisely the shape this file exists to
 reject.  The count of BLOCKS is reconciled against the count of Use Model actions instead.
+
+THIS FILE DELIBERATELY CARRIES NO CORE-DERIVED EXPECTATION, and the reason is recorded here
+because a previous version of the reason was measurably wrong.  Everything below reconciles
+the Aware fork AGAINST ITSELF -- span count against model count, gate by gate inside each
+block -- so one block plus one model is a clean run here by construction.  That is a real
+blind spot and it is stated rather than hidden: this file cannot see a MISSING rendering's
+audit, and it never could.  PHASE 11 CODE REVIEW (WR-18, then IN-04) measured it twice.
+
+What closed that gap is NOT a third copy of the Core derivation.  It is
+tools/build_sentient.py's assertion, which as of IN-04 re-derives the expected count from the
+Core fork's own untouched bytes via the shared open_arm_contract_markers() and refuses to
+write the artifact on a mismatch -- so the defect is now caught BEFORE disk, and by a
+quantity independent of the collection it checks.  docs/sentient_core_check.py keeps the
+same expectation post-hoc, on the shipped artifact.  Adding a third instance here would
+duplicate what that file already asserts, on the same artifact and at the same moment, and
+give the derivation a third place to drift.  The declined-with-reason record: the earlier
+justification for declining -- "the builder assertion is strictly stronger than a second
+standalone checker because it fires before the artifact reaches disk" -- was HALF WRONG and
+is retracted.  It was stronger in TIMING and weaker in INDEPENDENCE, which is the half that
+mattered; the fix was to make the builder independent, not to leave the claim standing.
 """
 import plistlib
 import re
