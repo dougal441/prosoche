@@ -3251,3 +3251,63 @@ pattern and both candidate chains are already wired and validated.
 is designed so an EMPTY result is distinguishable from a missing one via its `<<`/`>>`
 delimiters, and the third field reports the condition-99 contains test that the removal path
 actually depends on.
+
+## 32. Phase 11 — the output-name class fix: one table entry, two sites, and a guard that can now see them (plan 11-07, 2026-08-18)
+
+**The corpus tally that identified the class.** Re-taken this session across all 19 shipped
+golden XMLs, resolving every `ActionOutput` token back to its producing identifier:
+`is.workflow.actions.text.match` publishes **`Matches` 15 times** and the label this engine had
+guessed **0 times**. A second, independent source agreed: `tools/build_sentient.py`'s
+`audit_block()` had been reading the same identifier's output by the real name all along. One
+artifact was therefore shipping **two contradictory names for one identifier** — the condition
+`ACTION_OUTPUT_NAMES`'s own header comment names as the trigger for normalising ("where two
+independent sources give the real name, normalise to it rather than keep the guess").
+
+**Both sites closed in one pass**, per this project's standing rule that bisection only ever
+reveals the earliest remaining site and site-by-site fixing costs one device round trip each:
+
+| site | consumer | what the wrong name cost |
+|---|---|---|
+| `panic_escape_branch()` section read | condition-99 contains test | Section reads empty → test always false → the otherwise arm reports **"Nothing was changed."** on the path meant to remove the user's bypass |
+| `manual_note_refresh()` Sync My Profile | `set_value("profile_snapshot.proforma", …)` | An unresolved reference written straight into a state key |
+
+**Why it survived three phases.** Nothing errors. The reference does not resolve, and every
+downstream step behaves exactly as it would if the user had simply chosen not to remove the
+bypass. There is no error, no log, and — because the Note append that records the change never
+runs — no audit trail either. This is the T-11-36/T-11-37 pair in the plan's threat register:
+a spoofed success and an unloggable repudiation, arising from the same missing string.
+
+**The table entry is the fix; the two corrected sites are only its consequence.**
+`ACTION_OUTPUT_NAMES` now lists `is.workflow.actions.text.match`. That single entry arms the
+whole chain for the identifier at **every present and future site**:
+`_expected_output_names()` → `normalise_output_names()` rewrites every reference by producing-
+action UUID → `verify_output_names()` fails the build on any survivor. While the identifier was
+absent from that table, the guard built for exactly this defect class was **blind to both
+sites** — which is why a review finding from Phase 11 was still live at HEAD after Phases 12,
+13 and 16 had each landed on this codebase.
+
+**The negative control, observed both ways.** One `text.match` reference's `OutputName` was
+rewritten to a wrong string on a deep copy of the parsed Core action list, and
+`verify_output_names()` called directly on it — not by editing a call site and rebuilding,
+because `normalise_output_names()` runs *before* the verifier in `main()` and would silently
+repair the regression first:
+
+- **With the table entry removed** (reproducing the state before this plan): the call
+  **returned normally**. Nothing raised. The guard was genuinely silent, not merely
+  mutation-proof.
+- **With the table entry present**: `SystemExit` — *"magic-variable references carry a wrong
+  OutputName: action 4225 says 'Totally Wrong Name', real name is 'Matches' (1 total)"*.
+
+The unmutated source then verified clean, confirming the control restored cleanly.
+
+**The consumption-shape verdict: OPEN, with a fallback adopted.** Recorded in full in §31. In
+short: the shape is *not* settled, the probe that would have settled it built and signed but
+could not be installed, and the in-repo `First Item` precedent was adopted as the bounded
+fallback and recorded as a deviation. +2 actions per fork.
+
+**Nothing here is device-verified, and none of it is claimed to be.** DIST-03 is open. The
+repaired removal path has never run on a phone; what is proven is structural — the corpus
+tally, the build guard and its negative control, gate A at the project target, and the AEA1
+decrypt of both signed containers showing recovered action arrays equal to their sources with
+`Matches` present and the retired guess absent. Whether the removal branch actually reaches its
+confirmation menu on device remains exactly as unproven as it was before this plan.
