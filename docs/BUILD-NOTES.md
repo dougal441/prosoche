@@ -3599,7 +3599,15 @@ pinned; no identifier is shared between them; the nine MANUAL-arm markers carry 
 both forks pass gate A; and the Aware container decrypts to an action array equal to its source
 with both model actions carrying the pinned on-device literal.
 
-## 34. Phase 11 — the two interim stand-ins in force, and one review item already closed elsewhere (plan 11-10, 2026-08-18)
+## 34. Phase 11 — the two interim stand-ins recorded, one now discharged, and one review item already closed elsewhere (plan 11-10, 2026-08-18)
+
+**⚠ SUPERSEDED IN PART 2026-08-18 by plan 15-01.** This section originally recorded TWO
+interim stand-ins in force. Only ONE remains: Circle 8's is **discharged** — `voice()` replaces
+`mirror_and_voice()` as the designed Voice primitive, and `"Loud Mirror"` now dispatches it,
+distinct from `"Mirror"`'s `mirror()`. Circle 6's `Eject`/`Redirect` stand-in is untouched and
+still awaits Phase 17. The section title, table and Circle-8 subsection below are retained
+rather than rewritten, per this file's own supersession convention — see the dated note inside
+the Circle-8 subsection for the discharge record.
 
 Plan 11-02 carried a prohibition, and this section discharges it as written rather than amending
 it. Verbatim:
@@ -3625,7 +3633,16 @@ finds any one of them can reach the rest:
 
 ### Circle 8 — `Loud Mirror` dispatches `mirror_and_voice()`, the Mirror implementation
 
-**What ships today.** `primitive_dispatch()`'s branch tuple maps both `"Mirror"` and
+**⚠ DISCHARGED 2026-08-18 by plan 15-01.** The stand-in this subsection describes is no longer
+what ships. `mirror_and_voice()` was split into `mirror()` (Circle 7, shows only) and `voice()`
+(Circle 8, shows and speaks once, consent-gated); `primitive_dispatch()`'s tuple now maps
+`("Mirror", mirror)` and `("Loud Mirror", voice)`. A new build guard,
+`verify_speaktext_placement()`, fails the build if the two ever collapse back into one
+behaviour. The rest of this subsection is retained below, unedited, as the record of what
+shipped and why between Phase 11 and this discharge — not as a description of the current
+build.
+
+**What shipped from Phase 11 to plan 15-01.** `primitive_dispatch()`'s branch tuple mapped both `"Mirror"` and
 `"Loud Mirror"` to the same Python function, `mirror_and_voice()`. Circle 8 is a real dispatch
 that renders a real primitive — it is not dead, and it is not the designed one.
 
