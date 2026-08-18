@@ -33,11 +33,13 @@ as a module.  It never shells out and never rebuilds `src/PROSOCHE-Dumb.xml`.
 """
 from __future__ import annotations
 
+import ast
 import importlib.util
 import inspect
 import json
 import plistlib
 import sys
+import textwrap
 from pathlib import Path
 
 
@@ -381,6 +383,23 @@ def cross_fork_check():
     return load_module("environmental_restore_sentient", SENTIENT_BUILDER)
 
 
+def called_names(function) -> set[str]:
+    """The plain function names actually CALLED anywhere inside `function`'s body.
+
+    ast, not a substring test, and PHASE 11 CODE REVIEW (WR-21) is why.  The substring form
+    this replaces asked only whether "name(" appeared in the source text, which a
+    `#`-prefixed line satisfies -- and "commented out during a debug session and never
+    restored" is not an exotic way for a guard to leave the pipeline, it is the common one,
+    presenting identically to deletion.  Measured 2026-08-18: with
+    `# verify_environmental_reachability(actions)  # TEMPORARILY DISABLED` and the same for
+    verify_panic_escape_isolation in BOTH builders, both builds exited 0 and this file printed
+    "passed".  A commented-out call is not an ast.Call node, so it now fails.
+    """
+    tree = ast.parse(textwrap.dedent(inspect.getsource(function)))
+    return {node.func.id for node in ast.walk(tree)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)}
+
+
 def call_site_check(builder, sentient) -> None:
     """Every CALLED_GUARDS entry is INVOKED by each builder's main(), not merely defined.
 
@@ -388,18 +407,19 @@ def call_site_check(builder, sentient) -> None:
     both guards this phase added can be removed from the build pipeline with every count in
     this file still green, because REQUIRED_SYMBOLS only asks hasattr/callable.
 
-    The test is a source read of main() rather than a runtime trace, using the same
-    inspect.getsource() idiom source_check() already applies to manual_emergency_restore().
-    That is deliberate: this file is documented read-only and must never rebuild an artifact,
-    so it cannot observe a guard running.  The limit of a source read is recorded rather than
-    hidden -- it proves the NAME appears applied inside main(), so a call commented out or
-    moved behind a never-taken branch would still read as present.  It catches deletion, which
-    is the failure mode the cancelled cut and this phase's own negative control both take.
+    The test is a STATIC read of main() rather than a runtime trace, which is deliberate:
+    this file is documented read-only and must never rebuild an artifact, so it cannot
+    observe a guard running.  WR-21 replaced the substring form with an ast parse (see
+    called_names()), which closes the commented-out case.  The remaining limit of ANY static
+    read is recorded rather than hidden: a call moved behind a never-taken branch, or reached
+    only through an alias or a getattr, still reads as present.  What it now catches is
+    deletion AND commenting-out, which are the two failure modes the cancelled cut and this
+    phase's own negative controls take.
     """
     for module, label in ((builder, BUILDER.name), (sentient, SENTIENT_BUILDER.name)):
-        body = inspect.getsource(module.main)
+        called = called_names(module.main)
         for name in CALLED_GUARDS:
-            require(f"{name}(" in body,
+            require(name in called,
                     f"{label}'s main() no longer CALLS {name}() -- the function still exists, "
                     "so the REQUIRED_SYMBOLS check above stays green while the guard is "
                     "disarmed: the environmental primitives can silently return to a dead arm, "
