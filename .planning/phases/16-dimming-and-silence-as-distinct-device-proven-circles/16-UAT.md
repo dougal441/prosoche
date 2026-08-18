@@ -1,8 +1,8 @@
 ---
-status: blocked
+status: partial
 phase: 16-dimming-and-silence-as-distinct-device-proven-circles
 source: [16-01-SUMMARY.md, 16-02-SUMMARY.md, 16-03-SUMMARY.md, 16-04-SUMMARY.md, 16-05-SUMMARY.md, 16-06-PLAN.md]
-blocked_on: DIST-03
+blocked_on: DIST-03 (lifted for this session; brightness sub-tests re-blocked on rung-4 device access)
 started: 2026-08-18
 updated: 2026-08-18
 ---
@@ -836,30 +836,61 @@ outcome (Aware fork, one Dimming cycle):
 
 ---
 
-## Results
+## Results — device session 2026-08-18/19, over iPhone Mirroring
+
+**The headline: the capture → persist → apply → restore → clear cycle is DEVICE-PROVEN for
+VOLUME, and remains unsettled for BRIGHTNESS.** Full evidence in
+`.planning/debug/device-state/README.md`, findings F-13, F-14 and F-8.
+
+**The measurement that carries the phase.** Every step was read numerically off the device
+using a two-action probe (`Get Device Details` → `Show Content`) built on the phone, rather
+than inferred from the absence of an error:
+
+| step | `Current Volume` | `state.json` |
+|---|---:|---|
+| before Silence | `1` | no capture key |
+| after Silence (Circle 3) | **`0.10000000149`** | flat `settings_snapshot.volume.original_value = 1` |
+| after **Emergency Restore** | **`1`** | flat key back to `"null"` |
+| after a second cycle, restored by **CLOSE** instead | **`1`** | flat key back to `"null"` |
+
+So the original was captured, persisted to disk **before** the change, the change was **actually
+applied to the device**, and **both** restore paths — Emergency Restore and the CLOSE pipeline —
+returned the exact original and cleared the sentinel.
+
+**⚠ The false-negative trap this file would have walked into.** The capture lands in a **flat
+top-level key**; the nested `settings_snapshot` block reads `"null"` throughout. Test 2 as
+written sends a tester to the nested block, where they would have recorded a failure on the very
+test this phase exists to pass. See finding F-4.
 
 | # | Test | Outcome |
 |---|---|---|
-| 1 | Coerced operand's applied value, via the spike-010 Breadcrumbs probe | |
-| 2 | A real capture is visible in `state.json` | |
-| 3 | The has-any-value guard correctly skips the change | |
-| 4 | Full capture → apply → restore round trip | |
-| 5 | What `WFBrightness = 0` looks like on this screen | |
-| 6 | App force-quit mid-session | |
-| 7 | Device restart mid-session | |
-| 8 | CLOSE never fires at all | |
-| 9 | Two overlapping sessions | |
-| 10 | Compound — overlap plus force-quit of the winner | |
-| 11 | Emergency Restore after every failure mode | |
-| 12 | Removed snapshot leaves absent from a fresh bootstrap | |
+| 1 | Coerced operand's applied value | **PASS for volume** — the operand is consumed: volume moved 1 → 0.1. Brightness: see 5. |
+| 2 | A real capture is visible in `state.json` | **PASS for volume** — as the flat key `settings_snapshot.volume.original_value`, **not** the nested block. |
+| 3 | The has-any-value guard correctly skips the change | **PASS** — Dim reported *"Brightness could not be captured, so nothing was changed"* and wrote no capture. Fails safe, with honest user-facing copy. Reproduced on both the manual `Test a Circle` path and a real OPEN. |
+| 4 | Full capture → apply → restore round trip | **PASS for volume, via BOTH paths** — Emergency Restore and CLOSE each restored `1` exactly. |
+| 5 | What `WFBrightness = 0` looks like on this screen | **BLOCKED — rung 3 cannot settle it.** `Current Brightness` reads **`0`** on this iPhone 15 Pro while mirrored, so Dim never applies anything. `Device Is Locked` reads **`No`**, so the `0` is *not* attributable to a locked device; the leading explanation is that the physical display is off while mirroring, and that is untested. **Do not promote this to "brightness cannot be captured on iOS 26".** Needs rung 4. |
+| 6 | App force-quit mid-session | not run |
+| 7 | Device restart mid-session | not run |
+| 8 | CLOSE never fires at all | not run |
+| 9 | Two overlapping sessions | not run |
+| 10 | Compound — overlap plus force-quit of the winner | not run |
+| 11 | Emergency Restore after every failure mode | **PASS for the ordinary case** (restored volume to `1`, cleared the sentinel). Not run against Tests 6–10, which were not run. |
+| 12 | Removed snapshot leaves absent from a fresh bootstrap | **PASS.** A genuinely fresh bootstrap wrote `settings_snapshot` with exactly `{"original_value": "null"}` per group — one leaf each, both containers present, no `changed_at`, no `changed_by_session_id`. Upgrade case: **exercised only as far as reading** the pre-install file, which does carry both removed leaves; no Dimming cycle was run against it, and the file is preserved so it still can be. **Aware fork: NOT EXERCISED — it is not installed on this device.** |
+
+**A bonus this file said was impossible, and is not (finding F-8).** This file states that which
+build is installed cannot be determined by inspection, because the signer strips
+`WFWorkflowName`. True of the shortcut; **false of the state it writes.** The `settings_snapshot`
+seed shape above is emitted by no build before D-02, so *delete `state.json`, run once, read
+`settings_snapshot`* is a reliable build fingerprint. Worth adding to the re-import precondition
+section, which otherwise has to be taken on trust.
 
 ## Summary
 
-total: 12 (Tests 1, 2, 4, 7, 9, 10, 11 and 12 carry multiple sub-observations)
-passed: 0
+total: 12
+passed: 6
 issues: 0
 skipped: 0
-blocked: 12
+blocked: 6
 
 ## Reachability probe — MEASURED at execution time, 2026-08-18
 

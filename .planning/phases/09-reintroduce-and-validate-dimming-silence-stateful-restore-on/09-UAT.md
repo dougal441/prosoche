@@ -61,6 +61,19 @@ updated: 2026-08-16T10:05:40.000Z
 > with a 50% default**, so an unresolved operand fails silently rather than erroring.
 > `16-UAT.md` Test 1 carries the replacement.
 >
+>
+> ## Device session 2026-08-18/19 — the successor instrument was RUN
+>
+> The user asked for phase 9 by name during `/gsd-verify-work`. Because this file is superseded,
+> the successor `16-UAT.md` was run instead and carries the results; this file is still not
+> edited beyond this block. In short: **the capture → persist → apply → restore → clear cycle is
+> now device-proven for VOLUME** (measured 1 → 0.1 → 1, with the capture persisted to disk before
+> the change and cleared by both Emergency Restore and CLOSE), and **brightness remains
+> unsettled** — `Get Device Details → Current Brightness` reads `0` over iPhone Mirroring, so Dim
+> correctly refuses to change anything it cannot restore. That refusal is this file's Test 4 and
+> Test 5 answered in the only form a device can give them, and it vindicates the safety design
+> rather than the primitive. Evidence: `.planning/debug/device-state/README.md`, findings F-13
+> and F-14.
 > **Everything else in this file remains `pending` and is inherited, re-scoped, by `16-UAT.md`.**
 > The DEV-06 first-principles write-up in `## Context` below is still sound as *reasoning* and is
 > carried forward as the prediction that `16-UAT.md` Test 9 exists to test — but decision **D-02**
