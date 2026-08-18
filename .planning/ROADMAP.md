@@ -766,7 +766,7 @@ whitelist anything named `"Voice"` forever.
 **Severity:** major
 **Requirements**: CIRC-08, CIRC-09, CIRC-14, DIST-01
 **Depends on:** Phase 11
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 **Wave 1**
@@ -780,7 +780,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 15-04-PLAN.md — `verify_voice_gates()`, `verify_voice_path_volume_silence()`, and the "no two entry names are action-equal" assertion in `docs/sequence_dispatch_check.py`
+- [x] 15-04-PLAN.md — `verify_voice_gates()`, `verify_voice_path_volume_silence()`, and the "no two entry names are action-equal" assertion in `docs/sequence_dispatch_check.py`
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
