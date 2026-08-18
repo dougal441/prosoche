@@ -3,7 +3,7 @@ spike: 011
 name: mirror-primitive-picker-discriminator
 type: standard
 validates: "Given the alert-free three-leg probe (List / Get Item From List / Speak Text, Circle 8's own index, MIRROR_SUCCESSES transcribed verbatim), when imported and run on the booted iOS simulator with a bisection, then determine which of the three action identifiers unique to the Mirror primitive's span raises \"Please choose a value for each parameter in this action\" -- the device-reproduced axis-4 unfilled-picker failure recorded in `.planning/todos/pending/2026-08-18-mirror-primitive-unfilled-picker.md`"
-verdict: TBD
+verdict: "NOT DISCRIMINATED AT RUNG 2"
 related: [010, 007]
 tags: [axis-4, unfilled-picker, mirror, voice, list, getitemfromlist, speaktext, simulator, rung-2, probe, evidence-hierarchy, bisection]
 ---
@@ -172,10 +172,43 @@ archive under `2026-08-18/`.
 
 ## WHAT DID NOT WORK
 
-None yet -- this section is filled in during Task 2's run.
+- **Tapping the toolbar Play button and the Show Result "Done" button using a y-fraction
+  estimated by eye from the displayed screenshot thumbnail (0.6) missed both controls
+  entirely** and instead landed inside the first Comment action's body text, opening an
+  inline text-selection context menu and a keyboard-dismiss "X" affordance. Cropping the
+  screenshot to the bottom band and reading pixel coordinates directly from the crop (PIL
+  `Image.crop`) gave the correct fraction (`Play` at fx approx 0.840, fy approx 0.936;
+  `Done` at fx approx 0.728, fy approx 0.202) -- eyeballing proportions from a
+  described/rendered thumbnail is not reliable enough for this UI; crop-and-measure is.
+- **A single synthesized tap on the Show Result sheet's "Done" button did not reliably
+  dismiss it** across several attempts at the measured (and confirmed-correct) coordinate.
+  **A hardware Return keypress dismissed it reliably**, but only when preceded by a tap on
+  a neutral, non-interactive area of the screen to ensure the simulator window held input
+  focus. This refines spike 010's `sim_input.py` docstring claim that a Show Result sheet
+  "dismisses on Return, first try" -- true only after an explicit focus-establishing tap.
+- Tapping Play while a text field is still focused (from the mis-tap above) is silently
+  ignored -- no run starts, and the toolbar icon does not switch from Play to the black
+  "stop" square. Only visible by comparing the toolbar icon across screenshots.
+
+Full detail: `FINDINGS.md`'s own "WHAT DID NOT WORK" section (same content, kept in sync).
 
 ## Results
 
-### Verdict: TBD
+### Verdict: NOT DISCRIMINATED AT RUNG 2
 
-Task 2 runs the probe on the simulator and records the bisection and the verdict here.
+None of the three suspect identifiers raised the axis-4 unfilled-picker error on the
+simulator, in the full probe or in either bisection variant (minus Leg 3, minus Legs 2+3).
+Every variant ran cleanly to its final breadcrumb and terminated via
+`Return to Home Screen` with no error text. Full bisection evidence, the exact commands,
+the simulator runtime/device measured during the run, and the rung-2-ceiling analysis are
+in `FINDINGS.md`, which this README points to and which points back here.
+
+**This is not a clean bill of health for the generator.** It means the simulator did not
+reproduce the device-observed failure the blocker todo records three times across two
+independent installs. Per `15-RESEARCH.md` assumption A6, this could mean the real defect
+sits outside these three identifiers entirely (if Circle 3's device run was actually a
+no-op rather than a genuine silent success) -- the narrowing this research relied on to
+select these three suspects is itself now back in question. **CIRC-08 remains
+device-unproven for Phase 15** regardless of this spike's clean rung-2 result; see
+`FINDINGS.md` and the routing recorded in `.planning/todos/pending/
+2026-08-18-mirror-primitive-unfilled-picker.md`.
