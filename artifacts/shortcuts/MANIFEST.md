@@ -1,6 +1,65 @@
 # Shortcut Distribution Manifest
 
 **This table's six hash/size rows describe the PHASE 11 GAP-CLOSURE re-sign (2026-08-18, plan
+11-08), superseding the plan 11-07 re-sign whose header block follows immediately below.** Per
+this file's own convention, that block is retained as its own rebuild's record and is
+superseded by this one wherever the two conflict. Everything else carries forward untouched —
+the capture-persistence fix, D-01's zeroed floor and dim target, the retired-clause sweep and
+11-07's `text.match` output-name fix. This rebuild carries **one change**, and it is the one
+that makes two of the nine interventions intervene at all.
+
+**Dimming and Silence were unreachable, and this build makes them reachable.** Both functions
+opened on a `has any value` gate over the `settings_snapshot.<group>` **container**, with the
+whole capture-and-apply body — the device read, the snapshot write, the environmental write,
+the save, and even the "could not be captured, so nothing was changed" alert — sitting in the
+arm taken only when the container is **absent**. `clear_snapshot()` writes the *leaf* and never
+the container, deliberately, so that the seeded subtree stays a permanent invariant. The gate
+could therefore never read false. Measured against the previously shipped artifact: **44
+environmental actions per fork** in the never-taken arm — 22 Get Device Details, 11 Set
+Brightness, 11 Set Volume, which is *every* Get Device Details in the artifact and every
+non-restore environmental write. A Circle configured to dim or quieten produced **nothing** on
+device: no change, no state write, no alert, no error. Plan 11-08 re-gates both onto
+`settings_snapshot.<group>.original_value` with the numeric `> 0` test
+`restore_managed_settings()` already used, and arms a new build guard,
+`verify_environmental_reachability`, in **both** builders with no exemption set. **0 actions
+per fork remain unreachable.** The fix re-gates existing actions and emits none, so all site
+counts held exactly — 15 Set Brightness / 15 Set Volume / 22 Get Device Details, coercion split
+15-of-15 and 4-of-15, action totals 4304 Core and 4372 Aware, every one re-measured against the
+rebuilt forks rather than carried forward.
+
+**Three older claims a reader might otherwise trust at face value, corrected here rather than
+edited away.** All three are retained below as the record of what was honestly believed:
+
+1. **"Dimming and Silence writes now execute where they previously no-opped"** — the Phase
+   9-era warning block further down this file. That coercion fix was necessary and it was
+   **not sufficient**. The writes were correctly typed and still could not be reached, so they
+   went on no-opping for three further phases.
+2. **Phase 16's belief that the container gate was intentional input validation.** `dimming()`'s
+   pre-11-08 docstring stated that both the condition-100 container gate and the numeric
+   capture gate were "input validation over an absent or untrusted Get Device Details reading
+   (T-16-03)", and Phase 16 therefore left the broken one alone on purpose. That is true of the
+   inner gate and false of the outer one, which fires **before** Get Device Details runs and so
+   validated no reading at all. Phase 16 did not introduce this defect and its own
+   persistence fix is correct and untouched — but that fix was ordering *inside* a body that
+   had never been reached.
+3. **11-07's "the probe could not be installed"**, in the block immediately below. That was
+   retracted the same day: the simulator import channel works, the probe's own missing
+   normalisation pass was the real cause, and the consumption shape is now settled at rung 2.
+   See `docs/BUILD-NOTES.md` §31 (rewritten).
+
+**REACHABLE IS NOT PROVEN ON A DEVICE, and this build does not claim it is.** What is proven is
+structural, and only structural: the writes are correctly coerced, they are persisted before
+the device changes, and they are now reachable. The capture-and-restore loop those three
+properties exist to serve **has still never executed on hardware**, Emergency Restore has still
+never been tapped on a phone, and `16-UAT.md`'s twelve tests — which are exactly the
+force-quit, restart, missed-CLOSE, overlapping-session and lock-screen failure modes this
+change makes reachable — have never run. DIST-03 is open and Phase 16 owns that proof. This
+plan changes *what that UAT will be testing* — a live loop instead of a dead one — and nothing
+about its outcome.
+
+---
+
+**This table's six hash/size rows describe the PHASE 11 GAP-CLOSURE re-sign (2026-08-18, plan
 11-07), superseding the phase 16 plan 16-06 re-sign whose header block follows immediately
 below.** Per this file's own convention, that block is retained as its own rebuild's record
 and is superseded by this one wherever the two conflict. **Everything else in this build is
@@ -134,12 +193,12 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Core source | `src/PROSOCHE-Dumb.xml` | 2856393 | `fa540eee3e698d7298307809ff1888bbb8f0643250b804dd634819a539b67b8a` |
-| Core archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Core-125301.xml` | 2856393 | `fa540eee3e698d7298307809ff1888bbb8f0643250b804dd634819a539b67b8a` |
-| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 230355 | `b34b8b065db25f72d3a02e56aaf912a71b3cc135ea371a1878a4965c5e9d0a5e` |
-| Aware source | `src/PROSOCHE-Sentient.xml` | 2893074 | `7dc6b0db16d493cb5041007ac2bfa53dd77802f2048a6bb7061c66a749b07016` |
-| Aware archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Aware-125316.xml` | 2893074 | `7dc6b0db16d493cb5041007ac2bfa53dd77802f2048a6bb7061c66a749b07016` |
-| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 234885 | `e8601548e5c273880ba1561fa106f47cc462789e0a8a1845fc07e9038d4ea4a8` |
+| Core source | `src/PROSOCHE-Dumb.xml` | 2864203 | `34c2ba05968b0e35c723892404c5f4d3a334d51c3f14263f7d6809997e668b02` |
+| Core archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Core-132716.xml` | 2864203 | `34c2ba05968b0e35c723892404c5f4d3a334d51c3f14263f7d6809997e668b02` |
+| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 231148 | `873fa3dbda7b1f3440bfc76997c2962198ddec2052096833787547b52f129f10` |
+| Aware source | `src/PROSOCHE-Sentient.xml` | 2900884 | `e2c94746e5acf49b82d4f3ba7f89768122c2d3c409b574b27cb8e415c523dcda` |
+| Aware archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Aware-132729.xml` | 2900884 | `e2c94746e5acf49b82d4f3ba7f89768122c2d3c409b574b27cb8e415c523dcda` |
+| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 235592 | `4d985aefa04c1cf99405bd01189d7d6e2d30fa4c3b98d94a9bd0855e66f276f1` |
 
 **Re-archived and re-signed by the phase 13 CODE REVIEW, finding CR-01 (2026-08-17).** This is
 the record for the six rows in the table above; the plan-04 paragraph immediately below is its

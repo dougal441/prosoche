@@ -64,6 +64,12 @@ REQUIRED_SYMBOLS = (
     # the device is changed, so there is something to restore FROM.  Listed here so a future
     # subtractive pass cannot silently delete the guard that makes SAFE-05 effective.
     "verify_capture_persistence",  # build guard: no apply is reachable from an unpersisted capture
+    # PHASE 11 (11-08): the third axis of the same safety property, and the one whose absence
+    # is INVISIBLE at runtime.  verify_restore_gates proves a restore never writes junk;
+    # verify_capture_persistence proves a capture reaches disk before the device changes; this
+    # proves the arm holding both can actually be TAKEN.  Delete it and the primitives can
+    # silently return to doing nothing at all, with every count in this file still green.
+    "verify_environmental_reachability",  # build guard: no environmental action sits in a dead arm
 )
 
 SET_BRIGHTNESS = "is.workflow.actions.setbrightness"
@@ -101,6 +107,35 @@ DEVICE_DETAILS = "is.workflow.actions.getdevicedetails"
 # legitimate reason for these to move -- but only by exactly what that change explains.  A
 # larger delta, or a change caused by deleting dimming() or silence(), is the regression
 # this file exists to catch; investigate it rather than editing the table to match.
+#
+# WHAT THESE THREE NUMBERS DID NOT SAY UNTIL PHASE 11 (plan 11-08), and now do.  A site count
+# asserts that an action EXISTS.  For most of this file's life it was silently read as also
+# asserting the action can RUN, and for 44 of the sites below that reading was false.
+# dimming() and silence() opened on a condition-100 existence gate over the
+# settings_snapshot.<group> CONTAINER, with their whole capture-and-apply body in the
+# OTHERWISE arm.  clear_snapshot() writes the LEAF and never the container -- deliberately, so
+# the seeded subtree stays a permanent invariant -- so that gate could never read false and
+# the otherwise arm was dead code.  Measured against the shipped artifact at HEAD e6b96e3:
+# 22 Get Device Details + 11 Set Brightness + 11 Set Volume = 44 unreachable actions PER FORK,
+# which is EVERY Get Device Details in the artifact and every non-restore environmental write.
+# The eight restore-side writes were always fine: restore_managed_settings() opens on the same
+# container gate but puts its work in the TRUE arm, and its own numeric leaf gate decides
+# inside it.  Polarity, not the gate, was the whole defect.
+#
+# 11-08 re-gated both capture sites onto settings_snapshot.<group>.original_value with the
+# same numeric `> 0` test the restore side already used, so all 44 are now reachable, and
+# armed verify_environmental_reachability() in BOTH builders so the dead-arm shape is a build
+# failure rather than something this table can certify.
+#
+# THE NUMBERS BELOW DID NOT MOVE, AND THAT IS THE POINT.  The fix re-gates existing actions
+# and emits none, so 15 / 15 / 22 held exactly across it -- re-measured against both rebuilt
+# forks, not assumed.  A future reader should read the stillness of these three numbers as the
+# evidence that the reachability fix added and removed nothing; if they HAD moved, that would
+# have been a finding to investigate rather than a table to update.
+#
+# STILL NOT ASSERTED HERE, and not by anything else either: that the capture-and-restore loop
+# WORKS on a phone.  Reachable is a structural property of the build.  DIST-03 is open, Phase
+# 16 owns the device proof, and 16-UAT.md's twelve tests have never run.
 EXPECTED_SITES = {SET_BRIGHTNESS: 15, SET_VOLUME: 15, DEVICE_DETAILS: 22}
 
 # The only two device properties this Shortcut is permitted to read.  Anything else is an

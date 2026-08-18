@@ -14,6 +14,7 @@ Decisions in this document are numbered `BD-NN` ("blocker decision"). They are *
 | BD-06 | Circle naming, primitive roster, and slot allocation | Addendum 01 design pass (2026-08-16) |
 | BD-07 | Conditional TEXT-slot operand envelope — settled ALREADY CORRECT by Donor 5 | 13-03 |
 | BD-08 | `WFItems` List row wrapper — the two-kind rule, from Donors 4 and 4.1 | 13-03 |
+| BD-02/03-A1 | The capture gate both decisions specify was present but UNREACHABLE — corrected, and T-16-03's scope corrected with it | 11-08 |
 
 ---
 
@@ -1078,3 +1079,130 @@ decision record future agents treat as settled and the evidence hierarchy makes 
 authoritative.
 
 **Requirement:** CIRC-07, DIST-01
+
+---
+
+## BD-02/03-A1 — the capture gate both decisions specify was present but UNREACHABLE
+
+*Amendment to **BD-02** and **BD-03** jointly, Phase 11 plan 11-08, 2026-08-18.*
+
+**This sits BESIDE BD-02's existing Supersession note (D-01), not inside it, and the separation
+is the point.** D-01 settled the **value** the brightness write targets — the floor is retired
+and `safety.dim_target` is `0`. This settles whether the code holding that value could **run at
+all**. The two are orthogonal properties of the same primitives: a correct target in an
+unreachable branch is still nothing happening, and D-01 would have been just as settled and just
+as inert without this fix. Merging them into one note would have implied the floor decision was
+in some way responsible for, or repaired by, the reachability defect. It was neither.
+
+### What was wrong
+
+BD-02's Decision paragraph specifies "only if no un-restored snapshot already exists for that
+key"; BD-03's specifies the "same no-overwrite-of-a-true-original guard". Both were built — and
+both were built as a **condition-100 existence test over the `settings_snapshot.<group>`
+CONTAINER**, with the entire capture-and-apply body in the arm taken when the container is
+**absent**. `clear_snapshot()` writes the **leaf** and never the container, deliberately, so the
+bootstrap-seeded subtree stays a permanent invariant. The container is therefore *always*
+present, the gate is *permanently true*, and the body was **dead code**.
+
+Measured against the shipped artifact before the fix, per fork:
+
+| measure | count |
+|---|---:|
+| environmental actions in the never-taken arm | **44** |
+| — `is.workflow.actions.getdevicedetails` | 22 |
+| — `is.workflow.actions.setbrightness` | 11 |
+| — `is.workflow.actions.setvolume` | 11 |
+| permanently-true `settings_snapshot` container gates | 30 |
+| correct-polarity restore writes wrongly flagged | **0** |
+
+That 44 is *every* Get Device Details in the artifact and every non-restore environmental write.
+Nothing BD-02 and BD-03 specify — not the read, not the capture, not the write, not even the
+degrade-to-message-only alert, which lives in the same arm — could execute. The eight
+restore-side writes were never affected: `restore_managed_settings()` opens on the identical
+container gate but places its work in the **true** arm and lets its own numeric leaf gate decide
+inside it. **Polarity, not the gate, was the entire defect** — which is why the corrected guard
+tests the arm and never the gate, and why the restore side is clean by construction rather than
+by exemption.
+
+### What corrected it, and why the leaf gate is the right shape
+
+Both capture sites now read `settings_snapshot.<group>.original_value` and gate it on a numeric
+`> 0` test — the identical shape and the identical rule `restore_managed_settings()` already
+used, so capture and restore finally agree on what counts as a real outstanding original. The
+shape is forced by device-measured coercion, not chosen for symmetry: the cleared sentinel
+`"null"` and an empty string **both** coerce to a false `> 0` test (Donor 6.1 test 2 and Donor 6
+action 8), whereas a string `is not` test (code 5) closes the sentinel case and leaves the empty
+case open. A numeric test closes both. The operand is `gettext`-fed, so
+`normalise_numeric_operands()` attaches the coercion aggrandizement automatically and no new
+shape enters the artifact — confirmed against the rebuilt forks rather than assumed.
+
+The fix re-gates existing actions and emits none. Every site count held exactly across it —
+15 Set Brightness, 15 Set Volume, 22 Get Device Details, coercion split 15-of-15 and 4-of-15 —
+re-measured against both rebuilt forks. The stillness of those numbers is the evidence that
+nothing was added or removed.
+
+### Correction to Phase 16's record — T-16-03's scope was wrong
+
+Phase 16 plan 16-01 filed **both** gates over these functions under one threat, **T-16-03**, and
+described both as "this project's input validation over an absent or untrusted Get Device
+Details reading". That is accurate for the **inner** numeric gate (`capture_g`), which tests the
+freshly-read device value and is untouched by this amendment. It is **false** for the **outer**
+container gate (`snapshot_g`), which is evaluated **before** `Get Device Details` runs and so
+validates no reading whatsoever. Believing the outer gate was load-bearing input validation is
+precisely what led 16-01 to state in `dimming()`'s docstring that it "must stay so" — and thus
+to leave the actually-broken gate alone during the one phase devoted to these two functions.
+
+The outer gate is reclassified under **T-11-59** (denial of service — the reachability defect
+proper), which this amendment closes. T-16-01 (the persistence-ordering defect) is a genuine and
+distinct threat over the same functions, remains closed, and is **unmodified** by this work: it
+governs ordering *once the body runs*; T-11-59 governs whether the body runs. Neither implies
+the other, and this is not a retraction of Phase 16 — 16-01's fix is correct, it was fixing a
+real defect, and it did not introduce this one. It was repairing ordering inside a body that had
+never been reached.
+
+### The guard, and the guard's own limits
+
+`verify_environmental_reachability()` is armed in **both** builders with **no exemption,
+deferral or known-offender set of any kind**. It derives permanent truth rather than assuming
+it: a gate counts as permanently true only when its tested variable's provenance includes a
+`settings_snapshot`-rooted key that `_sentinel_written_keys()` confirms nothing ever clears.
+Evidence it has teeth, all three run and recorded: it raised on the live 44-site defect on both
+forks; it named **none** of the 8 correct-polarity restore writes; and after arming, reverting
+only `dimming()`'s outer gate to the container form exits the build **non-zero** with 22
+offenders, then clears on restore.
+
+It is verified **compatible with, and orthogonal to**, Phase 16's `verify_capture_persistence()`,
+which passed clean both before and after this change on both forks. That is the acceptance-level
+proof that re-gating the outer test disturbed no capture/apply arm relationship — only the gate
+enclosing both of them changed.
+
+### The user decision this discharges
+
+The cut of these primitives was **proposed and then CANCELLED by user decision on 2026-08-16,
+and the cancellation was reaffirmed on 2026-08-17** — "Dimming and Silence stay, each as its own
+distinct Circle, **each with a working capture-and-restore loop**"
+(`docs/environmental_restore_check.py`'s docstring). That decision was honoured in the record and
+not in the artifact: the loop was specified, guarded, counted and certified, and could not run.
+This amendment is what makes the shipped build match the decision that was twice affirmed.
+
+### No behavioural claim
+
+**Nothing here observed a device, and nothing here claims the capture-and-restore loop works.**
+Reachable is a structural property of the build, established by file-level analysis (rung 1) and
+nothing higher. Specifically NOT claimed: that `Get Device Details` returns a real,
+correctly-typed value on hardware; that the original is restored exactly on CLOSE; that
+force-quit, restart, missed CLOSE, overlapping sessions or lock-screen restore or leave a safe
+value; or that any failure mode was recovered from.
+
+The device proof of this loop remains **Phase 16**, requirement **DIST-03**, and **`16-UAT.md`'s
+twelve tests** — none of which has ever run. This plan changes **what that UAT will be testing**
+(a live loop rather than a dead one) and **nothing about its outcome**. Had those twelve tests
+been run before this fix, they would have observed nothing happening and could have been read as
+passing.
+
+Emergency Restore is unchanged and was re-measured after the rebuild: **4 surfaces per fork, 0
+enclosed** by any Panic-Escape-gated group, matching `11-VERIFICATION.md` item 12 exactly. The
+four `restore_managed_settings()` call sites remain the recovery path for everything this
+amendment makes live.
+
+**Requirement:** CIRC-02, CIRC-06, CIRC-08, DIST-01, DIST-02
