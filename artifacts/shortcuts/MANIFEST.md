@@ -1,5 +1,44 @@
 # Shortcut Distribution Manifest
 
+**This table's six hash/size rows describe the PHASE 11 GAP-CLOSURE re-sign (2026-08-18, plan
+11-07), superseding the phase 16 plan 16-06 re-sign whose header block follows immediately
+below.** Per this file's own convention, that block is retained as its own rebuild's record
+and is superseded by this one wherever the two conflict. **Everything else in this build is
+unchanged from the Phase-16 re-sign it supersedes** — the capture-persistence fix, decision
+D-01's zeroed brightness floor and dim target, and the retired-clause sweep all carry forward
+untouched. This rebuild carries **one change**, in two places:
+
+1. **The `text.match` output-name class fix (plan 11-07, closing `11-REVIEW.md` CR-02).**
+   `is.workflow.actions.text.match` publishes its output as **`Matches`** — corpus-attested 15
+   times across the 19 shipped golden XMLs, against **zero** occurrences of the label this
+   engine had guessed. The engine guessed wrongly at two sites while `tools/build_sentient.py`
+   already used the real name, so one artifact shipped **two contradictory names for one
+   identifier**. The wrong name raises nothing: the reference simply does not resolve, the
+   Panic Escape section reads **empty**, the condition-99 contains test over it is therefore
+   **always false**, and a user who asked to remove their bypass was shown a confident
+   *"Nothing was changed."* — the removal half of Phase 11's headline deliverable silently did
+   nothing, for three phases, with no error anywhere. Both sites are corrected in one pass:
+   `panic_escape_branch()`'s section read and `manual_note_refresh()`'s Sync My Profile
+   proforma. `ACTION_OUTPUT_NAMES` now lists the identifier, which is what arms
+   `verify_output_names()` to fail the build on any future site — while the identifier was
+   absent, the guard that exists for exactly this defect class was blind to both sites. A
+   negative control confirms the guard raises on a deliberate regression and was silent on the
+   identical regression beforehand.
+2. **The consumption shape at those two sites, adopted as a bounded fallback and NOT settled
+   by observation.** `text.match` publishes a **list**, and no golden shortcut feeds that list
+   to either `gettext` or `getitemfromlist` — so neither candidate shape is corpus-attested.
+   A rung-2 probe was built and signed to answer it; it could not be installed, so **the
+   question is recorded OPEN and no claim, device or simulator, is made**. The in-repo
+   precedent from `audit_block()` is adopted instead: `getitemfromlist` with the literal enum
+   case `First Item`, which is deterministic about which element is taken and cannot be worse
+   than stringifying a one-element list. Recorded as a deviation in `docs/BUILD-NOTES.md` §31.
+   **+2 actions per fork** (4302 → **4304** Core, 4370 → **4372** Aware).
+
+**Nothing in this rebuild is device-verified.** DIST-03 remains open; the repaired removal path
+has never run on a phone, and this build does not change that.
+
+---
+
 **This table's six hash/size rows describe the PHASE 16 re-sign (2026-08-18, plan 16-06),
 not the phase 13 CODE-REVIEW re-sign, not the phase 13 plan 04 re-sign, not the phase 12 plan
 05 refresh and not the phase 11 plan 06 rebuild.** Every paragraph below this one is retained
@@ -95,12 +134,12 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Core source | `src/PROSOCHE-Dumb.xml` | 2854976 | `e2da2742e662263e972fb3621dec33fd965bdcfb21deb67a8e8bd3d1d6d4da29` |
-| Core archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Core-094139.xml` | 2854976 | `e2da2742e662263e972fb3621dec33fd965bdcfb21deb67a8e8bd3d1d6d4da29` |
-| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 230232 | `9b0f261488beb396d01f8cf63fc539d4ef1f25063ddf6baad8d5569a055a2e7c` |
-| Aware source | `src/PROSOCHE-Sentient.xml` | 2891657 | `b3f8b9cbbf85ca4a819279de65aa18891ac97f87c3acdfcb4052f16ceb548443` |
-| Aware archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Aware-094152.xml` | 2891657 | `b3f8b9cbbf85ca4a819279de65aa18891ac97f87c3acdfcb4052f16ceb548443` |
-| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 234623 | `1db5c1ef0cf50862128ad45686600be8f144b1d5b88661582f43f5a93c1d93b6` |
+| Core source | `src/PROSOCHE-Dumb.xml` | 2856393 | `fa540eee3e698d7298307809ff1888bbb8f0643250b804dd634819a539b67b8a` |
+| Core archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Core-125301.xml` | 2856393 | `fa540eee3e698d7298307809ff1888bbb8f0643250b804dd634819a539b67b8a` |
+| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 230355 | `b34b8b065db25f72d3a02e56aaf912a71b3cc135ea371a1878a4965c5e9d0a5e` |
+| Aware source | `src/PROSOCHE-Sentient.xml` | 2893074 | `7dc6b0db16d493cb5041007ac2bfa53dd77802f2048a6bb7061c66a749b07016` |
+| Aware archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Aware-125316.xml` | 2893074 | `7dc6b0db16d493cb5041007ac2bfa53dd77802f2048a6bb7061c66a749b07016` |
+| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 234885 | `e8601548e5c273880ba1561fa106f47cc462789e0a8a1845fc07e9038d4ea4a8` |
 
 **Re-archived and re-signed by the phase 13 CODE REVIEW, finding CR-01 (2026-08-17).** This is
 the record for the six rows in the table above; the plan-04 paragraph immediately below is its
@@ -391,8 +430,11 @@ and recomputes every size and hash above from the files themselves.
 >
 > **⚠ This build additionally carries BD-06's entire renamed primitive roster and a changed
 > dispatch comparator, none of which has ever run on a real iPhone.** All nine shipped names
-> are proven present in the generator tuple, in all three `sequences` arrays, on all ninety
-> emitted dispatch branches and in the decrypted payload of both signed containers, and every
+> are proven present in the generator tuple, in all three `sequences` arrays, on all 99
+> emitted dispatch branches (9 shipped names × 11 primitive-dispatch renderings = 99, measured
+> fresh against this rebuild and equal across both forks; `docs/BUILD-NOTES.md` §24.3 carries
+> the rendering-count derivation, and `docs/sequence_dispatch_check.py` reports the same 99
+> on every run) and in the decrypted payload of both signed containers, and every
 > one of those branches is proven to carry condition code 4 — all of it file-level structural
 > proof. That any Circle actually reaches its renamed branch under exact matching on device is
 > **not** proven and is not claimed. Read `docs/BUILD-NOTES.md` §21.

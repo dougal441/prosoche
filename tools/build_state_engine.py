@@ -2265,8 +2265,14 @@ def manual_note_refresh():
               ("\n\nThis reports whether PROSOCHĒ has ever recorded a genuine open or an owning close. A close that a newer open superseded, or an open during a cool-down, records nothing — so a \"not seen yet\" verdict can be wrong, but a \"seen\" verdict never is.", None)])),
           otherwise(setup_g), action("is.workflow.actions.nothing"), end_if(setup_g)]
     sync_g, sync_if = if_block("Manual Sync Requested", 2, number=0)
-    text_id, match_id = uid(), uid()
-    a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The extracted text is saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), set_value("profile_snapshot.proforma", output(match_id, "Matched Text")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g)]
+    text_id, match_id, proforma_id = uid(), uid(), uid()
+    # The proforma is extracted with the SAME first-item-then-consume shape as
+    # panic_escape_branch(), for the same reason: text.match publishes a LIST, and writing
+    # that list straight into a state key stores a stringified list rather than the real
+    # extracted proforma.  Identical defect, closed in the same pass rather than left as
+    # the next site to be found.  Shape adopted from build_sentient.py audit_block(); see
+    # docs/BUILD-NOTES.md for why the question is recorded OPEN rather than settled.
+    a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The first matched section is taken, then saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), action("is.workflow.actions.getitemfromlist", UUID=proforma_id, WFItemSpecifier="First Item", WFInput=output(match_id, "Matches")), set_value("profile_snapshot.proforma", output(proforma_id, "Item from List")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g)]
     a += panic_escape_branch()
     a += [comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH END ---")]
     return a
@@ -2318,18 +2324,34 @@ def panic_escape_branch():
                  "- Writes panic_escape_enabled only after an explicit confirmation, in either direction.\n"
                  "- Emergency Restore is neither read nor written here and is not enclosed by any of these blocks.")]
     requested_g, requested_if = if_block("Manual Panic Escape Requested", 2, number=0)
-    note_id, match_id, section_id = uid(), uid(), uid()
+    note_id, match_id, first_id, section_id = uid(), uid(), uid(), uid()
     a += [requested_if,
           action("is.workflow.actions.gettext", UUID=note_id,
                  WFTextActionText=variable("Control Room Note")),
           action("is.workflow.actions.text.match", UUID=match_id,
                  WFMatchTextPattern=PANIC_ESCAPE_SECTION_PATTERN,
                  text=output(note_id, "Text")),
-          # Coerce the match to Text before comparing it: a Matched Text value compared
-          # directly renders blank, the same gotcha read_value() exists to avoid for
+          # Take the FIRST item, then coerce to Text.  Two separate points:
+          #
+          # THE LABEL is "Matches" -- corpus-attested 15/0, see ACTION_OUTPUT_NAMES.
+          #
+          # THE SHAPE is first-item-then-Text, mirroring build_sentient.py audit_block()'s
+          # match -> count -> getitemfromlist[First Item] chain.  text.match publishes a
+          # LIST, and no golden shortcut feeds that list to gettext or to getitemfromlist,
+          # so neither shape is corpus-attested; the 11-07 probe that would have settled it
+          # built and signed but could not be installed on the simulator, so the question
+          # is recorded OPEN and the in-repo precedent adopted as the bounded fallback
+          # (docs/BUILD-NOTES.md, plan 11-07 Task 2).  Taking the first item of a
+          # one-element list is deterministic about WHICH element is taken and cannot be
+          # worse than stringifying that list.
+          # The Text coercion still follows, for the reason it always did: the value is
+          # compared by a condition-99 contains test below, and an uncoerced value
+          # compared directly renders blank -- the same gotcha read_value() avoids for
           # dictionary values.
+          action("is.workflow.actions.getitemfromlist", UUID=first_id,
+                 WFItemSpecifier="First Item", WFInput=output(match_id, "Matches")),
           action("is.workflow.actions.gettext", UUID=section_id,
-                 WFTextActionText=output(match_id, "Matched Text")),
+                 WFTextActionText=output(first_id, "Item from List")),
           set_var("Panic Escape Section", output(section_id, "Text"))]
     a += read_value("panic_escape_enabled", variable("State"), "Panic Escape Stored")
 
@@ -4475,8 +4497,28 @@ def verify_numeric_operands(actions):
 #       device donor (.planning/debug/"Donor - notes.shortcut") AND golden shortcut
 #       f44f5caf5e3e48d4817e73af450c4404.xml action 14 both reference this action's
 #       output by that name.  This artifact said "Rich Text".
+#   text.match -> "Matches"                                        PHASE 11 (11-07), CR-02
+#       Two independent sources, both re-taken this session rather than transcribed.
+#       (1) Golden corpus, all 19 shipped XMLs, every ActionOutput token resolved back to
+#           its producing identifier: this action publishes "Matches" 15 times across 3
+#           files, and the label this engine used to guess ZERO times.  (2)
+#           tools/build_sentient.py's own audit_block() already reads this identifier's
+#           output as "Matches".  The engine guessed differently at two sites, so ONE
+#           artifact shipped TWO contradictory names for ONE identifier.
+#       The retired guess is deliberately NOT spelled out anywhere in this file: a comment
+#       that names a wrong output name is the seed of the next recurrence, and the string
+#       is also the negative-control search term.  Its wording is in 11-07-SUMMARY.md.
+#       WHAT THE WRONG NAME COSTS, and why it went unnoticed for three phases: nothing
+#       errors.  The reference simply does not resolve, so the Panic Escape section reads
+#       EMPTY, the condition-99 contains test over it is therefore always FALSE, control
+#       falls to the otherwise arm, and the user who asked to remove their bypass is shown
+#       a confident "Nothing was changed."  No error, no log, no Note append -- the removal
+#       half of the phase's headline deliverable silently did nothing.  Listing the
+#       identifier here is what lets verify_output_names() see the site at all; while it
+#       was absent, the guard that exists for exactly this defect class was blind to it.
 ACTION_OUTPUT_NAMES = {
     "is.workflow.actions.getrichtextfrommarkdown": "Rich Text from Markdown",
+    "is.workflow.actions.text.match": "Matches",
 }
 
 
