@@ -88,9 +88,55 @@ FAMILY_A = (
     "never `0`",
 )
 
-# FAMILY B -- the retired percentage band.  Both dash forms, because the em/en dash variant
-# is what most of the prose actually used and a hyphen-only pattern would have missed it.
-FAMILY_B = ("10-15", "10" + chr(8211) + "15")
+# FAMILY B -- the retired percentage band, ANCHORED.  Both dash forms, because the en-dash
+# variant is what most of the prose actually used and a hyphen-only pattern would have
+# missed it.
+#
+# WHY THIS IS A REGEX PLUS AN ANCHOR AND NOT A BARE SUBSTRING (16-REVIEW WR-03).  It WAS a
+# bare, unanchored, unscoped substring, matched against every line of every walked file --
+# and the band "10-15" is not a rare string.  Reproduced before the fix: appending the
+# ordinary sentence `A routine dated note: measured 2026-10-15 during the sweep.` to
+# docs/BUILD-NOTES.md red-lined the WHOLE repo gate with a message about the brightness
+# floor.  This project stamps ISO dates into docs/BUILD-NOTES.md, .planning/STATE.md and
+# every summary, so ANY date in October 2026 did it; so did `lines 10-15`, `10-15 minutes`
+# and the threat id `T-10-15`.  FAMILY_C's own comment already records the consequence, and
+# it applies with more force here: a check that cries wolf gets exempted, and the exemption
+# is what actually removes the protection.
+#
+# The family is NOT deleted -- it still has to catch the real retired clause.  It is
+# narrowed to what the clause actually MEANT: a brightness percentage band.
+#
+#   1. FAMILY_B_PATTERN requires the band as a STANDALONE numeric token.  The lookbehind
+#      rejects a preceding digit, dot or dash, which is what kills `2026-10-15` and
+#      `T-10-15`; the lookahead rejects a trailing digit (`10-155`).  Optional spaces around
+#      the dash, because prose wraps.
+#   2. A match counts only if the SAME LINE also carries the percent sign the clause carried
+#      (FAMILY_B_PERCENT, allowing `10-15 %`) or a brightness/dim word (FAMILY_B_ANCHORS).
+#      Line-scoped rather than FAMILY_C's +/-6 window, and deliberately tighter than it:
+#      docs/BUILD-NOTES.md is thick with ambient brightness prose, so a windowed anchor
+#      would have re-admitted every October date that happened to land near it.
+#
+# Verified against the real clause in both its live forms (measured 2026-08-18): the
+# canonical strategy's `- Prefer ~10-15% as a prototype dim value.` (en-dash in the file)
+# matches on both the percent sign and the `dim` anchor, and plan 16-05's own negative-
+# control probe line `the prototype dim value sits in the 10-15 band.` -- which carries NO
+# percent sign -- still matches on the anchor. Requiring the percent sign ALONE, as one
+# reading of the review suggested, would have silently dropped that second form.
+FAMILY_B_PATTERN = re.compile(r"(?<![\d.\-" + chr(8211) + r"])10\s*[-" + chr(8211) + r"]\s*15(?!\d)")
+FAMILY_B_PERCENT = re.compile(r"\s*%")
+FAMILY_B_ANCHORS = ("brightness", "dim")
+FAMILY_B_LABEL = "10-15 band (brightness/dim-anchored)"
+
+
+def family_b_hit(line: str) -> bool:
+    """True if `line` carries the retired percentage band as a brightness/dim claim."""
+    low = line.lower()
+    for match in FAMILY_B_PATTERN.finditer(low):
+        if FAMILY_B_PERCENT.match(low, match.end()):
+            return True
+        if any(anchor in low for anchor in FAMILY_B_ANCHORS):
+            return True
+    return False
 
 # FAMILY C -- the retired strictness description, SCOPED.
 #
@@ -232,7 +278,9 @@ def scan_repository() -> list[tuple[str, int, str, str]]:
             continue  # binary or unreadable: carries no authored prose to assert anything
         for index, line in enumerate(lines):
             low = line.lower()
-            pattern = next((p for p in FAMILY_A + FAMILY_B if p in low), None)
+            pattern = next((p for p in FAMILY_A if p in low), None)
+            if pattern is None and family_b_hit(line):
+                pattern = FAMILY_B_LABEL
             if pattern is None and family_c_hit(lines, index):
                 pattern = FAMILY_C_PHRASE
             if pattern is None or allowed_by_site(relative, line):
@@ -313,13 +361,63 @@ def check_record_matches_build() -> dict:
     return {key: record[key] for key in keys}
 
 
+def family_b_control() -> int:
+    """INVARIANT 0 -- prove FAMILY_B still catches the real clause and no longer cries wolf.
+
+    A GUARD THAT CANNOT FAIL IS THIS PROJECT'S TOP DEFECT CLASS, and FAMILY_B has now been
+    wrong in BOTH directions in one lifetime: as a bare substring it fired on every ISO date
+    in October (16-REVIEW WR-03), and the obvious narrowing -- requiring the percent sign --
+    would have stopped it firing on the retired clause's other live form.  So the narrowing
+    carries its own control, in the file, run on every invocation.  Ephemeral proof at fix
+    time is what let the bare substring ship.
+
+    The MUST-FIRE rows are the clause as it actually appears in this repository (the
+    canonical strategy's Sec 21 line and plan 16-05's own negative-control probe line, both
+    quoted from the files); the MUST-NOT-FIRE rows are the reproduced false positives.  The
+    fifth MUST-NOT row is the sharp one: an October date on a line that ALSO says
+    "brightness" -- which is why the anchor is line-scoped AND the pattern rejects a
+    dash-preceded 10.
+    """
+    dash = chr(8211)
+    must_fire = (
+        f"- Prefer ~10{dash}15% as a prototype dim value.",
+        "the prototype dim value sits in the 10-15 band.",
+        f'superseding the "10{dash}15% band, never zero" text',
+        "Set Brightness in a 10-15 band",
+        "keep the value at 10 - 15 % of maximum",
+    )
+    must_not_fire = (
+        "A routine dated note: measured 2026-10-15 during the sweep.",
+        "See lines 10-15 of the table.",
+        "allow 10-15 minutes for the device round trip",
+        "| T-10-15 | Denial of Service (accessibility stranding) |",
+        "committed 2026-10-15, brightness restore verified",
+        "the counter ran from 110-155 in that sweep",
+    )
+    for line in must_fire:
+        require(
+            family_b_hit(line),
+            f"FAMILY_B no longer catches the RETIRED CLAUSE itself: {line!r} did not match. "
+            f"The narrowing has gone too far and the gate is now decoration",
+        )
+    for line in must_not_fire:
+        require(
+            not family_b_hit(line),
+            f"FAMILY_B fires on ordinary prose: {line!r} matched. A check that cries wolf "
+            f"gets exempted, and the exemption is what removes the protection",
+        )
+    return len(must_fire) + len(must_not_fire)
+
+
 def main() -> None:
+    controlled = family_b_control()
     tiers = check_no_survivors()
     agreed = check_record_matches_build()
     values = ", ".join(f"{key}={value!r}" for key, value in agreed.items())
     print(
         f"retired clause check: passed -- 0 live lexical occurrences "
-        f"({tiers} allowlisted path prefixes, {len(ALLOWED_SITES)} anchored sites); "
+        f"({tiers} allowlisted path prefixes, {len(ALLOWED_SITES)} anchored sites, "
+        f"{controlled} FAMILY_B control rows); "
         f"{CONFIG_BLOCK} agrees with both built forks on {values} "
         f"[LEXICAL ONLY: this is not proof the class is empty -- see BLIND SPOT in this "
         f"file's source]"
