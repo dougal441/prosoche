@@ -466,7 +466,7 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 **Severity:** major
 **Requirements**: AUDIT-02, CIRC-02, CIRC-06, CIRC-08, ROOM-01, ROOM-02, DIST-01, DIST-02
 **Depends on:** Phase 10
-**Plans:** 6/6 plans executed; 4 gap-closure plans added after verification returned `gaps_found`
+**Plans:** 7/10 plans executed
 
 **Gap closure (waves 7–10).** `11-VERIFICATION.md` scored 13/18 with three failed truths and two
 partials. Plans `11-07` … `11-10` close all five and are strictly sequential, because every one of
@@ -505,7 +505,7 @@ Plans:
 
 **Wave 7** *(gap closure — blocked on Wave 6, and on Phase 12 being quiescent: no `12-*-PLAN.md` without a matching `-SUMMARY.md`, and no `.claude/worktrees/agent-*` present. A clean `git status` is not sufficient — Phase 12 executes in worktrees and merges, so the main tree is clean between waves. Run `11-07` … `11-10` as a contiguous block, entirely before `12-04` or entirely after `12-05`.)*
 
-- [ ] 11-07-PLAN.md — GAP 2 tracer: the text-match output-name class fix, both sites plus the recurrence guard; consumption shape settled at rung 2 (wave 7)
+- [x] 11-07-PLAN.md — GAP 2 tracer: the text-match output-name class fix, both sites plus the recurrence guard; consumption shape settled at rung 2 (wave 7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
 

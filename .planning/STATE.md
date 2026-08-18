@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 16
-current_phase_name: Dimming and Silence as distinct device-proven Circles
+current_phase: 11
+current_phase_name: Build Addendum 01 — Dante Circle names and the ten-primitive roster
 status: verification-deferred
 stopped_at: Phase 13 executed + code-reviewed + gap-closed; verification human_needed (25/27, 0 failed) — deferred to /gsd-verify-work 13, device-blocked (DIST-03). Phase 12 likewise deferred.
-last_updated: "2026-08-17T22:15:05.986Z"
+last_updated: "2026-08-18T02:38:18.935Z"
 last_activity: 2026-08-18
-last_activity_desc: Phase 16 execution started
+last_activity_desc: Phase 11 execution started
 progress:
   total_phases: 24
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 52
-  completed_plans: 42
+  completed_plans: 48
 ---
 
 # Project State
@@ -23,11 +23,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 16 — Dimming and Silence as distinct device-proven Circles
+**Current focus:** Phase 11 — Build Addendum 01 — Dante Circle names and the ten-primitive roster
 
 ## Current Position
 
-Phase: 16 (Dimming and Silence as distinct device-proven Circles) — EXECUTING
+Phase: 11 (Build Addendum 01 — Dante Circle names and the ten-primitive roster) — EXECUTING
 Plans: 4/4 complete; verifier 25/27, 0 failed; the 2 outstanding are device-gated and abstained
 
 **Phase 13 research rewrote the phase.** Donor 5 was decrypted for the first time and
@@ -105,7 +105,7 @@ target**, so an observation on it is same-major-version evidence rather than an 
 Personal Automations are user-created on the device regardless, so DIST-03 would gate this work
 even with a live tunnel.
 
-Last activity: 2026-08-18 — Phase 16 execution started
+Last activity: 2026-08-18 — Phase 11 execution started
 
 Progress: [██████████] 100%
 
