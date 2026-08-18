@@ -766,7 +766,7 @@ whitelist anything named `"Voice"` forever.
 **Severity:** major
 **Requirements**: CIRC-08, CIRC-09, CIRC-14, DIST-01
 **Depends on:** Phase 11
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans executed
 
 Plans:
 **Wave 1**
@@ -784,7 +784,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 15-05-PLAN.md — rebuild, sign and payload-assert both forks, re-derive MANIFEST, discharge the recording duty into BUILD-NOTES §36, author `15-UAT.md`
+- [x] 15-05-PLAN.md — rebuild, sign and payload-assert both forks, re-derive MANIFEST, discharge the recording duty into BUILD-NOTES §36, author `15-UAT.md`
 
 **Cross-cutting constraints:**
 
