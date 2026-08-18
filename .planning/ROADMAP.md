@@ -766,13 +766,13 @@ whitelist anything named `"Voice"` forever.
 **Severity:** major
 **Requirements**: CIRC-08, CIRC-09, CIRC-14, DIST-01
 **Depends on:** Phase 11
-**Plans:** 5 plans
+**Plans:** 2/5 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 15-01-PLAN.md — TRACER: split `mirror_and_voice()` into `mirror()` (Circle 7 shows) and `voice()` (Circle 8 speaks), retarget the dispatch tuple, add `verify_speaktext_placement()`, rebuild and gate-A both forks
-- [ ] 15-02-PLAN.md — rung-2 simulator probe discriminating the inherited axis-4 unfilled picker across `list` / `getitemfromlist` / `speaktext`, then route the verdict per D-04
+- [x] 15-01-PLAN.md — TRACER: split `mirror_and_voice()` into `mirror()` (Circle 7 shows) and `voice()` (Circle 8 speaks), retarget the dispatch tuple, add `verify_speaktext_placement()`, rebuild and gate-A both forks
+- [x] 15-02-PLAN.md — rung-2 simulator probe discriminating the inherited axis-4 unfilled picker across `list` / `getitemfromlist` / `speaktext`, then route the verdict per D-04
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
