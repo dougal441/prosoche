@@ -3406,7 +3406,7 @@ def verify_panic_escape_seed(actions):
             "the emitter.  The previous name-matched version of this guard reported BOTH of "
             "those as a clean build")
 
-    dotted, existence = [], []
+    dotted, existence, gates = [], [], 0
     for index, item in enumerate(actions):
         identifier = item.get("WFWorkflowActionIdentifier")
         parameters = item.get("WFWorkflowActionParameters", {})
@@ -3416,8 +3416,25 @@ def verify_panic_escape_seed(actions):
                 dotted.append((index, key))
         if identifier == "is.workflow.actions.conditional" and parameters.get("WFControlFlowMode") == 0:
             name = _tested_variable(parameters)
-            if name in guarded and parameters.get("WFCondition") not in NUMERIC_CONDITION_CODES:
-                existence.append((index, name, parameters.get("WFCondition")))
+            if name in guarded:
+                gates += 1
+                if parameters.get("WFCondition") not in NUMERIC_CONDITION_CODES:
+                    existence.append((index, name, parameters.get("WFCondition")))
+    # PHASE 11 CODE REVIEW (WR-19).  The non-empty check above proves a variable RESOLVES to
+    # the key; it does not prove any gate READS that variable, and those are different
+    # properties.  Between them sits the shape this assertion exists for: every gate re-routed
+    # onto an intermediate copy of the flag, at which point `guarded` is still non-empty, the
+    # raise above stays silent, and the loop here iterates over zero conditionals and reports
+    # success.  Measured on a mutated build (2026-08-18): all three gates moved behind one
+    # `set_var(copy, variable(original))` hop each -> both builders exit 0 and every checker
+    # stays green, with the bypass gate that decides whether the user is offered
+    # Leaving/Continue at all left completely un-asserted.
+    if not gates:
+        raise SystemExit(
+            f"{len(guarded)} variable(s) resolve to {PANIC_ESCAPE_KEY!r} by provenance but no "
+            "mode-0 conditional tests any of them, so assertion (3) below inspected zero gates "
+            "and would have reported success without checking a single one -- a gate reading an "
+            "intermediate copy of the flag orphans this guard exactly the way a rename used to")
     if dotted:
         raise SystemExit(
             f"{PANIC_ESCAPE_KEY} is read through a composite or dotted key "
@@ -3539,6 +3556,22 @@ def verify_panic_escape_isolation(actions):
               and item.get("WFWorkflowActionParameters", {}).get("WFControlFlowMode") == 0
               and _tested_variable(item.get("WFWorkflowActionParameters", {})) in guarded}
     groups.discard(None)  # a group-less conditional cannot enclose anything; never format None
+    # PHASE 11 CODE REVIEW (WR-19).  The non-empty check above asserts the resolved VARIABLE
+    # set; this asserts the resolved GATE set, and the gap between the two is where this guard
+    # goes vacuous.  With every gate re-routed onto an intermediate copy of the flag, `guarded`
+    # stays non-empty and the raise above stays silent, `groups` comes back EMPTY, the
+    # intersection below is empty by construction, and the guard reports Emergency Restore
+    # isolated without having tested a single enclosure.  Measured on a mutated build
+    # (2026-08-18): all three gates behind one set_var hop each -> both builders exit 0, every
+    # checker green.  Zero groups is a failure for the same reason zero surfaces is: a guard
+    # that reports clean because it resolved nothing is worse than no guard.
+    if not groups:
+        raise SystemExit(
+            f"{len(guarded)} variable(s) resolve to {PANIC_ESCAPE_KEY!r} by provenance but no "
+            "mode-0 conditional tests any of them, so no Panic Escape group could be located "
+            "and this guard would report Emergency Restore isolated without testing anything "
+            "-- a gate reading an intermediate copy of the flag orphans both Panic Escape "
+            "guards; see verify_panic_escape_seed()")
 
     surfaces = _emergency_restore_surfaces(actions)
     if not surfaces:
