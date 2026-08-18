@@ -1,7 +1,47 @@
 # Shortcut Distribution Manifest
 
 **This table's six hash/size rows describe the PHASE 11 GAP-CLOSURE re-sign (2026-08-18, plan
-11-08), superseding the plan 11-07 re-sign whose header block follows immediately below.** Per
+11-09), superseding the plan 11-08 re-sign whose header block follows immediately below.** Per
+this file's own convention that block is retained as its own rebuild's record and is superseded
+by this one wherever the two conflict. **Only the three Aware rows moved.** The Core source is
+byte-identical to 11-08's — this plan changes `tools/build_sentient.py` and nothing the Core
+builder emits — so the Core container was **not** re-signed, and that was verified rather than
+assumed: decrypting the existing Core `.shortcut` recovers a `WFWorkflowActions` array equal to
+the current `src/PROSOCHE-Dumb.xml`, so 11-08's build is demonstrably the one still on disk.
+
+**The Aware fork now carries one contract audit per OPEN-arm dispatch rendering — two, where it
+previously carried one.** This is a **structural** property of the artifact and is stated as
+nothing more: two Use Model actions, each inside its own audit block, each behind that block's
+own AI-preference, Circle-bound, completed-latency and parsed-token gates, and each pinned to
+the on-device model source. It is asserted per fork by `docs/sentient_core_check.py` against a
+count **derived** from the Core fork's OPEN-arm rendering count rather than a literal, and every
+block is inspected by `docs/sentient_audit_check.py`.
+
+**What was wrong.** The audit was inserted at the **first** contract marker in document order.
+Before Build Addendum 01 that was the same action as the OPEN-arm marker; plan 11-05 then added
+a second OPEN-arm rendering — the arm taken when a user has **removed the Panic Escape bypass**
+— and the audit did not follow it there. A user who removed that bypass reached the Intention
+primitive with **no contract audit at all**, on every open, with nothing observable on device to
+say so: their Aware install silently behaved as Core, and the checker that should have caught it
+asserted the model count as a literal `1` and so agreed with the defect instead of reporting it.
+Two features with no relationship to each other were coupled, and the coupling removed the audit
+from the *harder* path — the one where the user has given up their easy exit — which is exactly
+where it is most useful. Recording that coupling as a product decision was considered and
+**rejected**; the reasoning is in `docs/BUILD-NOTES.md` §33.
+
+**NOTHING HERE IS A CLAIM ABOUT THE MODEL.** No Use Model call in either of these two blocks has
+ever been made on Apple-Intelligence-capable hardware, by anyone, at any point in this project.
+The simulator cannot settle it — Apple Intelligence is inside `.claude/CLAUDE.md` §9's explicit
+"Rung 2's ceiling" list — so the audit's runtime behaviour, its latency against the eight-second
+gate, and whether the pinned on-device source is honoured at run time are all **unproven** and
+remain rung-3+ questions blocked on DIST-03. What is established is structural and only
+structural: the blocks exist, they are reachable from every OPEN-arm rendering, their
+identifiers are unique, and both containers decrypt equal to their sources.
+
+---
+
+**This block described the PHASE 11 GAP-CLOSURE re-sign (2026-08-18, plan 11-08); its six
+hash/size rows are superseded by the block above, and everything else in it stands.** Per
 this file's own convention, that block is retained as its own rebuild's record and is
 superseded by this one wherever the two conflict. Everything else carries forward untouched —
 the capture-persistence fix, D-01's zeroed floor and dim target, the retired-clause sweep and
@@ -196,9 +236,9 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 | Core source | `src/PROSOCHE-Dumb.xml` | 2864203 | `34c2ba05968b0e35c723892404c5f4d3a334d51c3f14263f7d6809997e668b02` |
 | Core archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Core-132716.xml` | 2864203 | `34c2ba05968b0e35c723892404c5f4d3a334d51c3f14263f7d6809997e668b02` |
 | Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 231148 | `873fa3dbda7b1f3440bfc76997c2962198ddec2052096833787547b52f129f10` |
-| Aware source | `src/PROSOCHE-Sentient.xml` | 2900884 | `e2c94746e5acf49b82d4f3ba7f89768122c2d3c409b574b27cb8e415c523dcda` |
-| Aware archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Aware-132729.xml` | 2900884 | `e2c94746e5acf49b82d4f3ba7f89768122c2d3c409b574b27cb8e415c523dcda` |
-| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 235592 | `4d985aefa04c1cf99405bd01189d7d6e2d30fa4c3b98d94a9bd0855e66f276f1` |
+| Aware source | `src/PROSOCHE-Sentient.xml` | 2936286 | `c52edd930f0c5fd1c81160fb584675d91a5c7b4d315dfe255f5325d3d35c0203` |
+| Aware archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Aware-134612.xml` | 2936286 | `c52edd930f0c5fd1c81160fb584675d91a5c7b4d315dfe255f5325d3d35c0203` |
+| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 238095 | `4b7c2cfbddf0dccf47ef8e34209378faf14ca2d760dc089013d3b033ebd2ada0` |
 
 **Re-archived and re-signed by the phase 13 CODE REVIEW, finding CR-01 (2026-08-17).** This is
 the record for the six rows in the table above; the plan-04 paragraph immediately below is its

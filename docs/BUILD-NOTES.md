@@ -3405,3 +3405,196 @@ tally, the build guard and its negative control, gate A at the project target, a
 decrypt of both signed containers showing recovered action arrays equal to their sources with
 `Matches` present and the retired guess absent. Whether the removal branch actually reaches its
 confirmation menu on device remains exactly as unproven as it was before this plan.
+
+---
+
+## 33. Phase 11 — the fork that an unrelated setting deleted: one audit per OPEN-arm rendering (plan 11-09, 2026-08-18)
+
+### The measurement that exposed it
+
+Re-measured against this plan's own base rather than transcribed from the plan text, which was
+written before 11-07 and 11-08 landed:
+
+| measure | Core | Aware |
+|---|---:|---:|
+| actions | 4304 | 4438 (was 4372) |
+| `persist_contract()` contract markers, whole artifact | 11 | 11 |
+| — of those, **inside the OPEN arm** | **2** | **2** |
+| — of those, in the MANUAL arm's Test-a-Circle submenu | 9 | 9 |
+| `is.workflow.actions.askllm` | 0 | **2** (was **1**) |
+
+Eleven dispatch renderings, eleven markers, **two of them in the OPEN arm** — and exactly
+**one** model call on the shipped Aware fork. That gap is the defect. `universal_leaving()`
+renders `primitive_dispatch()` twice: once inside the `Continue` case of the Leaving/Continue
+menu, and once in the otherwise arm taken when the user has **removed the Panic Escape bypass**
+(Mechanism A, plan 11-05). Each rendering reaches Intention, which calls `persist_contract()`,
+which emits the marker. `build_sentient.py` inserted its audit at the **first** marker in
+document order and then `break`-ed.
+
+### What the user experienced, and why it is a spoofing defect rather than a missing feature
+
+Remove the Panic Escape bypass — a setting with no relationship whatsoever to on-device
+intelligence — and your Aware fork reaches the Intention primitive with **no contract audit at
+all**, on every open, for as long as the bypass stays off. Nothing on device says so. The
+install still presents as Aware: its own name, its own icon, its own Note, its own `"fork":
+"Aware"` state seed. It simply *is* Core on that path. That is T-11-47, spoofing: the artifact
+misrepresents itself to the person running it.
+
+`docs/sentient_core_check.py` asserted the model count as a literal **1**. That is the count the
+**missing** audit produces, so the checker agreed with the defect rather than reporting it — it
+pinned the defect instead of detecting it, and went on doing so across the three phases (12, 13,
+16) that executed after the original review named it.
+
+### The two available resolutions, and why the other one was rejected
+
+Both were legitimate and one had to be chosen.
+
+**REJECTED — record "audit only the Panic-Escape-enabled path" as a deliberate product decision
+in `docs/CAPABILITY-DECISIONS.md` and surface it in the Note.** Three reasons, and it is
+recorded as *rejected* rather than merely *not taken* so that a future reader does not
+rediscover it as an option:
+
+1. **It is not a statable product rule.** Written out honestly it reads: *if you remove the easy
+   exit, you also lose the on-device intelligence audit.* Those two features have nothing to do
+   with each other. A user cannot predict it, cannot want it, and cannot undo one without the
+   other. Recording it would be documenting a defect in the vocabulary of a feature.
+2. **It inverts the escalation.** The bypass-removed path is the *harder* path: the user has
+   deliberately given up their exit and goes straight into the intervention. That is precisely
+   the moment a contract audit is most useful, and the behaviour removed it exactly there.
+3. **It is the same silent-degradation class this phase's own guard work exists to eliminate** —
+   two well-formed halves that stopped agreeing with each other and produced no error, one level
+   up: a fork that silently becomes the other fork, with nothing on device to see.
+
+**CHOSEN — insert into every OPEN-arm rendering, located structurally.** The OPEN arm is derived
+from the router's own OPEN literal test and its `GroupingIdentifier`, the same derivation
+`verify_circle_zero_silence()` uses, so a future rendering added anywhere inside that arm is
+covered with no further code change. Scoping to the OPEN arm rather than sweeping every marker
+in the file is also deliberate: the other nine are the Test-a-Circle diagnostic submenu in the
+MANUAL arm, and auditing those would put an on-device model call behind a diagnostic menu item
+(T-11-51). They are excluded **by construction**, not by an index.
+
+### The hazard the choice created, both halves of it, and how each was closed
+
+A second `audit_block()` call is only legal if its identifiers differ from the first's.
+`.claude/CLAUDE.md` §4 names a reused `GroupingIdentifier` as this toolchain's **#1 documented
+real-world mistake**: it validates, signs and imports perfectly and then silently corrupts a
+block boundary at run time.
+
+This fork's `uid()` is a `uuid5` **name hash**, not Dumb's positional counter, so a repeated
+literal is a *guaranteed* collision rather than an unlucky one. There are **two** routes to one,
+and the second is easy to miss:
+
+* the **14 bare `uid()` calls** inside `audit_block()` — 10 in the tuple unpacking at the top and
+  **4 inline inside the returned list**, which is where a sweep loses them;
+* the **10 `if_block(key=)` arguments**, because `if_block()` derives its `GroupingIdentifier`
+  from `uid(key)` too.
+
+**Phase 16 (16-01) closed only the first half of the second route, and it is worth being exact
+about what it did and did not do.** It made `if_block()`'s `key` argument **required** rather
+than defaulted, which stops two call sites *omitting* it and silently deriving the same
+identifier. It cannot stop two call sites *passing the same literal* — and `audit_block()`
+passes fixed literals (`"enabled"`, `"circle-min"`, …) deliberately. So a second call to
+`audit_block()` would have collided on all ten groups just as surely as before that change, only
+now by explicit argument rather than by omitted default. Making the key required moved the
+obligation from "remember to pass a key" to "remember the key must differ per rendering". This
+plan satisfies the second obligation.
+
+The mechanism is one required `ordinal` parameter and a single nested `aid()` helper that every
+identifier in the function passes through — there is no route to an identifier that bypasses it,
+which is what makes a missed call site unrepresentable rather than merely unlikely. The census is
+stated as measured, and one figure in the plan was wrong: **10** `if_block()` calls, not the nine
+the plan predicted.
+
+### The negative controls, and the one that found a gap in the guards
+
+Both routes were broken deliberately, one at a time, rebuilt, and observed.
+
+**Control A — one bare `uid()` call** (`uid("scope-bounded-text")`, the ordinal dropped):
+
+```
+python3 tools/build_sentient.py                       -> built ..., EXIT 0     (!)
+validate-shortcut ... --target-macos 26 ... all       -> Validation passed.    (!)
+whole-artifact UUID count                             -> 1116 distinct of 1117, a NEW duplicate
+```
+
+**The build passed and gate A passed.** `verify_group_identifier_uniqueness()` asserts start/end
+ownership of **`GroupingIdentifier`s**, so a collision on the action **`UUID`** axis is outside
+it by construction, and the validator does not check UUID uniqueness at all. The **only** thing
+that caught control A was an explicit whole-artifact UUID count. That is a real limit in the
+standing guard set and is recorded here rather than left implicit.
+
+**Control B — one `if_block()` key** (`key="fast"`, the ordinal dropped):
+
+```
+a GroupingIdentifier is not owned by exactly one control-flow block -- a reused identifier
+silently corrupts block boundaries at runtime: F05BC2CA-D66A-5B6F-981A-46C0EE877F8E:
+2 start(s) at [1101, 1419] and 2 end(s) at [1132, 1450] (1 total)
+EXIT CODE: 1
+```
+
+Phase 16's guard fires and the build **fails closed** before writing an artifact — exactly the
+"next insertion" its own arming comment anticipated. Restored, the rebuild reproduced the
+pre-control SHA-256 byte for byte.
+
+**Both checkers were also shown failing on a defect that was invisible to them beforehand**, by
+running the retired version alongside the new one on the same mutated artifact:
+
+| mutation, on a scratch copy | retired checker | new checker |
+|---|---|---|
+| delete one whole audit block | `sentient_core_check` **exit 0** | **exit 1**, naming the count mismatch |
+| remove the latency gate from the **second** block only | `sentient_audit_check` **exit 0** | **exit 1**, naming block 1 |
+
+### Two guards armed on the Aware chain, and one index defect closed
+
+`verify_circle_zero_silence` and `verify_parameter_keys` were imported by the Dumb builder and
+had **never** run on the Aware fork (WR-10, unresolved by Phases 12, 13 or 16). The first is
+directly load-bearing for this change — its four properties are precisely the ones an OPEN-arm
+insertion can break, and this fork is the only artifact that performs such an insertion. Both
+were measured **clean on the pre-change Aware fork** before arming, so a future raise is a
+finding about the insertion and must be investigated, never suppressed.
+
+**WR-11, closed in the same pass.** The third import preference was spliced at a hard-coded
+action index, and the appended import question repeated that same integer as its `ActionIndex` —
+two literals free to drift apart, in a generator whose own module docstring forbids addressing an
+anchor by a mutable index, at a position `build_state_engine.main()`'s pinned prologue (first
+five actions) does not cover. Both now derive from one content anchor, the set-variable naming
+the second import preference. Control, on a scratch copy: insert one filler action upstream of
+the import prologue and rebuild.
+
+```
+DERIVED  ActionIndex 7 -> is.workflow.actions.gettext 'yes'; next names 'Import AI'
+RETIRED  ActionIndex 6 -> is.workflow.actions.setvariable   (no WFTextActionText at all)
+```
+
+The retired literal would have pointed the question's `ParameterKey: "WFTextActionText"` at an
+action that does not define that parameter — silently, with no error from either builder and no
+finding at either validator gate. Per axis 1, a key an action does not define is ignored and
+reads empty.
+
+### What this does NOT establish
+
+Stated separately and deliberately, because a structural result recorded as a behavioural one is
+threat **T-11-52**, repudiation.
+
+* **No Use Model call in either audit block has ever been made on Apple-Intelligence-capable
+  hardware**, by anyone, at any point in this project. Not once. Not in this plan, and not in any
+  plan before it.
+* **A simulator can never settle it.** Apple Intelligence sits inside `.claude/CLAUDE.md` §9's
+  explicit "Rung 2's ceiling" list — the simulator is not AI-capable hardware — so this is a
+  rung-3+ question no amount of agent time can close. It was therefore not attempted, rather than
+  attempted and reported inconclusive.
+* **The audit's runtime behaviour is unproven** in every respect: whether the model returns a
+  parseable first token, whether it completes inside the eight-second latency gate, whether the
+  pinned on-device source is honoured at run time, and whether the `CHALLENGE` revision prompt
+  and the high-circle `DENY` redirect behave as designed. The `WFLLMModel` literal itself is
+  donor-confirmed (`"Apple Intelligence on Device"`, BD-04-R2) — that is a fact about what a
+  device **writes**, not about what this artifact **does**.
+* **DIST-03 is open**, and it is the blocker for all of the above. Nothing in this plan narrows
+  it. What this plan changes is *how many renderings the eventual device test will cover* — two
+  instead of one — and **nothing** about its outcome.
+
+What **is** established is structural and only structural, at rung 1: two audit blocks exist, one
+per OPEN-arm rendering; the count is derived at build time and in both checkers rather than
+pinned; no identifier is shared between them; the nine MANUAL-arm markers carry no model call;
+both forks pass gate A; and the Aware container decrypts to an action array equal to its source
+with both model actions carrying the pinned on-device literal.
