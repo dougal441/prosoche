@@ -317,6 +317,7 @@ Items acknowledged and carried forward from previous milestone close:
 |-------|-------|--------|
 | 12 | verification_deferred_human | /gsd-verify-work 12 |
 | 13 | verification_deferred_human | /gsd-verify-work 13 |
+| 16 | verification_deferred_human | /gsd-verify-work 16 |
 
 Phase 13's verifier returned `human_needed` at **25/27 must-haves verified, 0 failed**. The only two
 outstanding are device-gated and were correctly abstained rather than promoted on structural
@@ -343,6 +344,37 @@ assumption, and the JSON-null-leaf coercion assumption the option-a design choic
 but doesn't device-confirm). All 27 other must-haves verified; all 12 checkers + gate A×2 pass at HEAD.
 This mirrors Phase 10's precedent (DIST-03) — deferred, not treated as a gap, because no device is
 available to an autonomous run. Resume with `/gsd-verify-work 12` once an iPhone is connected.
+
+Phase 16's verifier returned `human_needed` at **73/81 must-haves verified, 8 abstained, 0 failed**.
+The eight are `verification: backstop` truths that need real hardware and were correctly abstained
+rather than promoted on structural evidence. `16-UAT.md` records 12 tests, 0 passed, all BLOCKED.
+
+**The DIST-03 reason is NOT "no devices found" — that phrasing is retired.** Measured three times
+this phase and it moved every time: session start returned no devices; planning measured
+`pairingState: paired` / `tunnelState: disconnected` / `transportType: wired`; plan 16-06 and an
+independent orchestrator re-check both measured `tunnelState: unavailable` / `transportType: none`.
+Current true reason: **a paired iPhone 15 Pro (`iPhone16,1`) on iOS 26.6 is known to the host, but
+there is no live tunnel and no transport, so there is no session to drive.** Any re-measurement MUST
+branch on `tunnelState` from `--json-output`, never on the `State` column, which prints
+`available (paired)` even with the tunnel down.
+
+**What IS proven, so a later reader does not re-derive it:** the Phase 9 persistence P0 is closed —
+22 exact `CAPTURE(State) → SAVE(source=State) → APPLY` triples per fork, covering all 11
+`primitive_dispatch()` renderings including the 9 MANUAL `Test a Circle` cases. Both LOCKED user
+decisions landed (D-01 floor and dim target both `0`; D-02 `changed_at` / `changed_by_session_id`
+removed at 44 write sites per fork, with a two-surface no-reader guard). 13 checkers green including
+the new `docs/retired_clause_check.py`; gate A clean on both forks; both artifacts re-signed and
+decrypt-verified byte-identical to source.
+
+**Two residual risks to hold when the session is arranged.** CAP-08 makes silent failure the default —
+`setbrightness.WFBrightness` is OPTIONAL and defaults to 50%, so an unresolved operand applies an
+unrequested 50% with no capture and no error; Test 1 must observe the *value applied*, never the
+absence of an error. And `dim_target = 0` ships on one unrepeated user report — D-01 is a settled
+*decision*, not a settled *device fact*.
+
+Batch the session: `16-UAT.md` shares its setup with `12-UAT.md` Test 3, Phase 18 (locked-screen
+CLOSE, which owns that case deliberately), Phase 19, `13-UAT.md` and `10-UAT.md`. Resume with
+`/gsd-verify-work 16`.
 
 ## Session Continuity
 
