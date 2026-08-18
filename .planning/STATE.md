@@ -320,6 +320,25 @@ Items acknowledged and carried forward from previous milestone close:
 | 12 | verification_deferred_human | /gsd-verify-work 12 |
 | 13 | verification_deferred_human | /gsd-verify-work 13 |
 | 16 | verification_deferred_human | /gsd-verify-work 16 |
+| 15 | verification_deferred_human | /gsd-verify-work 15 |
+
+**Phase 15 (added 2026-08-19).** All five plans executed; verifier scored **15/15 structural
+must-haves, `human_needed`**, with zero structural gaps found. It is not `passed` for one honest
+reason: **nothing in phase 15 has run on a phone.** Plan 15-02's rung-2 simulator probe (spike 011)
+returned `not discriminated at rung 2` — none of `list` / `getitemfromlist` / `speaktext`
+reproduced the device-observed axis-4 unfilled-picker defect — so it was correctly routed to D-04
+Branch B with no speculative fix, and **CIRC-08 remains structurally proven and behaviourally
+UNPROVEN**. `MANIFEST.md`, `docs/BUILD-NOTES.md` §36 and `15-UAT.md` each state this plainly and
+independently. `15-UAT.md` is cold-runnable and digest-pinned to the shipped artifacts: 4 tests,
+0 run. **DIST-03 is lifted**, so these are runnable in the next Mirroring session — expect Tests
+1–3 to hit the known axis-4 error, which the instrument warns about at its head.
+
+**Sequencing constraint from plan 15-03, carry this into the next device session:** install the
+Phase 15 build **BEFORE** the Pressure-accumulation UAT, never after. `schema_version` moved 4 → 5,
+and the first run of the new build rebuilds `state.json`, wiping `heat`, `gravity`, `pressure`, the
+rolling windows, `exit_events` and every `exit_stats[*].samples`. Doing the accumulation first
+throws that session away. A `.shortcut` re-install alone does **not** wipe `state.json` — only the
+bump does.
 
 **Phase 11 (added 2026-08-18).** Gap-closure waves 7-10 executed, code-reviewed and fix-passed
 twice; re-verification scored **18/21, `human_needed`**, with all five original gaps CLOSED and each
