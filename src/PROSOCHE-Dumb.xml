@@ -21423,7 +21423,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 				<key>UUID</key>
 				<string>897C2572-CB86-5D9E-82D9-491A77C840D6</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.volume</string>
+				<string>settings_snapshot.volume.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -21489,7 +21489,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Volume Snapshot</string>
+				<string>Outstanding Volume Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -21514,7 +21514,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -21526,12 +21526,23 @@ Continue: you go into the app, after this Circle's intervention.</string>
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Volume Snapshot</string>
+							<string>Outstanding Volume Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -22960,7 +22971,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 				<key>UUID</key>
 				<string>7048AEA9-F786-598B-89C8-1CA40CB4649D</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.brightness</string>
+				<string>settings_snapshot.brightness.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -23026,7 +23037,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Brightness Snapshot</string>
+				<string>Outstanding Brightness Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -23051,7 +23062,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -23063,12 +23074,23 @@ Continue: you go into the app, after this Circle's intervention.</string>
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Brightness Snapshot</string>
+							<string>Outstanding Brightness Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -27807,7 +27829,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 				<key>UUID</key>
 				<string>4EE3AB7D-0B1F-5B85-8B6C-588E40477E66</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.volume</string>
+				<string>settings_snapshot.volume.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -27873,7 +27895,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Volume Snapshot</string>
+				<string>Outstanding Volume Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -27898,7 +27920,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -27910,12 +27932,23 @@ Continue: you go into the app, after this Circle's intervention.</string>
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Volume Snapshot</string>
+							<string>Outstanding Volume Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -29344,7 +29377,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 				<key>UUID</key>
 				<string>5BFC18AD-6173-59D7-89BF-A44524677440</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.brightness</string>
+				<string>settings_snapshot.brightness.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -29410,7 +29443,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Brightness Snapshot</string>
+				<string>Outstanding Brightness Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -29435,7 +29468,7 @@ Continue: you go into the app, after this Circle's intervention.</string>
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -29447,12 +29480,23 @@ Continue: you go into the app, after this Circle's intervention.</string>
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Brightness Snapshot</string>
+							<string>Outstanding Brightness Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -39023,7 +39067,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>975C4CC8-850A-57BE-B1AC-F28831EB3DA0</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.volume</string>
+				<string>settings_snapshot.volume.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -39089,7 +39133,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Volume Snapshot</string>
+				<string>Outstanding Volume Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -39114,7 +39158,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -39126,12 +39170,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Volume Snapshot</string>
+							<string>Outstanding Volume Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -40560,7 +40615,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>688B9AE6-F97D-5594-B503-9B6640389A57</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.brightness</string>
+				<string>settings_snapshot.brightness.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -40626,7 +40681,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Brightness Snapshot</string>
+				<string>Outstanding Brightness Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -40651,7 +40706,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -40663,12 +40718,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Brightness Snapshot</string>
+							<string>Outstanding Brightness Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -45628,7 +45694,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>64893AA4-C5D6-5E61-B8EB-984D23398A83</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.volume</string>
+				<string>settings_snapshot.volume.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -45694,7 +45760,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Volume Snapshot</string>
+				<string>Outstanding Volume Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -45719,7 +45785,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -45731,12 +45797,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Volume Snapshot</string>
+							<string>Outstanding Volume Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -47165,7 +47242,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>626F140F-D5AC-5422-8DF6-4FD022E9F4A5</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.brightness</string>
+				<string>settings_snapshot.brightness.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -47231,7 +47308,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Brightness Snapshot</string>
+				<string>Outstanding Brightness Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -47256,7 +47333,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -47268,12 +47345,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Brightness Snapshot</string>
+							<string>Outstanding Brightness Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -52233,7 +52321,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>8258AD65-DF5B-57E6-A86D-97F9CDD0065B</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.volume</string>
+				<string>settings_snapshot.volume.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -52299,7 +52387,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Volume Snapshot</string>
+				<string>Outstanding Volume Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -52324,7 +52412,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -52336,12 +52424,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Volume Snapshot</string>
+							<string>Outstanding Volume Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -53770,7 +53869,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>16D4ECE9-1144-57B2-B455-2DA94BC2ADD4</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.brightness</string>
+				<string>settings_snapshot.brightness.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -53836,7 +53935,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Brightness Snapshot</string>
+				<string>Outstanding Brightness Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -53861,7 +53960,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -53873,12 +53972,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Brightness Snapshot</string>
+							<string>Outstanding Brightness Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -58838,7 +58948,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>08E9E02C-F651-5A54-898D-3142EC91D5A7</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.volume</string>
+				<string>settings_snapshot.volume.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -58904,7 +59014,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Volume Snapshot</string>
+				<string>Outstanding Volume Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -58929,7 +59039,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -58941,12 +59051,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Volume Snapshot</string>
+							<string>Outstanding Volume Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -60375,7 +60496,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>8F45139D-386A-56B7-9ABD-9894E087F2ED</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.brightness</string>
+				<string>settings_snapshot.brightness.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -60441,7 +60562,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Brightness Snapshot</string>
+				<string>Outstanding Brightness Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -60466,7 +60587,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -60478,12 +60599,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Brightness Snapshot</string>
+							<string>Outstanding Brightness Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -65443,7 +65575,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>6255F957-86EF-5064-8965-0F9FE1492B1B</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.volume</string>
+				<string>settings_snapshot.volume.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -65509,7 +65641,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Volume Snapshot</string>
+				<string>Outstanding Volume Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -65534,7 +65666,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -65546,12 +65678,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Volume Snapshot</string>
+							<string>Outstanding Volume Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -66980,7 +67123,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>9116A549-8C2F-5EB6-9C56-5224BA590549</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.brightness</string>
+				<string>settings_snapshot.brightness.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -67046,7 +67189,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Brightness Snapshot</string>
+				<string>Outstanding Brightness Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -67071,7 +67214,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -67083,12 +67226,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Brightness Snapshot</string>
+							<string>Outstanding Brightness Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -72048,7 +72202,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>FF3F4A14-DD77-5A0E-AF4D-0B8264822560</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.volume</string>
+				<string>settings_snapshot.volume.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -72114,7 +72268,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Volume Snapshot</string>
+				<string>Outstanding Volume Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -72139,7 +72293,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -72151,12 +72305,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Volume Snapshot</string>
+							<string>Outstanding Volume Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -73585,7 +73750,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>30EFA300-7727-5C71-B3D9-4C57DCCCF85A</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.brightness</string>
+				<string>settings_snapshot.brightness.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -73651,7 +73816,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Brightness Snapshot</string>
+				<string>Outstanding Brightness Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -73676,7 +73841,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -73688,12 +73853,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Brightness Snapshot</string>
+							<string>Outstanding Brightness Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -78653,7 +78829,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>264752A8-0531-53EF-A94F-0FEAC6DF332B</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.volume</string>
+				<string>settings_snapshot.volume.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -78719,7 +78895,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Volume Snapshot</string>
+				<string>Outstanding Volume Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -78744,7 +78920,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -78756,12 +78932,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Volume Snapshot</string>
+							<string>Outstanding Volume Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -80190,7 +80377,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>E0AE032F-14F8-50F0-A504-98F7835247A0</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.brightness</string>
+				<string>settings_snapshot.brightness.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -80256,7 +80443,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Brightness Snapshot</string>
+				<string>Outstanding Brightness Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -80281,7 +80468,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -80293,12 +80480,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Brightness Snapshot</string>
+							<string>Outstanding Brightness Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -85258,7 +85456,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>80E7285A-E6E7-56AA-A6F5-3D8CFD28115D</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.volume</string>
+				<string>settings_snapshot.volume.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -85324,7 +85522,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Volume Snapshot</string>
+				<string>Outstanding Volume Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -85349,7 +85547,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -85361,12 +85559,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Volume Snapshot</string>
+							<string>Outstanding Volume Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -86795,7 +87004,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>A8CE30D2-55B3-5156-AA72-821B5CE50FE5</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.brightness</string>
+				<string>settings_snapshot.brightness.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -86861,7 +87070,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Brightness Snapshot</string>
+				<string>Outstanding Brightness Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -86886,7 +87095,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -86898,12 +87107,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Brightness Snapshot</string>
+							<string>Outstanding Brightness Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -91863,7 +92083,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>079FCB26-641F-5E49-89A5-26FB247A2A43</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.volume</string>
+				<string>settings_snapshot.volume.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -91929,7 +92149,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Volume Snapshot</string>
+				<string>Outstanding Volume Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -91954,7 +92174,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -91966,12 +92186,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Volume Snapshot</string>
+							<string>Outstanding Volume Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>
@@ -93400,7 +93631,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>UUID</key>
 				<string>C403E3A0-1D8B-5DDD-8A58-32CF7712D5AE</string>
 				<key>WFDictionaryKey</key>
-				<string>settings_snapshot.brightness</string>
+				<string>settings_snapshot.brightness.original_value</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Value</key>
@@ -93466,7 +93697,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 					<string>WFTextTokenAttachment</string>
 				</dict>
 				<key>WFVariableName</key>
-				<string>Brightness Snapshot</string>
+				<string>Outstanding Brightness Original</string>
 			</dict>
 		</dict>
 		<dict>
@@ -93491,7 +93722,7 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 				<key>WFControlFlowMode</key>
 				<integer>0</integer>
 				<key>WFCondition</key>
-				<integer>100</integer>
+				<integer>2</integer>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -93503,12 +93734,23 @@ This check runs here, on the manual branch, and nowhere else — never on an aut
 							<key>Type</key>
 							<string>Variable</string>
 							<key>VariableName</key>
-							<string>Brightness Snapshot</string>
+							<string>Outstanding Brightness Original</string>
+							<key>Aggrandizements</key>
+							<array>
+								<dict>
+									<key>Type</key>
+									<string>WFCoercionVariableAggrandizement</string>
+									<key>CoercionItemClass</key>
+									<string>WFNumberContentItem</string>
+								</dict>
+							</array>
 						</dict>
 						<key>WFSerializationType</key>
 						<string>WFTextTokenAttachment</string>
 					</dict>
 				</dict>
+				<key>WFNumberValue</key>
+				<integer>0</integer>
 			</dict>
 		</dict>
 		<dict>

@@ -85,6 +85,40 @@ They are kept because the +44/-88 derivation is what tells a reader the counts
 site_audit() DOES assert were expected to hold still; treat them as a dated
 measurement, not as a live invariant.  If they matter enough to be right, they
 have to be asserted -- prose that no assertion pins will go stale again.
+
+PHASE 11 (plan 11-08): WHAT THE COERCION SPLIT NEVER MEANT, and now does.
+site_audit() has always asserted that 15 of 15 setbrightness operands and 4 of 15
+setvolume operands carry the coercion aggrandizement.  Every one of those
+assertions was true and 22 of the 30 sites could not run.  dimming() and silence()
+opened on a condition-100 existence gate over the settings_snapshot.<group>
+CONTAINER, with the entire capture-and-apply body in the OTHERWISE arm -- and
+clear_snapshot() writes the LEAF and never the container (deliberately, to keep the
+seeded subtree a permanent invariant), so that gate could never read false.  The 11
+Dim Target writes, the 11 Silence Target writes and all 22 Get Device Details reads
+were dead code, correctly coerced.  A coercion audit is a TYPE proof; it says
+nothing about reachability, and reading it as a liveness proof is what let this
+survive a phase (16) devoted to these very functions.  The 8 restore-side writes
+were never affected: restore_managed_settings() opens on the same container gate
+but does its work in the TRUE arm.
+
+11-08 re-gated both capture sites onto settings_snapshot.<group>.original_value
+with the numeric `> 0` test the restore side already used, and armed
+bse.verify_environmental_reachability() in both builders so the dead-arm shape
+fails the build.  THE SPLIT DID NOT MOVE -- still 15/15 sites and 15/4 coerced,
+re-measured against both rebuilt forks.  That stillness is the evidence: the fix
+re-gates existing actions, emits none, and changes no operand's source or
+coercion.  A move would have been a finding, not a table to update.
+
+THE TOTALS ABOVE ARE STALE AGAIN, exactly as that paragraph predicted, and are
+left unedited as the dated measurement they declare themselves to be.  Measured
+2026-08-18 at 11-08: Dumb 4304, Sentient 4372.  The +2 per fork is plan 11-07's
+text.match consumption fix (two getitemfromlist actions), landed between 16-04 and
+here; 11-08 itself moved them by zero.  Still unpinned by any assertion, still for
+the same reason.
+
+REACHABLE IS NOT PROVEN-ON-DEVICE.  Nothing in this file, and nothing in 11-08,
+observed a phone.  DIST-03 is open; Phase 16 owns the device proof; 16-UAT.md's
+twelve tests have never run.
 """
 from __future__ import annotations
 

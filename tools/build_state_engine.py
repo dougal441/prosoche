@@ -705,6 +705,15 @@ def dimming():
     The condition-100 container gate (snapshot_g) and the numeric `> 0` capture gate
     (capture_g) are UNTOUCHED by this change and must stay so -- they are this project's
     input validation over an absent or untrusted Get Device Details reading (T-16-03).
+
+    PHASE 11 (11-08) CORRECTS THE SENTENCE ABOVE, which is true of capture_g and was false
+    of the outer gate: that gate fires BEFORE Get Device Details runs, so it never validated
+    a reading at all -- it decides whether an unrestored capture is already OUTSTANDING, and
+    only a strictly positive reading of the captured-original LEAF (never mere container
+    presence, which clear_snapshot() makes a permanent invariant and therefore permanently
+    true) means one is.  Until that correction the whole body below sat in a dead arm and
+    none of the persistence machinery this docstring describes could ever run;
+    verify_environmental_reachability() now makes that shape a build failure.
     """
     # PHASE 16 (16-03): this comment SHIPS.  primitive_dispatch() renders it eleven times
     # per fork, so its middle bullet was eleven user-visible assertions of a lower limit on
@@ -720,9 +729,14 @@ def dimming():
 - Capture Current Brightness once when no snapshot exists.
 - Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.""")]
-    a += read_value("settings_snapshot.brightness", variable("State"), "Brightness Snapshot")
-    snapshot_g, snapshot_if = if_block("Brightness Snapshot", 100)
-    a += [snapshot_if, action("is.workflow.actions.nothing"), otherwise(snapshot_g)]
+    # PHASE 11 (11-08): the LEAF, gated numerically -- the exact shape and the exact rule
+    # restore_managed_settings() already uses, so capture and restore now agree on what
+    # counts as an outstanding original.  The container read that stood here could not read
+    # false, so everything below was unreachable.
+    a += read_value("settings_snapshot.brightness.original_value", variable("State"),
+                    "Outstanding Brightness Original")
+    original_g, original_if = if_block("Outstanding Brightness Original", 2, number=0)
+    a += [original_if, action("is.workflow.actions.nothing"), otherwise(original_g)]
     a += device_detail("Current Brightness", "Captured Brightness")
     capture_g, capture_if = if_block("Captured Brightness", 2, number=0)
     # PHASE 16 (16-04), D-02: the .changed_at and .changed_by_session_id writes that stood
@@ -737,7 +751,7 @@ def dimming():
     a += save_state()
     a += [set_brightness(variable("Dim Target")), end_if(already_dim_g), otherwise(capture_g),
           alert("Dim", "Brightness could not be captured, so nothing was changed."), end_if(capture_g),
-          end_if(snapshot_g)]
+          end_if(original_g)]
     return a
 
 
@@ -771,14 +785,24 @@ def silence():
     The emitted Shortcuts comment below states Media-only scoping and never-increase.  That
     is SAFE-02, it is still true, and this change does not touch it.  Nor does it touch the
     condition-100 container gate or the numeric `> 0` capture gate (T-16-03).
+
+    PHASE 11 (11-08) CORRECTS THE SENTENCE ABOVE on the same grounds as dimming()'s: the
+    outer gate fires BEFORE Get Device Details runs and so validated no reading -- it decides
+    whether an unrestored capture is already OUTSTANDING, and only a strictly positive
+    reading of the captured-original LEAF (never mere container presence, which
+    clear_snapshot() makes a permanent invariant and therefore permanently true) means one
+    is.  Until that correction this entire body sat in a dead arm;
+    verify_environmental_reachability() now makes that shape a build failure.
     """
     a = [comment("""Silence is reversible or message-only:
 - Capture Current Volume once when no snapshot exists.
 - Use Media volume only and never increase it.
 - Keep an existing unrestored snapshot unchanged.""")]
-    a += read_value("settings_snapshot.volume", variable("State"), "Volume Snapshot")
-    snapshot_g, snapshot_if = if_block("Volume Snapshot", 100)
-    a += [snapshot_if, action("is.workflow.actions.nothing"), otherwise(snapshot_g)]
+    # PHASE 11 (11-08): the LEAF, gated numerically -- see dimming() for the derivation.
+    a += read_value("settings_snapshot.volume.original_value", variable("State"),
+                    "Outstanding Volume Original")
+    original_g, original_if = if_block("Outstanding Volume Original", 2, number=0)
+    a += [original_if, action("is.workflow.actions.nothing"), otherwise(original_g)]
     a += device_detail("Current Volume", "Captured Volume")
     capture_g, capture_if = if_block("Captured Volume", 2, number=0)
     # PHASE 16 (16-04), D-02: the .changed_at and .changed_by_session_id writes that stood
@@ -794,7 +818,7 @@ def silence():
     a += save_state()
     a += [set_media_volume(variable("Silence Target")), end_if(quiet_g), otherwise(capture_g),
           alert("Silence", "Volume could not be captured, so nothing was changed."), end_if(capture_g),
-          end_if(snapshot_g)]
+          end_if(original_g)]
     return a
 
 
@@ -5149,6 +5173,11 @@ def main():
     verify_capture_persistence(actions)
     verify_no_removed_snapshot_leaf_reads(actions)
     verify_sentinel_gates(actions)
+    # Beside verify_sentinel_gates() because they are the two halves of the same question and
+    # neither implies the other: that one asks whether a gate can DISTINGUISH a key's states
+    # (crash-safety), this one asks whether the arm behind it can ever be TAKEN
+    # (reachability).  Armed with no exemption set -- see the guard's own docstring.
+    verify_environmental_reachability(actions)
     verify_compound_value_reads(actions)
     verify_router_shape(actions)
     verify_circle_zero_silence(actions)

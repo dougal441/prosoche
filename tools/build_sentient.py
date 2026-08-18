@@ -20,6 +20,7 @@ from build_state_engine import (
     verify_conditional_action_string,
     verify_conditional_inputs,
     verify_dispatch_coverage,
+    verify_environmental_reachability,
     verify_exit_events_seed,
     verify_group_identifier_uniqueness,
     verify_list_item_wrappers,
@@ -413,6 +414,15 @@ def main() -> None:
     # Asserted per fork, never inferred from the Dumb run.
     verify_no_removed_snapshot_leaf_reads(actions)
     verify_sentinel_gates(actions)
+    # PHASE 11 (11-08), same per-fork reasoning one axis further out.  Sentient inherits
+    # dimming()/silence() from the built Dumb source, so this asserts the fork did not lose
+    # the reachability fix -- but it also covers the Sentient-ONLY case Dumb's run cannot
+    # see: a Sentient insertion that wraps an environmental action in the otherwise arm of a
+    # permanently-true settings_snapshot container gate.  That failure is SILENT on device --
+    # the Circle does nothing, writes nothing and shows nothing, not even its own
+    # capture-failure alert -- so no runtime symptom would ever attribute it.  Asserted per
+    # fork, never inferred from the Dumb run.
+    verify_environmental_reachability(actions)
     # Sentient inherits the router verbatim from the built Dumb source, but assert it here
     # too: an inserted Sentient block must never land between the OPEN/CLOSE tests and the
     # MANUAL arm, and the absence gate must not reappear through a stale fork.
