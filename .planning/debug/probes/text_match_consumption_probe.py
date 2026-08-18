@@ -45,12 +45,16 @@ from build_state_engine import (  # noqa: E402
     comment,
     end_if,
     if_block,
+    normalise_numeric_operands,
+    normalise_output_names,
+    normalise_string_envelopes,
     otherwise,
     output,
     set_var,
     text_token,
     uid,
     variable,
+    verify_string_envelopes,
 )
 
 OUT = pathlib.Path(__file__).resolve().parent / "text-match-consumption-probe.xml"
@@ -159,6 +163,31 @@ def build():
 
 def main():
     actions = build()
+
+    # THE DEFECT THIS PROBE SHIPPED WITH, AND WHY THE FIRST RUN TAUGHT NOTHING.
+    #
+    # `build()` returns RAW actions.  The generator never writes raw actions: main() in
+    # build_state_engine.py runs a normalisation pipeline over them first, and two of those
+    # passes are load-bearing for the very sites this probe measures.
+    #
+    # `output()` returns a bare WFTextTokenAttachment.  At a string-typed parameter --
+    # gettext.WFTextActionText is one, and is listed in STRING_ENVELOPE_PARAMS -- a bare
+    # attachment resolves to EMPTY at run time (.claude/CLAUDE.md, axis 2).  Skipping
+    # normalise_string_envelopes() therefore injected an axis-2 defect at BOTH consumption
+    # sites, which is upstream of the shape question and blinds it completely: both shapes
+    # read empty for the same reason, and the difference the probe exists to measure cannot
+    # appear.  Measured on the first run -- [SHAPE_A]<<>> and [SHAPE_B]<<>>, identically
+    # blank, while the report action (built via text_token(), correctly enveloped) resolved
+    # its three chips perfectly.  Two identical blanks were the tell.
+    #
+    # A probe must exercise the shipped code path or it measures itself.  Run the same
+    # pipeline the generator runs, then ASSERT the envelope axis is clean before writing, so
+    # this class can never silently return.
+    normalise_string_envelopes(actions)
+    normalise_output_names(actions)
+    normalise_numeric_operands(actions)
+    verify_string_envelopes(actions)
+
     data = {
         "WFWorkflowActions": actions,
         "WFWorkflowClientVersion": "1300",

@@ -2338,12 +2338,25 @@ def panic_escape_branch():
           # THE SHAPE is first-item-then-Text, mirroring build_sentient.py audit_block()'s
           # match -> count -> getitemfromlist[First Item] chain.  text.match publishes a
           # LIST, and no golden shortcut feeds that list to gettext or to getitemfromlist,
-          # so neither shape is corpus-attested; the 11-07 probe that would have settled it
-          # built and signed but could not be installed on the simulator, so the question
-          # is recorded OPEN and the in-repo precedent adopted as the bounded fallback
-          # (docs/BUILD-NOTES.md, plan 11-07 Task 2).  Taking the first item of a
-          # one-element list is deterministic about WHICH element is taken and cannot be
-          # worse than stringifying that list.
+          # so neither shape is corpus-attested at rung 1.
+          #
+          # SETTLED AT RUNG 2, 2026-08-18 (supersedes this plan's original OPEN verdict).
+          # The 11-07 probe was re-run on the booted iOS 26.5 simulator and BOTH shapes
+          # returned the bounded section byte-identically, with the condition-99 contains
+          # test below reading TRUE.  So the shapes are EQUIVALENT for a single-match list
+          # and this chain is confirmed, not merely bounded.  First-item is retained because
+          # it is deterministic about WHICH element is taken, which still matters if the
+          # pattern is ever loosened to match more than once -- the multi-match case is
+          # where the two shapes would genuinely diverge and is NOT covered by that run.
+          #
+          # The plan's original reason for recording OPEN -- that the probe "could not be
+          # installed on the simulator" -- was FALSE and is retracted: simctl openurl
+          # produced the import sheet first try, exactly as .claude/CLAUDE.md Sec 9
+          # describes.  The first run taught nothing for an unrelated reason: the probe's
+          # main() skipped normalise_string_envelopes(), so both consumption sites carried a
+          # bare WFTextTokenAttachment (axis 2) and read empty regardless of shape.  A probe
+          # must run the generator's own pipeline or it measures itself
+          # (docs/BUILD-NOTES.md, plan 11-07 Task 2).
           # The Text coercion still follows, for the reason it always did: the value is
           # compared by a condition-99 contains test below, and an uncoerced value
           # compared directly renders blank -- the same gotcha read_value() avoids for

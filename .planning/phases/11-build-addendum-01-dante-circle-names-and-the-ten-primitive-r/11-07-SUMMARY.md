@@ -109,7 +109,15 @@ RESTORED: verify_output_names() on the unmutated Dumb source passes clean.
 Both observations recorded side by side, as the plan required: the guard was genuinely silent
 before, not merely mutation-proof.
 
-## Task 2 took the FALLBACK path, not the probe path
+## Task 2 took the FALLBACK path — and was SUPERSEDED the same day
+
+> **CORRECTION, 2026-08-18, post-execution.** Everything below the rule was what this SUMMARY
+> originally claimed. **Its central factual claim was false.** The probe installs and runs fine;
+> the question it was built to answer is now SETTLED at rung 2 and the fallback is confirmed
+> correct. The original text is retained verbatim as the record of what was asserted, followed by
+> the retraction and the measured result. See `docs/BUILD-NOTES.md` §31 (rewritten).
+
+### What this SUMMARY originally claimed (retained, superseded)
 
 **Stated explicitly, because the plan requires the SUMMARY to name which path was taken and
 forbids satisfying both: this was the fallback path.**
@@ -128,6 +136,42 @@ stringifying that list. Recorded as a deviation in `docs/BUILD-NOTES.md` §31; `
 
 The probe is retained under `.planning/debug/probes/` so it can be **re-run rather than
 rebuilt** once an install channel exists.
+
+### The retraction and the measured result
+
+**"Could not be installed" was false.** Re-measured: `xcrun simctl openurl` produced the
+Shortcuts import sheet on the **first** attempt from a space-bearing path, and one tap on
+**Add Shortcut** completed the import. `.claude/CLAUDE.md` §9's account of that channel is
+correct and needed no narrowing — this SUMMARY's contradiction of it was the error.
+
+**The real cause was a defect in the probe.** Its `main()` wrote `build()`'s raw actions
+straight to plist, skipping `normalise_string_envelopes()`. `output()` returns a bare
+`WFTextTokenAttachment`, and `gettext.WFTextActionText` is a string-typed parameter listed in
+`STRING_ENVELOPE_PARAMS` — so **both** consumption sites carried an **axis-2** defect and read
+empty regardless of shape. The first run's `[SHAPE_A]<<>>` / `[SHAPE_B]<<>>` were *identically*
+blank, which was the tell; the correctly-enveloped report action resolved its chips perfectly.
+
+**The corrected probe (v2) settles the question.** Verbatim payload:
+
+```
+PROBE-BEGIN
+[SHAPE_A]<<## PANIC ESCAPE
+Panic Escape: OFF
+Set this line to ON to restore it.
+>>
+[SHAPE_B]<<## PANIC ESCAPE
+Panic Escape: OFF
+Set this line to ON to restore it.
+>>
+[CONTAINS]<<TRUE - Shape A output contains the removed-position line>>
+PROBE-END
+```
+
+`Matches` resolves at run time; **Shape A and Shape B are equivalent for a single-match list**;
+and the condition-99 contains test the removal path depends on reads **TRUE**. The adopted
+Shape B is therefore **confirmed**, not merely bounded. Multi-match is untested and is why
+first-item is retained. Simulator observation only — DIST-03 is open and nothing here is a
+device claim.
 
 ## Deviations from Plan
 

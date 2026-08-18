@@ -3174,7 +3174,12 @@ have been found by reading the code.
 stays `false`, and Silence's Media-only scoping stands — SAFE-02 is unchanged by D-01.
 
 
-## 31. Phase 11 — the text.match consumption shape: a question left OPEN and a fallback adopted (plan 11-07 Task 2, 2026-08-18)
+## 31. Phase 11 — the text.match consumption shape: SETTLED at rung 2, and the probe defect that first hid it (plan 11-07 Task 2, 2026-08-18)
+
+> **This section was rewritten on 2026-08-18 after the probe was re-run.** Its first version
+> recorded the question OPEN and blamed an install failure. **That reason was false and is
+> retracted below.** The corpus tally and the fallback rationale are unchanged and are retained;
+> the verdict and the account of the first run are not.
 
 **The question.** `is.workflow.actions.text.match` publishes a **list** ("Matches"). When that
 list-valued output is consumed, which shape yields the matched section as a usable string?
@@ -3183,8 +3188,8 @@ list-valued output is consumed, which shape yields the matched section as a usab
 - **Shape B** — the in-repo precedent in `tools/build_sentient.py`'s `audit_block()`:
   `text.match` → `getitemfromlist` with `WFItemSpecifier="First Item"` → the extracted item.
 
-**The corpus tally, re-taken this session over all 19 shipped golden XMLs rather than
-transcribed.** Every `ActionOutput` token was resolved back to its producing identifier:
+**The corpus tally, re-taken over all 19 shipped golden XMLs rather than transcribed.** Every
+`ActionOutput` token was resolved back to its producing identifier:
 
 | measure | result |
 |---|---|
@@ -3198,59 +3203,100 @@ transcribed.** Every `ActionOutput` token was resolved back to its producing ide
 | consumer `gettext` | **0** |
 | consumer `getitemfromlist` | **0** |
 
-The tally settles the **name** decisively (15 versus 0 — see §ACTION_OUTPUT_NAMES and the
-class fix recorded below). It does **not** settle the **shape**: the corpus contains zero
-observations of *either* candidate chain, so rung 1 is genuinely exhausted on this question.
-That is why a probe was built rather than an inference recorded.
+The tally settles the **name** decisively (15 versus 0 — see §32). It does **not** settle the
+**shape**: the corpus contains zero observations of *either* candidate chain, so rung 1 is
+genuinely exhausted and a probe was the correct instrument.
 
-**The rung reached: 2, attempted and NOT completed.** A single-purpose probe was written to
-`.planning/debug/probes/text_match_consumption_probe.py`, holding its fixture inline (the
-`## PANIC ESCAPE` heading, the setting line in its removed position, and the bounding
-`## MY PHONE, ON PURPOSE` heading) and touching no Note, no model, no automation and no
-real-hardware behaviour — deliberately inside rung 2's competence per §9. It **built** (23
-actions), **validated clean at gate A** (`--target-macos 26 --target-platform all`), and
-**signed** to a 23,861-byte container. It could **not be installed**: `xcrun simctl openurl`
-against a `file://` URL hung indefinitely and produced no import sheet, on two attempts, from
-both a space-bearing and a space-free path. No alert, no clipboard payload, no readout of any
-kind was obtained.
+### The result — rung 2, booted iOS 26.5 simulator, 2026-08-18
 
-**Therefore the question is recorded OPEN. Nothing here is an observation.** No run happened,
-so no claim — device *or* simulator — is available to make, and none is made. This entry
-records an attempt and its failure, not a result.
+The corrected probe was imported and run. Verbatim clipboard payload:
 
-**The fallback adopted, and why — recorded as a deviation** per the plan's bounded-fallback
-clause and the do-not-fabricate protocol (§2). **Shape B is adopted at both sites**:
+```
+PROBE-BEGIN
+[SHAPE_A]<<## PANIC ESCAPE
+Panic Escape: OFF
+Set this line to ON to restore it.
+>>
+[SHAPE_B]<<## PANIC ESCAPE
+Panic Escape: OFF
+Set this line to ON to restore it.
+>>
+[CONTAINS]<<TRUE - Shape A output contains the removed-position line>>
+PROBE-END
+```
 
-- `panic_escape_branch()`'s section read, and
-- `manual_note_refresh()`'s Sync My Profile proforma extraction — the identical defect,
-  closed in the same pass rather than left as the next site to be found. Its consumer writes
-  straight into a state key, so Shape A there stored a **stringified list** rather than the
-  real extracted proforma.
+Three things are established, and nothing beyond them:
 
-Three reasons Shape B is the safe fallback rather than a coin toss: it is the **in-repo
-precedent**, already shipping in `audit_block()`; it is **deterministic about which element
-is taken**, where a list-to-text coercion is not; and taking the first item of a one-element
-list **cannot be worse** than stringifying that list. The `WFItemSpecifier` picker carries the
-literal enum case `First Item` at both new sites, per axis 4 — an unfilled picker reports as
-"Please choose a value for each parameter in this action."
+1. **`Matches` resolves at run time.** The name the class fix installed in `ACTION_OUTPUT_NAMES`
+   is correct in practice, not merely by corpus tally.
+2. **Shape A and Shape B are equivalent for a single-match list** — byte-identical output. The
+   adopted Shape B is confirmed safe; Shape A would also have worked. The fallback was a correct
+   choice made for a reason that has now been replaced by a measurement.
+3. **The load-bearing gate passes.** `[CONTAINS]` is TRUE — the exact condition-99 contains test
+   `panic_escape_branch()` runs finds the removed-position line.
 
-**A second deviation, on the probe's own construction.** Plan 11-07 Task 2 specifies three
-`Show Alert` readouts. §9 records, from spike 010, that **Show Alert modals accept neither a
-synthesized tap nor a hardware Return** — the run wedges permanently at the first one — and
-directs that simulator-bound probes carry **no blocking UI**. Three alerts would have wedged
-three times and read out nothing. The probe therefore concatenates all three results into one
-clipboard payload recoverable with `xcrun simctl pbpaste`, which needs no synthesized input.
-This deviation is orthogonal to the install failure above and did not cause it.
+**The boundary, stated because the fixture does not cross it.** The fixture yields exactly ONE
+match. Single-match is the operative case — `PANIC_ESCAPE_SECTION_PATTERN` is bounded and matches
+once — but **the multi-match case is untested**, and it is precisely where stringifying a list and
+taking its first item would diverge. First-item is retained for that reason. Do not read this
+entry as covering a loosened pattern.
 
-**Retained for re-running, not rebuilding.** The probe generator, its validated XML and its
-signed container all stay under `.planning/debug/probes/`. Whoever opens a working install
-channel can re-run it and close this question without re-deriving any of it; the fixture, the
-pattern and both candidate chains are already wired and validated.
+**Rung discipline.** This is a **simulator** observation and is never promotable above `UNVERIFIED`
+for anything in §9's "Rung 2's ceiling" list. It touches no Note, no model, no automation and no
+real-hardware behaviour, which is exactly why it sits inside rung 2's competence. **It says nothing
+about device behaviour; DIST-03 remains open.**
 
-**What would settle it.** Any successful install-and-run of the retained probe — the readout
-is designed so an EMPTY result is distinguishable from a missing one via its `<<`/`>>`
-delimiters, and the third field reports the condition-99 contains test that the removal path
-actually depends on.
+### Retraction: why the first run taught nothing
+
+The first version of this section stated the probe "could **not** be installed" — that
+`xcrun simctl openurl` against a `file://` URL hung and produced no import sheet on two attempts.
+**That is false.** Re-measured 2026-08-18: `simctl openurl` produced the Shortcuts import sheet on
+the first attempt, from a space-bearing path, and one tap on **Add Shortcut** completed the import.
+**`.claude/CLAUDE.md` §9's account of this channel is correct and needs no narrowing.**
+
+The real cause was in the probe itself, and it is a reusable lesson:
+
+**`build()` returns RAW actions, and the generator never ships raw actions.** `main()` in
+`tools/build_state_engine.py` runs a normalisation pipeline first. The probe's `main()` skipped it.
+`output()` returns a bare `WFTextTokenAttachment`; at a string-typed parameter — and
+`gettext.WFTextActionText` is one, listed in `STRING_ENVELOPE_PARAMS` — a bare attachment resolves
+to **empty** at run time (axis 2). So the probe injected an axis-2 defect at **both** consumption
+sites, upstream of the shape question and blinding it completely.
+
+Measured on that first run: `[SHAPE_A]<<>>` and `[SHAPE_B]<<>>`, **identically blank**, while the
+report action — built via `text_token()`, correctly enveloped — resolved its three chips perfectly.
+**Two identical blanks were the tell**: a genuine shape difference produces different results, not
+the same blank twice. The run also surfaced three blocking prompts (one text-entry prompt per
+unresolved parameter, then the clipboard grant), which is what an unattended run silently died on.
+
+**The rule this earns:** *a probe must run the generator's own pipeline, or it measures itself.*
+`text_match_consumption_probe.py` now calls `normalise_string_envelopes()`,
+`normalise_output_names()` and `normalise_numeric_operands()`, then **asserts**
+`verify_string_envelopes()` before writing, so this class cannot silently return.
+
+**A finding for every future simulator probe:** `is.workflow.actions.setclipboard` triggers a
+one-time *"Allow ... to copy to the clipboard?"* modal. The clipboard readout was chosen precisely
+to avoid blocking UI (§9, spike 010: `Show Alert` accepts neither a synthesized tap nor a hardware
+Return), and it **still has one blocking gate on first use**. It is dismissible by a synthesized
+tap — unlike `Show Alert` — so the channel remains the right one, but a probe run must budget for
+that tap rather than assume a fully unattended run.
+
+### The fallback adopted, and why — retained as originally recorded
+
+**Shape B is adopted at both sites**: `panic_escape_branch()`'s section read, and
+`manual_note_refresh()`'s Sync My Profile proforma extraction — the identical defect, closed in the
+same pass rather than left as the next site to be found. Its consumer writes straight into a state
+key, so Shape A there stored a **stringified list** rather than the real extracted proforma.
+
+Three reasons Shape B was the safe fallback rather than a coin toss: it is the **in-repo
+precedent**, already shipping in `audit_block()`; it is **deterministic about which element is
+taken**, where a list-to-text coercion is not; and taking the first item of a one-element list
+**cannot be worse** than stringifying that list. The `WFItemSpecifier` picker carries the literal
+enum case `First Item` at both new sites, per axis 4.
+
+**Retained for re-running.** The probe generator, its validated XML and its signed containers stay
+under `.planning/debug/probes/`. The v2 container is the corrected one; the original is kept beside
+it as the artifact that carries the axis-2 defect this section documents.
 
 ## 32. Phase 11 — the output-name class fix: one table entry, two sites, and a guard that can now see them (plan 11-07, 2026-08-18)
 
@@ -3300,10 +3346,14 @@ repair the regression first:
 
 The unmutated source then verified clean, confirming the control restored cleanly.
 
-**The consumption-shape verdict: OPEN, with a fallback adopted.** Recorded in full in §31. In
-short: the shape is *not* settled, the probe that would have settled it built and signed but
-could not be installed, and the in-repo `First Item` precedent was adopted as the bounded
-fallback and recorded as a deviation. +2 actions per fork.
+**The consumption-shape verdict: SETTLED at rung 2.** Recorded in full in §31. In short: the
+probe was re-run on the booted simulator and **both shapes returned the bounded section
+byte-identically**, with the condition-99 contains test reading TRUE — so `Matches` resolves at
+run time and the adopted `First Item` chain is confirmed, not merely bounded. The single-match
+case only; multi-match is untested and is why first-item is retained. **This section's earlier
+claim that the probe "could not be installed" was false and is retracted in §31** — the probe
+installs and runs; the first run was blinded by an axis-2 defect in the probe's own
+construction. +2 actions per fork.
 
 **Nothing here is device-verified, and none of it is claimed to be.** DIST-03 is open. The
 repaired removal path has never run on a phone; what is proven is structural — the corpus
