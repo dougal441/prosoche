@@ -1179,6 +1179,50 @@ the current no-ownership-check design is already correct for the two-session ove
 that a naive equality check would regress it — that argument is a trace, not device evidence,
 and tests 9/10/12 exist to check it.
 
+### ADDENDUM 2026-08-18 (Phase 11, plan 11-08) — the "live-path risk" this section names did not exist yet
+
+**What §18 asserted.** That merging the coercion fix made the Dimming and Silence writes
+execute where they previously no-opped, turning them into a live path on a device with no
+evidence behind it — hence this section's whole framing as a live-path *risk*, and hence the
+`09-UAT.md` battery above.
+
+**What was actually the case.** The coercion fix was real, correct and necessary. It was also
+**not sufficient**, and the writes did not become live. `dimming()` and `silence()` opened on a
+condition-100 existence gate over the `settings_snapshot.<group>` **container**, with the entire
+capture-and-apply body in the `otherwise` arm. `clear_snapshot()` writes the **leaf** and never
+the container — deliberately, so the seeded subtree stays a permanent bootstrap invariant — so
+that gate could never read false and the body was unreachable. Measured against the shipped
+artifact: **44 environmental actions per fork** stranded in the never-taken arm (22 Get Device
+Details, 11 Set Brightness, 11 Set Volume). Every UAT test listed above would have observed
+nothing happening, and would have been read as a passing "no stranding" result. The eight
+restore-side writes were never affected: `restore_managed_settings()` opens on the identical
+container gate but puts its work in the **true** arm and lets its own numeric leaf gate decide.
+Polarity, not the gate, was the entire defect.
+
+**How it was found.** The Phase 11 review (`11-REVIEW.md`, CR-01, 2026-08-17) identified the
+shape by inspection; it survived Phases 12, 13 and 16 and was re-measured against HEAD before
+being fixed. It is worth naming why Phase 16 did not catch it despite being devoted to these
+two functions: 16-01 filed **both** the outer container gate and the inner numeric capture gate
+under one threat, T-16-03, described both as input validation over the `Get Device Details`
+reading, and deliberately left both alone. That is accurate for the inner gate and wrong for the
+outer one, which is evaluated **before** `Get Device Details` runs and therefore validates
+nothing. Believing the broken gate was load-bearing is what protected it.
+
+**What closed it.** Plan 11-08 re-gated both onto `settings_snapshot.<group>.original_value`
+with the numeric `> 0` test the restore side already used, and armed
+`verify_environmental_reachability()` in both builders with no exemption set — proven raising on
+the live 44-site defect, proven silent on the 8 correct-polarity restore writes, and proven to
+fail the build on a deliberate revert. Phase 16's `verify_capture_persistence()` is a separate
+guard for a separate property (ordering once the body runs, not whether it runs) and was
+verified clean both before and after.
+
+**The device-proving tests referenced above remain untested, and this addendum does not change
+that.** They were untested before and they are untested now; the fix is structural, not
+behavioural. What changed is that they will now be testing a live loop rather than a dead one.
+Ownership of that proof sits with **Phase 16 / DIST-03 / `16-UAT.md`'s twelve tests**, which
+supersede this section's `09-UAT.md` battery as the current instrument. **No device was observed
+in plan 11-08.**
+
 ---
 
 ## 19. Phase 10 — ship readiness and the UX lite pass (2026-08-17)
