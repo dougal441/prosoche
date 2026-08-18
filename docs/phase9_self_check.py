@@ -53,13 +53,38 @@ THE SITE COUNTS DID NOT MOVE, and a reader who expected them to needs the reason
 The persistence fix adds only is.workflow.actions.setitemname and
 is.workflow.actions.documentpicker.save actions -- 22 of each pair per fork, one
 per applying arm across 11 dimming() and 11 silence() renderings, so +44 actions
-per fork (Dumb 4346 -> 4390, Sentient 4414 -> 4458).  It adds no setbrightness,
-no setvolume and no getdevicedetails action, and it changes no operand's source
-or coercion.  So site_audit()'s expected_counts (15/15) and expected_coerced
-(15/4) are unchanged, and so is environmental_restore_check.py's EXPECTED_SITES.
-That non-movement was MEASURED against the rebuilt forks after the fix, not
-assumed: a move in any of those numbers would have been a regression introduced
-by this phase, not a table that needed updating.
+per fork.  It adds no setbrightness, no setvolume and no getdevicedetails action,
+and it changes no operand's source or coercion.  So site_audit()'s
+expected_counts (15/15) and expected_coerced (15/4) are unchanged, and so is
+environmental_restore_check.py's EXPECTED_SITES.  That non-movement was MEASURED
+against the rebuilt forks after the fix, not assumed: a move in any of those
+numbers would have been a regression introduced by this phase, not a table that
+needed updating.
+
+THE ACTION TOTALS, RE-DERIVED 2026-08-18 (16-REVIEW WR-04).  The paragraph above
+used to end with "(Dumb 4346 -> 4390, Sentient 4414 -> 4458)" and call it
+MEASURED.  It was, when written -- and 16-04's D-02 removal then took 88 actions
+out of each fork, AFTER the paragraph was authored, so a live checker was left
+stating a stale total as a measurement.  That is precisely the record-drifts-from-
+the-build failure docs/retired_clause_check.py was created in the same phase to
+prevent.  The totals were not copied forward; they were re-measured by walking
+the four phase commits and counting WFWorkflowActions in each:
+
+    commit                          Dumb            Sentient
+    0465593^  pre-16-01 baseline    4346            4414
+    0465593   16-01 persist fix     4390  (+44)     4458  (+44)
+    8e2a676   16-03 floor/comment   4390   (+0)     4458   (+0)
+    3b0d368   16-04 D-02 removal    4302   (-88)    4370   (-88)
+
+The -88 decomposes exactly, measured per identifier on the Dumb fork: -44
+setvalueforkey (the two removed leaves x 22 renderings) and -44 setvariable (the
+now-unreferenced Now Epoch and Session ID bindings, one pair per rendering).
+
+NO ASSERTION IN THIS FILE PINS THESE TOTALS, and that is why they went stale.
+They are kept because the +44/-88 derivation is what tells a reader the counts
+site_audit() DOES assert were expected to hold still; treat them as a dated
+measurement, not as a live invariant.  If they matter enough to be right, they
+have to be asserted -- prose that no assertion pins will go stale again.
 """
 from __future__ import annotations
 
