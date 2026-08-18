@@ -2,224 +2,357 @@
 phase: 11-build-addendum-01-dante-circle-names-and-the-ten-primitive-r
 fixed_at: 2026-08-18T00:00:00Z
 review_path: .planning/phases/11-build-addendum-01-dante-circle-names-and-the-ten-primitive-r/11-REVIEW.md
-iteration: 1
-findings_in_scope: 7
-fixed: 7
+iteration: 3
+findings_in_scope: 4
+fixed: 4
 skipped: 0
 status: all_fixed
 ---
 
-# Phase 11: Code Review Fix Report
+# Phase 11: Code Review Fix Report — iteration 3
 
 **Fixed at:** 2026-08-18
 **Source review:** `.planning/phases/11-build-addendum-01-dante-circle-names-and-the-ten-primitive-r/11-REVIEW.md`
-**Iteration:** 1
-**Scope:** WR-16, WR-17, WR-18, WR-19, IN-01, IN-03, plus IN-02 (judgment call — taken)
+**Iteration:** 3
+**Scope:** WR-20, WR-21, WR-22, IN-04
 
 **Summary:**
-- Findings in scope: 7
-- Fixed: 7
+- Findings in scope: 4
+- Fixed: 4
 - Skipped: 0
 
+| Finding | Commit | Files |
+|---|---|---|
+| WR-20 | `7d963d1` | `tools/build_state_engine.py` |
+| WR-21 | `353621f` | `docs/environmental_restore_check.py` |
+| WR-22 | `65e47b4` | `docs/environmental_restore_check.py` |
+| IN-04 | `6396a6e` | `tools/build_sentient.py`, `docs/sentient_audit_check.py` |
+
+## Read this first — the honest statement about WR-20
+
+**I did not close WR-20 by teaching the fixpoint about `gettext`.** The walk no longer
+enumerates hop identifiers at all. But it is **not unconditionally general either**, and the
+one place it deliberately stops is named, measured and reproduced below under
+`## Residual`. Reporting it as an unqualified class fix would be the exact failure the brief
+forbids.
+
+What is now general: **every action that carries a reference to a variable or to another
+action's output propagates the provenance of those references to whatever it publishes.**
+`set_var` and `gettext` are two instances of that rule; so is `math`, so is `expression`, so
+is `getitemfromlist`, so is an action nobody has emitted yet. There is no allowlist.
+
+What is not: **three container-shaped identifiers are barriers** — `getvalueforkey` (which
+*seeds* instead of inheriting), `setvalueforkey` and `dictionary`. A value routed through a
+dictionary and read back out under a different key therefore still loses its provenance. I
+built that control and it exits 0. See `## Residual`.
+
+The barrier list is a **denylist**, not an allowlist, and that inversion is the load-bearing
+property: an identifier nobody anticipated **propagates**, so an unanticipated hop now fails
+**loud** (provenance carried further than needed, guards get stricter) rather than failing
+**quiet** (the guard silently resolves nothing) — which is the defect class of WR-16, WR-20,
+and half this phase.
+
 ## Definition of done — measured, not asserted
+
+Measured in an isolated `git worktree` (`/tmp/sv-11-reviewfix-…`) branched from `main` at
+`ab96bed`. The tracked tree was never mutated; every negative control ran on a
+`git archive HEAD` copy under the scratchpad.
 
 | Gate | Result |
 |---|---|
 | `python3 <each>` for all 13 `docs/*.py` | **13/13 exit 0** |
-| `docs/retired_clause_check.py` | exit 0 — the documented 4 gitignored `graphify-out/` occurrences are absent from the isolated worktree, so the expected 12/13 was in fact 13/13 |
+| `docs/retired_clause_check.py` | exit 0 here. The documented 4 gitignored `.planning/graphs/` + `graphify-out/` occurrences are absent from a `git worktree` checkout, so this measures 13/13 where the main tree measures 12/13. **That difference is the known, separately-tracked, not-mine item — not a fix.** |
 | Gate A, `src/PROSOCHE-Dumb.xml` | `Validation passed.`, exit 0 |
 | Gate A, `src/PROSOCHE-Sentient.xml` | `Validation passed.`, exit 0 |
-| Gate B (advisory, non-blocking) | exactly **one** line per fork — the documented `com.apple.mobilenotes.SharingExtension` / `WFCreateNoteInput` waiver, indices 4148 (Core) and 4282 (Aware). No new finding. |
-| Both builders re-run after every fix | exit 0, `md5` identical across consecutive rebuilds |
-| `git status --short` | **empty** |
+| Gate B (advisory, non-blocking) | exactly **one** line per fork — the documented `com.apple.mobilenotes.SharingExtension` / `WFCreateNoteInput` waiver, at indices **4148** (Core) and **4282** (Aware), unchanged. No new finding. |
+| Both builders after every fix | exit 0; `md5` identical across consecutive rebuilds |
+| Shipped totals | Core **4304** / Aware **4438**; Aware **2** `askllm`, Core **0** |
+| `git status --short src/` | **empty** |
 
-**No re-sign was performed, and none was needed.** Every fix is guard-, comment- or
-prose-only. After all seven, both forks rebuild to `a8d712b0…` (Core) and `0dee5197…` (Aware) —
-byte-identical to the shipped sources — and `git status --short` reports no change under `src/`.
-Action totals are unchanged at **Core 4304 / Aware 4438**. Per the phase's own rule, re-signing
-reflexively would have been wrong.
-
-**Every guard fix was proven to fail closed**, on an isolated copy of the tree, never by
-mutating the tracked tree. Before/after exit codes are recorded per finding below.
+**No re-sign was performed, and none was needed — stated explicitly rather than acted on
+reflexively.** All four fixes are guard-only. After all four, both forks rebuild to
+`a8d712b091aff9b1549ea7d236c4a15a` (Core) and `0dee5197e609ccbc8d59af388d06cede` (Aware),
+byte-identical to the shipped sources, and `src/` is untouched. `artifacts/shortcuts/MANIFEST.md`
+therefore needs no refresh: nothing it declares moved.
 
 ## Fixed Issues
 
-### WR-19: the Panic Escape guards assert the resolved *variable* set, never the resolved *gate* set
+### WR-20: the transitive-provenance fix follows one edge only
 
 **Files modified:** `tools/build_state_engine.py`
-**Commit:** `902d735`
-**Applied fix:** added a zero-gates raise to `verify_panic_escape_seed()` (a `gates` counter
-incremented whenever a mode-0 conditional tests a member of `guarded`) and the matching
-`if not groups` raise to `verify_panic_escape_isolation()`.
+**Commit:** `7d963d1`
 
-Fixed **before** WR-16 deliberately: once provenance is transitive, the fully-disconnected
-state is much harder to construct, so the control had to be run against the un-fixed resolver
-to mean anything.
+**Applied fix.** `_read_variable_keys()` is now a thin projection over a new
+`_variable_provenance()`, which runs one fixpoint over the **emitted data-flow graph**:
 
-**Negative control** — all three Panic Escape gates (`universal_leaving()`'s bypass gate and
-`panic_escape_branch()`'s two write gates) moved behind one `set_var` hop each, so `guarded`
-stays non-empty and both existing vacuity raises stay silent:
+- `_reference_descriptors()` walks the **whole** `WFWorkflowActionParameters` tree — not a
+  named slot — collecting every `Type: "Variable"` / `Type: "ActionOutput"` descriptor
+  wherever it sits: bare `WFTextTokenAttachment`, a `WFTextTokenString`'s
+  `attachmentsByRange`, `if_block()`'s nested `WFInput.Variable` wrapper, a `WFItems` row
+  wrapper (axis 8), a dictionary field value. Descent continues *through* a matched
+  descriptor because `if_block()` nests one inside another. Enumerating slots is the failure
+  WR-20 measured one level up; this enumerates none.
+- Nodes are action outputs (keyed by the action's own `UUID`) and named variables. A
+  `getvalueforkey` **seeds** its literal key; every non-barrier action **inherits** the union
+  of its references. `setvariable` publishes to a variable name as well as a UUID.
+- Provenance is carried as `(key, stringified)` pairs. `gettext` / `text` flip
+  `stringified`, which is what preserves axis 9's `read_value()`-vs-`get_value()` distinction
+  — see the false-positive note below.
+- Termination is unchanged in kind: sets grow monotonically over a finite vocabulary
+  (literal keys × {stringified, not}). Converges in **3** iterations on both forks.
+- Incidental, inside the code being rewritten: a nameless `setvariable` can no longer create a
+  `None`-keyed entry (`isinstance(..., str)` guard). That is the latent **IN-06** shape, which
+  was not in scope; I am recording it as a side effect rather than claiming IN-06 closed,
+  since IN-06's second half (`_tested_variable()`) is untouched.
 
-| | before | after |
+**Verified by the adversary, not by the change.** CR-01 rebuilt **verbatim** —
+`dimming()` re-gated onto the `settings_snapshot.brightness` **container** at condition 100
+with the whole capture-and-apply body back in the `otherwise` arm — behind each hop shape.
+Each row is a full build of a mutated generator copy, `before` = `git archive HEAD` (the
+iteration-2 code), `after` = the same tree with only this commit applied:
+
+| Control | before | after |
 |---|---|---|
-| `build_state_engine.py` | **exit 0** | **exit 1** — *"2 variable(s) resolve to `panic_escape_enabled` by provenance but no mode-0 conditional tests any of them, so assertion (3) below inspected zero gates…"* |
-| `build_sentient.py` | exit 0 | not reached |
-| substantive checkers | all exit 0 | — |
+| **J0** no hop (baseline) | build **exit 1** | build **exit 1** |
+| **J1** one **`gettext`** hop | build **exit 0** ← WR-20 | build **exit 1** |
+| **J2** one **`set_var`** hop | build **exit 1** | build **exit 1** (WR-16 preserved) |
+| **J3** two-hop **`set_var` → `gettext`** | build **exit 0** | build **exit 1** |
+| **J4** two-hop **`gettext` → `set_var`** | build **exit 0** | build **exit 1** |
+
+The `after` message in all five is `verify_environmental_reachability()`'s own dead-arm text:
+*"an environmental read or write sits in the never-taken arm of a permanently-true
+settings_snapshot container gate…"*.
+
+Same shape re-run on the Panic Escape **bypass** gate (`universal_leaving()`, flipped to
+condition 100), which is the gate deciding whether the user is offered the Leaving/Continue
+menu at all:
+
+| Control | before | after |
+|---|---|---|
+| **I1** one `gettext` hop | core **exit 0**, 12/13 checkers green | core **exit 1** |
+| **I2** one `set_var` hop | core exit 1 | core exit 1 |
+| **I3** `set_var` → `gettext` | core **exit 0**, 12/13 green | core **exit 1** |
+
+`after` message: *"a Panic Escape gate uses a non-numeric condition code action 531: 'PE Gate'
+at condition 100 — the variable is read from 'panic_escape_enabled'…"*.
+
+**One correction to the acceptance wording, stated rather than glossed.** The brief asked for
+`docs/environmental_restore_check.py` to exit 1 in every case. It exits **0**, and that is the
+*stronger* outcome, not a miss: the build now refuses to write the defective artifact, so
+`src/` still holds the good fork and the checker has nothing to find. That checker parses the
+built artifact and asserts the guards exist and are called; it never runs
+`verify_environmental_reachability()` itself, so it structurally cannot see a defect the build
+gate has already stopped. The chain that actually holds is: **guard call present ⇒ the build
+fails** (measured above) **and guard call removed or commented out ⇒
+`environmental_restore_check.py` fails** (measured under WR-21/WR-22 below). Neither half
+alone is the property; the composition is.
+
+**Zero false positives, re-measured on the shipped tree.**
+
+| | Core | Aware |
+|---|---:|---:|
+| `variable → variable` copies (iteration 2's figure) | **40** | **42** |
+| propagation edges the new walk follows | **1431** | **1478** |
+| resolved variables | 72 → **104** | 73 → **107** |
+| key assignments | 72 → **146** | 73 → **157** |
+| **`settings_snapshot`-provenance variables** | 6 → **6** (added: none) | 6 → **6** (added: none) |
+| **`panic_escape_enabled` variables** | `{Panic Escape Enabled, Panic Escape Stored}` — unchanged | unchanged |
+
+So the walk now follows ~36× more edges while the two safety-critical provenance sets are
+**bit-identical to before**. The widening it does produce is genuine data flow
+(`Heat After Contract` really is derived from `heat`, `heat.open_base`, `heat.decay_amount`…).
+
+**One false positive the generalisation *did* create, and how it was closed rather than
+suppressed.** Because the walk now also resolves `get_value()`'s two-action form — which the
+old chain walk could not see at all — `verify_compound_value_reads()` would have fired on
+`Recent Sessions`, `Exit Events` and `Profile Enabled Exits`, i.e. on **three correct
+`get_value()` call sites**. That guard's subject is axis 9's *Get Text stringification*, not
+the read. It now consumes `_stringified_variable_keys()` instead, and the split takes it back
+to **zero offenders** on both forks. Measured: unsplit would be
+`['Exit Events', 'Profile Enabled Exits', 'Recent Sessions']`; split is `[]`.
 
 ---
 
-### WR-16: one `set_var` hop disarms all three provenance-resolved guards
-
-**Files modified:** `tools/build_state_engine.py`
-**Commit:** `8f558a5`
-**Applied fix:** `_read_variable_keys()` now propagates its key sets across variable→variable
-copies in a fixpoint loop until the map stops growing, so a chain of any length resolves rather
-than only a direct read. Applied exactly as the review specified. Verified beforehand that
-`is.workflow.actions.setvariable` is **not** in `STRING_ENVELOPE_PARAMS`, so the bare
-`Type: "Variable"` descriptor the loop matches is the shape actually emitted and the fix is not
-dead on arrival.
-
-**Control H** — `CR-01` reintroduced verbatim (`dimming()` back on the
-`settings_snapshot.brightness` container at condition 100, whole body in the `otherwise` arm)
-with the gate reading a one-hop copy:
-
-| | before | after |
-|---|---|---|
-| `build_state_engine.py` | **exit 0** | **exit 1** — the dead-arm message naming **22 offenders**, matching 11-08's own control exactly |
-| `environmental_restore_check.py` | exit 0 | exit 0 (build already failed) |
-| `phase9_self_check.py` | exit 0 | — |
-
-**Control G** — `universal_leaving()`'s bypass gate behind one hop at condition 100, the two
-write gates left connected so WR-19's new raise does *not* mask the result:
-
-| | before | after |
-|---|---|---|
-| `build_state_engine.py` | **exit 0** | **exit 1** — *"a Panic Escape gate uses a non-numeric condition code action 530: 'PE Gate' at condition 100…"* |
-| `build_sentient.py` | exit 0 | not reached |
-| all 13 checkers | all exit 0 | — |
-
-**One thing a human should confirm:** this widens what every provenance-resolved guard can see.
-On the current tree it produces no false positive (13/13 checkers, both builds, byte-identical
-artifacts), but a *legitimate* future `set_var` copy of a `settings_snapshot`- or
-`panic_escape_enabled`-derived variable will now inherit that provenance and be held to the same
-gate rules. That is the intended semantics, not a bug — but it is a semantic widening, not a
-syntactic one, and worth knowing about before the next re-gating change.
-
----
-
-### WR-17: `REQUIRED_SYMBOLS` proves a guard exists, never that a builder runs it
+### WR-21: `call_site_check()`'s substring test is satisfied by a commented-out call
 
 **Files modified:** `docs/environmental_restore_check.py`
-**Commit:** `47cc720`
-**Applied fix:** added `CALLED_GUARDS` (the five guards among `REQUIRED_SYMBOLS`) and a new
-`call_site_check(builder, sentient)` that reads each builder's `main()` via
-`inspect.getsource()` — the idiom the file already uses on `manual_emergency_restore` — and
-requires each name to appear applied. `cross_fork_check()` now returns the already-loaded
-Sentient module so no second load is needed. The docstring records the limit of a source read
-honestly: it catches deletion, not a call commented out or moved behind a never-taken branch.
-A runtime trace was rejected because this file is documented read-only and must never rebuild
-an artifact.
+**Commit:** `353621f`
 
-**Negative control A** — both guard *calls* deleted from `main()` in **both** builders,
-definitions untouched:
+**Applied fix.** New `called_names(function)` parses `inspect.getsource(function)` with
+`ast` and returns the set of plain `ast.Name` call targets; `call_site_check()` tests
+membership in that set instead of `f"{name}(" in body`. `ast` and `textwrap` are stdlib and
+this file already imported `inspect`. The docstring's honesty is kept and narrowed to what is
+still true of *any* static read: a call behind a never-taken branch, or reached through an
+alias or `getattr`, still reads as present.
 
-| | before | after |
+**Negative control** — both guard calls (`verify_environmental_reachability`,
+`verify_panic_escape_isolation`) in **both** builders, definitions untouched:
+
+| Mutation | before | after |
 |---|---|---|
-| both builders | exit 0 | exit 0 (correct — this is a checker fix, not a build gate) |
-| all 13 checkers | **13/13 exit 0** | `environmental_restore_check.py` **exit 1** — *"build_state_engine.py's main() no longer CALLS verify_environmental_reachability()…"* |
+| `# verify_…(actions)  # TEMPORARILY DISABLED` | builds exit 0, `env_check` **exit 0**, **13/13** green | builds exit 0, `env_check` **exit 1**, 12/13 |
+| call replaced by `pass` (deletion) | `env_check` exit 1, 12/13 | `env_check` exit 1, 12/13 (no regression) |
 
-**Negative control B** — the Aware half alone, to prove the second arm of the loop is armed and
-not just the Core one: `verify_panic_escape_isolation` call removed from `build_sentient.py`
-only → **exit 1** naming `build_sentient.py`.
+`after` message: *"build_state_engine.py's main() no longer CALLS
+verify_environmental_reachability() — the function still exists, so the REQUIRED_SYMBOLS check
+above stays green while the guard is disarmed…"*.
 
 ---
 
-### WR-18: gap 3's invariant has no build guard, and the named second line of defence cannot see the defect
+### WR-22: `CALLED_GUARDS` is a hand-copied subset with nothing reconciling it
 
-**Files modified:** `tools/build_sentient.py`, `.planning/phases/11-…/11-09-SUMMARY.md`
-**Commit:** `5ee2586`
-**Applied fix:** two parts.
+**Files modified:** `docs/environmental_restore_check.py`
+**Commit:** `65e47b4`
 
-1. An assertion in `build_sentient.py`'s `main()` immediately after the insertion loop,
-   comparing the inserted `askllm` count against `len(markers)` and refusing to write the
-   artifact on a mismatch — asserted where the artifact is written, as the review specified.
-2. The false claim in `11-09-SUMMARY.md`, corrected in all three places it appears
-   (`provides`, the Task 2 row, the T-11-47 threat row) **and preserved**: a new *Correction
-   (phase-11 code review, WR-18)* section quotes all three original wordings verbatim, states
-   precisely why each is wrong, and records the measurement. History corrected, not deleted.
-   Frontmatter re-parsed as valid YAML after the edit.
+**Applied fix.** Two parts, both as the review specified.
 
-**Negative control** — insertion loop reverted to `markers[:1]`:
+1. **Derived, never copied:**
+   `CALLED_GUARDS = tuple(name for name in REQUIRED_SYMBOLS if name.startswith("verify_"))`.
+   The comment records *why* — this is the archive's own recurring class (WR-04, WR-05,
+   WR-06, WR-14: coupled literals with nothing reconciling them), reintroduced by the fix for
+   a finding about vacuous guards.
+2. **`verify_panic_escape_seed` added to `REQUIRED_SYMBOLS`**, beside
+   `verify_panic_escape_isolation`, with the written reason the review argued for: the two are
+   one guard pair, and this one holds half of the WR-19 fix.
 
-| | before | after |
+The derivation is self-demonstrating: adding the sixth name to `REQUIRED_SYMBOLS` **only**
+moved `CALLED_GUARDS` from 5 entries to 6 with no second edit. Confirmed by evaluation:
+`('verify_state_seed', 'verify_restore_gates', 'verify_capture_persistence',
+'verify_environmental_reachability', 'verify_panic_escape_isolation',
+'verify_panic_escape_seed')`.
+
+**Negative control** — `verify_panic_escape_seed(actions)` removed from `main()` in **both**
+builders:
+
+| Mutation | before | after |
 |---|---|---|
-| `build_sentient.py` | **exit 0**, defective fork **written to disk** | **exit 1**, nothing written — *"2 OPEN-arm dispatch rendering(s) but 1 Use Model action(s)…"* |
-| `docs/sentient_audit_check.py` | exit 0 (passes the defect) | unchanged — still cannot see it, which the SUMMARY now says |
-| `docs/sentient_core_check.py` | exit 1 | exit 1 |
+| deleted (→ `pass`) | builds exit 0, **13/13 green** | `env_check` **exit 1**, 12/13 |
+| commented out | builds exit 0, **13/13 green** | `env_check` **exit 1**, 12/13 |
 
-`docs/sentient_audit_check.py` was deliberately **not** given a Core-derived expectation. The
-review offered that as an alternative to correcting the SUMMARY; correcting the SUMMARY was the
-mandated half, and the builder assertion is strictly stronger than a second standalone checker
-because it fires before the artifact reaches disk. Duplicating `sentient_core_check.py`'s
-derivation into a third file would have added a second place for that derivation to drift.
+That is the "half of the WR-19 fix is protected by nothing" measurement, closed.
 
 ---
 
-### IN-01: an unreachability claim stated wider than its guard supports
+### IN-04: `WR-18`'s builder assertion is tautological with respect to marker derivation
 
-**Files modified:** `artifacts/shortcuts/MANIFEST.md`, `tools/build_state_engine.py`
-**Commit:** `ece61d2`
-**Applied fix:** narrowed MANIFEST's `**0 actions per fork remain unreachable.**` to
-`**0 environmental actions per fork remain in a dead arm.**`, with a paragraph naming the
-surviving unreachable branch and why it is retained. `already_dim_g` kept, with a generator
-comment recording that it is inert while `dim_target` is `0` and becomes live again the moment a
-non-zero target returns.
+**Files modified:** `tools/build_sentient.py`, `docs/sentient_audit_check.py`
+**Commit:** `6396a6e`
 
-**Verified before writing, not transcribed:** the shipped Config carries `"dim_target": 0` and
-`"brightness_floor": 0`; `already_dim_g` is `Captured Brightness <= Dim Target` (condition 1)
-nested inside `capture_g`'s `Captured Brightness > 0` (condition 2) — exact complements. Also
-checked the parallel gate the review did not mention: `silence()`'s `quiet_g` uses a `0.10`
-**literal** (`number(0.10, "Silence Target")`), not the config value, so it is reachable for any
-captured volume in `(0, 0.10]` and is **not** affected. That distinction is recorded in both
-files so a future reader does not "fix" the wrong one.
+**Decided on the merits, then applied.** The review offered a fix and left the checker
+question open. Both halves are answered:
 
----
+1. **The builder assertion is now independent.** The inline OPEN-arm derivation was factored
+   into one module-level `open_arm_contract_markers(actions)`, called **twice over two
+   different inputs**: on the already-spliced Aware list to find the *insertion points*, and
+   on a **fresh parse of the untouched Core bytes** (`plistlib.loads(original)`) to find the
+   *expectation*. The assertion is now
+   `if not expected or inserted != expected or len(markers) != expected`. This is the review's
+   own preferred shape — the builder gains independence and the codebase gains **no third
+   derivation**, because both call sites share one body.
+2. **`docs/sentient_audit_check.py` does NOT get a Core-derived expectation — declined, on a
+   rationale that now holds.** With the builder assertion independent *and* firing before
+   disk, and `sentient_core_check.py` keeping the same expectation post-hoc on the shipped
+   artifact, a third instance in `sentient_audit_check.py` would assert exactly what
+   `sentient_core_check.py` already asserts, on the same artifact, at the same moment, and
+   give the derivation a third place to drift. The reason — **and the retraction of the wrong
+   one** — is now written into that file's own docstring, where a reader looking for it will
+   find it, rather than only in a process artifact.
 
-### IN-02: the Circle-6 `Eject` interim is not named as interim in the generator's comment text
+**Correction to the record (this file, iteration 1) — quoted before it is refuted.**
+Iteration 1's `11-REVIEW-FIX.md` said, at its WR-18 entry:
 
-**Files modified:** `tools/build_state_engine.py`
-**Commit:** `c768493`
-**Applied fix:** a comment beside the branch tuple, matching the Circle-8 `DELIBERATE INTERIM`
-wording, naming Phase 17 and the exact two cells that flip.
+> *"`docs/sentient_audit_check.py` was deliberately **not** given a Core-derived expectation. The
+> review offered that as an alternative to correcting the SUMMARY; correcting the SUMMARY was the
+> mandated half, and the builder assertion is strictly stronger than a second standalone checker
+> because it fires before the artifact reaches disk. Duplicating `sentient_core_check.py`'s
+> derivation into a third file would have added a second place for that derivation to drift."*
 
-**Taken rather than skipped**, because every factual claim in it was independently corroborated
-before writing — no phase number or cell index was carried over from the review on trust:
+The **outcome** was right and is retained. The **"strictly stronger"** clause was wrong, and
+iteration 2 measured it rather than arguing it. The builder assertion was stronger in
+**timing** and weaker in **independence**, and independence was the half that mattered. The
+last sentence ("a third place to drift") was and remains correct — it is why the fix was to
+make the builder independent rather than to add a third checker. This paragraph is the
+correction; the wording above is preserved rather than deleted, per this project's own
+history-corrected-not-deleted convention.
 
-- `ROADMAP.md:40` — *"Phase 17: Exile split and exit-route deepening"*
-- `ROADMAP.md:461-462` — *"`Redirect` has no implementation until Phase 17, so all three sequences hold `Eject` at Circle 6 until then; Phase 17 flips Classic's and Ambient's"*
-- `docs/CAPABILITY-DECISIONS.md:398` — BD-06's table row `| 6 | Heresy | Redirect | Eject | Redirect |`
-- `docs/BUILD-NOTES.md:3672-3673` — *"exactly two cells — `Classic[5]` and `Ambient[5]` … `BlackMirror[5]` is already correct"*
-- the shipped Config's `sequences` — `Eject` at index 5 in all three, confirmed by parsing the artifact
+**Negative controls** — the two defect classes, distinguished:
 
-It is a Python comment, emits nothing, and changes no artifact byte. It discharges plan 11-02's
-stated prohibition, which §34 had filled with an absence rather than a comment.
+| Defect | before | after |
+|---|---|---|
+| **insertion loop** (`markers[:1]` — WR-18's own control) | build exit 1, artifact unchanged | build exit 1, artifact unchanged (no regression) |
+| **derivation** (`markers` truncated after collection; `open_test`/`open_end` intact) | build **exit 0**, artifact **CHANGED** → **4372** actions written to disk, `sentient_audit_check.py` **exit 0** (passes the defect), only `sentient_core_check.py` exit 1 | build **exit 1**, artifact **unchanged at 4438**, nothing written |
 
----
+`after` message: *"the Core fork's OPEN arm has 2 dispatch rendering(s); this build collected 1
+marker(s) and emitted 1 Use Model action(s)."* — it now names all three quantities, so a reader
+can tell which one moved.
 
-### IN-03: the newest stated Aware action total is 4372; the shipped fork is 4438
+## Residual — what WR-20's fix still does not follow
 
-**Files modified:** `docs/phase9_self_check.py`, `artifacts/shortcuts/MANIFEST.md`
-**Commit:** `23f69c5`
-**Applied fix:** appended the post-11-09 figures beside the dated 11-08 ones at all three sites
-(`phase9_self_check.py`'s totals paragraph, MANIFEST's 11-08 totals sentence, MANIFEST's 11-07
-`+2` delta line), leaving each dated measurement readable as what it actually measured.
+Named precisely, because a partial fix reported as a class fix is the failure this project
+forbids. Each of these was checked, not assumed.
 
-**Measured directly from the artifacts, not transcribed:** Core **4304**, Aware **4438**.
+### R-1 — provenance does not survive a round trip THROUGH a dictionary. **MEASURED, OPEN.**
 
-The review's alternative — pinning the totals in an asserted table — was **rejected with a
-written reason**, now recorded in `phase9_self_check.py` itself: that file already documents a
-deliberate choice to leave the totals unpinned, because pinning them turns every legitimate
-action-count change into a red checker. Overturning that would have been a decision, not a fix.
+`getvalueforkey`, `setvalueforkey` and `dictionary` are deliberate barriers. Writing a value
+into a dictionary key and reading it back out under **that** key restarts provenance at the new
+key, so the original key is lost.
+
+Reproduced on an isolated copy of the fixed tree — the Panic Escape flag copied into an
+already-seeded `State` key and read back, then gated at condition 100:
+
+```
+set_value("last_app", variable("Panic Escape Enabled"))
+read_value("last_app", variable("State"), "PE Gate")
+if_block("PE Gate", 100)
+```
+```
+python3 tools/build_state_engine.py -> EXIT 0
+python3 tools/build_sentient.py     -> EXIT 0
+12 of 13 checkers                   -> EXIT 0
+```
+
+(The thirteenth is `manifest_check.py`, failing only on a declared byte-size mismatch from the
+two extra actions — it does not see the defect. Same footnote iteration 2 recorded for its own
+Control I.) An earlier variant using an *unseeded* scratch key exits 1, but by
+`verify_state_seed()` complaining about the unseeded key — a different guard catching a
+different thing, which is luck, not coverage.
+
+**Why the barrier is there and not simply removed.** With those three identifiers propagating,
+the map explodes from **146 to 2325** key assignments on Core: `State` absorbs the provenance of
+everything ever written into it and hands it to every subsequent read. That is conflation, not
+provenance, and it would make `verify_restore_gates`, `verify_sentinel_gates` and
+`verify_environmental_reachability` fire on essentially everything.
+
+**What would actually close it:** container-key-aware provenance — track
+`(container variable, key) → value provenance` through `setvalueforkey`, so a write of a
+snapshot-derived value into `State["last_app"]` makes the later read of `State["last_app"]`
+inherit it, without `State` itself becoming a provenance sink. That is a larger change than
+this pass, and **I am recording it as open rather than shipping it half-done.**
+
+### R-2 — `_tested_variable()` reads one gate shape. **CHECKED, not reachable today.**
+
+The provenance walk is now general; the *gate* side is not. `_tested_variable()` reads only
+`WFInput.Variable.Value`, so a multi-condition `If` (the `WFConditions` /
+`WFContentPredicateTableTemplate` Any/All serialization documented in `.claude/CLAUDE.md` §4)
+would not be recognised as a gate at all — provenance would resolve perfectly and no gate would
+be found to hold it to. Measured: **0** occurrences of `WFConditions` in
+`tools/build_state_engine.py` and **0** multi-condition conditionals in either shipped fork, so
+this is latent, not live. It is the same defect *shape* one layer over, and it is exactly what
+a fourth iteration would find.
+
+### R-3 — a reference expressed as anything but a `Type`-bearing descriptor. **Not seen.**
+
+`_reference_descriptors()` matches on `Type: "Variable"` / `Type: "ActionOutput"`. A parameter
+that names a variable as a raw string, or any future envelope without a `Type` key, is
+invisible. Every reference the generator emits today goes through `variable()` / `output()` /
+`token()` / `text_token()`, all of which carry `Type`.
+
+### R-4 — static reads remain static (WR-21's own disclosure).
+
+`called_names()` closes deletion and commenting-out. A guard call moved behind a never-taken
+branch, or reached through an alias or `getattr`, still reads as present. Recorded in the
+docstring rather than papered over; a runtime trace was again rejected because this file is
+documented read-only and must never rebuild an artifact.
 
 ## Skipped Issues
 
@@ -227,15 +360,26 @@ None.
 
 ## Explicitly out of scope, and confirmed untouched
 
-- Every finding below `# ARCHIVE — waves 1–6 review` — covered by the review's own disposition
-  table, files outside this diff range.
-- The duplicate action `UUID` `792D1640-…` on both forks — recorded in `deferred-items.md`,
-  deliberately unfixed, separately tracked.
+- **IN-05** (raise ordering in `verify_panic_escape_seed`) and **IN-06** (`None`-keyed
+  provenance) — not in this pass's scope. IN-06's `_read_variable_keys()` half is closed
+  incidentally by the rewrite (recorded above); its `_tested_variable()` half is not.
+- The duplicate action `UUID` `792D1640-…` on both forks — `deferred-items.md`, separately
+  tracked. Unchanged (byte-identical forks).
 - Gate B's single waived line per fork — advisory, never blocking; re-measured as still exactly
-  one per fork.
+  one per fork, at unchanged indices.
+- `docs/retired_clause_check.py`'s 4 gitignored `.planning/graphs/` + `graphify-out/`
+  occurrences — pre-existing, separately tracked, absent from a worktree checkout.
+- Every finding below `# ARCHIVE — waves 1–6 review`.
+
+## Device evidence
+
+**None.** Everything above is **rung 1** — file-level analysis of the generators, the two built
+plists and the checkers. The negative controls are builds of mutated generator copies and are
+therefore still rung 1. No simulator and no phone was involved. `DIST-03` is open and nothing
+here touches it.
 
 ---
 
 _Fixed: 2026-08-18_
 _Fixer: Claude (gsd-code-fixer)_
-_Iteration: 1_
+_Iteration: 3_
