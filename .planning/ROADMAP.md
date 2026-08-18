@@ -708,6 +708,7 @@ real Color Filters change — make it true or make it honest, but do not leave b
 spike 005 step 5.
 
 **Severity:** major
+**UI hint**: no
 **Requirements**: CIRC-02, SAFE-01, SAFE-02, SAFE-05, AUDIT-02
 **Depends on:** Phase 11
 **Plans:** 0 plans
