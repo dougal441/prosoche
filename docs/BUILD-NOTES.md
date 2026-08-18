@@ -1431,6 +1431,17 @@ Recorded so a later reader does not go looking for changes that were correctly n
 
 ### 19.7 The Circle 8 Voice orphan — a known open defect, reported not blocked
 
+**⚠ SUPERSEDED, doubly, as of 2026-08-18.** This subsection describes a state that ended in two
+stages, neither of them this section's own edit. **Phase 11** closed the dispatch half: it
+renamed the Circle-8 sequence entry `Voice` → `Loud Mirror`, emitted a real dispatch branch for
+it (a Mirror-implementation stand-in, not the designed primitive), and moved
+`docs/sequence_dispatch_check.py` from a reporter that exits 0 on this orphan to a hard gate with
+`KNOWN_ORPHANS = {}` — so the "reported not blocked" framing below no longer describes the
+checker's behaviour at all. **Phase 15** then closed the design half: `voice()` replaced the
+Mirror stand-in as Circle 8's actual implementation. Full record, all six locked decisions, the
+declined alternatives and CIRC-08's device status: **§36**, below. The rest of this subsection is
+retained unedited as the record of the defect as it stood when this file first described it.
+
 Config's `sequences` arrays name `Voice` at position 8 in all three profiles
 (`Classic`, `BlackMirror`, `Ambient`), and **no dispatch branch matches it**, so Circle 8
 currently dispatches nothing. This is a pre-existing defect owned by
@@ -3640,7 +3651,8 @@ what ships. `mirror_and_voice()` was split into `mirror()` (Circle 7, shows only
 `verify_speaktext_placement()`, fails the build if the two ever collapse back into one
 behaviour. The rest of this subsection is retained below, unedited, as the record of what
 shipped and why between Phase 11 and this discharge — not as a description of the current
-build.
+build. **The full phase record — all six locked decisions, the declined alternatives, the
+probe verdict and CIRC-08's device status — is §36, below.**
 
 **What shipped from Phase 11 to plan 15-01.** `primitive_dispatch()`'s branch tuple mapped both `"Mirror"` and
 `"Loud Mirror"` to the same Python function, `mirror_and_voice()`. Circle 8 is a real dispatch
@@ -3883,3 +3895,233 @@ the repudiation threat this phase has now filed three times.
 * **`DIST-03` is open**, and nothing in this plan narrows it. The device proof for the
   capture-and-restore loop these guards protect remains Phase 16 / `16-UAT.md`'s twelve tests,
   none of which has ever run.
+
+---
+
+## 36. Phase 15 — the Voice primitive: six locked decisions, four declined alternatives, and a rung-2 verdict that settled nothing about the device (plans 15-01 through 15-05, 2026-08-18)
+
+Circle 8 dispatched a Mirror stand-in for four phases — the interim §34 already records and
+discharges. This section is the recording duty for the phase that replaced it: what was decided,
+what was declined and why, what was measured, and — stated as plainly as any sentence in this
+file — what remains genuinely unproven. All six decisions were confirmed with the user on
+2026-08-18 after `15-RESEARCH.md` surfaced them (`.planning/phases/15-circle-8-the-voice-primitive/15-CONTEXT.md`);
+none was made unilaterally during execution.
+
+### 36.1 The six locked decisions, each with its reasoning and its measured consequence
+
+**D-01 — Voice-off Circle 8 degrades, never skips.** When `voice_enabled = 0`, Circle 8 shows a
+Mirror-equivalent alert rather than doing nothing. Reasoning: a Circle that renders the menu,
+takes `Continue`, and does nothing is precisely the defect this phase exists to close — the cause
+being a user setting rather than a dispatch miss does not change what the user experiences.
+`voice_enabled`'s import-question copy ("May PROSOCHĒ speak to you at the highest circles?") is
+consent to be spoken to, not consent to have a Circle 8 at all. Measured consequence: `voice()`
+emits the alert **before** the consent gate, so the `otherwise` arm is
+`is.workflow.actions.nothing` — degradation costs zero additional actions, it is the shape the
+gate already had.
+
+**The cost D-01 accepts, unpapered.** With voice off, Circles 7 and 8 are **indistinguishable to
+the user** — CIRC-14 is satisfied by construction (Circle 8 dispatches a distinct function,
+`voice()`, not `mirror()`) but not *experienced*. Two mitigations were offered and **both
+declined**, deliberately, so this recorded cost stays literally true rather than becoming
+half-true and unrecorded:
+
+- Distinct voice-off copy for Circle 8 (different template text when speech does not fire) —
+  declined; no requirement asks for it and canonical strategy §11 Primitive H is explicit that
+  Circle 8 is the same reflection, escalated by modality, not by new words.
+- A distinct Circle-8 alert title (so the alert box itself reads differently even when silent) —
+  considered and **not taken**, precisely so this section's own claim ("Circles 7 and 8 become
+  indistinguishable") remains true of the shipped artifact rather than describing a build that
+  was never built.
+
+**D-02 — Speech is removed from Circle 7.** Circle 7 shows the reflection; Circle 8 speaks the
+same reflection. Grounded in canonical strategy §11 Primitive G (no speech in the Mirror's
+description) and §11 Primitive H ("the Mirror becomes spoken once"). This is what satisfies
+CIRC-14 and what makes Circle 8 an escalation at all — before this decision both Circles
+dispatched the identical `mirror_and_voice()` and Circle 8 replayed Circle 7 verbatim, speech
+included. **Visible behaviour change for existing `voice_enabled = 1` users: Circle 7 goes
+quiet.** Recorded here, explicitly, as the single change in this phase most likely to be
+mistaken for a regression by a later reader who has not seen this section — it is accepted
+knowingly, not an oversight. Measured consequence: `speaktext` sites 22 → 11 per fork (both of
+Circle 7/`Mirror`'s 11 removed, Circle 8/`Loud Mirror`'s 11 kept); `verify_speaktext_placement()`
+fails the build if either direction regresses, demonstrated on two reverted negative-control
+mutations (plan 15-01).
+
+**D-03 — The escalation is the modality, not the words.** Circle 8 reuses the same 30 fact-gated
+Mirror templates as Circle 7, via the shared `_mirror_body()` helper. No new copy, no longer
+copy. Measured consequence: `docs/phase7_self_check.py`'s ≥30-template assertion is unaffected —
+the template surface is single-sourced through `mirror_text()` in both `mirror()` and `voice()`.
+
+**D-04 — Axis-4 defect: discriminate early, then branch.** An alert-free rung-2 simulator probe
+(spike 011, plan 15-02) ran early in the phase to identify which of `is.workflow.actions.list` /
+`getitemfromlist` / `speaktext` carries the device-reproduced unfilled-picker defect. Verdict:
+**`not discriminated at rung 2`** — none of the three action identifiers raised the axis-4
+"Please choose a value for each parameter in this action." error on the booted iOS 26.5
+simulator, in the full probe or in either of two bisection variants. Per the decision's own
+pre-agreed routing, a verdict that names no identifier takes **Branch B**: no generator fix was
+attempted, and CIRC-08 is recorded device-unproven for Phase 15 rather than silently implied
+clean. Full detail and evidence-rung analysis: §36.4, below.
+
+**D-05 — `voice_enabled` normalised to numeric, with a schema bump.** The writer emits `1`/`0`
+and `schema_version` bumps 4→5. Before this decision, bootstrap emitted the unquoted JSON boolean
+`true`/`false` while `Toggle Voice` emitted the number `1`/`0` — two different writers, two
+different JSON types, feeding a numeric `> 0` gate whose boolean-coercion behaviour is explicitly
+unaudited under this project's nine-axes rule (axis 6: "Booleans, files, dictionaries and entity
+references are unaudited"). Normalising the writer makes the open coercion question moot rather
+than spending a device session to answer it. Measured consequence: the two bootstrap `gettext`
+actions producing `"true"`/`"false"` now produce `"1"`/`"0"`, resolved by provenance (walking back
+from the `Voice Normalised` variable's writer actions via `WFInput.Value.OutputUUID`), never by
+content match — content match alone would also have retargeted the unrelated `Contract Respected`
+gettext pair. `verify_voice_enabled_seed()` fails the build if the seed is ever non-numeric or if
+any reader gates on anything but `WFCondition == 2` / `WFNumberValue == 0`, demonstrated on three
+negative controls including the vacuous-resolution direction (severing all 13 provenance sites
+raises, rather than passing because nothing was found to check).
+
+**D-06 — The `Spoken This Run` guard stays verbatim.** No reset, no second flag, no clear step.
+The ROADMAP's own warning about it — "if Circle 8 is reached in a run where Mirror already
+spoke, the guard currently suppresses the second utterance" — is **retired**: the two OPEN-arm
+`primitive_dispatch()` renderings are mutually exclusive arms of the Panic Escape conditional, the
+nine MANUAL renderings are disjoint menu cases, and condition-4 exact-match dispatch (BD-06
+Decision 5, landed Phase 11) means `"Loud Mirror"` matches exactly one branch. Mirror and Loud
+Mirror can never both fire in one run, so the guard cannot suppress a second utterance that never
+occurs. The guard **is** CIRC-08's "at most once per run" clause, correctly implemented, and
+kept as defence-in-depth because Shortcuts variables are run-scoped and reset naturally every run.
+
+### 36.2 The four declined alternatives, each with its reason, so none reads later as an oversight
+
+1. **A `mode` parameter on `mirror_and_voice()`, instead of the `mirror()`/`voice()` split.**
+   Declined. Both were viable; the split was preferred because a mode flag keeps one function
+   whose body is two interleaved behaviours behind conditionals a reader must simulate, while the
+   split makes the Circle-7-vs-8 difference readable at the call site — which is exactly the
+   property whose *absence* let `Voice` dispatch nothing for four phases (the `continue` that
+   skipped emitting a branch at all was invisible precisely because nothing at the call site
+   distinguished "Voice" from any other name in the tuple). The split also keeps each function's
+   rendered action count independently measurable, which is how D-02's 22→11 site count could be
+   asserted per-function rather than as an undifferentiated total.
+2. **A separate, escalated template set for Circle 8**, instead of reusing the 30 Mirror
+   templates. Declined per D-03: canonical strategy §11 Primitive H is explicit that the Mirror
+   "becomes spoken once" — not that it becomes a *different* Mirror. Distinct copy is a new
+   product surface no requirement asks for, and it would have put `docs/phase7_self_check.py`'s
+   ≥30-template assertion and the fact-gating DUMB-02/DUMB-03 require in play for zero product
+   gain.
+3. **A dual-type read (accept both `true` and `1`) or a dual-key alias**, instead of the
+   `schema_version` 4→5 bump. Declined. `docs/CAPABILITY-DECISIONS.md` BD-06-A3 already rejected
+   a dual-key alias for the identical reason that applies here: it permanently encodes the
+   inconsistency the fix exists to dissolve, rather than dissolving it. BD-06-A1 Amendment 3 (the
+   developer's own 2026-08-17 statement) records that PROSOCHĒ has no installed base worth
+   preserving — the only installs are the developer's own testing — which is what makes the bump
+   free rather than merely convenient. The same reasoning discharged the identical gate on the
+   Phase 11 2→3 bump, and plan 15-03's own Task 1 checkpoint (originally a blocking
+   `checkpoint:decision`) was downgraded by the developer on exactly this precedent rather than
+   re-litigated.
+4. **Setting any of `speaktext`'s five non-text parameters** — `WFSpeakTextWait` (bool),
+   `WFSpeakTextRate` (float), `WFSpeakTextPitch` (float), `WFSpeakTextLanguage` (str),
+   `WFSpeakTextVoice` (str). **This is a recorded deviation under the do-not-fabricate rule
+   (`.claude/CLAUDE.md` C-1), not a simple style choice.** All five are catalog-real — confirmed
+   present in the v78 first-party parameter catalog, tagged available on both `iOS 27 Simulator`
+   and `macOS 27` — but **no donor anywhere in this project's corpus shows how Shortcuts
+   serializes any of them**, and this project has already been burned once by assuming a boolean
+   encoding (spike 005: the schema implied `on`=1/`off`=2; Shortcuts writes a plain bool).
+   `voice()` emits `WFText` only. The safest fallback is omission, and it is recorded here rather
+   than silently taken.
+
+### 36.3 The Status-line consequence of D-05
+
+Before D-05, the Control Room's Status line read `Voice: Yes` on a fresh install (the renderer
+maps the boolean `true` to `Yes`/`No`) and degraded to `Voice: 1` after the first `Toggle Voice`
+call (which always wrote a number, and the renderer passes numbers through raw). After D-05, the
+Status line reads `Voice: 1` / `Voice: 0` **consistently**, from first boot onward — there is no
+longer a boolean-typed fresh-install state to render specially. This is a **small UX regression on
+the fresh-install path** (a number is less immediately readable than "Yes"), traded for
+consistency and for closing the axis-6 unaudited-boolean-coercion question entirely. No
+requirement asks for a `Yes`/`No` renderer over the numeric value, and none was built; if this
+regression is ever worth fixing, it is a Status-line rendering task, not a state-shape one — the
+underlying value's meaning did not change, only which two writers previously disagreed about its
+type.
+
+### 36.4 The probe verdict from plan 15-02, transcribed with its evidence rung stated
+
+**Channel: SIMULATOR, rung 2.** iPhone 17 Pro, iOS 26.5 (23F77), udid
+`79A84C29-DB62-40A2-AC3F-CCB5F8192F86`. Spike:
+`.planning/spikes/011-mirror-primitive-picker-discriminator/`. Verdict:
+**`not discriminated at rung 2`**, transcribed verbatim from `FINDINGS.md`.
+
+None of the three action identifiers unique to the Mirror primitive's span
+(`is.workflow.actions.list`, `is.workflow.actions.getitemfromlist`,
+`is.workflow.actions.speaktext`) raised the axis-4 unfilled-required-picker error on the booted
+simulator, in the full 17-action alert-free probe or in either of two bisection variants (minus
+Leg 3 / speaktext; minus Legs 2+3 / getitemfromlist+speaktext). Every run completed to its final
+breadcrumb (or, for the full probe, to `Return to Home Screen`) with no error text of any kind.
+
+**What a rung-2 result may and may not be promoted to — stated explicitly, because this is the
+sentence the whole probe exists to earn.** Per `.claude/CLAUDE.md` §9, a simulator observation is
+never promotable above `UNVERIFIED` for anything on rung 2's ceiling list. This verdict sits
+partly inside and partly outside that boundary:
+
+- **Inside rung 2's reach, and settled here:** whether the three identifiers' *structural* wiring
+  (the picker literal, the coercion aggrandizement, the row-wrapper shape, the string envelope)
+  raises an unfilled-parameter error on import and run. It does not, on this simulator, on this
+  device model, on this iOS 26.5 build. That is a genuine rung-2 finding, not merely a
+  non-finding — the probe reproduced the real byte shapes (`mirror_text()`, `_list_row()`, the
+  `voice()` speaktext call), transcribed from the generator, not re-derived.
+- **Outside rung 2's reach, and NOT settled, even though every leg "ran":** whether `Speak Text`
+  produces audible speech on real hardware, whether the picker resolves the *same way* on real
+  hardware, and whether the original device-reproduced failure (three times, two independent
+  installs, proven to follow the primitive rather than the Circle index) has a cause this probe's
+  three-identifier scope does not cover at all. Spike 010 already established the general shape
+  of this ceiling: a structurally-identical, catalog-correct action (`Set Brightness`) can accept
+  its operand at the editor level and still fail the underlying OS call on the simulator, with no
+  distinguishing error text.
+
+**This spike narrows the *instrument*, not the *defect*.** Per `15-RESEARCH.md` assumption A6, if
+Circle 3's earlier device run (the basis for exonerating the 22 `getdevicedetails` sites as the
+leading suspect) was actually a no-op rather than a genuine silent success, the true suspect list
+could be wider than the three identifiers this probe tested — in which case this clean rung-2
+result is fully consistent with the real defect sitting entirely outside this probe's scope. The
+blocker todo (`.planning/todos/pending/2026-08-18-mirror-primitive-unfilled-picker.md`) carries
+this narrowing forward as its own next step (a rung-3 device-level breadcrumb build) and remains
+**pending** — Branch A (a one-line generator fix) was never reached, so there is nothing for this
+phase to have fixed, and closing that todo now would misrepresent an open defect as resolved.
+
+### 36.5 Measured counts, from the decrypted signed payloads (plan 15-05)
+
+| Measure | Phase-15 baseline | Shipped |
+|---|---:|---:|
+| `is.workflow.actions.speaktext` sites, per fork | 22 | **11** |
+| `is.workflow.actions.setvolume` sites, per fork | 15 | 15 (unchanged) |
+| `schema_version`, bootstrap template | 4 | **5** |
+
+Measured from the **decrypted payload** of each signed `.shortcut`, not from `src/` — per this
+project's own convention (`.claude/CLAUDE.md` §8) that a signed container is asserted, never
+inferred from an mtime. Both forks agree on every value above. Full digests and byte counts:
+`artifacts/shortcuts/MANIFEST.md`, the plan-15-05 block at the top of that file.
+
+### 36.6 CIRC-08's device status, stated plainly
+
+**CIRC-08 is structurally proven and behaviourally UNPROVEN, and it ships that way.** Every
+guard this phase added — `verify_speaktext_placement()`, `verify_voice_enabled_seed()`,
+`verify_voice_gates()`, `verify_voice_path_volume_silence()`, and
+`docs/sequence_dispatch_check.py`'s action-equality assertion — proves a **structural** property
+of the emitted artifact: that speech is correctly placed, correctly gated, correctly typed, and
+that no two sequence entries collapse into one behaviour ever again. None of them, individually or
+together, proves that Circle 8 fires audibly on a phone. The Mirror primitive both `mirror()` and
+`voice()` are built on carries a **device-reproduced** failure this phase did not close (§36.4),
+and unless a future rung-3 probe or device session settles it, **Circle 8 is expected to raise the
+same axis-4 "Please choose a value for each parameter in this action." error Circle 7 raises
+today.** A green gate A, six green build guards, and a clean rung-2 bisection are not evidence
+otherwise — they are evidence that this phase's own scope (the split, the type fix, the gates, the
+action-equality invariant) is done correctly, which is a different and smaller claim than "Circle
+8 works."
+
+### What this section does NOT establish
+
+* **Nothing here is device-verified**, except where §36.4 explicitly names a rung-2 simulator
+  observation as such — and even that is capped at `UNVERIFIED` for anything on rung 2's ceiling
+  list.
+* **The axis-4 blocker todo is not closed by this phase.** D-04 Branch B was taken; no generator
+  fix was attempted because the probe named no identifier to fix.
+* **This build is not the one installed on the developer's iPhone.** See
+  `artifacts/shortcuts/MANIFEST.md`'s plan-15-05 block for the digest that is, and the
+  schema-bump sequencing constraint (build/install before the next Pressure-accumulation UAT
+  session, never after) that plan 15-03 recorded and this phase's UAT instrument
+  (`15-UAT.md`) repeats.
+* **`DIST-03` is open.** Nothing in this phase narrows it. Voice has never been heard on a phone.
