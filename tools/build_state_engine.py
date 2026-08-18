@@ -3867,18 +3867,35 @@ def verify_capture_persistence(actions):
             + f" ({len(offenders)} total)")
 
 
-def _is_removed_snapshot_leaf(key: str) -> bool:
+def _is_removed_snapshot_leaf(key: str, source: str | None = None) -> bool:
     """True if `key` names a leaf that D-02 retired from the shipped state shape.
 
     Scoped rather than a bare name match: only a settings_snapshot-rooted dotted key, or
-    the bare leaf name itself, counts.  A foreign dictionary that legitimately owns its own
-    `changed_at` must not be flagged -- a guard that cries wolf gets exempted, and an
-    exempted guard is not a guard.
+    the bare leaf name read OUT OF STATE, counts.  A foreign dictionary that legitimately
+    owns its own `changed_at` must not be flagged -- a guard that cries wolf gets exempted,
+    and an exempted guard is not a guard.
+
+    THE `source` ARGUMENT EXISTS BECAUSE THAT PROMISE WAS BROKEN (16-REVIEW WR-02).  The
+    bare-leaf branch used to scope by KEY SHAPE alone, so `get_value("changed_at",
+    variable("Previous Session"))` -- a foreign dictionary reading its own field -- was
+    arraigned, and that false positive was measured to be the guard's ONLY behaviour not
+    already covered by verify_state_seed().  The one thing it added was the failure mode it
+    was written to avoid.  A bare leaf now counts only when it is read from State or
+    Reloaded State (STATE_READ_SOURCE_VARIABLES, the same dictionary-identity scoping
+    verify_state_seed() uses).  `source=None` means "not resolvable here", which is
+    conservative in the SILENT direction on purpose: a caller that cannot name the
+    dictionary must not guess that it is ours.
+
+    The DOTTED branch is deliberately NOT source-scoped: `settings_snapshot.<group>.<leaf>`
+    names this project's own shape wherever it is read from, so a read of it out of any
+    dictionary is a D-02 violation.
     """
     parts = key.split(".")
     if parts[-1] not in D02_REMOVED_SNAPSHOT_LEAVES:
         return False
-    return len(parts) == 1 or parts[0] == SNAPSHOT_ROOT
+    if len(parts) == 1:
+        return source in STATE_READ_SOURCE_VARIABLES
+    return parts[0] == SNAPSHOT_ROOT
 
 
 def verify_no_removed_snapshot_leaf_reads(actions):
@@ -3904,15 +3921,25 @@ def verify_no_removed_snapshot_leaf_reads(actions):
     the new read wants a field that was deliberately retired, and either the read or D-02
     has to change, by a decision with an owner.
 
-    TWO SURFACES, because reads reach state two ways and covering one would be decoration:
+    TWO SURFACES, and the honest statement of how they relate (16-REVIEW WR-02/IN-02
+    corrected an earlier comment here that had it backwards):
       (1) read_value()'s getvalueforkey -> gettext -> setvariable chain, resolved by
-          REUSING _read_variable_keys() -- the existing read-key index.  It is not
-          re-implemented here and no source is grepped; the walk backwards through the two
-          output UUIDs lives in that helper and stays there.
-      (2) every getvalueforkey's literal WFDictionaryKey, scanned flat.  This is a
-          DIFFERENT surface, not a second copy of the walk: get_value() emits a
-          getvalueforkey that never terminates in a setvariable, so surface (1) cannot see
-          it at all.
+          REUSING _read_variable_keys().  It is not re-implemented here; the walk backwards
+          through the two output UUIDs lives in that helper and stays there.  Every key it
+          can report came from a getvalueforkey carrying that literal key, so surface (1)
+          is a STRICT SUBSET of surface (2) by construction -- it is NOT an independent
+          second net.  It is kept because it names the offending VARIABLE in the failure
+          message, which is what a reader needs in order to find the read; it carries no
+          source dictionary, so it is passed none and covers the dotted form only.
+      (2) every getvalueforkey's literal WFDictionaryKey, scanned flat and scoped by SOURCE
+          DICTIONARY.  This is the load-bearing surface: get_value() emits a getvalueforkey
+          that never terminates in a setvariable, so surface (1) cannot see it at all, and
+          only here is the source variable available to keep the bare-leaf branch off
+          foreign dictionaries.
+    A composite (text_token()-built) key bypasses BOTH, since both require isinstance(key,
+    str).  That is not an open hole: verify_state_seed()'s unresolvable-composite branch
+    raises for any composite read of State/Reloaded State outside the named exit_stats
+    prefixes, so such a read cannot reach a phone.
     """
     offenders = []
     for name, keys in sorted(_read_variable_keys(actions).items(), key=lambda pair: str(pair[0])):
@@ -3921,9 +3948,14 @@ def verify_no_removed_snapshot_leaf_reads(actions):
     for index, item in enumerate(actions):
         if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.getvalueforkey":
             continue
-        key = item.get("WFWorkflowActionParameters", {}).get("WFDictionaryKey")
-        if isinstance(key, str) and _is_removed_snapshot_leaf(key):
-            offenders.append(f"action {index} reads {key!r}")
+        parameters = item.get("WFWorkflowActionParameters", {})
+        # Same measured accessor path verify_state_seed() uses to resolve a getvalueforkey's
+        # source dictionary.  Required by the bare-leaf branch -- see
+        # _is_removed_snapshot_leaf()'s docstring.
+        source = (parameters.get("WFInput") or {}).get("Value", {}).get("VariableName")
+        key = parameters.get("WFDictionaryKey")
+        if isinstance(key, str) and _is_removed_snapshot_leaf(key, source):
+            offenders.append(f"action {index} reads {key!r} from {source!r}")
     if offenders:
         raise SystemExit(
             "a read targets a snapshot leaf that decision D-02 REMOVED from the state "
