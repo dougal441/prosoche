@@ -87,11 +87,27 @@ non-restore environmental write. A Circle configured to dim or quieten produced 
 device: no change, no state write, no alert, no error. Plan 11-08 re-gates both onto
 `settings_snapshot.<group>.original_value` with the numeric `> 0` test
 `restore_managed_settings()` already used, and arms a new build guard,
-`verify_environmental_reachability`, in **both** builders with no exemption set. **0 actions
-per fork remain unreachable.** The fix re-gates existing actions and emits none, so all site
+`verify_environmental_reachability`, in **both** builders with no exemption set. **0
+environmental actions per fork remain in a dead arm.** The fix re-gates existing actions and
+emits none, so all site
 counts held exactly — 15 Set Brightness / 15 Set Volume / 22 Get Device Details, coercion split
 15-of-15 and 4-of-15, action totals 4304 Core and 4372 Aware, every one re-measured against the
 rebuilt forks rather than carried forward.
+
+**That sentence used to read "0 actions per fork remain unreachable," and it was narrowed by the
+phase-11 code review (IN-01) because it claimed more than the guard beneath it can carry.**
+`verify_environmental_reachability` derives permanence only from `settings_snapshot`-rooted
+existence gates, so what it measures is exactly the environmental dead-arm class and nothing
+wider. At least one non-environmental branch *is* unreachable and is deliberately left in place:
+inside `dimming()`'s `Captured Brightness > 0` arm, the already-dim short-circuit tests
+`Captured Brightness <= Dim Target`, and the shipped Config carries `"dim_target": 0` per D-01 —
+so the two conditions are exact complements and that branch's `Nothing` arm cannot fire in any of
+the 11 renderings per fork. The behaviour is correct post-D-01 (writing `0` never brightens
+anything) and becomes live again the moment a non-zero dim target returns, so this is dead code
+rather than a defect. `silence()`'s parallel gate is **not** affected: its `Silence Target` is a
+`0.10` literal, not the config value, so a captured volume in `(0, 0.10]` reaches it normally.
+The shipped Shortcuts comment bullet *"Do not brighten an already dim screen"* likewise describes
+a branch that does not currently fire.
 
 **Three older claims a reader might otherwise trust at face value, corrected here rather than
 edited away.** All three are retained below as the record of what was honestly believed:

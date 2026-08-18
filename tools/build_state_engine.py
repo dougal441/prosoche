@@ -744,6 +744,18 @@ def dimming():
     # the decision; verify_no_removed_snapshot_leaf_reads() is what keeps the removal safe.
     a += [capture_if, set_value("settings_snapshot.brightness.original_value", variable("Captured Brightness"))]
     a += config("safety.dim_target", "Dim Target")
+    # PHASE 11 CODE REVIEW (IN-01): INERT WHILE `dim_target` IS 0, and kept deliberately.
+    # This gate is `Captured Brightness <= Dim Target`, and it sits inside capture_g's
+    # `Captured Brightness > 0`.  The shipped Config carries "dim_target": 0 per D-01, so the
+    # two conditions are exact complements and this TRUE arm -- a bare Nothing -- cannot be
+    # reached in any of the 11 renderings per fork.  That is correct behaviour rather than a
+    # defect: a write of 0 never brightens anything, so the short-circuit has nothing to
+    # protect.  It is retained because it becomes live again the instant a non-zero dim target
+    # returns, and removing it would silently reintroduce "dim a screen that is already dimmer
+    # than the target" at that point.  verify_environmental_reachability() cannot see this and
+    # is not meant to: it derives permanence from settings_snapshot-rooted EXISTENCE gates, and
+    # this is a numeric gate over a live device reading.  silence()'s parallel `quiet_g` is NOT
+    # in the same position -- its Silence Target is a 0.10 literal, not a config read.
     already_dim_g, already_dim_if = if_block("Captured Brightness", 1, number=variable("Dim Target"))
     a += [already_dim_if, action("is.workflow.actions.nothing"), otherwise(already_dim_g)]
     # PHASE 16 (16-01): persist BEFORE the apply, and only on the arm that applies.  See
