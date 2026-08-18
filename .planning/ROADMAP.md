@@ -466,7 +466,7 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 **Severity:** major
 **Requirements**: AUDIT-02, CIRC-02, CIRC-06, CIRC-08, ROOM-01, ROOM-02, DIST-01, DIST-02
 **Depends on:** Phase 10
-**Plans:** 8/10 plans executed
+**Plans:** 9/10 plans executed
 
 **Gap closure (waves 7–10).** `11-VERIFICATION.md` scored 13/18 with three failed truths and two
 partials. Plans `11-07` … `11-10` close all five and are strictly sequential, because every one of
@@ -513,7 +513,7 @@ Plans:
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
-- [ ] 11-09-PLAN.md — GAP 3: the Aware fork's Use Model audit on every OPEN-arm rendering, with per-rendering identifiers and two checkers that derive rather than pin (wave 9)
+- [x] 11-09-PLAN.md — GAP 3: the Aware fork's Use Model audit on every OPEN-arm rendering, with per-rendering identifiers and two checkers that derive rather than pin (wave 9)
 
 **Wave 10** *(blocked on Wave 9 completion)*
 
