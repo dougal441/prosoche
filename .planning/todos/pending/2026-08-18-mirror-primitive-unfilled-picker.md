@@ -3,6 +3,7 @@ created: 2026-08-18T07:35:00.000Z
 title: Mirror primitive fails with an unfilled required picker — a third, unrecorded axis-4 instance
 area: general
 severity: blocker
+status: pending — rung-2 discriminator (spike 011, plan 15-02) did not reproduce the failure; CIRC-08 remains device-unproven; localisation still requires a device breadcrumb build (see 2026-08-18 dated section below)
 files:
   - tools/build_state_engine.py
   - artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut
@@ -124,3 +125,48 @@ TBD — **localise before fixing.**
 - Artifact: `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut`, SHA-256
   `b07497ba1a66506aaaa9c48134f463ceefeac7f4a656e86dad48b0a76414ac5b`, decrypted and
   parameter-dumped for every candidate action family named above.
+
+## 2026-08-18 — Phase 15 plan 15-02, spike 011: rung-2 discrimination attempted, did not reproduce
+
+**Spike:** `.planning/spikes/011-mirror-primitive-picker-discriminator/` (README.md,
+FINDINGS.md). This section and that spike each point at the other, per this phase's own
+recording duty — neither can be found without the other.
+
+`15-RESEARCH.md` Pitfall 4 narrowed this todo's suspect list from this todo's own "leading
+suspect" — the 22 `getdevicedetails` sites, based on an un-pinned edit-view scroll landing
+on "Get the Current Brightness" — down to exactly three identifiers unique to the Mirror
+primitive's own span: `is.workflow.actions.list`, `is.workflow.actions.getitemfromlist`,
+`is.workflow.actions.speaktext`. The reasoning: Circle 3 (`silence()`, which uses
+`getdevicedetails`) ran silently and error-free on a fresh device install, and `silence()`
+alerts only on its capture-failure path — so the capture path (and `getdevicedetails`)
+must have succeeded. **This todo's own "leading suspect" is demoted on that reasoning,
+carried here from the research rather than re-derived.**
+
+Plan 15-02 built an alert-free, three-leg simulator probe reproducing the real Mirror
+primitive's byte shapes verbatim (the actual `MIRROR_SUCCESSES` array, `_list_row()`'s
+row-wrapper discrimination, `mirror_text()`'s `Get Item From List` wiring, and `voice()`'s
+`speaktext` call) and ran it, with a bisection, on the booted iOS 26.5 simulator.
+
+**VERDICT: not discriminated at rung 2.** None of the three suspects raised the
+unfilled-picker error in the full probe or in either bisection variant (minus Leg 3, minus
+Legs 2+3) — every run completed cleanly to `Return to Home Screen`. Full bisection
+evidence, commands and screenshots are in `FINDINGS.md`.
+
+**This is Branch B of D-04's routing rule** (`15-02-PLAN.md` Task 3): the verdict does not
+name an identifier, so no fix is attempted here. **CIRC-08 remains device-unproven for
+Phase 15** — a green build, a clean gate A, and this spike's clean rung-2 bisection do not
+mean Circle 8 (or Circle 7's Mirror) fires on a phone. The original device-reproduced
+failure this todo records stands unexplained.
+
+**What this means for next steps, carried forward rather than acted on here:** because the
+rung-2 probe did not reproduce the failure, and per `15-RESEARCH.md` assumption A6 the
+demotion of `getdevicedetails` itself rests on a soft link (Circle 3's silent run being
+read as success rather than no-op), the suspect list this todo should investigate next is
+**wider than the three identifiers this spike tested**, not narrower. This todo's own
+original Solution step 1 — "Breadcrumb the Mirror primitive" with a **device** build — is
+now the most direct path to localisation and remains the right next instrument; a rung-2
+probe has been tried and could not close the question, so the next attempt should go
+directly to rung 3 (a real device) rather than repeating rung 2.
+
+This todo remains **pending**. Its scope is not widened — no fix was attempted or is
+recorded as attempted.
