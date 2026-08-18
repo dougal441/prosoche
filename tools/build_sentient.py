@@ -41,6 +41,7 @@ from build_state_engine import (
     verify_speaktext_placement,
     verify_state_seed,
     verify_string_envelopes,
+    verify_voice_enabled_seed,
 )
 
 SOURCE = Path("src/PROSOCHE-Dumb.xml")
@@ -545,6 +546,16 @@ def main() -> None:
     # touch point here: the guard was already imported and already invoked.
     verify_pending_exit_seed(actions)
     verify_panic_escape_seed(actions)
+    # PHASE 15 (15-03), D-05.  Armed here for the first time, beside verify_panic_escape_seed()
+    # for the same reason it sits beside it on Dumb: both assert that what bootstrap writes and
+    # what the runtime reads are the same shape.  Sentient inherits the seeded bootstrap
+    # template and every voice_enabled reader from the built Dumb source, so this asserts the
+    # fork lost neither the numeric seed nor the numeric gate shape -- a fork that reintroduced
+    # a boolean-typed voice_enabled write, or a reader gated on anything other than
+    # WFCondition == 2 / WFNumberValue == 0, is exactly as invisible to both validator gates and
+    # to a decrypt of the signed container as the Core case, and CIRC-08's consent gate would be
+    # silently unsatisfiable on the Aware fork alone.
+    verify_voice_enabled_seed(actions)
     # PHASE 11 (11-10).  T-11-22, the only `critical` this phase raises, asserted per fork
     # rather than inferred from the Dumb run.  Sentient inherits both Emergency Restore menu
     # surfaces and every Panic Escape conditional from the built Dumb source, so this asserts

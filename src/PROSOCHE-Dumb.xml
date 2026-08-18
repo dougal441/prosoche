@@ -864,7 +864,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<key>WFCondition</key>
 				<integer>4</integer>
 				<key>WFConditionalActionString</key>
-				<string>4</string>
+				<string>5</string>
 				<key>WFInput</key>
 				<dict>
 					<key>Type</key>
@@ -1309,7 +1309,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<key>UUID</key>
 				<string>690D0CC1-1A65-445F-89EF-09645CB6F652</string>
 				<key>WFTextActionText</key>
-				<string>true</string>
+				<string>1</string>
 			</dict>
 		</dict>
 		<dict>
@@ -1320,7 +1320,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 				<key>UUID</key>
 				<string>46F62C7C-652C-4D7E-9EFE-D77D753210DA</string>
 				<key>WFTextActionText</key>
-				<string>false</string>
+				<string>0</string>
 			</dict>
 		</dict>
 		<dict>
@@ -1457,7 +1457,7 @@ Guard against empty fields before reading anything nested inside them. Six field
 					<dict>
 						<key>string</key>
 						<string>{
-  "schema_version": 4,
+  "schema_version": 5,
   "fork": "Core",
   "profile": "￼",
   "sequence": "Classic",
