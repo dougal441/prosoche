@@ -932,27 +932,77 @@ def mirror_templates(templates):
                              for index, part in enumerate(template.split("￼"))]) for template in templates)
 
 
-def mirror_and_voice():
+def _mirror_body():
+    """Select one of 30 fact-gated Mirror templates into the named variable "Mirror Text".
+
+    Shared by mirror() (Circle 7) and voice() (Circle 8) so the same 30 templates back both
+    Circles (D-03) -- the escalation between them is the modality, never the copy.  This is
+    the ONLY consumer of mirror_text(), which is the only consumer of MIRROR_BASELINES /
+    MIRROR_SUCCESSES / MIRROR_LAPSES, so the 30-template surface stays single-sourced for
+    DUMB-02/DUMB-03 and docs/phase7_self_check.py.  Emits no leading comment and no alert --
+    both callers own their own comment and their own alert() call.
+    """
     baseline = mirror_templates(MIRROR_BASELINES)
     success = mirror_templates(MIRROR_SUCCESSES)
     lapse = mirror_templates(MIRROR_LAPSES)
-    a = [comment("""Mirror selects from 30 fact-gated, local templates:
-- Baselines use only this OPEN's Circle, Pressure, and Heat.
-- Success and lapse wording runs only when the recorded previous contract says so.
-- No model, interpretation, or empty telemetry path exists.""")]
     # Baseline is always available: Circle, Pressure, and Heat are prepared in this OPEN run.
-    a += mirror_text(baseline, "Mirror Text")
+    a = mirror_text(baseline, "Mirror Text")
     respected_g, respected_if = if_block("Previous Respected", 4, string="true")
     lapsed_g, lapsed_if = if_block("Previous Respected", 4, string="false")
     a += [respected_if] + mirror_text(success, "Mirror Text") + [otherwise(respected_g), lapsed_if]
-    a += mirror_text(lapse, "Mirror Text") + [otherwise(lapsed_g), action("is.workflow.actions.nothing"), end_if(lapsed_g), end_if(respected_g),
-          alert("Mirror", variable("Mirror Text"))]
+    a += mirror_text(lapse, "Mirror Text") + [otherwise(lapsed_g), action("is.workflow.actions.nothing"),
+          end_if(lapsed_g), end_if(respected_g)]
+    return a
+
+
+def mirror():
+    """Circle 7 -- The Mirror.  Shows a fact-gated reflection and does NOT speak.
+
+    D-02: speech is removed from Circle 7 and moved to Circle 8's voice() -- this is what
+    makes Circle 8 an escalation at all and what satisfies CIRC-14 (a stronger Circle does
+    not necessarily replay every weaker Circle's prompt).  Visible behaviour change for
+    existing voice_enabled=1 users: Circle 7 goes quiet.  Accepted knowingly (D-02).
+    """
+    a = [comment("""Mirror selects from 30 fact-gated, local templates and shows them -- it does
+not speak:
+- Baselines use only this OPEN's Circle, Pressure, and Heat.
+- Success and lapse wording runs only when the recorded previous contract says so.
+- Speech moved to Circle 8's Voice (D-02); the Mirror never reads voice_enabled.
+- No model, interpretation, or empty telemetry path exists.""")]
+    a += _mirror_body()
+    a += [alert("Mirror", variable("Mirror Text"))]
+    return a
+
+
+def voice():
+    """Circle 8 -- The Voice.  Shows the same reflection as the Mirror, then speaks it once.
+
+    D-03: the same 30 fact-gated templates as Circle 7's Mirror -- the escalation is the
+    modality, not the words.  D-01: the alert is emitted BEFORE the consent gate, so a
+    voice_enabled=0 run still shows a Mirror-equivalent alert and only degrades the speech
+    arm to is.workflow.actions.nothing -- Circle 8 never becomes an empty Circle.  D-06: the
+    Spoken This Run guard is copied verbatim from the retired mirror_and_voice() -- no reset,
+    no second flag, no clear step -- because it already is CIRC-08's "at most once per run".
+    """
+    a = [comment("""The Voice shows the same reflection as the Mirror (Circle 7), then speaks it
+once:
+- Same 30 fact-gated templates as the Mirror -- the escalation is modality, not copy (D-03).
+- Speaks only with the user's import-time consent, voice_enabled > 0 (D-01).
+- Speaks at most once per run, guarded by Spoken This Run (D-06).
+- Writes no volume anywhere in this path: speaktext exposes no volume parameter, so "never
+  at unsafe levels" is satisfied by absence, not by a setting (CIRC-08 / SAFE-02).""")]
+    a += _mirror_body()
+    # Same title Circle 7 uses, deliberately (D-01): with voice off the two Circles are
+    # indistinguishable to the user -- a recorded, accepted cost, not an oversight.
+    a += [alert("Mirror", variable("Mirror Text"))]
     a += read_value("voice_enabled", variable("State"), "Voice Enabled")
     voice_g, voice_if = if_block("Voice Enabled", 2, number=0)
     spoken_g, spoken_if = if_block("Spoken This Run", 101)
     # DEV-03 closed: the ToolKit v78 catalog DOES define speaktext parameters, and its text
     # parameter is WFText (type str, name "Text").  WFInput is not among them, so the spoken
     # text was never being read.  str-typed, so it also takes the WFTextTokenString envelope.
+    # No WFSpeakTextWait/Rate/Pitch/Language/Voice: catalog-real but no donor shows how
+    # Shortcuts serializes any of them, so omitting them is the safest fallback (C-1).
     a += [voice_if, spoken_if, action("is.workflow.actions.speaktext", WFText=variable("Mirror Text"))]
     a += number(1, "Spoken This Run")
     a += [otherwise(spoken_g), action("is.workflow.actions.nothing"), end_if(spoken_g),
@@ -988,17 +1038,16 @@ def primitive_dispatch(circle_name: str | None = None):
           set_var("Selected Primitive", output(entry_text_id, "Text"))]
     # The tuple carries the SHIPPED name, the function carries the INTERNAL name.  BD-06
     # Decision 3 renames the roster, but knock(), ash(), confession(), dimming(), exile(),
-    # mirror_and_voice() and ice_start() all keep their Python identifiers because
+    # mirror(), voice() and ice_start() all keep their Python identifiers because
     # docs/environmental_restore_check.py:49-60 imports generator functions BY NAME.
     #
-    # "Loud Mirror" (Circle 8 in all three sequences) reuses mirror_and_voice() as a
-    # DELIBERATE INTERIM, not as the designed behaviour.  It is here so the dispatch-coverage
-    # guard can be a hard gate from this commit onwards rather than waiting on a primitive
-    # that does not exist yet: mirror_and_voice() already carries the once-per-run and
-    # voice-enabled gates CIRC-08 requires.  PHASE 15 replaces it with the designed Voice
-    # primitive; until then Circle 8 is a real dispatch, not the designed one.
+    # "Mirror" (Circle 7) dispatches mirror() -- shows, does not speak.  "Loud Mirror"
+    # (Circle 8, in all three sequences) dispatches voice() -- shows the same reflection AND
+    # speaks it once, consent-gated.  PHASE 15 split the interim mirror_and_voice() both
+    # entries used to share into these two designed primitives; see mirror()'s and voice()'s
+    # own docstrings for D-01..D-06.
     #
-    # "Eject" (Circle 6 in all three sequences) is the SECOND DELIBERATE INTERIM, and in
+    # "Eject" (Circle 6 in all three sequences) is the DELIBERATE INTERIM, and in
     # Classic and Ambient only.  BD-06 gives that slot to `Redirect` there and to `Eject` in
     # BlackMirror; `Redirect` -- Exile routed INTO a deterministically selected exit rather
     # than straight to the Home Screen -- has no implementation, and a branch no sequence names
@@ -1013,7 +1062,7 @@ def primitive_dispatch(circle_name: str | None = None):
     # generator alone with no way to learn that this tuple entry is temporary.
     for name, implementation in (("Pause", knock), ("Black and White", ash), ("Silence", silence),
                                  ("Intention", confession), ("Dim", dimming), ("Eject", exile),
-                                 ("Mirror", mirror_and_voice), ("Loud Mirror", mirror_and_voice),
+                                 ("Mirror", mirror), ("Loud Mirror", voice),
                                  ("Frozen", ice_start)):
         # Condition 4 ("string is"), never 99 ("contains").  BD-06 Decision 5 abolished the
         # combined entries that were 99's only reason to exist, and under 99 the entry
