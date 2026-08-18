@@ -396,6 +396,28 @@ def main() -> None:
     # the rendering's position in document order, so it is stable across the reversal.
     for ordinal, index in reversed(list(enumerate(markers))):
         actions[index:index] = audit_block(ordinal)
+    # PHASE 11 CODE REVIEW (WR-18).  Assert the invariant WHERE THE ARTIFACT IS WRITTEN.
+    #
+    # Everything above derives the OPEN arm correctly and inserts one audit per rendering; what
+    # was missing was any assertion that it HAD.  Gap 3's whole invariant -- one contract audit
+    # per OPEN-arm rendering -- rested entirely on docs/sentient_core_check.py, a standalone
+    # script chained into no build.  Measured 2026-08-18 with the loop above reverted to
+    # markers[:1]: build_sentient.py printed its success line, WROTE the defective fork to
+    # disk and exited 0, and docs/sentient_audit_check.py exited 0 on it too -- that file loads
+    # the Aware fork alone and reconciles span count against model count WITHIN it, so one
+    # block plus one model is a clean run there by construction.  Only sentient_core_check.py
+    # caught it, after the bad artifact had already been written.
+    #
+    # The two counts are the same quantity measured two ways, so a mismatch is never cosmetic:
+    # Dumb emits no askllm at all (docs/sentient_core_check.py asserts that separately), so
+    # every Use Model action in this list came from an audit_block() inserted just above.
+    inserted = sum(1 for item in actions
+                   if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.askllm")
+    if inserted != len(markers):
+        raise SystemExit(
+            f"{len(markers)} OPEN-arm dispatch rendering(s) but {inserted} Use Model action(s). "
+            f"CONSEQUENCE: a rendering reaches Intention with no contract audit, so an Aware "
+            f"install silently behaves as Core on that path with nothing observable on device.")
     # Phase 11 plan 06.  The fork's own name, in its own Note and its own state seed.  This
     # runs BEFORE the normalise/verify chain so the rewritten token strings are guarded like
     # every other string in the file, and it mutates the forked COPY only -- the frozen-source

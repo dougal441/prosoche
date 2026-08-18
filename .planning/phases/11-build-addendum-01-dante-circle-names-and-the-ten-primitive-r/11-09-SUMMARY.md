@@ -9,7 +9,7 @@ provides:
   - "One Use Model contract audit per OPEN-arm dispatch rendering, so removing the Panic Escape bypass no longer turns the Aware fork into Core"
   - "audit_block(ordinal) -- a per-rendering discriminator threaded through EVERY uid() call AND every if_block() key via a single aid() chokepoint"
   - "Structural OPEN-arm insertion derived from the router's own OPEN test, so a future rendering inside that arm is covered with no code change"
-  - "Both Aware checkers derive the audit count from the Core fork and inspect every block"
+  - "sentient_core_check.py derives the audit count from the Core fork; sentient_audit_check.py inspects EVERY block (it does not derive a Core-fork count -- see 'Correction' in the body, WR-18)"
   - "verify_circle_zero_silence + verify_parameter_keys armed on the Aware chain (WR-10)"
   - "Content-anchored import splice and ActionIndex, replacing two hard-coded integers (WR-11)"
 affects:
@@ -87,12 +87,42 @@ and went on doing so across the three phases (12, 13, 16) that executed after th
 The plan predicted 4302/4370; the real base was **4304/4372**, matching 11-08's Deviation 3
 rather than the plan's stale `<measured_baseline>`. Surfaced, not absorbed.
 
+## Correction (phase-11 code review, WR-18) — added 2026-08-18
+
+This summary asserted, in three places, that **both** Aware checkers derive the audit count from
+the Core fork. The original wordings are retained here rather than edited away, because what
+went wrong is a claim recorded above its evidence and deleting it would delete the lesson:
+
+> - `provides`: *"Both Aware checkers derive the audit count from the Core fork and inspect every block"*
+> - Task 2: *"Both Aware checkers derive the count and inspect every block"*
+> - T-11-47: *"count derived in the builder and both checkers, so one block cannot satisfy it"*
+
+**None of the three is true of `docs/sentient_audit_check.py`, and the middle clause of the
+third was not true of the builder either.** That file loads `src/PROSOCHE-Sentient.xml` alone and
+reconciles its audit-span count against its own Use Model count *within the Aware fork*, so one
+span plus one model is a clean run — it never opens the Core fork and derives nothing from it.
+And until this correction **no builder asserted the invariant at all**: the count was derived in
+`build_sentient.py` and then never checked against what was actually inserted.
+
+Measured 2026-08-18 with the insertion loop reverted to the first marker only — the exact
+pre-11-09 defect: `build_sentient.py` printed its success line, **wrote the defective fork to
+disk** and exited 0; `docs/sentient_audit_check.py` exited 0 on it; only
+`docs/sentient_core_check.py`, a standalone script chained into no build, exited 1 — after the
+bad artifact had already been written.
+
+What actually closes T-11-47 now: `sentient_core_check.py`'s Core-derived count, **plus** an
+assertion added to `build_sentient.py`'s `main()` immediately after the insertion loop, which
+compares the inserted `askllm` count against the OPEN-arm marker count and refuses to write the
+artifact on a mismatch. `sentient_audit_check.py` is unchanged and its per-block properties
+remain valuable; it is simply not a second line of defence for *this* invariant, and this
+summary no longer says it is.
+
 ## Tasks
 
 | # | Task | Commit |
 |---|---|---|
 | 1 | Per-rendering identifiers + structural OPEN-arm insertion + WR-11 + two guards armed | `03ecdcf` |
-| 2 | Both Aware checkers derive the count and inspect every block | `3f9bea5` |
+| 2 | Both Aware checkers derive the count and inspect every block — **as written this overstates what shipped; see Correction below (WR-18)** | `3f9bea5` |
 | 3 | Re-sign Aware, decrypt-verify, refresh MANIFEST, record the resolution | `9e1e540` |
 
 ## The chosen resolution, and the one rejected
@@ -259,7 +289,7 @@ not define that parameter — silently, per axis 1.
 
 | Threat | Disposition |
 |---|---|
-| **T-11-47** (spoofing — Aware silently behaving as Core) | **CLOSED.** Audit on every OPEN-arm rendering; count derived in the builder and both checkers, so one block cannot satisfy it |
+| **T-11-47** (spoofing — Aware silently behaving as Core) | **CLOSED**, but not by what this row originally claimed — see Correction below (WR-18). Audit on every OPEN-arm rendering; the count is derived in `sentient_core_check.py` and, since the phase-11 code review, asserted **in the builder itself** where the artifact is written. `sentient_audit_check.py` inspects every block but derives no Core-fork count, so one block **did** satisfy *that* file |
 | **T-11-48** (duplicate identifiers across audit blocks) | **CLOSED** for the blocks this plan emits — disjoint sets, union == sum, no new duplicate UUID, two negative controls (one per route), plus Phase 16's standing guard |
 | **T-11-49** (the duplicated model prompt) | Unchanged and asserted per block: the second block is the same bounded prompt, and `sentient_audit_check` now checks the bounded-prompt property in **every** block |
 | **T-11-50** (a second model call) | **accept**, unchanged — the renderings are mutually exclusive at run time; the eight-second latency gate is asserted per block |
