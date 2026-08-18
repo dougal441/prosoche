@@ -35,7 +35,7 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → inte
 - [ ] Local epsilon-greedy explore/exploit exit learning keyed on time-until-next-tracked-OPEN
 - [ ] CLOSE handler measures real session duration, is race-proof via session IDs and state reload, computes contract overrun, restores any settings PROSOCHĒ changed
 - [ ] Circle IX (Ice): deterministic cooldown (~60s Paradise / ~3m Limbo / ~5m Inferno), never model-decided, blocked attempts don't inflate Heat, always a route out
-- [ ] Environmental safety: never zero brightness, never raise volume, never blindly override accessibility settings, skip any stateful change that cannot be restored
+- [ ] Environmental safety: every environmental change is captured **and durably persisted** before it is applied and is reliably restored; any setting whose original cannot be captured is left unchanged; never raise volume; never blindly override accessibility settings (the brightness clause was amended 2026-08-18 under user decision **D-01** — capture-and-restore reliability is the safety property, not avoidance of a particular value; authority: `docs/CAPABILITY-DECISIONS.md` BD-02's Supersession note)
 - [ ] Control Room manual menu: Status, Open Control Room, Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Test a Circle, Reset Today, Emergency Restore (+ Toggle On-Device AI, Test Model in Sentient)
 - [ ] Emergency Restore clears cooldown, active session, and recoverable brightness/volume/colour state
 - [ ] Dumb Mirror engine: ≥30 telemetry templates that never invent facts and are gated on available facts
@@ -78,7 +78,7 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → inte
 - **AI**: Apple Intelligence via the iOS 26 `Use Model` action, Sentient fork only. On-Device preferred; Private Cloud Compute acceptable (relaxed 2026-08-13, BD-04-R). ChatGPT / extension models excluded. Never write a guessed `WFLLMModel` value — omitting the key is safe, guessing it is not.
 - **Privacy**: no behavioural data leaves the device; Sentient receives only a compact local context window, never the whole Note
 - **Capability**: every iOS action identifier and parameter shape must be verified before use — if it cannot be verified, use the safest fallback, record the deviation, and keep the Shortcut runnable. Never fabricate an action because the strategy asks for it.
-- **Safety**: no zero brightness, no unsafe or startling volume, no accessibility-stranding state, Emergency Restore always available
+- **Safety**: no unsafe or startling volume, no accessibility-stranding state, Emergency Restore always available. Every environmental change is captured **and durably persisted** before it is applied and reliably restored, and any setting whose original cannot be captured is left unchanged — capture-and-restore reliability *is* the safety mechanism, not avoidance of a particular value. The brightness clause here was amended 2026-08-18 under user decision **D-01**; authority is `docs/CAPABILITY-DECISIONS.md` BD-02's Supersession note. This is the **second** of two independent assertions of the retired clause in this file — the success criterion above carries the other
 - **Determinism**: the model never controls arithmetic, thresholds, timers, Circle IX, or any safety decision
 - **Device split**: Dumb targets all iOS 26 iPhones; Sentient requires Apple Intelligence-capable hardware (iPhone 15 Pro and later)
 

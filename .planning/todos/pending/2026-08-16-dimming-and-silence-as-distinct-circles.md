@@ -87,11 +87,18 @@ the change at all.** A dim that never restores is a worse product than no dim.
    backstop that makes stateful environmental friction defensible at all — and it has
    itself never been tapped on a device
    (`.planning/phases/07-control-room-dumb-freeze/07-UAT.md` test 9, pending).
-8. **Note the corrected brightness floor.** Phase 9 revised BD-02's "never zero, 10–15%
-   band": the user's on-device observation is that iOS's practical minimum is dim, not
-   black, so avoiding zero was never itself the safety property. The safety property is
-   capture-and-restore reliability. That revision was scoped to the experimental fork and
-   now needs a decision on main.
+8. **The corrected brightness floor — SETTLED, no longer an open item.** Phase 9 revised
+   BD-02's floor clause (cited, deliberately not restated here): the user's on-device
+   observation is that iOS's practical minimum is dim, not black, so avoiding a particular
+   value was never itself the safety property. The safety property is capture-and-restore
+   reliability. That revision was scoped to the experimental fork.
+   **Settled 2026-08-18 by user decision D-01** (LOCKED 2026-08-17): the floor and the dim
+   target are both `0` on the main line. Plan **16-03** implemented the code half; plan
+   **16-05** implemented the record half and added `docs/retired_clause_check.py`. Authority:
+   `docs/CAPABILITY-DECISIONS.md` BD-02's Supersession note. The canonical strategy is frozen
+   and was not edited. **What this does NOT settle:** the capture-and-restore loop remains
+   device-unproven and is still what the rest of this todo is about — see items 1–7, all
+   BLOCKED on DIST-03.
 
 ## Related
 

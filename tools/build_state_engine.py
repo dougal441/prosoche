@@ -109,6 +109,51 @@ def uid() -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"prosoche-state-engine/{UUID_COUNTER}")).upper()
 
 
+def stable_uid(name: str) -> str:
+    """A UUID drawn from OUTSIDE uid()'s counter sequence, keyed by a name.
+
+    PHASE 16 (16-01) -- THE DEFECT THIS CLOSES, found by gate A failing on the first
+    rebuild after the capture-persistence fix:
+
+      Duplicate GroupingIdentifier '6219B3ED-727D-56FA-A9FB-787F84AEAE89'
+      for start action at index 4383; first seen at index 3672
+
+    Mechanism.  uid() is a COUNTER, so every identifier it returns is positional: the Nth
+    call always yields uuid5(".../N").  Most of the artifact is regenerated on every build,
+    so those identifiers are re-derived together and stay consistent.  But
+    gate_control_room_shownote() INSERTS its wrapper into the hand-authored find-or-create
+    block and is idempotent by positional probe -- it returns early when the wrapper is
+    already there.  So that one wrapper's GroupingIdentifier was FROZEN into
+    src/PROSOCHE-Dumb.xml at whatever counter value the build that first created it had
+    reached (measured: 1310), and every build since preserved it verbatim.
+
+    That makes it a landmine rather than a bug: it is harmless exactly as long as no
+    regenerated block ever lands on counter 1310.  Adding the 22 save_state() calls this
+    plan requires shifted every later uid() by +22, a silence() rendering landed on 1310,
+    and two unrelated conditional blocks began sharing one GroupingIdentifier -- which
+    .claude/CLAUDE.md records as the project's #1 documented real-world mistake, silently
+    corrupting block boundaries.  Any future phase that changes the action count upstream
+    of that wrapper would have re-armed the same landmine at a different value.
+
+    The fix is to take the preserved identifier OUT of the counter sequence entirely.  A
+    name-keyed uuid5 is stable across builds (so the pass stays idempotent) and can never
+    equal a counter-derived uid() (so the collision is unrepresentable rather than merely
+    unlikely).  Pinned by verify_group_identifier_uniqueness().
+
+    REJECTED ALTERNATIVE: regenerating the wrapper on every build so its identifier comes
+    from the current counter run.  It would work, but it discards the positional
+    idempotency that PHASE 10 (10-02) deliberately built into that pass, and it would
+    rewrite a hand-authored region on every build for no other reason.
+    """
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, f"prosoche-state-engine/stable/{name}")).upper()
+
+
+# The Control Room shownote gate is the one generated control-flow block that is PRESERVED
+# across builds rather than regenerated, so its GroupingIdentifier must not come from
+# uid()'s counter.  See stable_uid()'s docstring for the measured collision this prevents.
+SHOWNOTE_GATE_GROUP = stable_uid("gate-control-room-shownote")
+
+
 def action(identifier: str, **parameters):
     return {"WFWorkflowActionIdentifier": identifier,
             "WFWorkflowActionParameters": parameters}
@@ -469,9 +514,30 @@ def clear_snapshot(key: str, dictionary_name="State"):
     container gates at 100 while the leaf gates change -- the split is enforced by
     verify_sentinel_gates(), not asserted.
     Same action count as clearing the container: one Set Dictionary Value, deeper key.
-    changed_at / changed_by_session_id are deliberately left: they are written at 20 sites
-    and READ AT NONE in either fork (the ownership check does not exist -- DEV-06, deferred
-    to the user as a design change), so stale values there have no consumer.
+    DEV-06 -- DECIDED BY THE USER 2026-08-18 AS REMOVAL (decision D-02, LOCKED).  The
+    paragraph that stood here is preserved rather than deleted, because the history of the
+    deferral is worth more than the space it costs.  It read: "changed_at /
+    changed_by_session_id are deliberately left: they are written at 20 sites and READ AT
+    NONE in either fork (the ownership check does not exist -- DEV-06, deferred to the user
+    as a design change), so stale values there have no consumer."
+    Two of its three claims held and one did not.  READ AT NONE was and is true -- that is
+    exactly what licensed the removal.  "20 sites" was STALE: measured 2026-08-18 against
+    both built forks, the true figure is 44 write sites per fork (2 leaves x 2 groups x 11
+    primitive_dispatch() renderings); docs/BUILD-NOTES.md section 17 carries the correction
+    and its derivation.  And "deliberately left" is now false: the leaves are gone from the
+    writes, from the bootstrap seed (SNAPSHOT_SEED) and from
+    docs/phase5_self_check.py's state-safety-key loop, in one coordinated generator change.
+    WHY REMOVAL RATHER THAN AN OWNERSHIP CHECK: the overlapping-session case DEV-06 named is
+    already guarded without consulting identity or time.  if_block("<group> Snapshot", 100)
+    short-circuits a second session on snapshot PRESENCE, and every restore gates on
+    original_value > 0.  A naive field-equality check would additionally BLOCK the
+    legitimate last-close-restores-the-first-capture case.  The decision became timely only
+    after plan 16-01: before it, these fields were written into a dictionary that was never
+    saved, so they did not survive the run that wrote them; persisting the capture is
+    precisely what would have given them consequences for the first time.
+    The removal is safe ONLY because there is no reader -- a dotted read of a missing
+    segment is a HARD runtime error here (.claude/CLAUDE.md, verified runtime semantics).
+    verify_no_removed_snapshot_leaf_reads() is what keeps that property true.
     """
     return set_value(f"settings_snapshot.{key}.original_value", cleared_value(), dictionary_name)
 
@@ -594,28 +660,118 @@ def persist_contract():
 
 
 def dimming():
+    """Capture the original brightness, PERSIST it, and only then change the device.
+
+    PHASE 16 (16-01) CLOSES THE P0: the capture reached a dictionary that was never saved.
+    `set_value("settings_snapshot.brightness.original_value", ...)` writes into `State`
+    (set_value()'s default target), but on the OPEN arm the last `save_state("State")`
+    sits ABOVE universal_leaving(), and every save from the CLOSE pipeline onward sources
+    `Reloaded State` -- a different dictionary.  So the captured original never reached
+    state.json.  CLOSE and Emergency Restore reloaded the file, found the CLEARED_SENTINEL
+    in the leaf, failed restore_managed_settings()'s numeric `> 0` gate, and skipped.  The
+    screen dimmed and nothing in the product un-dimmed it.  Same on the MANUAL
+    `Test a Circle` path.  This is the live instance of threat T-16-01 and the actual
+    mitigation for SAFE-05.
+
+    THE ORDERING RULE NOW ENFORCED: the file records the original strictly BEFORE
+    Set Brightness runs.  Shortcuts has no try/catch, so safety here is achieved by
+    ordering, not by detection -- there is no action sequence in which the device is
+    changed while state.json still holds the sentinel.  verify_capture_persistence()
+    pins the rule at build time; docs/phase9_self_check.py's
+    capture_persistence_negative_control() proves that guard load-bearing.
+
+    THE REJECTED ALTERNATIVE, and why -- this resolves 16-RESEARCH.md Open Question 5.
+    The obvious placement is the outer `capture_g` arm, immediately after the set_value
+    block: one save per rendering, and it covers both inner arms at once.  It is WRONG.
+    That arm also runs on the already-dim path, where no Set Brightness fires, so it would
+    persist a snapshot for a change that never happened.  A later CLOSE would then read a
+    positive original, pass the `> 0` gate, and set brightness to it -- so a user who
+    raised brightness by hand mid-session would have it pulled back down by a Circle that
+    never touched it.  Persisting ONLY on the applying arm makes the snapshot mean exactly
+    "a change is outstanding", which is what every restore gate already assumes.  The cost
+    is stated rather than hidden: the save is emitted inside the nested otherwise-arm, so
+    it renders once per primitive_dispatch() rendering on the applying path only.
+
+    The dictionary name is load-bearing (T-16-04): set_value()'s default target and
+    save_state()'s default source are both `State`.  Passing "Reloaded State" here would
+    persist a dictionary that never received the capture -- the exact mechanism of the
+    defect.  Take both defaults; do not name a source.
+
+    One edit, eleven renderings.  primitive_dispatch() renders this function eleven times
+    per fork (nine Test-a-Circle submenu cases plus two in universal_leaving()), so the
+    generator-level change closes the MANUAL half of the defect by construction rather
+    than site-by-site.  Do NOT add a second save to the Test a Circle menu arm.
+
+    The condition-100 container gate (snapshot_g) and the numeric `> 0` capture gate
+    (capture_g) are UNTOUCHED by this change and must stay so -- they are this project's
+    input validation over an absent or untrusted Get Device Details reading (T-16-03).
+    """
+    # PHASE 16 (16-03): this comment SHIPS.  primitive_dispatch() renders it eleven times
+    # per fork, so its middle bullet was eleven user-visible assertions of a lower limit on
+    # the brightness write -- a limit the same build no longer sets.  D-01 (LOCKED, see
+    # .planning/phases/16-*/16-CONTEXT.md) retires that clause on the main line, superseding
+    # BD-02's original Decision paragraph and the canonical strategy's §21 wording, which are
+    # both retained unmodified as the historical design input.  The bullet now states the
+    # PROPERTY the build actually guarantees -- capture-and-restore -- rather than a softer
+    # limit, because a relocated limit is a safety claim the build still does not make.
+    # The FIRST line is the stable anchor: comment_index() locates comments by prefix and
+    # 16-03's verify anchors on it.  Do not edit it.
     a = [comment("""Dimming is reversible or message-only:
 - Capture Current Brightness once when no snapshot exists.
-- Do not brighten an already dim screen and never set zero.
+- Do not brighten an already dim screen; the captured original is saved before any change and is always restored.
 - Keep an existing unrestored snapshot unchanged.""")]
     a += read_value("settings_snapshot.brightness", variable("State"), "Brightness Snapshot")
     snapshot_g, snapshot_if = if_block("Brightness Snapshot", 100)
     a += [snapshot_if, action("is.workflow.actions.nothing"), otherwise(snapshot_g)]
     a += device_detail("Current Brightness", "Captured Brightness")
     capture_g, capture_if = if_block("Captured Brightness", 2, number=0)
-    a += [capture_if, set_value("settings_snapshot.brightness.original_value", variable("Captured Brightness")),
-          set_value("settings_snapshot.brightness.changed_at", variable("Now Epoch")),
-          set_value("settings_snapshot.brightness.changed_by_session_id", variable("Session ID"))]
+    # PHASE 16 (16-04), D-02: the .changed_at and .changed_by_session_id writes that stood
+    # here are GONE.  See D02_REMOVED_SNAPSHOT_LEAVES and clear_snapshot()'s docstring for
+    # the decision; verify_no_removed_snapshot_leaf_reads() is what keeps the removal safe.
+    a += [capture_if, set_value("settings_snapshot.brightness.original_value", variable("Captured Brightness"))]
     a += config("safety.dim_target", "Dim Target")
     already_dim_g, already_dim_if = if_block("Captured Brightness", 1, number=variable("Dim Target"))
-    a += [already_dim_if, action("is.workflow.actions.nothing"), otherwise(already_dim_g),
-          set_brightness(variable("Dim Target")), end_if(already_dim_g), otherwise(capture_g),
+    a += [already_dim_if, action("is.workflow.actions.nothing"), otherwise(already_dim_g)]
+    # PHASE 16 (16-01): persist BEFORE the apply, and only on the arm that applies.  See
+    # this function's docstring for why the outer capture arm was rejected.
+    a += save_state()
+    a += [set_brightness(variable("Dim Target")), end_if(already_dim_g), otherwise(capture_g),
           alert("Dim", "Brightness could not be captured, so nothing was changed."), end_if(capture_g),
           end_if(snapshot_g)]
     return a
 
 
 def silence():
+    """Capture the original Media volume, PERSIST it, and only then change the device.
+
+    The exact mirror of dimming(); read that docstring for the full derivation.  Stated
+    here too rather than cross-referenced only, because the two functions are edited
+    independently and a reader arriving at this one must not have to infer the rule.
+
+    PHASE 16 (16-01) CLOSES THE SAME P0 ON THIS SIDE: the capture went into `State`, which
+    is never saved after the OPEN arm's last save, so restore_managed_settings() reloaded
+    the file, read the CLEARED_SENTINEL, failed its numeric `> 0` gate, and skipped.  The
+    volume dropped and nothing in the product raised it back.
+
+    THE ORDERING RULE: state.json records the original strictly BEFORE Set Volume runs.
+    Ordering, not detection -- Shortcuts has no try/catch.  Pinned by
+    verify_capture_persistence().
+
+    THE REJECTED ALTERNATIVE: persisting in the outer `capture_g` arm.  It also runs on the
+    already-quiet path, where no Set Volume fires, so it would record a snapshot for a
+    change that never happened and a later CLOSE would drive volume to it -- overriding a
+    volume the user set by hand.  The save therefore sits inside the applying arm only, so
+    a persisted snapshot means exactly "a change is outstanding".  Resolves
+    16-RESEARCH.md Open Question 5.
+
+    save_state() takes its default source `State`, matching set_value()'s default target.
+    Naming "Reloaded State" would persist a dictionary that never received the capture --
+    the defect itself, pointed the other way (T-16-04).
+
+    The emitted Shortcuts comment below states Media-only scoping and never-increase.  That
+    is SAFE-02, it is still true, and this change does not touch it.  Nor does it touch the
+    condition-100 container gate or the numeric `> 0` capture gate (T-16-03).
+    """
     a = [comment("""Silence is reversible or message-only:
 - Capture Current Volume once when no snapshot exists.
 - Use Media volume only and never increase it.
@@ -625,14 +781,18 @@ def silence():
     a += [snapshot_if, action("is.workflow.actions.nothing"), otherwise(snapshot_g)]
     a += device_detail("Current Volume", "Captured Volume")
     capture_g, capture_if = if_block("Captured Volume", 2, number=0)
-    a += [capture_if, set_value("settings_snapshot.volume.original_value", variable("Captured Volume")),
-          set_value("settings_snapshot.volume.changed_at", variable("Now Epoch")),
-          set_value("settings_snapshot.volume.changed_by_session_id", variable("Session ID"))]
+    # PHASE 16 (16-04), D-02: the .changed_at and .changed_by_session_id writes that stood
+    # here are GONE.  See D02_REMOVED_SNAPSHOT_LEAVES and clear_snapshot()'s docstring for
+    # the decision; verify_no_removed_snapshot_leaf_reads() is what keeps the removal safe.
+    a += [capture_if, set_value("settings_snapshot.volume.original_value", variable("Captured Volume"))]
     target = number(0.10, "Silence Target")
     a += target
     quiet_g, quiet_if = if_block("Captured Volume", 1, number=variable("Silence Target"))
-    a += [quiet_if, action("is.workflow.actions.nothing"), otherwise(quiet_g),
-          set_media_volume(variable("Silence Target")), end_if(quiet_g), otherwise(capture_g),
+    a += [quiet_if, action("is.workflow.actions.nothing"), otherwise(quiet_g)]
+    # PHASE 16 (16-01): persist BEFORE the apply, and only on the arm that applies.  See
+    # this function's docstring for why the outer capture arm was rejected.
+    a += save_state()
+    a += [set_media_volume(variable("Silence Target")), end_if(quiet_g), otherwise(capture_g),
           alert("Silence", "Volume could not be captured, so nothing was changed."), end_if(capture_g),
           end_if(snapshot_g)]
     return a
@@ -2755,9 +2915,17 @@ def verify_list_item_wrappers(actions):
 #
 # This is a TEXT edit to the existing template action, not new actions, so it adds nothing
 # to the artifact and every breadcrumb keeps its build-i position.
+#
+# PHASE 16 (16-04), D-02 -- changed_at and changed_by_session_id are REMOVED from the seed.
+# Only LEAVES may go.  The settings_snapshot CONTAINER and both group sub-dictionaries stay,
+# and original_value stays seeded under each: clear_snapshot()'s docstring records the
+# cycle-10 finding that replacing a group with a string makes the next dotted read of
+# .original_value run against a string parent and hard-error.  Removing a leaf nothing reads
+# is safe; removing a group is that defect.
+D02_REMOVED_SNAPSHOT_LEAVES = ("changed_at", "changed_by_session_id")
 SNAPSHOT_SEED = {
-    "brightness": ("original_value", "changed_at", "changed_by_session_id"),
-    "volume": ("original_value", "changed_at", "changed_by_session_id"),
+    "brightness": ("original_value",),
+    "volume": ("original_value",),
 }
 SNAPSHOT_EMPTY = '"settings_snapshot": {},'
 
@@ -2775,7 +2943,31 @@ def _snapshot_seed_text(indent: str) -> str:
 # that a present-but-empty value passes `has any value`, so the leaf gate read TRUE and the
 # restore wrote an empty value into Set Brightness.  Recognise that shape and correct it in
 # place, so a re-run over a build-j tree converges instead of silently keeping "".
+#
+# PHASE 16 (16-04), D-02 -- THE DECISION ABOUT THIS CONSTANT, STATED RATHER THAN GUESSED.
+# It is a RECOGNISER, not a seed: it holds the literal text an OLD tree carries, so a re-run
+# detects that shape and corrects it in place.  Getting it wrong does not fail the build --
+# it silently stops old trees converging -- so the reasoning is recorded here.
+#
+# DECISION: the recogniser literal is LEFT EXACTLY AS IT WAS.  Build j is a finished
+# historical fact and it wrote THREE empty leaves; editing this string to two would simply
+# stop it matching the only shape it exists to match, and the build-j convergence path would
+# silently die.  Its REPLACEMENT text, by contrast, is derived from SNAPSHOT_SEED rather than
+# written out, so it followed the seed down to one leaf on its own -- which is the wanted
+# behaviour: a build-j tree now converges straight to the post-D-02 shape in a single step,
+# rather than to an intermediate shape a second recogniser would then have to re-correct.
+#
+# BUT THAT IS NOT SUFFICIENT ON ITS OWN, and this is the part a "just shrink SNAPSHOT_SEED"
+# reading misses.  main() re-parses its OWN previous output as SOURCE, and
+# seed_settings_snapshot() is idempotent on SNAPSHOT_EMPTY -- so on every tree built since
+# the seed first landed, the template is ALREADY seeded, SNAPSHOT_EMPTY is absent, the seeder
+# returns early, and shrinking SNAPSHOT_SEED would change NOTHING in the artifact.  The
+# already-shipped three-leaf SENTINEL shape needs its own recogniser, so D-02 gets one.
+# It is derived from the same two constants it must agree with, so it cannot drift from them.
 SNAPSHOT_SEEDED_EMPTY = '"original_value": "", "changed_at": "", "changed_by_session_id": ""'
+SNAPSHOT_SEEDED_D02 = ", ".join(
+    f'"{leaf}": "{CLEARED_SENTINEL}"'
+    for leaf in ("original_value",) + D02_REMOVED_SNAPSHOT_LEAVES)
 
 
 def _state_template(actions):
@@ -2824,11 +3016,17 @@ def _replace_in_token(inner: dict, old: str, new: str):
 def seed_settings_snapshot(actions):
     """Establish the complete settings_snapshot subtree in the bootstrap template."""
     _, inner = _state_template(actions)
+    current = ", ".join(f'"{leaf}": "{CLEARED_SENTINEL}"' for leaf in SNAPSHOT_SEED["brightness"])
     while SNAPSHOT_SEEDED_EMPTY in inner["string"]:
         # A build-j tree: right shape, wrong sentinel.  Correct the leaves in place.
-        _replace_in_token(inner, SNAPSHOT_SEEDED_EMPTY,
-                          ", ".join(f'"{leaf}": "{CLEARED_SENTINEL}"'
-                                    for leaf in SNAPSHOT_SEED["brightness"]))
+        # Post-D-02 this also drops the two retired leaves in the same step, because
+        # `current` is derived from SNAPSHOT_SEED -- see the note beside the constant.
+        _replace_in_token(inner, SNAPSHOT_SEEDED_EMPTY, current)
+    while SNAPSHOT_SEEDED_D02 in inner["string"]:
+        # A pre-D-02 tree: right container, right sentinel, two retired leaves.  Drop them
+        # in place.  Without this pass the removal would never reach the artifact at all:
+        # the template is already seeded, so the SNAPSHOT_EMPTY branch below returns early.
+        _replace_in_token(inner, SNAPSHOT_SEEDED_D02, current)
     if SNAPSHOT_EMPTY not in inner["string"]:
         return  # already seeded; verify_state_seed() proves it is the right shape
     line = next(text for text in inner["string"].splitlines() if SNAPSHOT_EMPTY in text)
@@ -3548,6 +3746,311 @@ def _tested_variable(parameters):
     return None
 
 
+def _save_source_dictionary(actions, index):
+    """The dictionary a documentpicker.save at `index` persists, or None.
+
+    DEPENDS ON save_state()'s EMITTED SHAPE and nothing else: it emits exactly
+    setitemname(WFName="state.json", WFInput=variable(<source>)) immediately followed by
+    documentpicker.save(WFInput=output(<that setitemname>, "Renamed Item")).  The save
+    action itself never names the dictionary -- it carries a reference to the RENAMED ITEM,
+    so the source is only recoverable by looking back at the setitemname that produced it.
+    Hence the three-action lookback: one is the emitted distance, and the slack absorbs a
+    normalisation pass inserting between them without silently returning None (which would
+    make every caller's "was it persisted?" test read false and the guard become
+    decoration).
+
+    This is the one genuinely new helper Phase 16 needed: no existing guard resolves a
+    save's SOURCE.  If save_state() ever stops emitting the setitemname, this returns None
+    everywhere and verify_capture_persistence() starts failing loudly -- which is the
+    correct direction for a safety guard to fail.
+    """
+    for candidate in range(index - 1, max(index - 4, -1), -1):
+        if actions[candidate].get("WFWorkflowActionIdentifier") != "is.workflow.actions.setitemname":
+            continue
+        parameters = actions[candidate].get("WFWorkflowActionParameters", {})
+        descriptor = (parameters.get("WFInput") or {}).get("Value")
+        if isinstance(descriptor, dict):
+            return descriptor.get("VariableName")
+        return None
+    return None
+
+
+def verify_capture_persistence(actions):
+    """Fail the build if a brightness/volume apply can be reached from an unpersisted capture.
+
+    THE DEFECT THIS CLOSES -- PHASE 16 (16-01), the phase's P0 and the live instance of
+    threat T-16-01.  dimming()/silence() captured the device's current reading and wrote it
+    to settings_snapshot.<group>.original_value in the `State` dictionary, then changed the
+    device.  But `State` is never saved again after the OPEN arm's last save (every save
+    from the CLOSE pipeline onward sources `Reloaded State`, a different dictionary), so
+    the captured original never reached state.json.  CLOSE and Emergency Restore reloaded
+    the file, found the CLEARED_SENTINEL in the leaf, failed restore_managed_settings()'s
+    numeric `> 0` gate, and skipped.  The screen dimmed and nothing in the product un-dimmed
+    it; SAFE-05's Emergency Restore was structurally incapable of restoring.
+
+    THE EVIDENCE: measured against the BUILT artifact, not inferred from the generator.
+    Before the fix this guard's own logic reported 24 offenders on the Dumb fork (applies at
+    1035, 1122, 1291, 1378, 1585, ...); after it, zero on both forks.
+
+    THE INVARIANT, stated over the APPLY rather than over the save: no
+    is.workflow.actions.setbrightness / setvolume may be reached, in action order, from a
+    setvalueforkey writing settings_snapshot.<group>.original_value unless a
+    documentpicker.save SOURCING THAT CAPTURE'S OWN DICTIONARY occurs between them, AT OR
+    ABOVE that capture's own arm depth.  Bookkeeping is keyed by (<group>, <dictionary>),
+    and each half of that key earns its place:
+
+      <dictionary> -- the capture is tracked into ANY dictionary, and only a save sourcing
+        the SAME one discharges it (16-REVIEW WR-05).  Tracking only `State` captures left
+        a capture into `Reloaded State` -- which clear_snapshot() already accepts as a
+        parameter -- invisible on both halves.  The save's source is resolved through
+        _save_source_dictionary(): a save of `Reloaded State` persists a dictionary that
+        never received a `State` capture, which is the exact mechanism of the defect
+        (T-16-04) and must NOT clear it.
+
+      <group> -- belongs to the APPLY side: it is what stops a brightness capture
+        arraigning a Set Volume.  It is NOT a barrier between the two on the clear side,
+        and an earlier revision of this docstring wrongly claimed it was (16-REVIEW
+        CR-01(b)).  A save writes the WHOLE dictionary, so it persists every snapshot leaf
+        in it at once and a volume save genuinely does vouch for a brightness capture in
+        the same dictionary.
+
+    What the CLEAR is additionally scoped by is ARM DEPTH: a save nested deeper than the
+    capture sits on a branch that need not run, so it cannot vouch for anything on the path
+    that reaches the apply.
+
+    WHY THE RESTORE SIDE IS NOT FALSELY FLAGGED, by construction rather than by exemption:
+    restore_managed_settings() also emits setbrightness/setvolume, fed by Restore Brightness
+    / Restore Volume.  Those are READ from the snapshot, never preceded by a capture write
+    on the same run of the walk, so no pending flag is outstanding when they are reached and
+    they are silently correct.  The pending flag is additionally dropped when the walk
+    leaves the conditional arm the capture was written into, so a capture on a branch that
+    was not taken cannot arraign an apply somewhere else entirely.
+
+    IF THIS FIRES, a future reader should conclude that a capture-and-restore path has been
+    reordered so the device is changed before the file records how to change it back -- and
+    that the correct response is to move the save earlier, never to relax the guard.  A
+    crash, a force-quit or a missed CLOSE between the two leaves the user dim or silent with
+    no recorded way back.
+    """
+    arms, offenders = _enclosing_if_arms(actions), []
+    pending = {}
+    for index, item in enumerate(actions):
+        identifier = item.get("WFWorkflowActionIdentifier")
+        parameters = item.get("WFWorkflowActionParameters", {})
+        # Drop any capture whose arm the walk has now left: it cannot reach an apply that
+        # is no longer inside it.
+        enclosing = {id(entry) for entry in arms[index]}
+        for group in [group for group, scope in pending.items() if not scope <= enclosing]:
+            del pending[group]
+        if identifier == "is.workflow.actions.setvalueforkey":
+            key = parameters.get("WFDictionaryKey")
+            if isinstance(key, str) and key.startswith(f"{SNAPSHOT_ROOT}.") \
+                    and key.endswith(".original_value"):
+                # ANY dictionary, not just `State` (16-REVIEW WR-05).  The flag used to be
+                # raised only for a capture whose WFDictionary named `State`, so a capture
+                # into `Reloaded State` -- a dictionary clear_snapshot() already accepts --
+                # was invisible on BOTH halves: untracked at the capture, and a matching
+                # `Reloaded State` save correctly cleared nothing because nothing was
+                # pending.  That is the same wrong-dictionary mechanism (T-16-04) that
+                # dimming()'s docstring calls load-bearing, and it was the one variant the
+                # guard could not see.  Tracking the dictionary NAME is what lets the clear
+                # below demand a save of that SAME dictionary.
+                target = (parameters.get("WFDictionary") or {}).get("Value", {})
+                dictionary = target.get("VariableName")
+                if isinstance(dictionary, str):
+                    pending[(key.split(".")[1], dictionary)] = enclosing
+        elif identifier == "is.workflow.actions.documentpicker.save":
+            saved = _save_source_dictionary(actions, index)
+            if isinstance(saved, str):
+                # TWO conditions, and each closes a separate hole.
+                #
+                # SAME DICTIONARY (16-REVIEW WR-05): a save persists the dictionary it
+                # sources and no other, so a `Reloaded State` save can never vouch for a
+                # capture written into `State` -- that is the defect (T-16-04) itself.
+                #
+                # ARM-SCOPED (16-REVIEW CR-01): an unscoped pending.clear() let a save
+                # nested DEEPER than the capture vouch for it -- and that save sits on a
+                # branch that need not run, so on the path that actually reaches the apply
+                # nothing was persisted.  A save may only discharge a capture when it is
+                # reached on every path from that capture to the apply, i.e. when the
+                # save's own enclosing IF arms are a SUBSET of the capture's.  (Given the
+                # drop above has already removed every capture whose arms the walk has
+                # left, `scope` is always a subset of `enclosing` here, so this reduces to
+                # equality -- stated as the subset test because that is the property being
+                # asserted.)
+                for entry in [(g, d) for (g, d), scope in pending.items()
+                              if d == saved and enclosing <= scope]:
+                    del pending[entry]
+        elif identifier in {"is.workflow.actions.setbrightness", "is.workflow.actions.setvolume"}:
+            group = "brightness" if identifier.endswith("setbrightness") else "volume"
+            stranded = sorted({d for g, d in pending if g == group})
+            if stranded:
+                offenders.append((index, f"applies {group} while the captured original is "
+                                         f"still only in the "
+                                         f"{' / '.join(stranded)} variable, never saved"))
+    if offenders:
+        raise SystemExit(
+            "a brightness/volume apply is reachable from an unpersisted capture -- the "
+            "device is changed before the file records how to change it back, so a crash, "
+            "force-quit or missed CLOSE strands the user dim or silent: "
+            + "; ".join(f"action {i}: {why}" for i, why in offenders[:5])
+            + f" ({len(offenders)} total)")
+
+
+def _is_removed_snapshot_leaf(key: str, source: str | None = None) -> bool:
+    """True if `key` names a leaf that D-02 retired from the shipped state shape.
+
+    Scoped rather than a bare name match: only a settings_snapshot-rooted dotted key, or
+    the bare leaf name read OUT OF STATE, counts.  A foreign dictionary that legitimately
+    owns its own `changed_at` must not be flagged -- a guard that cries wolf gets exempted,
+    and an exempted guard is not a guard.
+
+    THE `source` ARGUMENT EXISTS BECAUSE THAT PROMISE WAS BROKEN (16-REVIEW WR-02).  The
+    bare-leaf branch used to scope by KEY SHAPE alone, so `get_value("changed_at",
+    variable("Previous Session"))` -- a foreign dictionary reading its own field -- was
+    arraigned, and that false positive was measured to be the guard's ONLY behaviour not
+    already covered by verify_state_seed().  The one thing it added was the failure mode it
+    was written to avoid.  A bare leaf now counts only when it is read from State or
+    Reloaded State (STATE_READ_SOURCE_VARIABLES, the same dictionary-identity scoping
+    verify_state_seed() uses).  `source=None` means "not resolvable here", which is
+    conservative in the SILENT direction on purpose: a caller that cannot name the
+    dictionary must not guess that it is ours.
+
+    The DOTTED branch is deliberately NOT source-scoped: `settings_snapshot.<group>.<leaf>`
+    names this project's own shape wherever it is read from, so a read of it out of any
+    dictionary is a D-02 violation.
+    """
+    parts = key.split(".")
+    if parts[-1] not in D02_REMOVED_SNAPSHOT_LEAVES:
+        return False
+    if len(parts) == 1:
+        return source in STATE_READ_SOURCE_VARIABLES
+    return parts[0] == SNAPSHOT_ROOT
+
+
+def verify_no_removed_snapshot_leaf_reads(actions):
+    """Fail the build if any read of state targets a leaf that D-02 removed.
+
+    THE DEFECT THIS EXISTS TO PREVENT -- PHASE 16 (16-04), threat T-16-16.  A dotted read
+    of a MISSING segment is a HARD RUNTIME ERROR in this runtime ("could not evaluate the
+    key path"), measured on device and recorded in .claude/CLAUDE.md's verified runtime
+    semantics table.  Shortcuts has no try/catch, so such a read does not degrade -- it
+    aborts the run wherever it stands.  On the CLOSE path that means aborting BEFORE
+    restore_managed_settings(), which strands the user on a dimmed or silenced device: the
+    exact SAFE-01 consequence verify_active_session_seed() already records for its own
+    subtree.
+
+    WHY THIS GUARD IS THE REAL DELIVERABLE OF D-02.  Removing settings_snapshot.<group>.
+    changed_at and .changed_by_session_id from the writes, the bootstrap seed and the
+    phase5 assertion is safe ONLY because NOTHING READS THEM.  That is not a property of
+    the removal; it is a precondition of it, and it can be falsified later by a single
+    innocent-looking line in an unrelated plan.  This guard converts "nothing reads them
+    today" into "nothing may ever read them without failing the build first" -- so a future
+    plan that adds such a read is stopped at build time rather than shipping a hard error
+    to a phone.  If it fires, the correct conclusion is NOT to re-seed the leaf: it is that
+    the new read wants a field that was deliberately retired, and either the read or D-02
+    has to change, by a decision with an owner.
+
+    TWO SURFACES, and the honest statement of how they relate (16-REVIEW WR-02/IN-02
+    corrected an earlier comment here that had it backwards):
+      (1) read_value()'s getvalueforkey -> gettext -> setvariable chain, resolved by
+          REUSING _read_variable_keys().  It is not re-implemented here; the walk backwards
+          through the two output UUIDs lives in that helper and stays there.  Every key it
+          can report came from a getvalueforkey carrying that literal key, so surface (1)
+          is a STRICT SUBSET of surface (2) by construction -- it is NOT an independent
+          second net.  It is kept because it names the offending VARIABLE in the failure
+          message, which is what a reader needs in order to find the read; it carries no
+          source dictionary, so it is passed none and covers the dotted form only.
+      (2) every getvalueforkey's literal WFDictionaryKey, scanned flat and scoped by SOURCE
+          DICTIONARY.  This is the load-bearing surface: get_value() emits a getvalueforkey
+          that never terminates in a setvariable, so surface (1) cannot see it at all, and
+          only here is the source variable available to keep the bare-leaf branch off
+          foreign dictionaries.
+    A composite (text_token()-built) key bypasses BOTH, since both require isinstance(key,
+    str).  That is not an open hole: verify_state_seed()'s unresolvable-composite branch
+    raises for any composite read of State/Reloaded State outside the named exit_stats
+    prefixes, so such a read cannot reach a phone.
+    """
+    offenders = []
+    for name, keys in sorted(_read_variable_keys(actions).items(), key=lambda pair: str(pair[0])):
+        for key in sorted(key for key in keys if _is_removed_snapshot_leaf(key)):
+            offenders.append(f"variable {name!r} is read from {key!r}")
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.getvalueforkey":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        # Same measured accessor path verify_state_seed() uses to resolve a getvalueforkey's
+        # source dictionary.  Required by the bare-leaf branch -- see
+        # _is_removed_snapshot_leaf()'s docstring.
+        source = (parameters.get("WFInput") or {}).get("Value", {}).get("VariableName")
+        key = parameters.get("WFDictionaryKey")
+        if isinstance(key, str) and _is_removed_snapshot_leaf(key, source):
+            offenders.append(f"action {index} reads {key!r} from {source!r}")
+    if offenders:
+        raise SystemExit(
+            "a read targets a snapshot leaf that decision D-02 REMOVED from the state "
+            f"shape ({', '.join(D02_REMOVED_SNAPSHOT_LEAVES)}) -- the leaf is no longer "
+            "written or seeded, and a dotted read of a missing segment is a hard runtime "
+            "error with no try/catch to contain it, which on the CLOSE path aborts before "
+            "the brightness/volume restore and strands the user dim or silent: "
+            + "; ".join(offenders[:5])
+            + f" ({len(offenders)} total)")
+
+
+def verify_group_identifier_uniqueness(actions):
+    """Fail the build if two control-flow blocks share one GroupingIdentifier.
+
+    PHASE 16 (16-01).  THE DEFECT: gate A rejected the first rebuild after the
+    capture-persistence fix with "Duplicate GroupingIdentifier ... for start action at
+    index 4383; first seen at index 3672".  A preserved wrapper held a FROZEN
+    counter-derived identifier and a regenerated silence() block landed on the same
+    counter value -- full mechanism in stable_uid()'s docstring, fix in
+    gate_control_room_shownote().
+
+    Why a guard and not just the fix.  .claude/CLAUDE.md records a reused
+    GroupingIdentifier as the project's #1 documented real-world mistake: it silently
+    corrupts block boundaries at runtime.  The collision here was a LANDMINE, not a
+    one-off -- harmless until an unrelated change shifted the counter onto it, and
+    re-armable by any future phase that changes the action count.  Nothing in the
+    generator noticed; only the external validator did, and only because it happened to
+    check.  This guard moves the detection inside the build, where the derivation that
+    explains it lives.
+
+    THE INVARIANT: every GroupingIdentifier carries exactly one block start
+    (WFControlFlowMode 0) and exactly one block end (mode 2).  Middle arms (mode 1) are
+    deliberately uncounted -- an If has one Otherwise, but a Choose from Menu has one per
+    menu item, so a count there would be an arbitrary number rather than an invariant.
+
+    IF THIS FIRES, a reader should conclude that two structurally unrelated blocks are
+    being emitted with one identifier -- not that the count needs adjusting.  Find which
+    identifier, and whether one of the two sites is preserved across builds rather than
+    regenerated; if it is, it needs stable_uid(), not a new counter value.
+    """
+    starts, ends = {}, {}
+    for index, item in enumerate(actions):
+        parameters = item.get("WFWorkflowActionParameters", {})
+        group = parameters.get("GroupingIdentifier")
+        if group is None:
+            continue
+        mode = parameters.get("WFControlFlowMode")
+        if mode == 0:
+            starts.setdefault(group, []).append(index)
+        elif mode == 2:
+            ends.setdefault(group, []).append(index)
+    offenders = []
+    for group in sorted(set(starts) | set(ends)):
+        opened, closed = starts.get(group, []), ends.get(group, [])
+        if len(opened) != 1 or len(closed) != 1:
+            offenders.append((group, f"{len(opened)} start(s) at {opened} and "
+                                     f"{len(closed)} end(s) at {closed}"))
+    if offenders:
+        raise SystemExit(
+            "a GroupingIdentifier is not owned by exactly one control-flow block -- a "
+            "reused identifier silently corrupts block boundaries at runtime: "
+            + "; ".join(f"{group}: {why}" for group, why in offenders[:5])
+            + f" ({len(offenders)} total)")
+
+
 def verify_restore_gates(actions):
     """Fail the build if a brightness/volume write is not numerically gated.
 
@@ -4217,8 +4720,35 @@ def gate_control_room_shownote(actions):
             if (prior.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
                     and prior_parameters.get("WFControlFlowMode") == 0
                     and prior_parameters.get("WFCondition") == 2):
+                # PHASE 16 (16-01): re-stamp rather than merely returning.  A wrapper built
+                # before SHOWNOTE_GATE_GROUP existed carries a FROZEN counter-derived
+                # identifier, which collides the moment a regenerated block reaches that
+                # counter value -- the measured gate-A failure in stable_uid()'s docstring.
+                # Re-stamping converts an already-wrapped artifact in place and is itself
+                # idempotent: on every later build the three actions already hold the
+                # stable value and the writes are no-ops.
+                # Scope the re-stamp to THIS wrapper's own three actions, walking forward
+                # from the shownote to its End If.  A global "replace every action holding
+                # the stale identifier" is WRONG and was measured wrong: the stale value is
+                # duplicated precisely because an unrelated regenerated block already holds
+                # it, so a global pass re-stamps that block too and simply moves the
+                # collision onto the new identifier.
+                stale = prior_parameters.get("GroupingIdentifier")
+                if stale != SHOWNOTE_GATE_GROUP:
+                    prior_parameters["GroupingIdentifier"] = SHOWNOTE_GATE_GROUP
+                    for sibling in actions[index + 1:]:
+                        parameters = sibling.get("WFWorkflowActionParameters", {})
+                        if parameters.get("GroupingIdentifier") != stale:
+                            continue
+                        parameters["GroupingIdentifier"] = SHOWNOTE_GATE_GROUP
+                        if parameters.get("WFControlFlowMode") == 2:
+                            break
                 return
         gate_group, gate_if = if_block("Manual Show Note Requested", 2, number=0)
+        # Out of uid()'s counter sequence: this wrapper is PRESERVED across builds, so a
+        # positional identifier would freeze and later collide.  See stable_uid().
+        gate_group = SHOWNOTE_GATE_GROUP
+        gate_if["WFWorkflowActionParameters"]["GroupingIdentifier"] = gate_group
         # Authored here rather than left to main()'s auto-comment pass, so the emitted
         # plist carries the reason instead of the generic "Control-flow check" filler.
         gate_comment = comment(
@@ -4446,6 +4976,7 @@ def main():
     verify_conditional_inputs(actions)
     verify_conditional_action_string(actions)
     verify_list_item_wrappers(actions)
+    verify_group_identifier_uniqueness(actions)
     verify_numeric_operands(actions)
     verify_state_seed(actions)
     verify_pending_exit_seed(actions)
@@ -4453,6 +4984,8 @@ def main():
     verify_exit_events_seed(actions)
     verify_active_session_seed(actions)
     verify_restore_gates(actions)
+    verify_capture_persistence(actions)
+    verify_no_removed_snapshot_leaf_reads(actions)
     verify_sentinel_gates(actions)
     verify_compound_value_reads(actions)
     verify_router_shape(actions)

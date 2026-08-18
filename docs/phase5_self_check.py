@@ -104,8 +104,15 @@ def main() -> None:
     for marker in ("PHASE 5 PRIMITIVE DISPATCH", "PHASE 5 LIVE ICE REDIRECT", "PHASE 5 ICE EXPIRY",
                    "PHASE 5 RESTORE MANAGED SETTINGS", "PHASE 5 MANUAL EMERGENCY RESTORE"):
         require(marker in comments, f"missing semantic marker: {marker}")
+    # PHASE 16 (16-04), D-02: the two bare leaf names "changed_at" and
+    # "changed_by_session_id" stood in this tuple and are REMOVED.  They are written at zero
+    # sites and read at zero sites now; asserting their presence would assert against the
+    # build that produces the artifact this checker inspects.  The two DOTTED
+    # original_value keys and cooldown_until are retained deliberately -- original_value is
+    # the leaf every restore gate reads, and its absence from the bootstrap seed is the
+    # cycle-10 hard-error class.
     for key in ("settings_snapshot.brightness.original_value", "settings_snapshot.volume.original_value",
-                "changed_at", "changed_by_session_id", "cooldown_until"):
+                "cooldown_until"):
         require(key in text, f"missing state safety key: {key}")
     require("AXToggleColorFiltersIntent" not in text and "UAToggleColorFiltersIntent" not in text,
             "unsupported Color Filters action was emitted")
@@ -114,7 +121,34 @@ def main() -> None:
         if item["WFWorkflowActionIdentifier"] == "is.workflow.actions.setvolume":
             require(params.get("WFVolumeSetting") == "Media", "non-Media volume write")
         if item["WFWorkflowActionIdentifier"] == "is.workflow.actions.setbrightness":
-            require(params.get("WFBrightness") not in (0, "0", 0.0), "brightness may reach zero")
+            # PHASE 16 (plan 16-03).  What stood here was a value check forbidding a
+            # brightness operand of 0.  It encoded the lower-bound clause that user decision
+            # D-01 (LOCKED) retired -- cited, not quoted: it lived in BD-02's original
+            # Decision paragraph in docs/CAPABILITY-DECISIONS.md and in the canonical
+            # strategy's Sec 21.  Under D-01 the shipped dim target IS 0, so the old test
+            # asserted against the build that produced the artifact it inspects.
+            #
+            # THIS SITE IS THE PHASE'S KNOWN NON-LEXICAL ENCODING.  It carried none of the
+            # retired vocabulary -- measured 2026-08-18, a case-insensitive grep for every
+            # retired phrase over this whole file returned ZERO hits while this line was
+            # live.  No lexical gate can see it; only reading the code reaches it.  Plan
+            # 16-05's repo-scoped gate names this line as its known blind spot for exactly
+            # that reason, so nobody mistakes a green gate for proof the class is empty.
+            #
+            # WHAT REPLACES IT is the honest version of what it was reaching for: a
+            # brightness write must never be left to an unstated operand.  Per CAP-08
+            # (plan 16-02, simulator-measured) WFBrightness is OPTIONAL -- an ABSENT operand
+            # does not raise the unfilled-parameter error, it silently applies an
+            # unrequested 50% with no capture behind it.  That is a live SAFE-01 / CIRC-05
+            # hazard nothing else in docs/ pins.  The complementary direction -- that a
+            # variable-fed operand is numerically gated so the cleared sentinel or an empty
+            # read never reaches the write -- is already enforced from the generator side by
+            # verify_restore_gates(), so the two together cover the write without either
+            # one re-imposing a bound on its VALUE.
+            require("WFBrightness" in params,
+                    "a Set Brightness action ships with no WFBrightness operand; an absent "
+                    "operand silently applies a default brightness with no captured "
+                    "original to restore (CAP-08)")
 
     cooldown_index, cooldown = next(
         ((index, item) for index, item in enumerate(actions)

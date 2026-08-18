@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 13
-current_phase_name: Red-operator conditionals and the WFItems List wrapper
+current_phase: 16
+current_phase_name: Dimming and Silence as distinct device-proven Circles
 status: verification-deferred
 stopped_at: Phase 13 executed + code-reviewed + gap-closed; verification human_needed (25/27, 0 failed) — deferred to /gsd-verify-work 13, device-blocked (DIST-03). Phase 12 likewise deferred.
-last_updated: "2026-08-17T08:08:52.852Z"
-last_activity: 2026-08-17
-last_activity_desc: Phase 13 complete pending device UAT — code review found and fixed CR-01; both verification gaps closed
+last_updated: "2026-08-17T22:15:05.986Z"
+last_activity: 2026-08-18
+last_activity_desc: Phase 16 execution started
 progress:
   total_phases: 24
-  completed_phases: 9
-  total_plans: 46
-  completed_plans: 38
+  completed_phases: 10
+  total_plans: 52
+  completed_plans: 42
 ---
 
 # Project State
@@ -23,11 +23,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 13 — Red-operator conditionals and the WFItems List wrapper
+**Current focus:** Phase 16 — Dimming and Silence as distinct device-proven Circles
 
 ## Current Position
 
-Phase: 13 (Red-operator conditionals and the WFItems List wrapper) — VERIFICATION DEFERRED (device-blocked)
+Phase: 16 (Dimming and Silence as distinct device-proven Circles) — EXECUTING
 Plans: 4/4 complete; verifier 25/27, 0 failed; the 2 outstanding are device-gated and abstained
 
 **Phase 13 research rewrote the phase.** Donor 5 was decrypted for the first time and
@@ -78,12 +78,34 @@ Phase 13 (blank Lists, red operators) should land before Phase 19 so a blank Cir
 testing is a real finding rather than a known artifact.
 
 **Standing device backlog**, all blocked on DIST-03 and best run in one session:
-`10-UAT.md` (10 tests), `09-UAT.md` tests 2-12 (dimming/silence restore — the highest-risk
-untested path in the product), Phase 4 UAT tests 1 and 3-6, Phase 8's real-iPhone import, and
-Phase 19's full nine-Circle sweep. Report the opens-to-first-interruption count from
-`10-UAT.md` Test 2 — it decides whether Phase 10's raised entry thresholds need tuning.
+`16-UAT.md` (12 tests — dimming/silence capture-and-restore, **the highest-risk untested path
+in the product**, and the instrument that **supersedes `09-UAT.md`**; its single recorded pass
+does not carry forward, because plan 16-02 showed the coercion-chip gate carries no information
+at a direct Set-action parameter), `12-UAT.md` Test 3 (the same brightness/volume restore
+observation read from the SESS-07 side — run it once, record it in both files), `13-UAT.md`
+(6 tests), `10-UAT.md` (10 tests), Phase 4 UAT tests 1 and 3-6, Phase 8's real-iPhone import,
+Phase 18's locked-screen CLOSE investigation (which **owns** the screen-locked case; `16-UAT.md`
+hands it over by reference rather than duplicating it), and Phase 19's full nine-Circle sweep.
+Report the opens-to-first-interruption count from `10-UAT.md` Test 2 — it decides whether Phase
+10's raised entry thresholds need tuning. `16-UAT.md`'s header carries the batching table.
 
-Last activity: 2026-08-17 — Phase 13 executed, code-reviewed, gap-closed; awaiting device UAT
+**DIST-03's blocked REASON, re-measured 2026-08-18 (plan 16-06):** ~~`xcrun devicectl list
+devices` reports no connected devices~~ — that wording is **retired**, struck rather than
+deleted so the correction has something to point at. Measured at execution time: a **paired**
+iPhone 15 Pro (`iPhone16,1`) on **iOS 26.6**, `pairingState: paired`, **`tunnelState:
+unavailable`**, `transportType: none`; the `State` column reads `unavailable`. So a device is
+known but **there is no live tunnel and no active transport — no session to drive**, which is a
+different fact from "no device exists" and is recorded as the different fact it is. The reason
+has now moved twice: 2026-08-17 measured `tunnelState: disconnected` with `transport: wired`.
+**Always branch on `tunnelState` read from `--json-output`, never on the `State` column** —
+on 2026-08-17 the column read `available (paired)` while the tunnel was down. Two consequences
+worth carrying: `iPhone16,1` is **Apple-Intelligence-capable**, so this hardware can exercise
+the **Aware** fork when a session is arranged; and **iOS 26.6 is inside the declared `iOS 26.x`
+target**, so an observation on it is same-major-version evidence rather than an extrapolation.
+Personal Automations are user-created on the device regardless, so DIST-03 would gate this work
+even with a live tunnel.
+
+Last activity: 2026-08-18 — Phase 16 execution started
 
 Progress: [██████████] 100%
 
@@ -143,7 +165,8 @@ Progress: [██████████] 100%
 
 - Phase 9 added: Reintroduce and validate Dimming/Silence stateful restore on an experimental fork (this branch). Runs in parallel with, and does not reverse, the main-line brightness/volume cut in `.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md`. See `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md` for full context; `Donor 10.shortcut` (`.planning/debug/`) supplies the coercion-aggrandizement evidence needed to fix the 18 deferred sites.
 - [Phase 9]: Research corrected the site count from 18 to 28 (`setbrightness`=14, `setvolume`=14) — `docs/BUILD-NOTES.md`'s original citation of "§8" was itself wrong; the real table is `.planning/debug/HANDOFF.md` §8, now corrected there, in ROADMAP.md criterion 1, and in the todo. Donor 10 (decrypted) confirms the action/parameter identifiers but contains no variable-fed `WFBrightness`/`WFVolume` example, so the coercion shape for this exact parameter position remains analogy-only (`WFNumberContentItem`, unverified) pending an on-device visual check or fresh donor. See `09-RESEARCH.md`.
-- [Phase 9]: BD-02's "never zero, 10–15% band" brightness floor corrected — user-reported on-device observation is that iOS's practical brightness minimum is dim, not a literal black/unusable screen, so avoiding it was never itself the safety requirement. The safety mechanism is capture-and-restore reliability (Get Device Details → has-any-value guard → snapshot → restore on CLOSE/Emergency Restore), which BD-02 already specified and Phase 9 exists to prove under real failure modes. Scoped to this experimental fork only (`.claude/CLAUDE.md`, `docs/CAPABILITY-DECISIONS.md` BD-02 addendum, `.planning/ROADMAP.md` Phase 9 criterion 4) — main line's floor is untouched. Provisional until Phase 9's own on-device testing confirms it.
+- [Phase 9] — **⚠ SUPERSEDED IN PLACE 2026-08-18 by D-01; see the [Phase 16] entry immediately below, which is the current record. Retained, not deleted: this log's value is that it shows what was believed when.** BD-02's brightness floor clause corrected (the retired wording is cited, not restated) — user-reported on-device observation is that iOS's practical brightness minimum is dim, not a literal black/unusable screen, so avoiding it was never itself the safety requirement. The safety mechanism is capture-and-restore reliability (Get Device Details → has-any-value guard → snapshot → restore on CLOSE/Emergency Restore), which BD-02 already specified and Phase 9 exists to prove under real failure modes. *Three claims in this entry are now false on this branch:* that the correction is scoped to this experimental fork only, that the main line's floor is untouched, and that it is provisional.
+- [Phase 16]: **D-01 — the brightness floor is SETTLED ON THE MAIN LINE.** User decision, LOCKED 2026-08-17. `safety.brightness_floor` `0.10 → 0` and `safety.dim_target` `0.12 → 0` in both shipped forks — the target follows the floor down because a floor under an unchanged target would never bind. Plan **16-03** carried the code half (six code sites, including the emitted Shortcuts comment that shipped 11× per fork asserting a bound the same build set to zero); plan **16-05** carried the record half — 21 measured sites across nine files — and added `docs/retired_clause_check.py`, a repo-scoped gate that reports every surviving lexical occurrence with file and line. `PROSOCHE_Nine_Circles_Canonical_Strategy.md` is **frozen** as the original design input and is not edited; `docs/CAPABILITY-DECISIONS.md` BD-02's Supersession note records that §21's floor clause is superseded on main and is the authority where the two disagree. **The safety property is unchanged and was never the bound:** the original is captured **and durably persisted** before any change (made true by plan 16-01) and always restored. **Not settled by this decision:** the capture-and-restore loop is still device-unproven and the dim-not-black observation still rests on one unrepeated user report — both BLOCKED on DIST-03.
 
 - Phase 10 added: Ship-readiness remainder and UX-lite pass. **The brightness/volume MVP cut is cancelled and is NOT part of this phase** — Dimming and Silence stay, each as its own distinct Circle, with working brightness and volume capture-and-restore (user decision 2026-08-16, reaffirmed 2026-08-17). Consequences: the SAFE-05 conflict resolves rather than deferring to milestone close, and DEV-06 is live again rather than moot. Research (`10-RESEARCH.md`, 925 lines) was salvaged from an abandoned branch and moved into the phase directory rather than regenerated; its Finding 2 and Pitfalls 2–3 cover the cancelled cut and are superseded, the rest stands.
 - [Phase 10]: Circle 8 dispatching nothing (the `"Voice"` sequence entry matching no branch under condition-99 "contains") is a known open defect deliberately left for a later phase. Any sequence/dispatch checker added here must record the orphan rather than fail on it, and must not hard-code condition 99 or substring matching — BD-06 moves dispatch to condition 4 exact matching and abolishes combined entries.
@@ -261,9 +284,10 @@ Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 ### Blockers/Concerns
 
 - [Phase 1]: Four capability blockers are unresolved pending live on-device verification — grayscale/Color Filters availability, brightness/volume read-back, the `Use Model` On-Device pinning literal, and Notes actions on iOS. All downstream phases assume these get resolved (favorably or via documented fallback) in Phase 1.
-- DIST-03 real-iPhone import and first Manual UAT blocked: xcrun devicectl reports no connected devices.
-- Phase 9 Plan 02 Tasks 2-3 blocked: 09-UAT.md's 12 device-proving tests (coercion-chip gate, capture/restore, failure-mode trials, DEV-06 verdict) require a real Apple-Intelligence-capable iPhone on iOS 26.x. xcrun devicectl reports zero connected devices — same underlying blocker as DIST-03. Both re-signed .shortcut artifacts and the fully-authored 09-UAT.md are ready; resume via /gsd-verify-work 9 once a device is available.
-- DIST-03 — no iPhone connected. All ten Phase 10 device tests (.planning/phases/10-ship-readiness-remainder-and-ux-lite-pass/10-UAT.md) are outstanding with blank outcomes, as are Phase 9's UAT tests 2-12 and Phase 4's UAT tests 1 and 3-6. Everything Phase 10 shipped is structurally proven and behaviourally unproven.
+- **[Phase 16, 2026-08-18] DIST-03 — THE CURRENT RECORD. This entry supersedes the reason given in the three entries below it, which are retained as the record of what was measured when they were written.** Re-measured at plan 16-06 execution time: a **paired** iPhone 15 Pro (`iPhone16,1`) on **iOS 26.6**, `pairingState: paired`, **`tunnelState: unavailable`**, `transportType: none`, `State` column `unavailable`. **The blocker is real but its reason has changed: it is not that no device is known, it is that the known device has no live tunnel and no active transport — no session to drive.** The reason has moved twice now (2026-08-17 measured `tunnelState: disconnected`, `transport: wired`), which is why any executor must **branch on `tunnelState` read from `xcrun devicectl list devices --json-output`, never on the `State` column** — the column read `available (paired)` on 2026-08-17 while the tunnel was down. Recording "no devices found" today would be recording something false, which this project forbids exactly as firmly as a false pass. Outstanding and blocked on this: `16-UAT.md` (12 tests, all blank), `13-UAT.md` (6), `12-UAT.md` (incl. Test 3), `10-UAT.md` (10), Phase 4 tests 1 and 3-6, Phase 8's real-iPhone import, Phase 18's locked-screen investigation, Phase 19's nine-Circle sweep. **Everything Phase 16 shipped is structurally proven and behaviourally unproven** — the capture-and-restore loop has still never executed on hardware, and Emergency Restore has still never been tapped on a device.
+- ~~DIST-03 real-iPhone import and first Manual UAT blocked: xcrun devicectl reports no connected devices.~~ **[reason superseded 2026-08-18 — see the Phase 16 entry above; the import and first Manual UAT are still outstanding]**
+- Phase 9 Plan 02 Tasks 2-3 blocked: 09-UAT.md's 12 device-proving tests (coercion-chip gate, capture/restore, failure-mode trials, DEV-06 verdict) require a real Apple-Intelligence-capable iPhone on iOS 26.x. ~~xcrun devicectl reports zero connected devices~~ — **[reason superseded 2026-08-18, see above]**. Both re-signed .shortcut artifacts and the fully-authored 09-UAT.md are ready; resume via /gsd-verify-work 9 once a device is available. **[SUPERSEDED 2026-08-18 by Phase 16: `09-UAT.md` is superseded by `16-UAT.md`, which carries a build-identity header it lacks; its one recorded pass (the coercion-chip gate) does NOT carry forward, because plan 16-02 measured that the chip cannot discriminate at a direct Set-action parameter at all.]**
+- ~~DIST-03 — no iPhone connected.~~ **[reason superseded 2026-08-18, see above]** All ten Phase 10 device tests (.planning/phases/10-ship-readiness-remainder-and-ux-lite-pass/10-UAT.md) are outstanding with blank outcomes, as are Phase 9's UAT tests 2-12 (now carried by `16-UAT.md`) and Phase 4's UAT tests 1 and 3-6. Everything Phase 10 shipped is structurally proven and behaviourally unproven.
 - The repaired iOS 26 automation onboarding (quick task 260817-au7, docs/BUILD-NOTES.md §20) is correct as written but device-unproven end to end in this form. The INPUT PROBE proved the Text → Run Shortcut handoff mechanism, not these rendered steps; confirming them belongs with the outstanding device UAT.
 
 ### Quick Tasks Completed
@@ -293,6 +317,7 @@ Items acknowledged and carried forward from previous milestone close:
 |-------|-------|--------|
 | 12 | verification_deferred_human | /gsd-verify-work 12 |
 | 13 | verification_deferred_human | /gsd-verify-work 13 |
+| 16 | verification_deferred_human | /gsd-verify-work 16 |
 
 Phase 13's verifier returned `human_needed` at **25/27 must-haves verified, 0 failed**. The only two
 outstanding are device-gated and were correctly abstained rather than promoted on structural
@@ -319,6 +344,37 @@ assumption, and the JSON-null-leaf coercion assumption the option-a design choic
 but doesn't device-confirm). All 27 other must-haves verified; all 12 checkers + gate A×2 pass at HEAD.
 This mirrors Phase 10's precedent (DIST-03) — deferred, not treated as a gap, because no device is
 available to an autonomous run. Resume with `/gsd-verify-work 12` once an iPhone is connected.
+
+Phase 16's verifier returned `human_needed` at **73/81 must-haves verified, 8 abstained, 0 failed**.
+The eight are `verification: backstop` truths that need real hardware and were correctly abstained
+rather than promoted on structural evidence. `16-UAT.md` records 12 tests, 0 passed, all BLOCKED.
+
+**The DIST-03 reason is NOT "no devices found" — that phrasing is retired.** Measured three times
+this phase and it moved every time: session start returned no devices; planning measured
+`pairingState: paired` / `tunnelState: disconnected` / `transportType: wired`; plan 16-06 and an
+independent orchestrator re-check both measured `tunnelState: unavailable` / `transportType: none`.
+Current true reason: **a paired iPhone 15 Pro (`iPhone16,1`) on iOS 26.6 is known to the host, but
+there is no live tunnel and no transport, so there is no session to drive.** Any re-measurement MUST
+branch on `tunnelState` from `--json-output`, never on the `State` column, which prints
+`available (paired)` even with the tunnel down.
+
+**What IS proven, so a later reader does not re-derive it:** the Phase 9 persistence P0 is closed —
+22 exact `CAPTURE(State) → SAVE(source=State) → APPLY` triples per fork, covering all 11
+`primitive_dispatch()` renderings including the 9 MANUAL `Test a Circle` cases. Both LOCKED user
+decisions landed (D-01 floor and dim target both `0`; D-02 `changed_at` / `changed_by_session_id`
+removed at 44 write sites per fork, with a two-surface no-reader guard). 13 checkers green including
+the new `docs/retired_clause_check.py`; gate A clean on both forks; both artifacts re-signed and
+decrypt-verified byte-identical to source.
+
+**Two residual risks to hold when the session is arranged.** CAP-08 makes silent failure the default —
+`setbrightness.WFBrightness` is OPTIONAL and defaults to 50%, so an unresolved operand applies an
+unrequested 50% with no capture and no error; Test 1 must observe the *value applied*, never the
+absence of an error. And `dim_target = 0` ships on one unrepeated user report — D-01 is a settled
+*decision*, not a settled *device fact*.
+
+Batch the session: `16-UAT.md` shares its setup with `12-UAT.md` Test 3, Phase 18 (locked-screen
+CLOSE, which owns that case deliberately), Phase 19, `13-UAT.md` and `10-UAT.md`. Resume with
+`/gsd-verify-work 16`.
 
 ## Session Continuity
 

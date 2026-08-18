@@ -15,12 +15,15 @@ from build_state_engine import (
     normalise_output_names,
     normalise_string_envelopes,
     verify_active_session_seed,
+    verify_capture_persistence,
     verify_compound_value_reads,
     verify_conditional_action_string,
     verify_conditional_inputs,
     verify_dispatch_coverage,
     verify_exit_events_seed,
+    verify_group_identifier_uniqueness,
     verify_list_item_wrappers,
+    verify_no_removed_snapshot_leaf_reads,
     verify_numeric_operands,
     verify_output_names,
     verify_panic_escape_seed,
@@ -89,7 +92,14 @@ def set_var(name: str, value):
     return action("is.workflow.actions.setvariable", WFInput=value, WFVariableName=name)
 
 
-def if_block(name: str, condition: int, *, number=None, string=None, key="if"):
+def if_block(name: str, condition: int, *, number=None, string=None, key: str):
+    # `key` is REQUIRED (16-REVIEW WR-01).  It used to default to "if", so two call sites
+    # that both omitted it derived the SAME uid() and emitted two structurally unrelated
+    # blocks under one GroupingIdentifier -- .claude/CLAUDE.md's #1 documented real-world
+    # mistake, silently corrupting block boundaries at runtime.  Unlike Dumb's counter-based
+    # uid(), this fork's uid() is a name hash, so a repeated name is a guaranteed collision
+    # rather than an unlucky one.  A missing key is now a TypeError at author time; the
+    # build-time backstop is verify_group_identifier_uniqueness(), armed in main().
     group = uid(key)
     params = {"GroupingIdentifier": group, "WFControlFlowMode": 0, "WFCondition": condition,
               "WFInput": {"Type": "Variable", "Variable": variable(name)}}
@@ -388,6 +398,20 @@ def main() -> None:
     # future insertion puts over a sentinel-written key.  A brightness/volume write reached
     # with an empty value is a black screen, so this is asserted per fork, never inferred.
     verify_restore_gates(actions)
+    # PHASE 16 (16-01), same per-fork reasoning one axis over: Sentient inherits
+    # dimming()/silence() and the whole capture-persist-apply ordering from the built Dumb
+    # source, but a Sentient-only insertion between a capture and its apply would strand the
+    # user dim or silent with no recorded way back, and neither validator gate can see
+    # ordering.  Asserted per fork, never inferred from the Dumb run.
+    verify_capture_persistence(actions)
+    # PHASE 16 (16-04), D-02, same per-fork reasoning again.  Sentient inherits the reduced
+    # settings_snapshot shape from the built Dumb source rather than re-seeding it, so this
+    # asserts the fork added no read of a leaf D-02 retired.  A Sentient-ONLY read is exactly
+    # the case Dumb's own run cannot see: the Mirror's context window is assembled on this
+    # fork alone, and a dotted read of a removed leaf there is a hard runtime error that
+    # aborts before restore_managed_settings() and strands the Aware-fork user dim or silent.
+    # Asserted per fork, never inferred from the Dumb run.
+    verify_no_removed_snapshot_leaf_reads(actions)
     verify_sentinel_gates(actions)
     # Sentient inherits the router verbatim from the built Dumb source, but assert it here
     # too: an inserted Sentient block must never land between the OPEN/CLOSE tests and the
@@ -400,6 +424,19 @@ def main() -> None:
     # and the branches -- from the built Dumb source, so a fork that dropped or rewrote
     # either would produce a Circle that dispatches nothing, with no error anywhere.
     verify_dispatch_coverage(actions)
+    # PHASE 16 CODE REVIEW (WR-01).  Armed here for the first time: 16-01 created this guard
+    # FOR the GroupingIdentifier defect class and armed it on Dumb only, with no per-fork
+    # reasoning recorded either way -- an omission, not a decision.  It matters MORE here.
+    # Sentient's if_block() derives its group from uid(key), a uuid5 NAME HASH rather than
+    # Dumb's counter, so two call sites sharing a key collide DETERMINISTICALLY; the
+    # now-required `key` argument closes the default-"if" hole at author time and this
+    # closes it at build time for any other route to a repeated name. Measured 2026-08-18:
+    # 10 if_block() call sites on this fork, all with distinct explicit keys, and the built
+    # Aware artifact is clean -- so this is armed against the NEXT insertion, not a live
+    # defect. Asserted per fork, never inferred from the Dumb run: Sentient emits its own
+    # conditionals on top of the forked Dumb source, and a collision between a Sentient-only
+    # block and an inherited one exists on this artifact alone.
+    verify_group_identifier_uniqueness(actions)
     payload = plistlib.dumps(root, fmt=plistlib.FMT_XML, sort_keys=False)
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=TARGET.parent, delete=False) as tmp:

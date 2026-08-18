@@ -1,8 +1,60 @@
 # Shortcut Distribution Manifest
 
-**This table's six hash/size rows describe the phase 13 CODE-REVIEW re-sign (2026-08-17,
-CR-01), not the phase 13 plan 04 re-sign, not the phase 12 plan 05 refresh and not the phase 11
-plan 06 rebuild.** Plan 04's artifacts are superseded: they wrapped 44 attachment-free literal
+**This table's six hash/size rows describe the PHASE 16 re-sign (2026-08-18, plan 16-06),
+not the phase 13 CODE-REVIEW re-sign, not the phase 13 plan 04 re-sign, not the phase 12 plan
+05 refresh and not the phase 11 plan 06 rebuild.** Every paragraph below this one is retained
+as its own rebuild's record and is superseded by this one wherever the two conflict. This
+rebuild carries **three changes**, all of them in the capture-and-restore surface this phase
+exists to make real:
+
+1. **The capture-persistence fix (plan 16-01).** `dimming()` and `silence()` now write the
+   captured original to `state.json` **before** Set Brightness / Set Volume runs. Until this
+   build the capture was written into the `State` dictionary, which is never saved again after
+   the OPEN arm's last save — so it never reached disk, and CLOSE and Emergency Restore both
+   found the cleared sentinel, failed the `> 0` gate and skipped. **The screen dimmed and
+   nothing in the product un-dimmed it.** A build guard, `verify_capture_persistence`, pins the
+   ordering on both forks and a negative control proves it fires. +44 actions per fork.
+2. **The brightness floor and the dim target both reach zero (decision D-01, plan 16-03).**
+   `safety.brightness_floor` `0.10 → 0` and `safety.dim_target` `0.12 → 0`. The eleven-per-fork
+   emitted `comment()` actions that asserted a lower bound on the brightness write — 22 shipped
+   user-visible comment actions across the pair, asserting a bound this same build sets to zero
+   — were replaced by a statement of the property the build actually guarantees. Measured
+   11 → 0 per fork. `silence()`'s parallel SAFE-02 comment was deliberately **not** edited and
+   is asserted still present 11× per fork. `docs/CAPABILITY-DECISIONS.md` BD-02's Supersession
+   note is the authority; canonical strategy §21 is retained unmodified as the original design
+   input.
+3. **The two dead snapshot leaves are removed (decision D-02 / DEV-06, plan 16-04).**
+   `settings_snapshot.<group>.changed_at` and `.changed_by_session_id` had 44 writes per fork
+   and **zero** readers; both are gone from the writes, from the bootstrap seed and from the
+   phase5 assertion, and `verify_no_removed_snapshot_leaf_reads` fails any future build that
+   reads one. −88 actions per fork (each removed `set_value` also removes the `normalize_setters()`
+   rebind). `settings_snapshot`, both group sub-dictionaries and both `original_value` leaves
+   survive — only leaves were removed.
+
+Net action delta across the phase: **+44 − 88 = −44** per fork, 4346 → **4302** (Core) and
+4414 → **4370** (Aware), each confirmed on the **decrypted** payload rather than on `src/`.
+Both forks were regenerated in one pass after the provenance ancestor check passed, and the
+rebuild is byte-idempotent — a second consecutive build left `git status` empty, so these
+digests are reproducible rather than run-specific. **Gate A** (`--target-macos 26
+--target-platform all`) `Validation passed.` exit 0 on both forks before signing; **gate B**
+(`--target-macos 27 --target-platform all`) read standalone and advisorily per fork, reporting
+exactly the one permanent `WFCreateNoteInput` waiver each — at index **4148** (Core) and
+**4216** (Aware) — and nothing else. All thirteen `docs/*.py` checkers exit 0 at this commit,
+`manifest_check` included once this table was refreshed, and `docs/retired_clause_check.py` —
+new in plan 16-05 — among them. The superseded previous rows, retained so a reader can identify
+a build already on a device: **phase 13 CR-01** Core source/archive `2901248` bytes
+`c6270691…`, Core signed `233802` bytes `b07497ba…`, Aware source/archive `2937929` bytes
+`709f53f8…`, Aware signed `237842` bytes `212598cf…`.
+
+**⚠ Nothing in this rebuild has run on a real iPhone.** The capture-and-restore loop is now
+**structurally capable** of restoring and remains **behaviourally unproven** — see the closing
+`⚠` bullet and
+`.planning/phases/16-dimming-and-silence-as-distinct-device-proven-circles/16-UAT.md`, which is
+pinned to the two signed digests in the table below.
+
+**This table's six hash/size rows described the phase 13 CODE-REVIEW re-sign (2026-08-17,
+CR-01) until the phase 16 re-sign above superseded them.** Plan 04's artifacts are superseded:
+they wrapped 44 attachment-free literal
 rows per fork in the variable-row wrapper, a shape no donor exhibits, and the CR-01 fix moved
 those 44 rows to the bare `<string>` form both donors show. See the **Phase 13 code review**
 paragraph and the closing `⚠` bullet below. Every earlier paragraph in this file is retained
@@ -43,12 +95,12 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Core source | `src/PROSOCHE-Dumb.xml` | 2901248 | `c62706919f3fca4fc8f44f3361aeb0a60c85d22efa32b26b787f34f105353496` |
-| Core archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Core-220448.xml` | 2901248 | `c62706919f3fca4fc8f44f3361aeb0a60c85d22efa32b26b787f34f105353496` |
-| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 233802 | `b07497ba1a66506aaaa9c48134f463ceefeac7f4a656e86dad48b0a76414ac5b` |
-| Aware source | `src/PROSOCHE-Sentient.xml` | 2937929 | `709f53f88fef829a6e6af7187a656e8ea5a128f2a475656e44d18a2569f2d878` |
-| Aware archive | `artifacts/shortcuts/2026-08-17/PROSOCHĒ — Nine Circles — Aware-220500.xml` | 2937929 | `709f53f88fef829a6e6af7187a656e8ea5a128f2a475656e44d18a2569f2d878` |
-| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 237842 | `212598cff4dd349316aee93c872fb2fd2862eee11f0278d8d02f69a89f447533` |
+| Core source | `src/PROSOCHE-Dumb.xml` | 2854976 | `e2da2742e662263e972fb3621dec33fd965bdcfb21deb67a8e8bd3d1d6d4da29` |
+| Core archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Core-094139.xml` | 2854976 | `e2da2742e662263e972fb3621dec33fd965bdcfb21deb67a8e8bd3d1d6d4da29` |
+| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 230232 | `9b0f261488beb396d01f8cf63fc539d4ef1f25063ddf6baad8d5569a055a2e7c` |
+| Aware source | `src/PROSOCHE-Sentient.xml` | 2891657 | `b3f8b9cbbf85ca4a819279de65aa18891ac97f87c3acdfcb4052f16ceb548443` |
+| Aware archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Aware-094152.xml` | 2891657 | `b3f8b9cbbf85ca4a819279de65aa18891ac97f87c3acdfcb4052f16ceb548443` |
+| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 234623 | `1db5c1ef0cf50862128ad45686600be8f144b1d5b88661582f43f5a93c1d93b6` |
 
 **Re-archived and re-signed by the phase 13 CODE REVIEW, finding CR-01 (2026-08-17).** This is
 the record for the six rows in the table above; the plan-04 paragraph immediately below is its
@@ -428,6 +480,39 @@ and recomputes every size and hash above from the files themselves.
 > `.planning/phases/13-red-operator-conditionals-and-the-wfitems-list-wrapper/13-UAT.md` when a
 > device is available.
 >
-> **DIST-03 — device verification — remains OPEN.** `xcrun devicectl list devices` reports
-> no devices, so no criterion in either UAT file has been exercised. Nothing in this manifest
-> should be read as device evidence.
+> **⚠ This build additionally carries the PHASE 16 capture-persistence fix, a brightness floor
+> and dim target of zero, and the removal of two dead snapshot leaves — none of which has ever
+> run on a real iPhone, and it is the build you must re-import to get any of it.** The three
+> changes are enumerated in full in this file's leading paragraph. Two things about this
+> particular build deserve to be read before it is imported:
+>
+> **First, the defect it fixes is live on any device holding an earlier post-coercion-fix
+> build.** Since the phase 9 coercion fix merged, Dimming and Silence actually change the
+> device where they previously no-opped — but until this build the captured original never
+> reached disk, so **nothing in the product could put it back**. A phone that ran an earlier
+> build and reached Dimming or Silence is dim or quiet **right now** with no capture on disk,
+> and Emergency Restore cannot help it: it reads the same file and finds the same cleared
+> sentinel. That phone must be restored by hand in iOS Settings. This is stated as a hazard,
+> not as history.
+>
+> **Second, `safety.dim_target` is now `0`.** Dimming reaches the device's true minimum. The
+> user's on-device report is that iOS renders that dim rather than black, and decision D-01
+> accepts it on that basis — but **that report is unrepeated and this build has not tested
+> it**. The safety property was never the floor; it is capture-and-restore reliability, which
+> plan 16-01 made structurally real and which no run of this build has yet exercised on
+> hardware. Everything in this phase is **structurally proven and behaviourally unproven.**
+> Read `docs/BUILD-NOTES.md` §17 and §30, `docs/CAPABILITY-DECISIONS.md` BD-02, and run
+> `.planning/phases/16-dimming-and-silence-as-distinct-device-proven-circles/16-UAT.md` — which
+> is pinned to this table's two signed digests — when a device session can be arranged.
+>
+> **DIST-03 — device verification — remains OPEN, and its REASON was re-measured 2026-08-18.**
+> ~~`xcrun devicectl list devices` reports no devices~~ — that wording described an earlier
+> session and is **false as of this rebuild**; it is struck rather than deleted so the
+> correction has something to point at. Measured at this commit: a **paired** iPhone 15 Pro
+> (`iPhone16,1`) on **iOS 26.6**, `pairingState: paired`, **`tunnelState: unavailable`**,
+> `transportType: none`. The `State` column reads `unavailable`. So a device is known but there
+> is **no live tunnel and no active transport — no session to drive**, which is a different
+> fact from "no device exists" and is recorded as the different fact it is. Personal
+> Automations are user-created on the device regardless, so DIST-03 would gate this work even
+> with a live tunnel. No criterion in any UAT file has been exercised. **Nothing in this
+> manifest should be read as device evidence.**

@@ -140,15 +140,37 @@ execute Shortcuts itself.
   `99`) produces a `Note` output, and `shownote`/`appendnote` consume it as an ordinary
   `WFTextTokenAttachment`. No identifier appears in the plist at all. The generators already
   do this (`entity=variable("Control Room Note")`); keep it that way.
-- **The booted simulator cannot import a signed `.shortcut`.** Measured 2026-08-17 on
-  iPhone 17 Pro / iOS 26.5: `shortcuts://import-shortcut?url=…` rejects a plain HTTP URL
-  ("The shortcut URL provided was invalid" — it wants an iCloud link); the Files app never
-  surfaces "On My iPhone" even with files seeded into
-  `group.com.apple.FileProvider.LocalStorage` and a SpringBoard respring; Safari's download
-  banner does not respond to synthesized taps; iCloud Drive needs an Apple Account.
-  **Rung 2 therefore tests the *build* (validator, signer, byte shape), not the *import*.**
-  This narrows `.claude/CLAUDE.md` §9, which currently lists "import success" as rung-2.
-  Signing the simulator into an Apple Account would likely unlock it — a user decision.
+- **⚠ RETIRED 2026-08-18 — "the booted simulator cannot import a signed `.shortcut`."**
+  ~~Measured 2026-08-17 on iPhone 17 Pro / iOS 26.5… Rung 2 therefore tests the *build*, not
+  the *import*. This narrows `.claude/CLAUDE.md` §9, which currently lists "import success"
+  as rung-2.~~ **That generalisation was wrong**, and spike
+  `010-coercion-at-a-direct-set-parameter` measured the channel it was missing:
+
+  ```bash
+  open -a Simulator                                        # a simctl-booted sim has NO window until this
+  xcrun simctl openurl <udid> "file:///abs/path.shortcut"  # → the Shortcuts import sheet
+  # then ONE synthesized tap on "Add Shortcut" completes the import
+  ```
+
+  Spike 007 tried five channels and generalised from five failures. Its `file://` row was
+  measured against the **MCP simulator tool's** scheme allowlist, **not** against `simctl`.
+  `openurl` with a plain file URL never goes through the `shortcuts://` scheme at all. The
+  other four rows stand — `shortcuts://import-shortcut` genuinely wants an iCloud link
+  (re-measured with `file://` + `silent=true`: still rejected), Files never surfaces "On My
+  iPhone", Safari's download banner ignores synthesized taps, iCloud Drive needs an Apple
+  Account. **`.claude/CLAUDE.md` §9's original rung-2 row was right and needs no narrowing.**
+
+  Kept as a struck-through record rather than deleted, per this project's standing rule that
+  what was believed is worth its space — and because the *shape* of the error is the lesson:
+  **five failed channels are not "any channel."**
+
+- **Build simulator-bound probes with NO blocking UI.** Measured alongside the above:
+  `Show Alert` modals accept neither a synthesized tap nor a hardware Return, so a run wedges
+  permanently at the first one. Ordinary in-app UI (buttons, list scrolling) takes taps
+  normally. Let a clean completion or an error dialog be the signal instead. A breadcrumb
+  ladder is still right for a **device** probe, where a human can tap — so a probe aimed at
+  both may need two variants, and if it does, assert mechanically that they are identical on
+  whatever is actually under test.
 - **Silent automation probes:** any shortcut wired into a Personal Automation must have
   zero UI (no Show Result/Show Alert) — an automation that displays something interrupts
   the user on every trigger. Log to a Note instead.

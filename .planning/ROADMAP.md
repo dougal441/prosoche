@@ -141,7 +141,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
 
   1. The Knock shows a brief, non-lecturing interruption carrying real telemetry; Confession asks for a free-text intention and then a time boundary (2/5/10/15/custom).
-  2. Ash applies the audited visual-salience reduction or its documented Phase 1 fallback; Silence reduces media audio only when the original value can be captured and restored, otherwise degrades safely; Dimming reduces brightness only when reversible and never to zero, otherwise degrades safely — and across all primitives, brightness is never set to zero, volume is never increased or startling, any setting whose original value can't be captured is left unchanged, and pre-existing accessibility configuration is never blindly overridden.
+  2. Ash applies the audited visual-salience reduction or its documented Phase 1 fallback; Silence reduces media audio only when the original value can be captured and restored, otherwise degrades safely; Dimming reduces brightness only when reversible — only when the original has been captured **and durably persisted** — otherwise degrades safely; and across all primitives, every environmental change is captured and persisted before it is applied and is always restored, volume is never increased or startling, any setting whose original value can't be captured is left unchanged, and pre-existing accessibility configuration is never blindly overridden. (Both brightness clauses in this criterion were amended 2026-08-18 under user decision **D-01**; the volume and accessibility clauses are untouched — D-01 is brightness-only. Authority: `docs/CAPABILITY-DECISIONS.md` BD-02's Supersession note.)
   3. Exile routes immediately to an exit without a permission prompt and returning remains possible only as an affirmative act; the Mirror shows a precise behavioural reflection built only from recorded facts; the Voice speaks the Mirror at most once per run, only when voice is enabled, never at unsafe levels.
   4. Ice applies a deterministic cooldown whose duration varies by profile, decided entirely without the model; a target-app OPEN during Ice immediately ejects or redirects with remaining cooldown shown where practical; blocked attempts don't endlessly inflate Heat; Ice always expires, granting Heat relief and clearing the cooldown.
   5. Switching between Classic (default), Black Mirror, and Ambient sequences visibly changes which primitives each Circle invokes, including combined primitives, and a stronger Circle does not necessarily replay every weaker Circle's prompt; Emergency Restore clears cooldown, the active session, and recoverable brightness/volume/colour state, and is reachable even while in Ice.
@@ -284,10 +284,18 @@ this phase does not reverse that cut, which proceeds independently on main.
      overlapping sessions each either restore correctly or leave the user at a device-safe
      state — never silent-forever, never loud, and never *stuck* at a changed brightness/
      volume with no path back to the original value (§21, §32). Brightness may target the
-     device's true minimum, not an artificial 10–15% floor — corrected 2026-08-16 per
+     device's true minimum, not an artificial floor — corrected 2026-08-16 per
      user on-device report that the practical minimum is dim, not a literal black/unusable
      screen (see `docs/CAPABILITY-DECISIONS.md` BD-02 addendum); the safety mechanism is
      capture-and-restore reliability (criteria 2–3, 5), not floor avoidance.
+     **Amended 2026-08-18 (phase 16 plan 05).** This criterion was already substantively
+     right; what it lacked was the main-line settlement. The 2026-08-16 correction it cites
+     was *provisional* and scoped to the experimental fork when written. User decision
+     **D-01** (LOCKED 2026-08-17) settles it on the **main line** — `safety.brightness_floor`
+     and `safety.dim_target` are both `0`, shipped by plan 16-03. The criterion's meaning and
+     its 2026-08-16 date are unchanged; only its status is. Authority: BD-02's Supersession
+     note. The retired band wording was removed rather than restated, because a live file
+     that quotes the clause it retires still carries the clause.
 
   5. Emergency Restore recovers from every failure mode found above.
   6. DEV-06 (restore-ownership check) is re-evaluated live on this fork now that the cut
@@ -785,21 +793,63 @@ read nowhere. That was recorded MOOT conditional on the cut proceeding; the cut 
 so DEV-06 and the `Session ID` scope defect both return. `docs/BUILD-NOTES.md` §17 reserves
 the DEV-06 decision to the user — surface it, do not decide it unilaterally.
 
-**The brightness floor was corrected and needs a decision on main.** Phase 9 revised BD-02's
-"never zero, 10–15% band": the user's on-device observation is that iOS's practical minimum
-is dim, not black, so avoiding zero was never itself the safety property — capture-and-restore
-reliability is. That revision was scoped to the experimental fork; decide it for main here.
+**The brightness floor was corrected, and the main-line decision has been TAKEN.** Phase 9
+revised BD-02's floor clause — cited here, deliberately not restated, since a live file that
+reproduces the clause it retires still carries it. The user's on-device observation is that
+iOS's practical minimum is dim, not black, so avoiding a particular value was never itself the
+safety property — capture-and-restore reliability is. That revision was scoped to the
+experimental fork. **User decision D-01, LOCKED 2026-08-17, settles it on main:**
+`safety.brightness_floor` and `safety.dim_target` are both `0`. Plan **16-03** carried the code
+half (six code sites, incl. the emitted comment shipping 11× per fork); plan **16-05** carried
+the record half (21 measured record sites) and the repo-scoped gate. Authority:
+`docs/CAPABILITY-DECISIONS.md` BD-02's Supersession note.
 
 Distinct-Circle allocation is already settled by **BD-06 Decision 4** — do not re-cut it.
+
+**Planning correction (2026-08-17, plan-phase).** Research re-measured the artifact and found a P0
+this goal did not know about: **the capture is never persisted.** A captured
+`settings_snapshot.*.original_value` is written into the `State` dictionary, but the last `State`
+save on the OPEN arm precedes `universal_leaving()` and every later save writes `Reloaded State` —
+a different dictionary. CLOSE and Emergency Restore therefore find the cleared sentinel, fail the
+numeric gate, and skip. The screen dims and nothing in the product un-dims it. So "run `09-UAT.md`
+tests 2–12" is **not** the opening move: fix persistence first, re-sign, then instrument. `09-UAT.md`
+is superseded by `16-UAT.md` (no build identity, pre-rename fork names, test list predates the
+finding); its single recorded pass does not carry forward. Two user decisions locked before planning:
+**D-01** floor and dim target both to `0`; **D-02** remove `changed_at` / `changed_by_session_id`.
 
 **Severity:** major
 **Requirements**: CIRC-03, CIRC-05, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-03
 **Depends on:** Phase 12
-**Plans:** 0 plans
+**Plans:** 6/6 plans executed
 
 Plans:
+**Wave 1**
 
-- [ ] TBD (run /gsd-plan-phase 16 to break down)
+- [x] 16-01-PLAN.md — TRACER: persist the captured original before the device is changed; build guard + negative control (wave 1)
+- [x] 16-02-PLAN.md — Aimed rung-2 coercion probe at a direct Set parameter; disposition the 11 uncoerced volume sites (wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 16-03-PLAN.md — D-01 code half: floor and dim target to zero; six measured code sites, incl. the 11×/fork emitted comment (wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 16-04-PLAN.md — D-02: remove the two dead snapshot leaves as one coordinated change; no-reader guard (wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 16-05-PLAN.md — D-01 record half: 21 measured record sites, the BD-02 §21 supersession note, and the repo-scoped gate (wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 16-06-PLAN.md — Rebuild, re-sign, refresh manifest, author 16-UAT.md; device session BLOCKED-or-proceed (wave 5)
+
+**Split 2026-08-18, user decision.** D-01's blast radius was under-counted four times (6 → 8 → 9 →
+13+), so the record sweep was split out of 16-03 into its own plan: the safety-critical code fix
+does not wait on it. The canonical strategy is **frozen** — BD-02 records the supersession instead.
+The class is not purely lexical (`docs/phase5_self_check.py:117` encodes it as a value check with
+none of the vocabulary), so 16-05 pairs a repo-scoped gate with an explicit human-reasoned list and
+presents neither alone as complete.
 
 ### Phase 17: Exile split and exit-route deepening
 

@@ -201,7 +201,7 @@ sign-shortcut <file.xml> --name "<name>"
 | CAP-08 | Create Note (Control Room bootstrap) — per D-12/AUDIT-05 | `com.apple.mobilenotes.SharingExtension` (primary candidate, display name "Create Note"); `com.apple.Notes.CreateNoteFromMarkdownLinkAction` (markdown-specific alternate) | SharingExtension: `name` (`str`), `contents` (`AttributedString`), `folder` (`com_apple_notes_folder_entity`), `interpretAsMarkdown` (`bool`, On/Off), `OpenWhenRun` (`bool`, On/Off) — all 5 tagged `platforms: ["macOS 27"]` in `toolkit-v78-first-party-parameter-keys.json`. CreateNoteFromMarkdownLinkAction: absent from that same OS27 parameter-keys catalog entirely (`lookup_parameters` returns `None`); its content-parameter key is instead independently documented, twice, in prose: `BEST_PRACTICES.md` line 121 — "For `com.apple.Notes.CreateNoteFromMarkdownLinkAction`, use `markdownContents` (camelCase) as the content parameter key — this is the official AppIntent parameter name from the toolkit and the runtime-required key. Do not use `markdown` as a substitute; it can pass older validation but produce an empty note body at runtime." — and `CHANGELOG.md` line 447 — "Root cause: `com.apple.Notes.CreateNoteFromMarkdownLinkAction` uses `markdownContents` (camelCase) as its content parameter, not `markdown`. The validator accepts `markdown` but the runtime produces an empty note." | VERIFIED | Queried 2026-08-13. `com.apple.mobilenotes.SharingExtension` present in `toolkit-v63-tool-ids.json` and `toolkit-v78-tool-ids.json`, absent from `toolkit-v78-ios27-tool-ids.json` (same whole-namespace-absent pattern as CAP-07, non-disqualifying per §3). `lookup_parameters` returns the 5-parameter record above, tagged `platforms: ["macOS 27"]`. `com.apple.Notes.CreateNoteFromMarkdownLinkAction` is present **only** in `toolkit-v63-tool-ids.json` (True/False/False) — absent from the v78 generic snapshot too, not just the iOS-27-simulator one, meaning `lookup_parameters` returns `None` for it; its shape is recoverable only via the two independent prose citations named in the Parameter shape cell, the same CAP-S04/CAP-S05 prose-fills-JSON-gap pattern used elsewhere in this document. **This is the single highest-consequence authoring trap in the whole build**: `markdown` (the shorter, plausible-looking key) passes the Playground's own validator but produces an empty note body at runtime, per the CHANGELOG's explicit root-cause note; the camelCase key `markdownContents` is the runtime-correct one, recorded here verbatim. Since the Control Room Note is the entire onboarding surface, using the wrong key silently ships a Shortcut whose first-run note is empty — the user never sees the setup instructions at all. No divergence from `.planning/research/STACK.md` §3 row 5 on either identifier. | n/a for the identifier/parameter shape (VERIFIED). The runtime-correct content key is `markdownContents` (camelCase) on `com.apple.Notes.CreateNoteFromMarkdownLinkAction` — the failure mode of the wrong key (`markdown`) is a validator false-pass with an empty note body at runtime, not a build-time error, so `validate-shortcut` will not catch it; UA-01 (§6) must specifically confirm the Control Room Note actually contains its body text after import. `interpretAsMarkdown` on `com.apple.mobilenotes.SharingExtension` is an OS27-gated boolean and must not be set when validating at the iOS 26 target (per D-01); prefer `com.apple.Notes.CreateNoteFromMarkdownLinkAction` + `markdownContents` for the markdown-formatted Control Room body at the iOS 26 target rather than `SharingExtension` + `interpretAsMarkdown`. |
 | CAP-09 | Append to Note (Attention Ledger growth) — per D-12/AUDIT-05 | `is.workflow.actions.appendnote` | `operation` (`com_apple_notes_append_operation`, append or prepend), `entity` (`com_apple_notes_note_entity`), `text` (`AttributedString`), `section` (`str`), `ignoreWhitespace` (`bool`, On/Off), `interpretAsMarkdown` (`bool`, On/Off) — all 6 tagged `platforms: ["macOS 27"]` in `toolkit-v78-first-party-parameter-keys.json` | VERIFIED | Queried 2026-08-13. Present True/True/False across the three id snapshots (v78-ios27 absent — same whole-namespace gap as CAP-07/CAP-08). `lookup_parameters("is.workflow.actions.appendnote")` returns the 6-parameter record above. Independently cross-corroborated in `ACTIONS.md`'s "OS 26 to 27 Updated Parameters" table: `section`/`ignoreWhitespace`/`interpretAsMarkdown` documented as the new/updated parameters, `operation` (accepting `append` or `prepend`) as the pre-existing key. No divergence from `.planning/research/STACK.md` §3 row 5 on the identifier or parameter names. | n/a for the identifier/parameter shape (VERIFIED). `interpretAsMarkdown` is an OS27-gated boolean and must not be set when validating at the iOS 26 target (per D-01; `ACTIONS.md`'s own "OS 26 to 27 Updated Parameters" heading confirms this whole table's params are target-gated). This is the action the ATTENTION LEDGER's append-only growth (canonical strategy §5.4, PITFALLS D7) depends on; on-device confirmation of its own separate first-use permission prompt is tracked as UA-01 (§6). |
 | CAP-10 | Show / open a Note (Control Room manual-menu "Open Control Room") — per D-12/AUDIT-05 | `is.workflow.actions.shownote` | `target` (`com_apple_notes_note_entity`) — 1 parameter, tagged `platforms: ["macOS 27"]` in `toolkit-v78-first-party-parameter-keys.json` | VERIFIED | Queried 2026-08-13. Present True/True/False across the three id snapshots (same whole-namespace-absent-from-iOS27-sim pattern as CAP-07/08/09). `lookup_parameters("is.workflow.actions.shownote")` returns the single-parameter record above. `APPINTENTS.md` line 2726 independently confirms `is.workflow.actions.shownote` (alongside `appendnote` and `filter.notes`) is a WF-namespace action documented in `ACTIONS.md`, not an AppIntent — consistent classification, no divergence from `.planning/research/STACK.md` §3 row 5. | n/a for the identifier/parameter shape (VERIFIED). Group-wide note: `interpretAsMarkdown` — not a parameter of this action — is OS27-gated on the two Notes actions that do carry it (CAP-08, CAP-09) and must not be set at the iOS 26 target. This is the action the Control Room manual menu's "Open Control Room" item depends on; on-device confirmation is tracked as UA-01 (§6). |
-| CAP-16 | Set Brightness (Dimming, Primitive E) — per D-09/AUDIT-03 | `is.workflow.actions.setbrightness` | `WFBrightness` (`float`), `ShowWhenRun` (`bool`, On/Off) — both tagged `platforms: ["iOS 27 Simulator","macOS 27"]` in `toolkit-v78-first-party-parameter-keys.json` | VERIFIED | Queried 2026-08-13. `search_ids(["brightness"])` finds `is.workflow.actions.setbrightness` present True/True/True across all three id snapshots — the identifier is confirmed present in all three, including the iOS-27-Simulator snapshot (unlike every Notes action above), one of the few system-control actions in the whole audit with direct iOS-snapshot confirmation. `lookup_parameters` returns the 2-parameter record above, both tagged cross-platform `["iOS 27 Simulator","macOS 27"]` — confirmed provenance, not merely a macOS27-only tag. No divergence from `.planning/research/STACK.md` §3 row 8 or `.planning/research/ARCHITECTURE.md` §0's grounding audit on the Set side. | n/a. Section 21 floors, binding on Phase 5's CIRC-05: never set `WFBrightness` to `0`; the prototype dim value sits in the 10–15% band (`safety.brightness_floor`/`safety.dim_target` in `src/CONFIG-BLOCK.md` derive from this). See BD-02 for whether/when this action may fire at all. |
+| CAP-16 | Set Brightness (Dimming, Primitive E) — per D-09/AUDIT-03 | `is.workflow.actions.setbrightness` | `WFBrightness` (`float`), `ShowWhenRun` (`bool`, On/Off) — both tagged `platforms: ["iOS 27 Simulator","macOS 27"]` in `toolkit-v78-first-party-parameter-keys.json` | VERIFIED | Queried 2026-08-13. `search_ids(["brightness"])` finds `is.workflow.actions.setbrightness` present True/True/True across all three id snapshots — the identifier is confirmed present in all three, including the iOS-27-Simulator snapshot (unlike every Notes action above), one of the few system-control actions in the whole audit with direct iOS-snapshot confirmation. `lookup_parameters` returns the 2-parameter record above, both tagged cross-platform `["iOS 27 Simulator","macOS 27"]` — confirmed provenance, not merely a macOS27-only tag. No divergence from `.planning/research/STACK.md` §3 row 8 or `.planning/research/ARCHITECTURE.md` §0's grounding audit on the Set side. | n/a. **⚠ Section 21's floor clause is SUPERSEDED on the main line by D-01** (user decision LOCKED 2026-08-17, recorded 2026-08-18 by phase 16 plan 05; see §30 for the record and `docs/CAPABILITY-DECISIONS.md` BD-02's **Supersession** note, which is the governing authority). The bound this cell asserted until that date is **cited there and deliberately not restated here** — this cell declares itself binding on Phase 5's CIRC-05, so a stale instruction here is not a note, it is a live order. The canonical strategy is retained unmodified as the original design input. **What binds CIRC-05 now:** `WFBrightness` is written only when the original brightness has been captured **and durably persisted** first, and it is always restored; a run whose read returns nothing changes nothing (SAFE-03). The value written is `safety.dim_target` in `src/CONFIG-BLOCK.md`, at or above `safety.brightness_floor` — both `0` as shipped by plan 16-03 — a relationship `docs/environmental_restore_check.py` pins structurally. Per **CAP-08** the parameter is OPTIONAL, so the real hazard at this action is an **absent** `WFBrightness`, which silently applies an unrequested default with no captured original behind it; `docs/phase5_self_check.py` asserts its presence. See BD-02 for whether/when this action may fire at all. |
 | CAP-17 | Get current brightness (Dimming read-back) — per D-09/AUDIT-03 | `is.workflow.actions.getdevicedetails` (display name "Get Device Details") | `WFDeviceDetail` (enum type `getdevicedetails_wfdevice_detail`) — 1 parameter, tagged `platforms: ["iOS 27 Simulator","macOS 27"]`; enum case list (12 cases, same platform tag) inspected in `toolkit-v78-first-party-enum-cases.json` includes the literal case `Current Brightness` | VERIFIED | Per D-09, this was not concluded before Get Device Details was actually checked. Queried 2026-08-13: `search_ids(["devicedetails","getdevicedetails"])` finds `is.workflow.actions.getdevicedetails` present True/True/True across all three id snapshots, including the iOS-27-Simulator snapshot. `lookup_parameters("is.workflow.actions.getdevicedetails")` returns exactly one parameter, `WFDeviceDetail`, typed `getdevicedetails_wfdevice_detail`, cross-platform tagged. Per this plan's binding instruction, that enum type was then looked up directly: `lookup_enum("getdevicedetails_wfdevice_detail")` against `toolkit-v78-first-party-enum-cases.json` returns a populated 12-case list — `Device Name`, `Device Hostname`, `Device Model`, `Device Is Watch`, `System Version`, `System Build Number`, `Screen Width`, `Screen Height`, `Current Volume`, **`Current Brightness`**, `Current Appearance`, `Device Is Locked` — itself tagged `platforms: ["iOS 27 Simulator","macOS 27"]`. A brightness case **does exist** in this enum, read directly out of a named bundled JSON file, not asserted from external corroboration. This is a genuine, positive divergence from `.planning/research/STACK.md` §3 row 8, `.planning/research/PITFALLS.md` C1, and `.planning/research/ARCHITECTURE.md` §0/§9, all three of which report no brightness-readback evidence anywhere in the Playground bundle and treat Apple's "Get Device Details... now rounds numbers, including the current battery level, volume, and brightness" release-note claim as external-only, UNVERIFIED corroboration — none of those research passes queried `toolkit-v78-first-party-enum-cases.json` for this specific enum type, which the live re-run of the §3 recipe did. That external claim is recorded here for context only; the verdict rests on the local file evidence above, per the binding citation rule, not on the external claim. | n/a for the identifier/parameter shape and the confirmed literal case value (VERIFIED). One residual item this local toolchain cannot settle: the exact numeric format/range Get Device Details returns for `Current Brightness` (e.g. a 0–1 float matching `WFBrightness`'s own input range, versus a 0–100 percentage) is not documented anywhere in this bundle — no prose doc gives a Get Device Details output-format table. Phase 5 (BD-02, CIRC-05) must add a defensive numeric-sanity/coercion check around this read rather than assuming the two actions' numeric ranges match; a read that fails that sanity check is treated identically to a read with no value under the `settings_snapshot` has-any-value guard (`.planning/research/ARCHITECTURE.md` §9). |
 | CAP-18 | Set Volume (Silence, Primitive C) — per D-10/AUDIT-04 | `is.workflow.actions.setvolume` | `WFVolumeSetting` (enum type `setvolume_wfvolume_setting`, cases `Media`/`Ringtone`), `WFVolume` (`float`) — both tagged `platforms: ["iOS 27 Simulator","macOS 27"]` | VERIFIED | Queried 2026-08-13. `search_ids(["volume"])` finds `is.workflow.actions.setvolume` present True/True/True across all three id snapshots. `lookup_parameters("is.workflow.actions.setvolume")` returns a 2-parameter record — `WFVolumeSetting` (enum) and `WFVolume` (float) — both cross-platform tagged. `lookup_enum("setvolume_wfvolume_setting")` returns a 2-case list, `Media` and `Ringtone`, also cross-platform tagged. **This is a positive divergence from `.planning/research/STACK.md` §3 row 9**, which reported "No parameter schema for setvolume was found in the v78 catalog... treat the conventional WFVolume-style float parameter as the working assumption pending on-device confirmation" — the live re-run of the parameter-keys catalog finds a confirmed, cross-platform, two-key schema, not merely a plausible-assumption placeholder. `WFVolumeSetting = "Media"` is the literal that scopes the change to media-playback volume rather than the ringer (`Ringtone`). | n/a. Section 21/SAFE-02 constraints, binding on Phase 5's CIRC-03: `WFVolumeSetting` must always be `"Media"`, never `"Ringtone"`; volume is never increased and no startling output is produced — the target `WFVolume` value must never exceed the captured original. See BD-03 for the read-back-gated build form. |
 | CAP-19 | Get current volume (Silence read-back) — per D-10/AUDIT-04 | `is.workflow.actions.getdevicedetails` (same action as CAP-17) | `WFDeviceDetail` (enum type `getdevicedetails_wfdevice_detail`, the same 12-case list inspected for CAP-17) includes the literal case `Current Volume` | VERIFIED | Same Get Device Details investigation as CAP-17, recorded with the same discipline, queried 2026-08-13. `lookup_enum("getdevicedetails_wfdevice_detail")` against `toolkit-v78-first-party-enum-cases.json` — the same 12-case list inspected for CAP-17 — includes the literal case **`Current Volume`** (alongside `Current Brightness`), tagged `platforms: ["iOS 27 Simulator","macOS 27"]`. A volume case does exist in this enum, read directly out of the named file. Positive divergence from `.planning/research/STACK.md` §3 row 9, `.planning/research/PITFALLS.md` C2, and `.planning/research/ARCHITECTURE.md` §0/§9 for the same reason as CAP-17 — none queried this enum-cases file for this type. | n/a for the identifier/parameter shape and confirmed literal case value (VERIFIED). Same residual item as CAP-17: the exact numeric format/range of the `Current Volume` reading is not documented anywhere in this bundle and needs the same Phase 5 defensive numeric-sanity check before being fed back into `WFVolume`, under the same `settings_snapshot` has-any-value guard. |
@@ -1002,6 +1002,79 @@ alone.
 brightness/volume machinery might remove the mechanism and make the question moot — is void; the
 cut was cancelled, so DEV-06 and the `Session ID` scope defect are both live again. See §19.8. The
 decision itself is unchanged and still reserved to the user; this line points forward only.
+
+### Addendum (2026-08-18) — DEV-06 is CLOSED. Decided by the user: **REMOVAL.**
+
+Everything above this heading is the record as it stood, retained unedited. This addendum
+supersedes it on three points and closes the entry. Phase 16, plan 16-04, decision **D-02**
+(LOCKED, see `.planning/phases/16-*/16-CONTEXT.md`).
+
+**1. The site count above is STALE. Measured: 44 per fork, not 20.**
+
+Measured 2026-08-18 by a `plistlib` key scan over both built forks, immediately before the
+removal:
+
+| Leaf | Write sites, `Dumb` | Write sites, `Sentient` |
+|---|---:|---:|
+| `settings_snapshot.brightness.changed_at` | 11 | 11 |
+| `settings_snapshot.brightness.changed_by_session_id` | 11 | 11 |
+| `settings_snapshot.volume.changed_at` | 11 | 11 |
+| `settings_snapshot.volume.changed_by_session_id` | 11 | 11 |
+| **total** | **44** | **44** |
+
+Derivation: **2 leaves × 2 groups × 11 `primitive_dispatch()` renderings per fork = 44.** The
+eleven renderings are nine `Test a Circle` submenu cases plus the two in `universal_leaving()`.
+The figure is arrived at two independent ways — counted off the artifact and derived off the
+rendering count — and they agree exactly.
+
+This is the same staleness class as the 18-vs-28 correction `09-RESEARCH.md` had to make, and
+it has the same two causes: the `Test a Circle` unroll, and Phase 11's eleventh dispatch
+rendering. **A delta LARGER than the rendering count explains would mean a regression — a write
+emitted somewhere `primitive_dispatch()` does not reach — not a recount.**
+
+`§17`'s companion figure moves with it: "only 2 of the 20 … the other 18 record an empty owner"
+becomes **4 of 22 `changed_by_session_id` writes carried a real owner, and 18 recorded an empty
+one.** The "18" survives only by coincidence. Post-removal both figures are **0**, asserted
+against the rebuilt artifact.
+
+**2. DEV-06 — DECIDED by the user, 2026-08-18: drop the unused fields.**
+
+Of the four options `§17` put to the user, the second was chosen: **remove
+`changed_at` and `changed_by_session_id` entirely.** Ship-checklist item 4 is therefore
+**CLOSED**.
+
+The reasoning that made removal correct, recorded so it is not re-litigated:
+
+- **Zero consumers.** No read of state targeted either field anywhere in either fork — not
+  through `read_value()`'s chain, not through a flat `get_value()`.
+- **The two guards that actually protect the overlap case consult neither identity nor time.**
+  `if_block("<group> Snapshot", 100)` short-circuits a second session on snapshot *presence*, so
+  it never overwrites a live original; and every restore path gates on `original_value > 0`.
+  The exposure `§17` described as "narrow" was in fact already closed, by structure rather than
+  by ownership.
+- **A naive field-equality check would have been worse than nothing.** It would block the
+  legitimate case where the last CLOSE restores the first capture — the case `09-UAT.md`'s
+  first-principles write-up traced. Removal avoids introducing that defect at all.
+
+**3. Why the decision became timely exactly now — the consequence plan 16-01 created.**
+
+Before plan 16-01, these fields were written into the `State` dictionary, which is never saved
+after the OPEN arm's last save. They therefore **did not survive the run that wrote them**: any
+ownership check would have been reading a leaf no run could populate. 16-01 made the capture
+persist to `state.json` — which is precisely what would have given these fields consequences for
+the first time. Retiring dead state one plan *after* the fix that would have made it real is the
+whole reason D-02 sits in this phase and in this order.
+
+**Ship-checklist item 5 — the `Session ID` scope defect — is RESOLVED BY REMOVAL, not deferred.**
+Item 5 was conditional on item 4 resolving to "implement". It resolved to "remove", so there is
+no longer a field whose scope could be wrong. Both rows are closed; items 1–3 are unaffected.
+
+**What enforces this going forward.** The removal is safe **only because there is no reader** —
+`.claude/CLAUDE.md`'s verified runtime semantics make a dotted read of a missing segment a *hard*
+runtime error, and Shortcuts has no `try`/`catch`. `tools/build_state_engine.py::
+verify_no_removed_snapshot_leaf_reads` fails the build if any read ever targets one of these
+names again, on **both** forks, reusing the existing read-key index rather than a grep. It was
+demonstrated to fire on an injected read of each surface before being accepted (T-16-16).
 
 ---
 
@@ -2873,3 +2946,229 @@ import is `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` at 
 **`b07497ba…`** (the `365937e` re-ship); anything else is the wrong build. **SUPERSEDED:** an
 earlier revision of this sentence named `fe1bafdf…`, the `737ce07` build that carried the CR-01
 defect. Importing that one would test the defect rather than the fix.
+
+---
+
+## 29. Phase 16 — the coercion probe: a rung-2 channel opened, a chip gate retired, and an inference refuted (plan 16-02, 2026-08-18)
+
+**Channel: SIMULATOR, rung 2.** iPhone 17 Pro, iOS 26.5 (23F77), udid
+`79A84C29-DB62-40A2-AC3F-CCB5F8192F86`. **None of this is device evidence.** No physical-device
+tunnel was live; nothing below may be read as device ground truth, and every claim inside
+`.claude/CLAUDE.md` §9's "Rung 2's ceiling" is recorded **UNVERIFIED** regardless of how clean the
+observation looked. Spike: `.planning/spikes/010-coercion-at-a-direct-set-parameter/`, verdict
+**PARTIAL**, 14 archived screenshots.
+
+### 29.1 The rung-2 import channel is real — spike 007's claim is RETIRED
+
+`xcrun simctl openurl <udid> "file:///abs/path.shortcut"` renders the Shortcuts import sheet, and
+**one synthesized tap on "Add Shortcut" completes the import.** Measured this session; the editor
+opened on the imported probe. This closes `16-RESEARCH.md` assumption **A5** — the open half was
+whether the tap lands, and the answer is **yes**.
+
+Spike 007 recorded, and the `spike-findings-prosoche` skill repeated as a standing constraint, that
+*"the booted simulator cannot import a signed `.shortcut` through any channel."* That generalisation
+was drawn from five failed channels **without the sixth having been tried**: its `file://` row was
+measured against the **MCP simulator tool's scheme allowlist**, not against `simctl`. Every other row
+stands — re-measured 2026-08-18, `shortcuts://import-shortcut?url=file://…&silent=true` still returns
+*"Import Failed. The shortcut URL provided was invalid."*, because the `shortcuts://` scheme wants an
+iCloud link and rejects the URL before `silent=true` is ever consulted. `openurl` with a plain file
+URL does not go through that scheme at all.
+
+**Consequence for the ladder:** `.claude/CLAUDE.md` §9's original rung-2 row was **right**, and spike
+007's narrowing of it was wrong. Rung 2 reaches the **editor and the runtime**, not merely the build.
+Both §9 and the skill's `evidence-and-probes.md` are corrected accordingly, each citing
+`010-coercion-at-a-direct-set-parameter` as the measuring spike.
+
+Instrument, preserved with every dead end recorded so nobody re-walks them:
+`.planning/spikes/010-coercion-at-a-direct-set-parameter/drafts/sim_input.py`. What did **not** work:
+the tap tool §9 names (`mcp__Claude_Code_iOS_Simulator__control`) is not exposed to a subagent with a
+restricted tool list; `osascript` is refused assistive access (`-1728`); `idb` and `cliclick` are not
+installed; `simctl` has no tap verb. What works is `CGEventPost` straight to the window server, which
+needed no Accessibility grant. Two preconditions that cost real time: a `simctl`-booted simulator has
+**no on-screen window** until `open -a Simulator`, and coordinates must be **fractions of the device
+screen mapped through the window rect measured at run time**, never pixels.
+
+### 29.2 CAP-06 addendum — the chip gate CANNOT discriminate at a direct Set-action parameter
+
+§15 (CAP-06) established that operator/operand type validity is a UI-only signal: a numeric
+conditional on a text-typed operand renders **red**, is structurally valid in the file, and fails at
+runtime. That remains true **for conditionals**. It does **not** generalise to a direct Set-action
+parameter, and this is the finding that matters most here.
+
+Measured: a `Set Brightness` fed by a named variable **with** the Number coercion, and an otherwise
+identical one **without** it, **render identically** in the editor. Neither is red. Neither is
+degraded.
+
+The mechanism is simple once seen. A conditional's operator picker is populated **from the operand's
+static type**, so a mismatch has no case to render and the chip goes red. **`Set Brightness` has no
+operator picker.** There is nothing for a type mismatch to break in the UI.
+
+**Therefore `09-UAT.md` Test 1 — "the coercion chip does not render red" — is not a valid instrument
+for `WFBrightness`/`WFVolume`.** Its single recorded pass was never evidence about these sites. A
+green chip at a direct Set parameter is not weak evidence; it is **no** evidence. The uncoerced
+control leg is what exposed this — without it, "leg A rendered fine" would have been recorded as a
+pass, and the pass would have been vacuous.
+
+### 29.3 CAP-08 — `setbrightness.WFBrightness` is OPTIONAL and defaults to 50%
+
+**New capability finding, and it is a safety finding.** A `Set Brightness` authored with
+`WFBrightness` **entirely absent** renders in the editor as **"Set brightness to 50%"**. The
+parameter is optional with a default; omitting it does **not** produce an unfilled-parameter state.
+
+**Why this matters for SAFE-01 / CIRC-05.** If the coercion were ever wrong in a way that left the
+operand unresolved, `Set Brightness` would **not** halt and would **not** report *"Please choose a
+value for each parameter in this action."* It would silently apply **50% brightness** — an
+unrequested environmental change, with no capture, and no error to attribute it to. That is strictly
+worse than a halt, because Shortcuts has no try/catch and a halt is at least visible.
+
+**Direct requirement on the device instrument:** the eventual device test must verify **the
+brightness value actually applied**, not merely that the action did not error. A "no error" device
+result is fully consistent with a completely broken operand.
+
+### 29.4 The refuted inference — recorded because the refutation is the useful part
+
+Running the coerced leg on the simulator produced **"Could Not Run Set Brightness — There was a
+problem setting the brightness."** That is a **capability** failure, not the **parameter** failure
+§15 names as the signature of an operand-type defect. The tempting inference was: *Shortcuts got past
+parameter validation and reached the OS call, so the coerced operand resolved.*
+
+**A negative control refuted it.** A one-action probe holding a `Set Brightness` with no operand at
+all produced **the same** message. Both reach the OS call; both fail identically because the
+simulator has no backlight. **The channel cannot distinguish a resolved operand from an absent one**,
+so no run on a simulator can show whether the coerced operand was consumed.
+
+This is `.claude/CLAUDE.md`'s *"read the error text, not just the letter"* doing its job, and the
+negative-control idiom from `docs/phase9_self_check.py::negative_control()` doing its job. The
+control cost one small artifact and overturned the conclusion the spike was about to record.
+
+### 29.5 What this probe did NOT settle — the negative record, stated in full
+
+A record that only holds successes is not a record. **Recorded UNVERIFIED, all inside §9's rung-2
+ceiling:**
+
+- **Whether `Set Brightness` actually CONSUMES a Number-coerced named-variable operand at run time.**
+  `Set Brightness` cannot succeed on a simulator at all. This is not partially answered — it is
+  **untouched, and now known to be unreachable at rung 2**, which is worth recording because it means
+  no further simulator effort will help and the device session must carry it.
+- **Whether `Get Device Details → Current Brightness` returns a usable, correctly typed value on real
+  hardware.** The simulator returns **`0`**. Informative for probe design, **not promotable**.
+- **Real-hardware environmental behaviour** — whether the screen physically dims and un-dims, and
+  what `WFBrightness = 0.0` looks like. Untouched. Personal Automations, the Control Room Note path
+  and Apple Intelligence likewise untouched.
+
+**`WFNumberContentItem` is neither confirmed nor refuted at this position.** Nothing observed
+contradicts it; the fresh-donor protocol is **NOT** triggered; no replacement `CoercionItemClass`
+appears anywhere in the spike, and `drafts/assert_probe_shape.py` fails if one ever does.
+
+### 29.6 A2 CONFIRMED by name-scoped provenance — the 11 uncoerced `setvolume` sites are correct
+
+`16-RESEARCH.md` assumption **A2** is the claim the volume disposition rests on, and its own risk
+note said the existing evidence was a count, not a name-scoped check. Run properly, read-only, on
+both shipped forks (`drafts/audit_silence_target_sourcing.py`, 2026-08-18):
+
+| | Dumb | Sentient |
+|---|---:|---:|
+| `Set Variable "Silence Target"` assignments | **11** | **11** |
+| …**Number-sourced** (`is.workflow.actions.number`) | **11** | **11** |
+| …**not** Number-sourced | **0** | **0** |
+| `setvolume` sites | 15 | 15 |
+| …fed by `Silence Target` | **11** | **11** |
+| …carrying a coercion | 4 | 4 |
+
+**The arithmetic closes exactly:** 11 fed by `Silence Target` + 4 coerced = 15. The 11 uncoerced
+sites are precisely the 11 fed by a variable whose **every** definition is `number()`-sourced. **A2
+holds**, now on provenance rather than on a count.
+
+**The asymmetry — 15/15 brightness coerced vs 4/15 volume — is a SOURCING ARTIFACT, not a gap.**
+Brightness operands are `gettext`-sourced (`read_value()` = get + gettext → Text) and need the
+coercion; the silence target is `number()`-sourced and already Number-typed, so
+`normalise_numeric_operands()` correctly skips it via `_already_numeric()`, leaving device-proven
+sites byte-identical. The four coerced `setvolume` sites are the **restore** operands, which come
+back out of state through `read_value()` and are therefore Text — the same reason brightness needs
+it. `docs/environmental_restore_check.py` deliberately asserts **no** coercion count for exactly this
+reason and says so in its own comments.
+
+**Do not "fix" the asymmetry by pattern-matching brightness.** Coercing an already-Number operand
+would change 11 device-untested sites for no benefit, in a build whose safety argument rests on not
+disturbing what already works.
+
+The failure mode the name-scoped check rules out is one this project has already paid for: Shortcuts
+variables are global to a run and last-write-wins, so **one** text-sourced `Set Variable "Silence
+Target"` anywhere in either fork would poison all 11 operands, and the count-based `site_audit()`
+would still pass. That is exactly how `Circle Next` became mixed-typed and produced 30 real
+offenders (the CYCLE 14 note above `NUMERIC_OPERAND_FIELDS`).
+
+**This plan changed no generator or checker code.** `python3 docs/phase9_self_check.py` and
+`python3 docs/environmental_restore_check.py` both exit 0 — `site_audit: passed (30/30 sites audited,
+19 coerced, 11 correctly not)`. Acting on the probe's verdict in the generator belongs to a later
+phase, with its own guard.
+
+### 29.7 Free-ride — spike 007 resolved, PARTIAL → VALIDATED
+
+The channel was open and the recording duty applies to whatever is observed, so spike 007's
+still-unrun `App Picker Probe` was imported and inspected. Recorded in **spike 007**; summarised here
+because leg E is a general lesson about fabricated values, which is this project's central discipline.
+
+| leg | authored | renders as |
+|---|---|---|
+| A | Calendar, donor-exact complete descriptor | **"Open [Calendar]"** — normal, control passes |
+| B | Reminders — **first-party, INSTALLED**, `WFSelectedApp` **omitted** | **"Open [App]"** — EMPTY |
+| C | Contacts — correct bundle id, **fabricated** name + nonsense team id | **"Open [ZZZ WRONG NAME ZZZ]"** — the editor **trusts the stored Name** and never re-resolves it |
+| D | Instagram — third-party, not installed, bare identifier | **"Open [App]"** — empty, identical to B |
+| E | TikTok — third-party, not installed, **fabricated** descriptor | **"Open [AirDrop]"** in **RED** — mis-resolved to a different, real app |
+
+**An unresolvable picker renders silently EMPTY, and a fabricated one renders silently WRONG.**
+Nothing fails at import; nothing warns. Leg E produces a confident, fully-populated chip naming an app
+the author never mentioned. That is the silent-wrong-behaviour class the do-not-fabricate rule exists
+to prevent, now demonstrated end to end rather than argued — and it generalises spike 005's lesson
+from parameter literals to **entity descriptors**: a plausible-looking fabricated descriptor is not a
+degraded correct one, it is a *different* one.
+
+**Leg B is the one that touches this project's code:** `WFAppIdentifier` alone is **not** sufficient
+even for an installed first-party app. **PROSOCHĒ is unaffected** — `open_app()` emits the full
+`WFSelectedApp` triple for all six apps, which is leg A's shape exactly — but spike 006's Class-A
+verdict for `Open App` holds **because the descriptor is written**, not because the bundle id would
+have carried it. Leg C adds the cost of a wrong Name: the editor would display it indefinitely.
+
+**Still not settled:** launch behaviour. Every observation is authoring-time render, which is what the
+probe was built for. What legs D and E do when actually launched is untouched, and is off PROSOCHĒ's
+critical path.
+---
+
+## 30. Phase 16 — D-01 recorded: CAP-16's Fallback cell stops asserting a bound (plan 16-05, 2026-08-18)
+
+**What changed.** CAP-16's `Fallback` cell in §4 asserted a lower bound on the `WFBrightness` write and
+declared itself **binding on Phase 5's CIRC-05**. `safety.brightness_floor` and `safety.dim_target` are
+both `0` in both shipped forks as of plan 16-03, so that cell had become an instruction to build
+something the build does not do. It is corrected in place.
+
+**The retired clause is CITED, never restated — and that is a mechanical requirement, not a stylistic
+one.** `docs/retired_clause_check.py` (new in this plan) greps live files for the retired vocabulary and
+fails on every survivor. A supersession note that reproduces the clause it retires *is* a survivor: the
+false assertion is still sitting in the file, now wearing a correction's clothes. Where the clause lived
+is recorded — BD-02's original Decision paragraph in `docs/CAPABILITY-DECISIONS.md`, and canonical
+strategy §21 — and that is the whole record anyone needs to follow it.
+
+**The canonical strategy is FROZEN and was not edited.** `PROSOCHE_Nine_Circles_Canonical_Strategy.md`
+is a historical design input, not a living spec (user decision, 2026-08-18). §21's floor clause stays
+exactly as written there. `docs/CAPABILITY-DECISIONS.md` BD-02's **Supersession** note carries the
+correction instead and is **the authority where the two disagree**. That note is load-bearing rather
+than decorative: three amended sites across the repo keep citing §21 as their authority — both `safety`
+rows in `src/CONFIG-BLOCK.md`, the CAP-16 cell above, and the Set Brightness capability-audit row in
+`.claude/CLAUDE.md` — and without it each reads as amended text pointing at an unamended source.
+
+**What binds CIRC-05 now.** The property, not a value: the original brightness is captured **and
+durably persisted** before any change and is always restored; a run whose read returns nothing changes
+nothing. The durable-persistence half became true in plan 16-01 — before it, the capture was written
+into a dictionary that was never saved, so the property could not have been satisfied by any build.
+That is what makes this restatement a correction rather than a weakening.
+
+**Per CAP-08 the hazard at this action moved rather than disappeared.** `WFBrightness` is OPTIONAL
+(simulator-measured, plan 16-02): an **absent** operand does not raise the unfilled-parameter error, it
+silently applies an unrequested default with no captured original behind it. `docs/phase5_self_check.py`
+asserts the operand's presence — the assertion plan 16-03 put in place of the retired value check, which
+was the one site in the whole class that carried **none** of the retired vocabulary and could only ever
+have been found by reading the code.
+
+**Scope.** Brightness only. §17's DEV-06 record (closed by plan 16-04) is untouched, `allow_volume_increase`
+stays `false`, and Silence's Media-only scoping stands — SAFE-02 is unchanged by D-01.
