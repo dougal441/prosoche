@@ -188,6 +188,18 @@ ALLOWED_PREFIXES: tuple[tuple[str, str], ...] = (
         "and .claude/CLAUDE.md -- all of which this gate DOES walk.",
     ),
     (
+        ".claude/worktrees/",
+        "Nested git worktrees. A worktree is a COMPLETE second checkout of this same repo "
+        "living inside the main one, so every path under here is a duplicate of a file the "
+        "walk already visits at its real location -- including other branches' copies of the "
+        "very phase records TIER 1 already excludes. Without this entry the gate reports "
+        "~1763 occurrences across ~231 files when run from the main checkout while reporting "
+        "0 from inside a worktree, which is not a finding about this repo's authority "
+        "documents; it is the walk descending into copies of itself. Measured 2026-08-18, "
+        "phase 16 post-merge. These directories are transient and are not source of truth: "
+        "the authority copy of every file here is walked at its own path.",
+    ),
+    (
         ".planning/debug/resolved/",
         "Closed debug sessions: a record of what was diagnosed and when. Rewriting a "
         "resolved session destroys the audit trail that makes the diagnosis reviewable.",
