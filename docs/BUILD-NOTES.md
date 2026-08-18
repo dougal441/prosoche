@@ -3598,3 +3598,271 @@ per OPEN-arm rendering; the count is derived at build time and in both checkers 
 pinned; no identifier is shared between them; the nine MANUAL-arm markers carry no model call;
 both forks pass gate A; and the Aware container decrypts to an action array equal to its source
 with both model actions carrying the pinned on-device literal.
+
+## 34. Phase 11 — the two interim stand-ins in force, and one review item already closed elsewhere (plan 11-10, 2026-08-18)
+
+Plan 11-02 carried a prohibition, and this section discharges it as written rather than amending
+it. Verbatim:
+
+> MUST NOT present an interim stand-in as the designed final behaviour: the Circle-8 branch
+> reusing `mirror_and_voice()` and `Eject` occupying Circle 6 in all three sequences are both
+> temporary, and each must be named as interim in the generator's own comment text **and in
+> `docs/BUILD-NOTES.md`**, with the phase that replaces it.
+
+Both were recorded in the generator and in `src/CONFIG-BLOCK.md`. Neither was in **this** file —
+measured 2026-08-18 before this edit, `grep -c 'Eject' docs/BUILD-NOTES.md` returned **0**, and
+`Loud Mirror` appeared only as a count inside an evidence table, never as an interim with a
+replacing phase. The prohibition names a specific file; the correct response is to write the
+record there, not to widen the prohibition to accept the two locations that already had it.
+
+**Each interim now has three records that agree, and each names the other two**, so a reader who
+finds any one of them can reach the rest:
+
+| Interim | In the generator | In the config mirror | Here |
+|---|---|---|---|
+| Circle 8 — `Loud Mirror` | `primitive_dispatch()`, the comment immediately above the branch tuple | `src/CONFIG-BLOCK.md`, second bullet under the Config JSON literal heading | below |
+| Circle 6 — `Eject` | the same `primitive_dispatch()` tuple, which emits no `Redirect` branch at all | `src/CONFIG-BLOCK.md`, first bullet under the same heading | below |
+
+### Circle 8 — `Loud Mirror` dispatches `mirror_and_voice()`, the Mirror implementation
+
+**What ships today.** `primitive_dispatch()`'s branch tuple maps both `"Mirror"` and
+`"Loud Mirror"` to the same Python function, `mirror_and_voice()`. Circle 8 is a real dispatch
+that renders a real primitive — it is not dead, and it is not the designed one.
+
+**What BD-06 specifies.** Circle 8 is **Voice**: the spoken address is *the* primitive, not an
+optional embellishment on a shown text. Circle 7's Mirror shows the text and speaks it only when
+`voice_enabled`; Circle 8's escalation is that the phone talks to you.
+
+**Why the stand-in exists rather than nothing.** `verify_dispatch_coverage()` — armed in both
+builders by plan 11-02 — fails the build on any dispatch branch no sequence names **and** on any
+sequence entry that reaches no branch. Emitting nothing for Circle 8 would therefore have made
+the coverage guard unarmable in the very commit that introduced it, and the guard was the point:
+Circle 8 had shipped **dead for four phases** precisely because nothing could see an undispatched
+name. `mirror_and_voice()` was chosen because it already carries the once-per-run and
+voice-enabled gates CIRC-08 requires, so the stand-in is a correct primitive in the wrong slot
+rather than a placeholder.
+
+**Replaced by Phase 15** ("Circle 8 — the Voice primitive"). Concretely, per its ROADMAP entry:
+Phase 15 first *decides and records* the semantics — whether `voice_enabled = 0` degrades Circle
+8 to a Mirror-equivalent alert or skips it entirely is a product decision, not an implementation
+detail — then emits a real Voice branch, either by giving `mirror_and_voice()` a mode parameter
+or by splitting it into `mirror()` and `voice()` over a shared template selector. It must also
+resolve the `Spoken This Run` guard, which today suppresses Circle 8's utterance outright if
+Mirror already spoke in the same run.
+
+### Circle 6 — `Eject` occupies the slot in all three sequences
+
+**What ships today.** `Classic[5]`, `BlackMirror[5]` and `Ambient[5]` all hold `Eject`.
+`Redirect` appears nowhere in the artifact: not in a sequence, not as a dispatch branch.
+
+**What BD-06 specifies.** Circle 6 belongs to `Redirect` in `Classic` and `Ambient`, and to
+`Eject` **only** in `BlackMirror`. `Eject` is the straight ejection — immediate, no menu, Home
+Screen — and its virtue is that it is instant and cannot be negotiated with. `Redirect` is the
+*routed* ejection: it lands the user in a deterministically selected exit, reusing `select_exit()`
+and `record_exit_and_route()` unchanged so the involuntary path records its exit, captures its
+return-time sample, and feeds the same learning loop as the voluntary one.
+
+**Why the stand-in exists rather than nothing.** The same coverage guard, from the other
+direction. `Redirect` has no implementation, and a branch no sequence names is a build failure —
+so a `Redirect` branch cannot be emitted before a sequence can name it, and a sequence cannot
+name it before it exists. Holding `Eject` in the slot keeps all three sequences dispatchable and
+the guard hard.
+
+**Replaced by Phase 17** ("Exile split and exit-route deepening"). Concretely: **Phase 17 flips
+exactly two cells** — `Classic[5]` and `Ambient[5]`, `Eject` → `Redirect` — alongside emitting the
+`Redirect` branch itself. `BlackMirror[5]` is already correct and does not move. Phase 17 has
+Phase 12 as a hard prerequisite (`exit_events` sits directly on `record_exit_and_route()`).
+
+**Neither is a settled decision, and neither is a defect.** Both are deliberate intermediate
+states with a named exit. What would be a defect is a later reader mistaking either for the
+designed behaviour and planning around it — which is the repudiation threat this record closes.
+
+### One inherited review item was already closed, by a different phase, for a better reason
+
+`11-REVIEW.md`'s **WR-03** flagged `docs/phase5_self_check.py`'s brightness assertion as
+unsatisfiable — a scalar value comparison against an operand that is always a variable descriptor
+by construction. **That item is closed, and it was not closed by this gap-closure set.** Phase 16
+(plans 16-02 and 16-03) replaced it, independently and for reasons of its own.
+
+What stands there now tests **operand presence** — `"WFBrightness" in params` — not a numeric
+band, and its comment cites **CAP-08**'s simulator-measured finding that `WFBrightness` is
+OPTIONAL: an **absent** operand does not raise the unfilled-parameter error, it silently applies
+an unrequested 50% with no captured original behind it. The retired assertion had encoded the
+lower-bound clause that decision **D-01** retired, so under D-01's shipped dim target of `0` it
+had begun asserting against the very build that produces the artifact it inspects.
+
+This is a **different and better-evidenced** fix than the one plan 11-10 originally proposed
+(which would have tested for a variable descriptor rather than a literal), and it closes the same
+finding. Plan 11-10 therefore **read the file and changed nothing in it** — `git diff --stat --
+docs/phase5_self_check.py` is empty for the whole plan. Recorded here so a future reader does not
+re-open a finding another phase already resolved, and does not mistake the absence of an edit for
+an item that was dropped.
+
+### What this section does NOT establish
+
+* Nothing here is a device observation. Both interims are structural facts about what the
+  generator emits, at rung 1.
+* **Neither interim has ever run on a phone.** Circles 2–9 have never been exercised on hardware
+  at all; `DIST-03` is open.
+* Naming Phase 15 and Phase 17 as the replacing phases is a statement about the ROADMAP's current
+  plan, not a commitment that either has been scheduled or scoped beyond its roadmap entry.
+
+---
+
+## 35. Phase 11 — a guard that could not fail, and the phase's only critical threat given a checker (plan 11-10, 2026-08-18)
+
+Three guard defects, each of a different kind: one that passed under exactly the drift it existed
+to catch, one that did not exist at all, and one whose threshold sat a third of the way below the
+value it claimed to have measured. All three are structural findings, and the closing subsection
+says so.
+
+### 35.1 The Panic Escape gate guard was resolved by a name, and the name was not a contract
+
+`verify_panic_escape_seed()`'s third assertion matched a bare variable-name literal,
+`"Panic Escape Enabled"`. `universal_leaving()` carried its **own copy** of that string forty
+lines away. The two shared no constant, so the emitter could rename its variable and the guard
+would go on inspecting a name nothing emitted — reporting a clean build.
+
+**The negative control, re-run this session and recorded in both directions.** On a scratch copy
+in an isolated sandbox tree: rename **only** the emitter's variable throughout
+`universal_leaving()`, flip its gate to condition 100 — the exact existence test the assertion
+forbids — and leave the guard's literal untouched.
+
+```
+PRE-FIX   (generator @ e5d3bab)  exit 0, no message, artifact REWRITTEN with the defect
+                                 9/9 structural checkers green on the defective artifact
+POST-FIX                         exit 1: a Panic Escape gate uses a non-numeric condition code
+                                 action 529: 'Panic Escape Bypass' at condition 100 -- ...
+```
+
+The pre-fix row is the finding: a defective build, silently produced, certified green by every
+checker that could see it. Note that the post-fix message names the **renamed** variable — the
+guard found it through `panic_escape_enabled`, which is what makes the rename survivable.
+
+**It was also incomplete, and that half was never noticed.** The literal named **one** of
+**three** mode-0 gates over the flag, measured per fork:
+
+| gate | function | condition | covered before |
+|---|---|---:|---|
+| bypass gate | `universal_leaving()` | 2 | yes |
+| `still_on_g` | `panic_escape_branch()` | 2 | **no** |
+| `stored_off_g` | `panic_escape_branch()` | 2 | **no** |
+
+The two uncovered ones are strictly the worse pair: they decide whether the flag is **written**,
+so an existence test there writes the bypass flag on a run where the user changed nothing, in
+either direction. A third control confirms the new coverage is real rather than incidental —
+flipping `still_on_g` alone now exits 1 naming `'Panic Escape Stored'` at action 4248, a site the
+previous guard could not see at all.
+
+**The fix.** A shared resolver, `_panic_escape_variables()`, returns every named variable whose
+`_read_variable_keys()` provenance contains `PANIC_ESCAPE_KEY`. The assertion iterates that set.
+No name appears anywhere in the guard. `grep -c '"Panic Escape Enabled"'` on the generator went
+**3 → 2**: the two remaining occurrences are the emitter's own, and the deleted third was the
+guard's copy — the deletion *is* the fix.
+
+**Plus the assertion the previous version lacked: an empty guarded set now raises.** An empty set
+means nothing in the artifact reads the key — either the feature was dropped or a rename
+disconnected the guard — and the old version reported **both** as success. Control: remove every
+read of the key and the build exits 1 on that branch.
+
+**One Panic-Escape-adjacent gate is deliberately outside the set.**
+`Manual Panic Escape Requested` gates `panic_escape_branch()`'s outer block but is set from a
+**menu selection**, never read from the Panic Escape state key, so it has no provenance here.
+Its exclusion is safe and is recorded rather than repaired: adding it back by a bare name literal
+would reintroduce exactly the coupling this rewrite removes.
+
+### 35.2 T-11-22, the phase's only `critical`, had no standing checker
+
+The threat: Panic Escape is a **removable behavioural bypass**; Emergency Restore is a **safety
+mechanism** that is not removable. A user who removed the first and finds the second gone with it
+is **stranded** inside an intervention — dimmed screen, silenced device, no way back. The whole
+mitigation is that the two are separate.
+
+Its verification was a **hand-measurement** recorded in `MANIFEST.md` prose and
+`11-VERIFICATION.md` item 12. Correct when taken, and not re-run by the next change to
+`universal_leaving()` or `panic_escape_branch()`. Plan **11-08**, in this same gap-closure set,
+made the stranding state materially more reachable: before it, `dimming()` and `silence()` both
+sat in a permanently-true gate's never-taken arm, so no intervention could actually dim a screen
+or quieten a device and there was nothing to be stranded *by*.
+
+`verify_panic_escape_isolation()` is now armed in **both** builders. It resolves the Panic-Escape
+grouping identifiers from the same provenance set as §35.1, locates every Emergency Restore
+surface, and asserts in **both** directions.
+
+Positive result, reproducing `11-VERIFICATION.md` item 12's independent measurement rather than
+pinning whatever the artifact happens to be:
+
+| measure | Core | Aware |
+|---|---:|---:|
+| variables resolving to `panic_escape_enabled` | 2 | 2 |
+| mode-0 gates over them (all condition 2) | 3 | 3 |
+| Panic-Escape grouping identifiers | 3 | 3 |
+| Emergency Restore surfaces (2 `WFMenuItems`, 2 case titles) | 4 | 4 |
+| **enclosed** | **0** | **0** |
+
+Two negative controls, both run:
+
+* **Enclosure.** Wrap `live_ice_redirect()`'s Emergency Restore menu in a conditional gated on a
+  variable read from the Panic Escape key. Exit 1, naming **both** the `WFMenuItems` declaration
+  and the case title, with the stranding consequence spelled out. Both halves matter: hiding the
+  row removes the tap target, enclosing the case makes the tap do nothing.
+* **Absence.** Rename every emitted Emergency Restore surface so none exists, leaving the guard's
+  own constant untouched. Exit 1 on the no-surface-found branch. **A guard that reported clean
+  when the safety hatch is gone would be worse than no guard** — it converts a removal into a
+  green build — so zero surfaces is a failure, never a vacuous pass.
+
+The guard uses **full** enclosure, not true-arm-only enclosure: a surface in either arm of a Panic
+Escape conditional is unreachable to the users in the other one. That is the opposite choice from
+`verify_environmental_reachability()`, which tests the arm precisely because *its* defect is a
+polarity error. `verify_panic_escape_isolation` was also added to
+`docs/environmental_restore_check.py`'s `REQUIRED_SYMBOLS`, for the same reason its three
+neighbours are listed there: deleting it is invisible at runtime and every count in that file
+would stay green.
+
+### 35.3 The token-string floor sat a third of the way below its own measurement
+
+`MINIMUM_TOKEN_STRINGS` was **775**, measured at the phase-11 baseline `ae0226c` and never
+revised while the artifacts grew past it. Re-measured 2026-08-18 with `check_offsets()`'s own
+walk, in the same session as the edit: **1104** (Core) / **1112** (Aware). The floor is now the
+lower of the two, so one constant serves both forks — Aware forks the built Core source and only
+ever adds, so Core is the lower bound by construction, but both were measured.
+
+329 units of slack meant this check named parameter-defect **axis 2** while tolerating roughly a
+third of every token string in the artifact being converted to a bare `WFTextTokenAttachment`.
+Control, on a scratch copy of the Core artifact: flatten **one** token string to a bare
+attachment, dropping the count to 1103.
+
+```
+NEW floor (1104)  exit 1: Dumb: only 1103 WFTextTokenString values found, below the measured floor
+OLD floor  (775)  exit 0: ... 1112 token strings, 0 attachment-offset mismatches
+```
+
+The old floor passes the identical mutation. That gap is the whole point of the control.
+
+### 35.4 No emitted action changed
+
+Tasks 1 and 2 touch build guards and one checker constant only. Both forks rebuild
+**byte-identical** to the 11-09 build — `git status --short -- src/` empty after a full rebuild,
+and the Aware source re-serialises to the same SHA-256 `c52edd93…`. `manifest_check.py` is green
+with **no exception**: no hash moved, so the manifest refresh was the no-op it was expected to be.
+Both forks pass gate A (`--target-macos 26 --target-platform all`), `Validation passed.` on each.
+Gate B is advisory and permanently waivered and appears in **no** command in this plan.
+
+### What this section does NOT establish
+
+Stated separately and deliberately, because a structural result recorded as a behavioural one is
+the repudiation threat this phase has now filed three times.
+
+* **Nothing here is device-verified.** Every claim above is rung 1 — file-level analysis of the
+  generator and the built artifact — and nothing higher was attempted.
+* **A guard proven to fail on a synthesised defect is proof about the guard, not about the
+  device.** Six negative controls fired in this plan. Each demonstrates that a build-time
+  assertion catches a mutation deliberately introduced to defeat it. None of them says anything
+  about what the shipped Shortcut does on a phone.
+* **T-11-22 is now guarded, not tested.** The guard proves Emergency Restore is not *enclosed* by
+  a Panic Escape conditional in the emitted artifact. It does not prove Emergency Restore is
+  reachable at run time, that its menu case fires, that `restore_managed_settings()` restores the
+  captured originals, or that **Emergency Restore has ever been tapped on a phone** — it has not.
+* **`DIST-03` is open**, and nothing in this plan narrows it. The device proof for the
+  capture-and-restore loop these guards protect remains Phase 16 / `16-UAT.md`'s twelve tests,
+  none of which has ever run.
