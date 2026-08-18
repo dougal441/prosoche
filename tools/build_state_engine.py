@@ -3780,6 +3780,125 @@ def verify_panic_escape_seed(actions):
               "the user changed nothing")
 
 
+def _voice_enabled_variables(actions):
+    """Every named variable whose PROVENANCE resolves to VOICE_ENABLED_KEY.
+
+    Same rationale as _panic_escape_variables(): a NAME is not a contract.  voice()'s reader
+    ("Voice Enabled"), Toggle Voice's reader ("Manual Voice") and the bootstrap writer's
+    intermediate variable (VOICE_ENABLED_VARIABLE, "Voice Normalised") sit hundreds of lines
+    apart in this file and share no constant beyond VOICE_ENABLED_KEY itself, so resolving by
+    a hardcoded variable-name literal means a rename silently disconnects the guard.
+    Resolution runs through _read_variable_keys(actions), the same provenance walk every
+    other resolved guard in this file routes through.
+    """
+    return {name for name, keys in _read_variable_keys(actions).items()
+            if VOICE_ENABLED_KEY in keys}
+
+
+def verify_voice_enabled_seed(actions):
+    """Fail the build unless voice_enabled is seeded numerically and gated numerically.
+
+    Neighbours verify_state_seed() and verify_panic_escape_seed() -- all three assert that
+    what bootstrap writes and what the runtime reads are the same shape.
+
+    WHY THIS NEEDS A GUARD AT ALL.  A type-confused consent flag is invisible to the
+    validator, to the ToolKit catalog and to a decrypt of the signed container -- every one of
+    them sees a well-formed conditional whether its operand coerces to something truthy or to
+    nothing.  Only a build-time read of the emitted actions can tell "1" apart from "true".
+
+    Four assertions, each naming the failure it prevents:
+      (1) the bootstrap template contains the voice_enabled key, and the two gettext actions
+          feeding VOICE_ENABLED_VARIABLE (resolved by provenance exactly as
+          normalise_voice_enabled_seed() resolves them, so exactly two must resolve) carry
+          VOICE_ENABLED_SEED_TRUE and VOICE_ENABLED_SEED_FALSE, never either legacy boolean
+          literal -- a seed that reverted to "true"/"false" would leave The Voice's consent
+          gate resting on the unaudited boolean-to-WFNumberContentItem coercion D-05 exists
+          to avoid.
+      (2) the resolved variable set from _voice_enabled_variables() is non-empty -- a guard
+          that resolves nothing must raise, stating that it would otherwise report the
+          consent gate sound without having tested anything.
+      (3) every mode-0 is.workflow.actions.conditional whose input variable is in that
+          resolved set uses WFCondition == 2 and WFNumberValue == 0.  Any other condition
+          code on a voice_enabled reader RAISES -- an unrecognised gate shape is a failure,
+          never a silent exclusion.  This is the clause that stops a later pass "fixing" the
+          gate into a string comparison against a boolean literal, which would validate,
+          sign, import, and then silently never speak.
+      (4) the set of conditionals found while checking (3) is non-empty.  Zero readers is a
+          failure for the same reason zero variables is in (2): a guard inspecting no gate
+          reports success by construction, which is worse than no guard at all.
+
+    NEGATIVE CONTROL, measured 2026-08-18 against an in-memory copy of the built actions list
+    (never written to disk, so no revert was needed):
+      (a) reverting the true-branch seed gettext literal to "true" made assertion (1) raise:
+          "the 'Voice Normalised' gettext pair holds ['0', 'true'], not the numeric pair
+          ['0', '1'] -- a non-numeric seed leaves voice_enabled's consent gate resting on an
+          unaudited boolean-to-WFNumberContentItem coercion (axis 6) ...".
+      (b) changing voice()'s "Voice Enabled" gate to condition 4 with the string operand
+          "true" made assertion (3) raise: "a voice_enabled reader uses an unrecognised gate
+          shape (expected WFCondition == 2, WFNumberValue == 0): action 1185: 'Voice Enabled'
+          at condition 4, number None ...".
+      (c) severing every getvalueforkey action reading the literal key "voice_enabled" (13
+          sites) made assertion (2) raise: "no variable in the artifact resolves to
+          'voice_enabled' by provenance, so assertions (3)/(4) below would inspect nothing
+          and report success ..." -- the build did NOT exit 0 with a vacuous pass.
+
+    DELIBERATE NON-COVERAGE.  This guard does not assert anything about Toggle Voice's own
+    internal "Manual Voice" / "Manual Voice Next" pair before its set_value() call -- that
+    pair was already numeric (it is the writer bootstrap is brought into agreement with) and
+    is out of scope for D-05, which is specifically about the bootstrap seed.
+    """
+    _, inner = _state_template(actions)
+    if f'"{VOICE_ENABLED_KEY}"' not in inner["string"]:
+        raise SystemExit(
+            f"the bootstrap template does not contain {VOICE_ENABLED_KEY!r} -- The Voice's "
+            "consent gate has nothing to read on a clean install")
+    gettexts = _voice_enabled_seed_gettexts(actions)
+    texts = sorted(item["WFWorkflowActionParameters"].get("WFTextActionText") for item in gettexts)
+    expected = sorted((VOICE_ENABLED_SEED_TRUE, VOICE_ENABLED_SEED_FALSE))
+    if texts != expected:
+        raise SystemExit(
+            f"the {VOICE_ENABLED_VARIABLE!r} gettext pair holds {texts!r}, not the numeric "
+            f"pair {expected!r} -- a non-numeric seed leaves voice_enabled's consent gate "
+            "resting on an unaudited boolean-to-WFNumberContentItem coercion (axis 6), and "
+            "The Voice may be silent on every fresh install that answered yes")
+
+    guarded = _voice_enabled_variables(actions)
+    if not guarded:
+        raise SystemExit(
+            f"no variable in the artifact resolves to {VOICE_ENABLED_KEY!r} by provenance, so "
+            "assertions (3)/(4) below would inspect nothing and report success -- either this "
+            "build dropped the voice_enabled read entirely, or a rename disconnected this "
+            "guard from the reader")
+
+    malformed, gates = [], 0
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("WFControlFlowMode") != 0:
+            continue
+        name = _tested_variable(parameters)
+        if name not in guarded:
+            continue
+        gates += 1
+        if not (parameters.get("WFCondition") == 2 and parameters.get("WFNumberValue") == 0):
+            malformed.append((index, name, parameters.get("WFCondition"), parameters.get("WFNumberValue")))
+    if not gates:
+        raise SystemExit(
+            f"{len(guarded)} variable(s) resolve to {VOICE_ENABLED_KEY!r} by provenance but no "
+            "mode-0 conditional tests any of them, so assertions (3)/(4) inspected zero gates "
+            "and would have reported success without checking a single one")
+    if malformed:
+        raise SystemExit(
+            "a voice_enabled reader uses an unrecognised gate shape (expected WFCondition == 2, "
+            "WFNumberValue == 0): "
+            + "; ".join(f"action {i}: {name!r} at condition {code}, number {number}"
+                        for i, name, code, number in malformed)
+            + " -- an unrecognised shape here is exactly the change that would let a later "
+              "pass 'fix' the gate into a string comparison against a boolean literal, which "
+              "validates, signs, imports and then silently never speaks")
+
+
 # The literal that names the safety hatch on every surface it appears on.  ONE constant, so
 # the guard below and any future emitter cannot drift apart the way the Panic Escape variable
 # name did -- that drift is the whole reason this file now resolves gates by provenance.
@@ -5856,6 +5975,10 @@ def main():
     verify_state_seed(actions)
     verify_pending_exit_seed(actions)
     verify_panic_escape_seed(actions)
+    # PHASE 15 (15-03).  Beside verify_state_seed() and verify_panic_escape_seed() -- all
+    # three are neighbours because all three assert that what bootstrap writes and what the
+    # runtime reads are the same shape; this one is D-05's half of CIRC-08's consent gate.
+    verify_voice_enabled_seed(actions)
     # Beside the seed guard because both resolve their targets through the SAME
     # provenance set (_panic_escape_variables) and neither implies the other: that one asks
     # whether every gate over the flag can DISTINGUISH a removed bypass from a present one,
