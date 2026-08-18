@@ -92,7 +92,11 @@ environmental actions per fork remain in a dead arm.** The fix re-gates existing
 emits none, so all site
 counts held exactly — 15 Set Brightness / 15 Set Volume / 22 Get Device Details, coercion split
 15-of-15 and 4-of-15, action totals 4304 Core and 4372 Aware, every one re-measured against the
-rebuilt forks rather than carried forward.
+rebuilt forks rather than carried forward. **Those two totals are 11-08's and are superseded on
+the Aware side: at 11-09 the shipped forks measure Core 4304 (unchanged — 11-09 was required to
+leave `src/PROSOCHE-Dumb.xml` byte-identical) and Aware 4438 (+66, the second `audit_block()`).**
+Appended by the phase-11 code review (IN-03) rather than substituted, so the dated 11-08
+measurement stays readable as what 11-08 actually measured.
 
 **That sentence used to read "0 actions per fork remain unreachable," and it was narrowed by the
 phase-11 code review (IN-01) because it claimed more than the guard beneath it can carry.**
@@ -173,7 +177,9 @@ untouched. This rebuild carries **one change**, in two places:
    precedent from `audit_block()` is adopted instead: `getitemfromlist` with the literal enum
    case `First Item`, which is deterministic about which element is taken and cannot be worse
    than stringifying a one-element list. Recorded as a deviation in `docs/BUILD-NOTES.md` §31.
-   **+2 actions per fork** (4302 → **4304** Core, 4370 → **4372** Aware).
+   **+2 actions per fork** (4302 → **4304** Core, 4370 → **4372** Aware). *(That Aware figure is
+   this plan's delta and is not the shipped total: 11-09 later took Aware to **4438**. See the
+   IN-03 note beside the 11-08 totals above.)*
 
 **Nothing in this rebuild is device-verified.** DIST-03 remains open; the repaired removal path
 has never run on a phone, and this build does not change that.

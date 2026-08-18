@@ -116,6 +116,20 @@ text.match consumption fix (two getitemfromlist actions), landed between 16-04 a
 here; 11-08 itself moved them by zero.  Still unpinned by any assertion, still for
 the same reason.
 
+AND STALE ONCE MORE, on the Aware side only -- appended by the phase-11 code review
+(IN-03) rather than by editing the dated line above, which stays as the honest record
+of what 11-08 measured.  Measured 2026-08-18 at 11-09: Dumb 4304 (unchanged, 11-09
+was required to leave src/PROSOCHE-Dumb.xml byte-identical), Sentient 4438 (+66, the
+second audit_block() inserted at the Panic-Escape-removed OPEN-arm rendering).  So
+between 11-08 and 11-09 the newest Aware figure recorded anywhere in this file was 68
+short of the artifact on disk.
+
+DELIBERATELY STILL UNPINNED.  Adding these totals to an asserted table would stop them
+going stale, and would also turn every legitimate action-count change into a red
+checker -- which is the reason the paragraph above gives for leaving them unpinned, and
+it has not changed.  The remedy adopted instead is this one: when a wave moves a total,
+append the new measurement here rather than leaving the last one to be read as current.
+
 REACHABLE IS NOT PROVEN-ON-DEVICE.  Nothing in this file, and nothing in 11-08,
 observed a phone.  DIST-03 is open; Phase 16 owns the device proof; 16-UAT.md's
 twelve tests have never run.
