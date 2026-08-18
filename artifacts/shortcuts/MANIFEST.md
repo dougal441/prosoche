@@ -1,5 +1,69 @@
 # Shortcut Distribution Manifest
 
+**PHASE 15 — the Voice primitive, re-signed (2026-08-18, plan 15-05). Both forks moved; this
+block's six hash/size rows below supersede every row in every block that follows.** Everything
+below this block is retained as its own rebuild's record, per this file's own convention, and
+is superseded here wherever the two conflict.
+
+**What changed, all four waves in one rebuild.** Plan 15-01 split the interim
+`mirror_and_voice()` into `mirror()` (Circle 7, shows only) and `voice()` (Circle 8, shows and
+speaks once, consent-gated), retargeted `primitive_dispatch()`'s tuple, and added
+`verify_speaktext_placement()`. Plan 15-03 normalised `voice_enabled` to the numbers `1`/`0` at
+every writer and bumped `schema_version` **4 → 5**. Plan 15-04 added `verify_voice_gates()`
+(every `speaktext` site enclosed by both the consent gate and the once-per-run gate),
+`verify_voice_path_volume_silence()` (zero volume writes inside the Circle-8 branch span), and a
+fifth `docs/sequence_dispatch_check.py` assertion that no two distinct sequence-entry names may
+resolve to action-equal dispatch bodies — the general form of the defect that let `Mirror` and
+`Loud Mirror` dispatch the identical function for four phases. Plan 15-05 (this rebuild) changed
+no code: it re-ran the provenance-gated builders, confirmed both forks reproduce byte-identically
+(`git status --short -- src/` empty after the rebuild — the working tree already carried waves
+1–3's committed state), validated gate A clean on both, and re-signed.
+
+**Measured from the decrypted payload of each signed artifact, not from `src/`:** 11
+`is.workflow.actions.speaktext` sites (was 22 at the phase-15 baseline), 15
+`is.workflow.actions.setvolume` sites (unchanged), `schema_version` **5** (was 4) in the
+bootstrap template, on both forks. Action totals: Core 4128, Aware 4262.
+
+**CIRC-08's device status, stated plainly and in the same place as the claims it qualifies: this
+build is structurally proven and behaviourally UNPROVEN.** Plan 15-02's rung-2 simulator probe
+(spike 011) did **not** discriminate the inherited axis-4 unfilled-required-picker defect —
+verdict `not discriminated at rung 2`, routed to Branch B (no generator fix attempted, no
+identifier named). The Mirror primitive that both `mirror()` and `voice()` are built on carries
+a **device-reproduced** failure (`.planning/todos/pending/2026-08-18-mirror-primitive-unfilled-picker.md`,
+reproduced three times across two independent installs, proven to follow the primitive rather
+than the Circle index) that this phase did not close. **Circle 8 is expected to raise "Please
+choose a value for each parameter in this action." on a phone**, exactly as Circle 7 does today.
+Nothing in this rebuild's green gate A, green guards, or clean rung-2 bisection should be read as
+evidence otherwise.
+
+**This signed build is deliberately NOT the one installed on the developer's iPhone.** The last
+device session (2026-08-17/18) ran against Core `b07497ba1a66506aaaa9c48134f463ceefeac7f4a656e86dad48b0a76414ac5b`
+(233802 bytes, the phase-13 CR-01 signing) — several rebuilds behind this one (Phase 16, the
+Phase 11 gap-closure waves, and now Phase 15 all post-date it). No install has happened since.
+Per plan 15-03's recorded sequencing constraint: **build and install this Phase-15 signed build
+BEFORE the next Pressure-accumulation UAT session, never after** — the `schema_version` 4→5 bump
+wipes `heat`/`gravity`/`pressure`/every rolling window/`exit_events`/`exit_stats[*].samples` on
+first run, and re-installing a `.shortcut` alone does **not** trigger that wipe; only the schema
+bump does. Doing the bump after that session would throw it away and force it to be repeated.
+
+| Fork | Source / archive / signed artifact | Bytes | SHA-256 |
+|---|---|---:|---|
+| Core source | `src/PROSOCHE-Dumb.xml` | 2780563 | `4d761994ec14c7d643aceb98a2693e18f988cc9944c37cd55cea515060eb9693` |
+| Core archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Core-214110.xml` | 2780563 | `4d761994ec14c7d643aceb98a2693e18f988cc9944c37cd55cea515060eb9693` |
+| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 225345 | `a5b2976adb88f9ac9db8d4ded298634cf6afd04e84a4a65cd0218b028db8af34` |
+| Aware source | `src/PROSOCHE-Sentient.xml` | 2852646 | `edaf67fb6dd73b3d0bbbc14af51ab18d9fbb69b88bafd7105c69b9c6217df96d` |
+| Aware archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Aware-214122.xml` | 2852646 | `edaf67fb6dd73b3d0bbbc14af51ab18d9fbb69b88bafd7105c69b9c6217df96d` |
+| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 231675 | `8a20813efe9c3211a21425d77bfb723e15a686e97557c877196b266b150834c8` |
+
+**NOTHING IN THIS BLOCK IS A DEVICE CLAIM.** Every result above is rung 1, structural, or (for
+the axis-4 verdict) rung 2 with its ceiling stated in `.planning/spikes/011-mirror-primitive-picker-discriminator/FINDINGS.md`.
+Voice has never been heard on a phone; the Mirror primitive it is built on has never completed a
+device run without the axis-4 error. Read `docs/BUILD-NOTES.md` §36 and
+`.planning/phases/15-circle-8-the-voice-primitive/15-UAT.md` before distributing or relying on
+this build.
+
+---
+
 **PHASE 11 GAP-CLOSURE, wave 10 (2026-08-18, plan 11-10) — NO ARTIFACT MOVED, and this block
 adds no hash row.** The table's six hash/size rows below remain plan 11-09's and are correct
 unchanged. Plan 11-10 touched build guards and one checker constant only: it emitted no action,
@@ -279,18 +343,20 @@ source*, so a Sentient carried across a Dumb change is a fork of a file that no 
 exists. Regenerating both in one pass is the only way the shipped pair provably matches
 `tools/build_state_engine.py` at this commit.
 
-| Fork | Source / archive / signed artifact | Bytes | SHA-256 |
-|---|---|---:|---|
-| Core source | `src/PROSOCHE-Dumb.xml` | 2864203 | `34c2ba05968b0e35c723892404c5f4d3a334d51c3f14263f7d6809997e668b02` |
-| Core archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Core-132716.xml` | 2864203 | `34c2ba05968b0e35c723892404c5f4d3a334d51c3f14263f7d6809997e668b02` |
-| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 231148 | `873fa3dbda7b1f3440bfc76997c2962198ddec2052096833787547b52f129f10` |
-| Aware source | `src/PROSOCHE-Sentient.xml` | 2936286 | `c52edd930f0c5fd1c81160fb584675d91a5c7b4d315dfe255f5325d3d35c0203` |
-| Aware archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Aware-134612.xml` | 2936286 | `c52edd930f0c5fd1c81160fb584675d91a5c7b4d315dfe255f5325d3d35c0203` |
-| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 238095 | `4b7c2cfbddf0dccf47ef8e34209378faf14ca2d760dc089013d3b033ebd2ada0` |
+**SUPERSEDED 2026-08-18 by the plan 15-05 block at the top of this file — these six values are
+no longer a live table**, converted to prose here so `docs/manifest_check.py` (which scans every
+pipe-delimited row in the document) asserts only the current build's rows. Retained as the record
+of what this rebuild (phase 11 wave 10 / plan 11-09's Aware re-sign) actually shipped: Core
+source/archive `2864203` bytes `34c2ba05968b0e35c723892404c5f4d3a334d51c3f14263f7d6809997e668b02`,
+Core signed `231148` bytes `873fa3dbda7b1f3440bfc76997c2962198ddec2052096833787547b52f129f10`,
+Aware source/archive `2936286` bytes `c52edd930f0c5fd1c81160fb584675d91a5c7b4d315dfe255f5325d3d35c0203`,
+Aware signed `238095` bytes `4b7c2cfbddf0dccf47ef8e34209378faf14ca2d760dc089013d3b033ebd2ada0`.
 
 **Re-archived and re-signed by the phase 13 CODE REVIEW, finding CR-01 (2026-08-17).** This is
-the record for the six rows in the table above; the plan-04 paragraph immediately below is its
-own re-sign's record and is **SUPERSEDED** by this one wherever the two conflict. Plan 04's
+the record for the six values in the paragraph immediately above (now prose, formerly this
+file's live table — see the plan 15-05 supersession note there); the plan-04 paragraph
+immediately below is its own re-sign's record and is **SUPERSEDED** by this one wherever the two
+conflict. Plan 04's
 `_list_row()` discriminated on Python type (`isinstance(item, str)`), so every non-`str` got the
 `{WFItemType, WFValue}` wrapper — including two Mirror templates that carry no `￼` placeholder
 and therefore have an **empty** `attachmentsByRange`. Those are literal rows by content, and
