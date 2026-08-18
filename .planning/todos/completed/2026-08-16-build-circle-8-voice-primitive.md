@@ -95,3 +95,42 @@ against the shipped dispatch branches.
   "all nine primitives fire" test.
 - `.planning/phases/05-nine-primitives-environmental-safety/05-UAT.md` — notes The Voice
   "has never been heard on device"; this explains why.
+
+## Closed — 2026-08-18 (Phase 15 — Circle 8 — the Voice primitive)
+
+**Closed. All five Solution steps are satisfied, across two phases:**
+
+1. **Decide the semantics first.** Answered by **D-01, D-02 and D-03**, confirmed with the user
+   2026-08-18 and recorded verbatim in
+   `.planning/phases/15-circle-8-the-voice-primitive/15-CONTEXT.md`, implemented in plan **15-01**.
+   D-01: voice-off degrades Circle 8 to a Mirror-equivalent alert, never skips. D-02: speech is
+   removed from Circle 7 entirely — this is what makes Circle 8 an escalation. D-03: Circle 8
+   reuses the same 30 fact-gated Mirror templates; no new copy.
+2. **Emit a real `Voice` branch.** Delivered by plan **15-01**'s split of the interim
+   `mirror_and_voice()` into `mirror()` (Circle 7, shows only) and `voice()` (Circle 8, shows and
+   speaks once, consent-gated), with `primitive_dispatch()`'s tuple retargeted to
+   `("Mirror", mirror), ("Loud Mirror", voice)` and a new build guard,
+   `verify_speaktext_placement()`, holding the split in place.
+3. **Check the combined entries.** Already closed by **Phase 11** (plan 11-02, BD-06 Decision 5)
+   — the sequence entry is `"Loud Mirror"`, not `"Voice"`, and dispatch moved from condition 99
+   ("contains") to condition 4 ("string is") before Phase 15 began, which is what let this todo's
+   own step-3 concern about combined `"…+Mirror"` entries become moot: exact matching cannot
+   partially match a combined entry the way "contains" could.
+4. **Rebuild and re-verify.** Delivered by plan **15-05** (this plan): provenance gate, both
+   builders, gate A on both forks, re-sign under exact display names, `artifacts/shortcuts/MANIFEST.md`
+   re-derived from the signed files, `docs/manifest_check.py` closed (deliberately red since
+   wave 1, closed here by re-signing, never by row editing).
+5. **Add a build guard** (Config entry with no matching dispatch branch). Already closed by
+   **Phase 11** (plan 11-02) — `verify_dispatch_coverage()`, armed in both builders, plus
+   `docs/sequence_dispatch_check.py` as a standalone hard gate with `KNOWN_ORPHANS = {}`.
+
+**Residue carried forward, by name — not silently dropped.** Closing this todo does **not** mean
+Circle 8 fires audibly on a phone. The Mirror primitive both `mirror()` and `voice()` are built on
+carries a **separate, still-open** device-reproduced defect — the axis-4 unfilled-required-picker
+failure, tracked in its own todo,
+`.planning/todos/pending/2026-08-18-mirror-primitive-unfilled-picker.md`, which this phase's own
+plan 15-02 (spike 011) attempted to discriminate at rung 2 and could not (verdict:
+`not discriminated at rung 2`, routed to Branch B, no fix attempted). That todo **remains
+pending**; CIRC-08 is recorded device-unproven in `docs/BUILD-NOTES.md` §36 and in
+`artifacts/shortcuts/MANIFEST.md`'s plan-15-05 block. Full record:
+`docs/BUILD-NOTES.md` §36, `.planning/phases/15-circle-8-the-voice-primitive/15-UAT.md`.
