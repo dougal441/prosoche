@@ -198,3 +198,98 @@ did not apply to this device.
   suggestive of a late-firing CLOSE but proves nothing about the trigger path.
 - Phase 6 Tests 12/13 (explore/exploit): one exit ever recorded (`Capture`),
   `exit_selection_counter: 1`. Far below `exploit_min_observations`.
+
+---
+
+# Fresh-install session — 2026-08-18 21:45 onward (AEST)
+
+## Environment, as measured
+
+| Item | Measured value |
+|---|---|
+| Library | **Exactly one** shortcut matches "Nine Circles": `PROSOCHĒ — Nine Circles — Core`, no suffix. **The Aware fork is NOT installed** — so any Aware sub-observation in `16-UAT.md` is unrunnable this session. |
+| OPEN automation | `When any of 2 apps are opened` → Text `OPEN` → Run `PROSOCHĒ — Nine Circles — Core`, **Input = Text**. Run Immediately, Notify When Run **off**. |
+| CLOSE automation | `When any of 2 apps are closed` → Text `CLOSE` (**not** the `CLOSED` typo that blocked the earlier session) → same shortcut. |
+| Tracked apps | **AliExpress** and **Instagram**. |
+| Disk artifacts | Core `873fa3db…`, Aware `4b7c2cfb…` — both match the `16-UAT.md` header exactly. |
+| `state.json` | Deleted 21:52; `PROSOCHE` folder confirmed empty before the first run. |
+
+## F-8 — The bootstrap seed shape is a usable BUILD FINGERPRINT, and it proves this build is post-D-02
+
+`16-UAT.md` states that which build is installed cannot be determined by inspection, because the
+signer strips `WFWorkflowName` and there is no version string on device. **That is true of the
+shortcut, and false of the state it writes.** The first run's fresh bootstrap produced:
+
+```json
+"settings_snapshot": {
+  "brightness": {"original_value": "null"},
+  "volume":     {"original_value": "null"}
+}
+```
+
+**One leaf per group, both containers present, no `changed_at`, no `changed_by_session_id`.**
+That is decision **D-02**'s shape and no earlier build can emit it. Compare the pre-install file
+(F-6), which carries both removed leaves.
+
+So `16-UAT.md` **Test 12's fresh-bootstrap sub-observation is PASSED**, and the same reading
+independently answers the re-import precondition that file could otherwise only take on trust.
+A one-line addition to that file's "How to confirm which build is installed" section is
+warranted: *delete `state.json`, run once, read `settings_snapshot`.*
+
+The rest of the seed matches `_state_template()` exactly — `schema_version: 4`, `exit_events: []`
+(not the degraded single object of F-3), `recent_contracts: []`, all six `exit_stats` groups
+zeroed with `samples: []`, `behavioural_day: "2026-08-18"` (correct local day at 21:58 AEST),
+and — corroborating **F-4** — **zero top-level keys containing a dot**, because no dotted
+`set_value` had yet run. Preserved as `state-2026-08-18T2158-fresh-bootstrap.json`.
+
+Status read back: Fork Core, Profile **Purgatory**, Sequence **Classic**, Voice Yes, Circle 1,
+Pressure 0. Classic orders the primitives `Pause, Black and White, Silence, Intention, Dim,
+Eject, Mirror, Loud Mirror, Frozen` — so **Silence is Circle 3, Intention (the contract) is
+Circle 4 and Dim is Circle 5**, all reachable from the manual `Test a Circle` menu.
+
+## F-9 — FIRST RUN ONLY: the manual menu prompts twice for input the user should never see
+
+**Observed, twice, deliberately.** On the **first** manual run against a freshly-bootstrapped
+`state.json`, choosing **Status** produced, in order:
+
+1. the Status alert (correct);
+2. a **Notes-app note picker listing every note on the device**, headed only `Note`;
+3. an **unlabelled free-text prompt** — an empty `Text` field with Cancel / Done and no prompt
+   copy whatsoever;
+4. the Notes app opened to the Control Room note.
+
+Cancelling at step 3 ended the run. **On the second run of the identical menu path, with
+`state.json` now present, Status showed its alert and ended cleanly — no picker, no text prompt,
+no Notes launch.** So the behaviour is specific to the fresh-bootstrap run, not to Status.
+
+**Why this matters more than a cosmetic wart.** It is the *first thing a new user sees*, and the
+generator already carries a fix for a near-identical symptom: the comment at the Show Note gate
+records *"Reported symptom: every manual menu choice ended by launching the Notes app"* and
+narrows the Show Note to the `Open Control Room` case alone. That gate is intact and is **not**
+what fired here — `Manual Show Note Requested` was never set on this run.
+
+**Mechanism — narrowed, not settled.** The first run differs from the second in two ways that
+move together, so this pair of observations cannot separate them:
+
+- `State Recovery Occurred` is set by the bootstrap, which un-gates the recovery `appendnote`
+  (`src/PROSOCHE-Dumb.xml` index 4293, `entity = Control Room Note`). An `appendnote` whose
+  entity does not resolve is exactly what would raise a note picker, and an unresolved `text`
+  is exactly what would raise a bare text prompt.
+- The Control Room Note was **created during that same run** (index 4148), so `Control Room Note`
+  was bound from Create Note's output rather than from the found branch's Get Item From List.
+
+Both parameters were checked in the artifact and are **well-formed** — `entity` is a proper
+`WFTextTokenAttachment` variable reference and `text` is a proper `WFTextTokenString` with its
+one attachment at `{114, 1}`. So this is not one of the nine parameter-defect axes; it is a
+**variable-binding or entity-resolution** failure that only file-level analysis cannot see.
+
+**The cheap discriminating experiment, not yet run:** delete `state.json` again *while leaving
+the Note in place*, then run Status. Prompts returning implicates the recovery `appendnote`;
+prompts staying away implicates the Create-Note binding. It was deliberately deferred so the
+clean bootstrap could be spent on the phase 4/6/16 tests instead.
+
+**Related observation, recorded but not diagnosed:** the device already held **two** notes named
+`PROSOCHĒ — Control Room` (one from Friday) before this run, and the run created a **third**
+note named `PROSOCHĒ`. The Find Notes filter is `Name contains "PROSOCHĒ"` with limit 1, so all
+three match and which one wins is unspecified. A rename of the note, or a user with any note
+whose title contains the word, silently redirects the Control Room.
