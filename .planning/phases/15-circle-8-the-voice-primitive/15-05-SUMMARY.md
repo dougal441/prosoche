@@ -144,6 +144,7 @@ Each task was committed atomically:
 1. **Task 1: rebuild, validate, sign both forks, and assert the shipped payload** - `0870817` (feat)
 2. **Task 2: the recording duty -- BUILD-NOTES §36 and the supersession notes** - `5dbde9a` (docs)
 3. **Task 3: author the device UAT instrument and close out the superseded todo** - `a5377ae` (docs)
+4. **Fix: restore the closing note dropped from the Task 3 commit, plus this SUMMARY** - `b88cc9a` (fix)
 
 **Plan metadata:** (this commit, pending)
 
@@ -164,7 +165,19 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-None -- plan executed exactly as written. The plan itself anticipated that no code would change ("CIRC-08's honest status... unless plan 15-02's verdict identified a one-line class fix that was absorbed, Circle 8 inherits the axis-4 unfilled-picker defect") and that is exactly what plan 15-02's verdict (Branch B, no fix) produced.
+**1. [Rule 1 - Bug] Task 3's todo-close commit (`a5377ae`) was missing its own closing note**
+- **Found during:** Post-commit review, while preparing this SUMMARY.
+- **Issue:** `git mv .planning/todos/pending/... .planning/todos/completed/...` staged the file
+  before an immediately-preceding `Edit` tool call's write (adding the "Closed — 2026-08-18"
+  section) had reached disk, so the committed snapshot at `a5377ae` moved the todo to
+  `completed/` without its closing note, even though the working-tree file was correct
+  throughout and `git diff` against `HEAD` surfaced the 39-line gap cleanly.
+- **Fix:** Re-added the closing-note content (identical to what was authored and verified during
+  Task 3) in a follow-up commit.
+- **Files modified:** `.planning/todos/completed/2026-08-16-build-circle-8-voice-primitive.md`.
+- **Commit:** `b88cc9a` (combined with this SUMMARY's own commit).
+
+Plan executed exactly as written otherwise. The plan itself anticipated that no code would change ("CIRC-08's honest status... unless plan 15-02's verdict identified a one-line class fix that was absorbed, Circle 8 inherits the axis-4 unfilled-picker defect") and that is exactly what plan 15-02's verdict (Branch B, no fix) produced.
 
 ## Issues Encountered
 
