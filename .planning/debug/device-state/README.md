@@ -580,3 +580,61 @@ time more than one Circle has ever run on a real device in this project.
 
 **Circle 2 (`Black and White`) showed its alert but the screen did not turn grey.** Phase 14
 territory, recorded here only because it was observed in passing and not investigated.
+
+---
+
+# F-23 — The 04:00 rollover test was armed, and the HOST blocked it
+
+A background timer was set at 22:43 to wake the session at **03:50 AEST**, ten minutes before
+the behavioural-day boundary, specifically to drive a session across it. The timer fired on
+schedule. **The Mac had locked itself to the login window** (`CGSSessionScreenIsLocked` present,
+confirmed), and **iPhone Mirroring cannot run behind the login window**. Entering the password is
+not an action I can take, so the phone became undrivable roughly nine minutes before 04:00.
+
+`state.json` stayed readable through the iCloud mirror throughout, and its last device write is
+**22:50** — so nothing ran on the phone after the session ended, and **no rollover data exists to
+inspect**. Nothing about the rollover was observed. This is a host failure, not a product
+result, and it must not be read as evidence either way.
+
+**Two ways to finish it, and the second is much cheaper than the first.**
+
+1. **The literal test** — be at the phone shortly before 04:00, open a tracked app, stay in it
+   past 04:00, close a few minutes later. Confirm the spanning session's `duration_seconds`
+   equals `ended_at - started_at` with no double-count and no drop, and that the **first** open
+   after 04:00 flips `behavioural_day` and resets `opens_today` to `0`.
+
+2. **The same coverage at any hour, without staying up.** The rollover branch compares the
+   **stored** `behavioural_day` against the one computed at OPEN; it does not read the clock for
+   anything else. So editing `behavioural_day` in `state.json` to a past date and then opening a
+   tracked app exercises the reset arm exactly — and closing afterwards exercises CLOSE with the
+   day having just changed underneath the session. This was the intended fallback and there was
+   no time to run it. It is a fixture, not a simulation of the clock, so it settles the reset
+   arithmetic but not the wall-clock boundary itself; run (1) once as well before calling the
+   rollover proven.
+
+**To avoid the repeat:** `sudo pmset -a sleep 0 displaysleep 0` plus disabling "Require password
+after screen saver begins" for the session, or simply run these tests on the phone directly.
+
+---
+
+# Cleanup owed on the user's device — please read
+
+Two deliberate changes were left on the phone and are **not** product behaviour:
+
+1. **A scratch shortcut named `Show Content`** was built by hand in the Shortcuts library. It is
+   two actions — `Get Device Details` → `Show Content` — and exists only as the brightness/volume
+   probe that produced F-13 and F-14. **Safe to delete.** It is worth keeping if the brightness
+   question is going to be re-run at rung 4, because it is the instrument for it.
+2. **`state.json` was edited three times as a test fixture**, and every edit is disclosed here
+   rather than left to be discovered: `profile_snapshot.enabled_exits` was reduced to
+   `["Capture","Close"]` for the F-18 experiment **and restored to all six**; and
+   `heat`/`gravity`/`pressure`/`circle` were lowered twice to bring Pressure back into the
+   Circle 4 band so the contract tests could run at all. The final on-device values are
+   `heat 5, gravity 0.5, pressure 5.5, circle 3, opens_today 13` — **accumulated behavioural
+   data on that file is therefore synthetic and should not be read as real usage.** Delete
+   `state.json` before any run whose numbers are meant to mean something.
+
+Every state file from the session is preserved beside this document:
+`state-2026-08-18T1931-stale-preinstall.json` (the outgoing build's, pre-delete),
+`…T2158-fresh-bootstrap.json`, `…T2222-after-emergency-restore.json`,
+`…T2241-after-exit-tests.json`, `…T2250-session-end.json`.
