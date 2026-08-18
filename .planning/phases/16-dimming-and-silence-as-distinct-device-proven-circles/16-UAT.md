@@ -49,9 +49,9 @@ dim with a `settings_snapshot` full of `"null"`, you have just reproduced the P0
 |---|---|
 | Phase | `16-dimming-and-silence-as-distinct-device-proven-circles` |
 | Written | 2026-08-18 |
-| Commit artifacts were signed at | `04f3612` — the phase 16 re-sign, plan 16-06 task 1 |
-| Fork 1 | **Core** — `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` — 230232 bytes — SHA-256 `9b0f261488beb396d01f8cf63fc539d4ef1f25063ddf6baad8d5569a055a2e7c` |
-| Fork 2 | **Aware** — `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` — 234623 bytes — SHA-256 `1db5c1ef0cf50862128ad45686600be8f144b1d5b88661582f43f5a93c1d93b6` |
+| Commit artifacts were signed at | `9e1e540` — the **phase 11** wave-9 re-sign. **Re-pinned from `04f3612` (phase 16) on 2026-08-18**: phase 11 waves 7-9 each rebuilt and re-signed both forks, so the phase-16 digests below no longer existed on disk. The phase-16 values are retained in git history, not restated here. |
+| Fork 1 | **Core** — `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` — 231148 bytes — SHA-256 `873fa3dbda7b1f3440bfc76997c2962198ddec2052096833787547b52f129f10` |
+| Fork 2 | **Aware** — `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` — 238095 bytes — SHA-256 `4b7c2cfbddf0dccf47ef8e34209378faf14ca2d760dc089013d3b033ebd2ada0` |
 | Manifest rows | `artifacts/shortcuts/MANIFEST.md`, the `Core signed` and `Aware signed` rows. All four values above are copied from that table, and `python3 docs/manifest_check.py` proves every row against disk. |
 | Device requirement | An iPhone running **iOS 26.x**. The paired device on record is an **iPhone 15 Pro (`iPhone16,1`) on iOS 26.6** — inside the declared target, so an observation on it is same-major-version evidence, not an extrapolation. |
 | Personal Automations | **Required for Tests 4 and 6–11.** Tests 1, 2, 3, 5 and 12 are reachable from the shortcut's own manual menu. |

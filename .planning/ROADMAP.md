@@ -472,7 +472,8 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 partials. Plans `11-07` … `11-10` close all five and are strictly sequential, because every one of
 them rebuilds and re-signs both forks. Two scope judgments were made explicitly rather than left to
 drift: GAP 1 (`dimming()` / `silence()` bodies unreachable) is **closed here**, with the device
-proof of the capture-and-restore loop deferred to **Phase 16 / DIST-03 / `09-UAT.md` tests 2–12` —
+proof of the capture-and-restore loop deferred to **Phase 16 / DIST-03 / `16-UAT.md`'s twelve
+tests** (`09-UAT.md` is superseded by `16-UAT.md` — see `.claude/CLAUDE.md`'s Blockers entry) —
 the reasoning is in `11-08-PLAN.md`'s `<scope_judgment>`; and GAP 3 (the Aware fork's Use Model
 audit on one rendering of two) is resolved by **auditing every OPEN-arm rendering**, with the
 "deliberate product decision" alternative rejected and the rejection recorded in
