@@ -149,9 +149,28 @@ automation (DIST-08), so most ASVS web categories do not apply.
 | Emergency Restore recovers from every failure mode found | SAFE-05 | Has never been tapped on a device | `16-UAT.md` |
 | Both forks import and complete a first manual run | DIST-03 | Personal Automations are user-created on-device and cannot be exercised anywhere else | `16-UAT.md` |
 
-**All four are BLOCKED on DIST-03** — `xcrun devicectl list devices` → `No devices found.`,
-re-verified 2026-08-17 after the Phase 13 merge. They are recorded as blocked with that reason;
-none may be inferred, and none may be marked passed by this phase.
+**All four are BLOCKED on DIST-03.** They are recorded as blocked with the true reason; none may be
+inferred, and none may be marked passed by this phase.
+
+~~`xcrun devicectl list devices` → `No devices found.`, re-verified 2026-08-17 after the Phase 13
+merge.~~ **SUPERSEDED — that sentence was false when written here and is struck rather than deleted,
+so the correction stays auditable** (finding F-01, `16-VERIFICATION.md`). It was true at session
+start on 2026-08-17 and was carried into this file after the device state had already changed.
+
+The reason has been re-measured three times and moved each time. Measure it again rather than
+trusting any value recorded here:
+
+| Measured | `pairingState` | `tunnelState` | `transportType` |
+|---|---|---|---|
+| 2026-08-17, session start | — | *(no devices returned)* | — |
+| 2026-08-17, planning | `paired` | `disconnected` | `wired` |
+| 2026-08-18, plan 16-06 + orchestrator re-check | `paired` | `unavailable` | `none` |
+
+Current true reason: **a paired `iPhone16,1` (iPhone 15 Pro) on iOS 26.6 is known to the host, but
+there is no live tunnel and no transport — so there is no session to drive.** Not "no device exists".
+
+Any future re-measurement MUST branch on `tunnelState` read from `--json-output`, **never** on the
+`State` column, which prints `available (paired)` even with the tunnel down.
 
 ---
 
