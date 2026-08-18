@@ -3546,6 +3546,102 @@ def seed_panic_escape(actions):
                       PANIC_ESCAPE_ANCHOR + f'\n{indent}"{PANIC_ESCAPE_KEY}": {PANIC_ESCAPE_SEED},')
 
 
+# PHASE 15 (15-03), D-05 -- voice_enabled's two writers disagreed in JSON TYPE.  Bootstrap
+# emitted the unquoted boolean true/false while Toggle Voice (see the setvalueforkey call in
+# the Control Room menu below) writes the number 1/0, and every reader coerces through
+# WFCoercionVariableAggrandizement / WFNumberContentItem and compares "> 0" -- a comparison
+# .claude/CLAUDE.md's device-verified runtime-semantics table does not cover for booleans
+# (axis 6: "booleans, files, dictionaries and entity references are unaudited").  If "true"
+# happens to coerce to nothing, The Voice is silent on every fresh install that answered yes,
+# and CIRC-08 is unsatisfiable no matter how well the primitive is written.  D-05 makes this
+# question moot rather than spending a device session answering it: normalise the writer so
+# both writers agree BY CONSTRUCTION.
+VOICE_ENABLED_KEY = "voice_enabled"
+# The intermediate Shortcuts variable both bootstrap gettext branches write.  The ONLY handle
+# normalise_voice_enabled_seed() and _voice_enabled_variables() use to find their producing
+# actions -- never a hardcoded action index, since both indices are measured to shift on
+# every rebuild (15-03-PLAN.md's key_links: voice pair at 66/67, Contract Respected pair at
+# 1526/1529 in one measured build).
+VOICE_ENABLED_VARIABLE = "Voice Normalised"
+VOICE_ENABLED_SEED_TRUE = "1"
+VOICE_ENABLED_SEED_FALSE = "0"
+# The two superseded literals this pass retargets away from, named so the idempotence check
+# and normalise_voice_enabled_seed()'s own assertion recognise them without repeating the
+# bare strings at every call site.
+VOICE_ENABLED_LEGACY = ("true", "false")
+
+
+def _voice_enabled_seed_gettexts(actions):
+    """The two bootstrap gettext actions feeding VOICE_ENABLED_VARIABLE, resolved by PROVENANCE.
+
+    Content matching alone is WRONG here and would corrupt an unrelated subsystem: the
+    shipped artifact carries FOUR gettext actions holding the literals "true"/"false", and
+    the second pair feeds Contract Respected in the CLOSE pipeline.  So this walks the
+    emitted data-flow graph instead of grepping for the literals: it starts from the two
+    is.workflow.actions.setvariable actions whose WFVariableName is VOICE_ENABLED_VARIABLE,
+    follows each one's WFInput.Value.OutputUUID, and returns the gettext action that UUID
+    belongs to.  Raises rather than returning a partial result -- a caller that silently
+    accepted fewer than two would either leave the boolean writer live (if it under-resolved)
+    or retarget an unrelated gettext pair (if it over-resolved by content).
+    """
+    setters = [item for item in actions
+               if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setvariable"
+               and item.get("WFWorkflowActionParameters", {}).get("WFVariableName") == VOICE_ENABLED_VARIABLE]
+    if len(setters) != 2:
+        raise SystemExit(
+            f"expected exactly 2 setvariable actions writing {VOICE_ENABLED_VARIABLE!r}, found "
+            f"{len(setters)} -- the voice_enabled seed pair could not be located by provenance")
+    uuids = []
+    for setter in setters:
+        value = setter["WFWorkflowActionParameters"].get("WFInput", {}).get("Value", {})
+        if value.get("Type") != "ActionOutput" or not isinstance(value.get("OutputUUID"), str):
+            raise SystemExit(
+                f"a {VOICE_ENABLED_VARIABLE!r} setvariable action does not read an ActionOutput "
+                "reference -- provenance cannot be walked back to its producing gettext action")
+        uuids.append(value["OutputUUID"])
+    gettexts = [item for item in actions
+                if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.gettext"
+                and item.get("WFWorkflowActionParameters", {}).get("UUID") in uuids]
+    if len(gettexts) != 2:
+        raise SystemExit(
+            f"expected exactly 2 gettext actions feeding {VOICE_ENABLED_VARIABLE!r} by "
+            f"provenance, found {len(gettexts)} for UUIDs {uuids!r}")
+    return gettexts
+
+
+def normalise_voice_enabled_seed(actions):
+    """Retarget the two bootstrap voice_enabled gettext branches from booleans to numbers.
+
+    D-05.  This is a RETARGET, not an insertion: voice_enabled is already present in the
+    bootstrap template, fed by VOICE_ENABLED_VARIABLE, so only the two gettext actions
+    producing that variable's two possible values change -- the template token itself is
+    untouched by this pass.
+
+    Idempotent: a second run finds the new pair already in place and returns.  Must run in
+    main()'s seeder block BEFORE fix_state_rebind() -- that pass edits the same template
+    token, and retargeting this seed is one of the reasons the version bump exists.
+
+    Does NOT build a migrator, a dual-key alias, or read-time normalisation by name --
+    BD-06-A1 forbids all three, and each would permanently encode the inconsistency this
+    pass exists to dissolve.
+    """
+    gettexts = _voice_enabled_seed_gettexts(actions)
+    texts = {item["WFWorkflowActionParameters"].get("WFTextActionText") for item in gettexts}
+    normalised_pair = {VOICE_ENABLED_SEED_TRUE, VOICE_ENABLED_SEED_FALSE}
+    if texts == normalised_pair:
+        return  # already normalised; verify_voice_enabled_seed() proves it is the right shape
+    legacy_pair = set(VOICE_ENABLED_LEGACY)
+    if texts != legacy_pair:
+        raise SystemExit(
+            f"the {VOICE_ENABLED_VARIABLE!r} gettext pair holds unexpected text {texts!r} -- "
+            f"expected either the legacy pair {legacy_pair!r} or the normalised pair "
+            f"{normalised_pair!r}, and refusing to guess which branch is which")
+    for item in gettexts:
+        text = item["WFWorkflowActionParameters"]["WFTextActionText"]
+        item["WFWorkflowActionParameters"]["WFTextActionText"] = (
+            VOICE_ENABLED_SEED_TRUE if text == "true" else VOICE_ENABLED_SEED_FALSE)
+
+
 def _panic_escape_variables(actions):
     """Every named variable whose PROVENANCE resolves to the Panic Escape state key.
 
@@ -5570,8 +5666,8 @@ def fix_date_format_key(actions):
 # A STRING, because site 3 is a WFConditionalActionString and the device compares its stored
 # schema_version as text; the template interpolates the same characters unquoted, which is
 # what makes the two halves comparable at all.
-SCHEMA_VERSION = "4"
-SCHEMA_VERSION_PREVIOUS = "3"
+SCHEMA_VERSION = "5"
+SCHEMA_VERSION_PREVIOUS = "4"
 # The RECOGNITION tuple.  It must admit every literal this transformer has ever written --
 # including the one it is about to write -- or the NEXT build fails to locate the
 # conditional and aborts, one build downstream of the change that caused it.
@@ -5584,7 +5680,15 @@ SCHEMA_VERSION_PREVIOUS = "3"
 # licenses the unrecoverable loss the bump carries (heat, gravity, pressure, the rolling
 # windows, the session record, every exit_stats[*].samples); that same decision forbids a
 # migration, a dual-key alias and read-time normalisation by name.
-SCHEMA_VERSION_ACCEPTED = ("1", "2", "3", "4")
+#
+# PHASE 15 (15-03) -- the 4 -> 5 move is this plan's, D-05.  Normalising voice_enabled's
+# bootstrap seed from the boolean true/false to the numbers 1/0 (normalise_voice_enabled_seed()
+# above) only reaches a device that ALREADY holds a state.json by way of THIS bump; the same
+# BD-06-A1 Amendment 3 record licenses the same unrecoverable loss, re-confirmed by this plan's
+# Task 1 sequencing constraint (see 15-03-SUMMARY.md).  THREE COUPLED LITERALS move in this
+# same commit, per fix_state_rebind()'s own docstring: SCHEMA_VERSION, SCHEMA_VERSION_PREVIOUS
+# and this recognition tuple -- the tuple is the one that fails LATE, one build downstream.
+SCHEMA_VERSION_ACCEPTED = ("1", "2", "3", "4", "5")
 
 
 def fix_state_rebind(actions):
@@ -5713,6 +5817,10 @@ def main():
     seed_exit_events(actions)
     seed_active_session(actions)
     seed_create_target_url(actions)
+    # PHASE 15 (15-03), D-05.  Also must run BEFORE fix_state_rebind(): the rebind pass edits
+    # the same template token, and retargeting this seed is one of the reasons the
+    # schema_version 4 -> 5 bump below exists.
+    normalise_voice_enabled_seed(actions)
     fix_state_rebind(actions)
     fix_date_format_key(actions)
     fix_shownote_key(actions)
