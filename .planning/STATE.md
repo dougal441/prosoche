@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 13
 current_phase_name: Red-operator conditionals and the WFItems List wrapper
 status: verification-deferred
-stopped_at: Phase 13 executed + code-reviewed + gap-closed; verification human_needed (25/27, 0 failed) — deferred to /gsd-verify-work 13, device-blocked (DIST-03). Phase 12 likewise deferred.
-last_updated: "2026-08-17T08:08:52.852Z"
-last_activity: 2026-08-17
-last_activity_desc: Phase 13 complete pending device UAT — code review found and fixed CR-01; both verification gaps closed
+stopped_at: Device UAT session 2026-08-17/18 on Core b07497ba (hash-matched). DIST-03 is NO LONGER a blocker — an iPhone is reachable via Mirroring and both Personal Automations are verified correct. 24 UAT items answered (11 pass, 6 partial, 4 fail, 3 blocked). Two product blockers open: the Mirror primitive's axis-4 unfilled picker (proven to follow the primitive, not the Circle index) and Control Room Note resolution on state-changing manual runs. Next highest-value step: accumulate Pressure to Inferno's Circle-1 entry (>=2) via repeated tracked-app opens to unlock the intervention/exits surface, which gates ~30 remaining tests in phases 06/12/13.
+last_updated: "2026-08-18T08:30:00.000Z"
+last_activity: 2026-08-18
+last_activity_desc: First real device UAT session — DIST-03 unblocked; 24 tests answered across phases 06/07/10/12/13; two blockers found (Mirror axis-4 picker, Note resolution); audit-uat and audit-open both fixed for silent under-reporting
 progress:
   total_phases: 24
   completed_phases: 9
