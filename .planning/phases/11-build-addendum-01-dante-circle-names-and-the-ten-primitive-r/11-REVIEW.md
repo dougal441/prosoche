@@ -1,32 +1,485 @@
 ---
 phase: 11-build-addendum-01-dante-circle-names-and-the-ten-primitive-r
-reviewed: 2026-08-17T00:00:00Z
+reviewed: 2026-08-18T00:00:00Z
 depth: standard
-files_reviewed: 16
+review_scope: "waves 7-10 (gap closure), diff base 5421772"
+files_reviewed: 12
 files_reviewed_list:
-  - tools/plist_text_edit.py
   - tools/build_state_engine.py
   - tools/build_sentient.py
-  - docs/note_identity_check.py
-  - docs/sequence_dispatch_check.py
-  - docs/sentient_core_check.py
-  - docs/manifest_check.py
-  - docs/phase5_self_check.py
-  - docs/phase7_self_check.py
-  - docs/phase9_self_check.py
   - docs/environmental_restore_check.py
-  - docs/state_engine_self_check.py
-  - src/CONFIG-BLOCK.md
+  - docs/note_identity_check.py
+  - docs/phase9_self_check.py
+  - docs/sentient_audit_check.py
+  - docs/sentient_core_check.py
   - docs/BUILD-NOTES.md
   - docs/CAPABILITY-DECISIONS.md
   - artifacts/shortcuts/MANIFEST.md
+  - src/PROSOCHE-Dumb.xml
+  - src/PROSOCHE-Sentient.xml
 findings:
+  critical: 0
+  warning: 4
+  info: 3
+  total: 7
+earlier_review:
+  scope: "waves 1-6, reviewed 2026-08-17, retained verbatim below"
   critical: 3
   warning: 15
-  info: 0
   total: 18
-status: issues_found
+  closed_by_waves_7_10: 8
+  closed_elsewhere: 1
+  still_open: 9
+status: findings
 ---
+
+# Phase 11: Code Review Report — waves 7–10 (gap closure)
+
+**Reviewed:** 2026-08-18
+**Depth:** standard
+**Diff base:** `5421772` (the commit immediately before wave 7)
+**Files reviewed:** 12 (both generated forks used only as evidence, never reviewed line by line)
+**Status:** findings — 0 Critical, 4 Warning, 3 Info
+
+## How this file was written
+
+**I APPENDED.** The waves 1–6 review of 2026-08-17 is retained **verbatim and unedited** below,
+under the heading `# ARCHIVE — waves 1–6 review (2026-08-17, retained verbatim)`. Nothing in it
+was rewritten, renumbered or deleted. Only the YAML frontmatter above was replaced, and this
+waves 7–10 section plus the disposition table were inserted ahead of it. New findings are
+numbered from `WR-16` / `IN-01` so that no identifier collides with the earlier report's
+`CR-01`–`CR-03` and `WR-01`–`WR-15`.
+
+## Summary
+
+**Waves 7–10 close all four of the code-level gaps `11-VERIFICATION.md` raised, and they close
+them properly rather than cosmetically.** I re-ran every substantive claim rather than reading
+the SUMMARYs: both builders are byte-idempotent and reproduce the shipped sources exactly
+(`md5` identical across two consecutive rebuilds in an isolated `git archive` copy), all 13
+structural checkers exit 0 on the tracked tree, and gate A
+(`--target-macos 26 --target-platform all`) prints `Validation passed.` for both forks. The
+`11-08` re-gate is correct at the plist level: 22 new `Outstanding … Original` conditionals per
+fork, all at condition 2 with `WFNumberValue 0`, all carrying the axis-6
+`WFCoercionVariableAggrandizement` / `WFNumberContentItem` and the axis-5 bare
+`WFTextTokenAttachment` variable descriptor. `11-07`'s two `text.match` consumers now read
+`Matches` through a `First Item` `getitemfromlist`, and `text` is corpus-attested as that
+action's input key (8 occurrences). `11-09`'s second audit block lands inside the OPEN arm
+(actions 1095 and 1413, OPEN arm 94→1627) and introduces **no** new duplicate `UUID` or
+`GroupingIdentifier` — both forks carry the identical, already-tracked `792D1640…` pair and
+nothing else. `11-10`'s import-question derivation is right: all three questions in both forks
+resolve to a `gettext` that actually defines `WFTextActionText`.
+
+I also confirmed the guards have teeth where they were claimed to. Reverting `dimming()`'s gate
+to the container form fails the build with 22 named offenders. Renaming the Panic Escape emitter
+variable and flipping its gate to condition 100 — the precise drift `WR-01` showed passing
+silently — now exits 1. Deleting every Emergency Restore surface raises; wrapping one in a Panic
+Escape conditional raises. Reverting `build_sentient.py` to first-marker insertion makes
+`sentient_core_check.py` exit 1 with a derived-count message.
+
+**Where this set falls short is one level down, and it is the same class the phase keeps
+rediscovering: a guard that reports success because it resolved nothing.** Three of the four
+warnings below are that shape, and I demonstrated each with a build, not by reading.
+
+1. All three provenance-resolved guards route through one helper, `_read_variable_keys()`, which
+   walks exactly the `getvalueforkey → gettext → setvariable` chain `read_value()` emits.
+   **One extra `set_var` hop breaks it.** I reintroduced `CR-01` verbatim — `dimming()`'s whole
+   body back in the never-taken arm of a permanently-true container gate — behind a single
+   variable copy, and `verify_environmental_reachability()` (the guard 11-08 authored for
+   exactly that shape), `environmental_restore_check.py` and `phase9_self_check.py` all stayed
+   green with the build exiting 0. The same hop makes the Panic Escape bypass gate a condition-100
+   existence test that both 11-10 guards ignore.
+2. `docs/environmental_restore_check.py`'s `REQUIRED_SYMBOLS` asserts a guard is **defined and
+   callable**, never that a builder **calls** it. Deleting `verify_environmental_reachability(actions)`
+   and `verify_panic_escape_isolation(actions)` from both builders' `main()` leaves all 13
+   checkers green — directly contradicting the comment added in the same wave, which says
+   deleting the guard would be caught here.
+3. The "one contract audit per OPEN-arm rendering" invariant — the whole of gap 3 — is enforced
+   **only** by a standalone checker. `build_sentient.py` exits 0 with an audit missing, and
+   `docs/sentient_audit_check.py` cannot see the defect at all (it reconciles blocks against
+   models *within* the Aware fork, so one block and one model satisfies it).
+
+None of this is a live defect in the shipped artifacts. Every one of them is a build guard that
+will pass on the day the defect it was written for comes back in slightly different clothes,
+which is precisely what `11-VERIFICATION.md` gap 4 was about.
+
+**Evidence discipline in the prose changes is, by contrast, good.** `BUILD-NOTES.md` §31–§35 and
+`CAPABILITY-DECISIONS.md` BD-02/03-A1 keep the rung distinction consistently: the simulator probe
+result is labelled rung 2 and explicitly barred from anything in §9's ceiling list, the Use Model
+path is stated as never having run on Apple-Intelligence hardware, and every section closes with
+a "what this does NOT establish" block. I found no promotion of a structural result to a device
+claim, and no restatement of the D-01-retired brightness-floor clause
+(`docs/retired_clause_check.py` is clean on the tracked tree; its 4 failures at HEAD are the
+known gitignored `graphify-out/` sites). The three Info items below are staleness and
+completeness, not confidence inflation.
+
+## Disposition of the waves 1–6 findings
+
+Re-checked against HEAD, not transcribed from the SUMMARYs.
+
+| ID | Disposition | Evidence |
+|---|---|---|
+| CR-01 dimming/silence unreachable | **CLOSED** (11-08) | Both gates now read `settings_snapshot.<g>.original_value` at condition 2; 22 gates/fork verified in both plists; reverting to the container form exits 1 with 22 offenders |
+| CR-02 `text.match` wrong `OutputName` | **CLOSED** (11-07) | Both consumers read `Matches`; `ACTION_OUTPUT_NAMES` lists the identifier; 0 references carry the retired guess |
+| CR-03 Aware audit on one rendering only | **CLOSED** (11-09) | 2 `askllm` at 1095/1413, both inside the OPEN arm; count derived from Core; first-marker revert makes `sentient_core_check` exit 1 |
+| WR-01 name-coupled panic gate guard | **CLOSED** (11-10), residual → WR-16/WR-19 | Emitter rename + condition-100 flip now exits 1 |
+| WR-02 `MINIMUM_TOKEN_STRINGS = 775` | **CLOSED** (11-10) | Now `1104`, equal to the measured Core count under `check_offsets()`'s own walk (Aware 1112) |
+| WR-03 vacuous brightness assertion | **CLOSED elsewhere** (Phase 16) | `docs/phase5_self_check.py` untouched in this range; asserts operand presence, cites CAP-08 |
+| WR-04 `PROFILE_NAMES` unreconciled | **OPEN** | Not addressed by waves 7–10 |
+| WR-05 `THRESHOLDS` duplication | **OPEN** | `docs/state_engine_self_check.py` untouched in this range |
+| WR-06 Note-copy constants unasserted | **OPEN** | Not addressed |
+| WR-07 `plist_text_edit` divergent copy | **OPEN** | `tools/plist_text_edit.py` untouched in this range |
+| WR-08 range `length` discarded | **OPEN** | same file, untouched |
+| WR-09 code points vs UTF-16 offsets | **OPEN** | same file, untouched |
+| WR-10 Aware runs a guard subset | **CLOSED** (11-09) | `verify_circle_zero_silence` and `verify_parameter_keys` now imported *and* called at `build_sentient.py:581,587` |
+| WR-11 hard-coded import index | **CLOSED** (11-09) | Splice and `ActionIndex` both derive from the `Import Voice` anchor; all 3 questions in both forks resolve to a `gettext` |
+| WR-12 bare `StopIteration`/`IndexError` | **OPEN** | Not addressed |
+| WR-13 MANIFEST dispatch count stale by nine | **CLOSED** (11-07) | MANIFEST reads 99; `sequence_dispatch_check.py` independently reports 99 |
+| WR-14 display names, three unlinked copies | **OPEN** | Not addressed |
+| WR-15 T-11-22 has no standing checker | **CLOSED** (11-10) | `verify_panic_escape_isolation()` armed in both builders; raises on an enclosed surface *and* on zero surfaces |
+
+## Warnings
+
+### WR-16: one `set_var` hop disarms all three provenance-resolved guards, including the one 11-08 wrote to make `CR-01` unrepresentable
+
+**Files:**
+`tools/build_state_engine.py:3925-3964` (`_read_variable_keys`),
+`tools/build_state_engine.py:4394-4502` (`verify_environmental_reachability`, the `permanent` loop at `:4453-4466`),
+`tools/build_state_engine.py:3317-3336` (`_panic_escape_variables`)
+
+**Issue.** `_read_variable_keys()` recovers a variable's provenance by walking exactly one emitted
+shape: `getvalueforkey` → `gettext` → `setvariable`. It has no transitive step, so a
+`setvariable` whose `WFInput` is a plain `Type: "Variable"` descriptor — an ordinary
+`set_var("Copy", variable("Original"))` — yields **no** provenance for `Copy`. Every guard that
+resolves its targets through that helper therefore stops seeing the gate the moment an
+intermediate variable is introduced. All three of this phase's provenance-resolved guards do.
+
+I verified this by building, not by reading. Two controls, each on an isolated `git archive`
+copy of HEAD:
+
+*Control H — `CR-01` reintroduced behind one hop.* `dimming()` re-gated onto the
+`settings_snapshot.brightness` **container** at condition 100 with the whole capture-and-apply
+body back in the `otherwise` arm — the exact defect 11-08 exists to close — with the gate reading
+a one-hop copy of the container variable:
+
+```
+python3 tools/build_state_engine.py        -> EXIT 0
+python3 docs/environmental_restore_check.py -> "environmental restore check: passed", EXIT 0
+python3 docs/phase9_self_check.py           -> EXIT 0
+```
+
+Compare the same revert **without** the hop, which is the control 11-08 actually ran:
+
+```
+an environmental read or write sits in the never-taken arm of a permanently-true
+settings_snapshot container gate ... (22 total)         EXIT 1
+```
+
+*Control G — the Panic Escape bypass gate behind one hop.* `read_value(panic_escape_enabled, …,
+"Panic Escape Enabled")` left intact (so `_panic_escape_variables()` still returns a non-empty
+set and neither `if not guarded` raise fires), one `set_var("PE Gate", variable("Panic Escape
+Enabled"))` added, and `universal_leaving()`'s gate moved to `if_block("PE Gate", 100)` — the
+existence test both 11-10 guards forbid, on the gate that decides whether the user gets the
+Leaving/Continue menu at all:
+
+```
+python3 tools/build_state_engine.py -> EXIT 0
+python3 tools/build_sentient.py     -> EXIT 0
+all 13 checkers                     -> EXIT 0
+```
+
+Measured on that artifact: `_panic_escape_variables()` = `{'Panic Escape Enabled', 'Panic Escape
+Stored'}` (non-empty, so the vacuity assertion passes), resolved Panic-Escape groups = 2 (the two
+write gates only), and the bypass gate at action 530 sits at condition 100, unseen.
+
+`verify_panic_escape_seed()`'s own docstring states the property this disproves: *"The guarded
+set is resolved BY PROVENANCE … and the set itself is asserted non-empty, so neither a rename nor
+a disconnection can make this pass vacuously."* A disconnection can.
+
+**Fix.** Make provenance transitive in the one helper, so all three guards inherit it:
+
+```python
+def _read_variable_keys(actions):
+    ...
+    # existing pass builds `keys` from the getvalueforkey -> gettext -> setvariable chain
+    # NEW: propagate across variable -> variable copies until the map stops growing, so an
+    # intermediate `set_var("Copy", variable("Original"))` cannot orphan a guard.
+    changed = True
+    while changed:
+        changed = False
+        for item in actions:
+            if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.setvariable":
+                continue
+            parameters = item.get("WFWorkflowActionParameters", {})
+            source = (parameters.get("WFInput") or {}).get("Value")
+            if not isinstance(source, dict) or source.get("Type") != "Variable":
+                continue
+            inherited = keys.get(source.get("VariableName"))
+            if not inherited:
+                continue
+            target = keys.setdefault(parameters.get("WFVariableName"), set())
+            if not inherited <= target:
+                target |= inherited
+                changed = True
+    return keys
+```
+
+Then re-run both controls above; both must exit 1.
+
+---
+
+### WR-17: `REQUIRED_SYMBOLS` proves a guard exists, never that a builder runs it — both guards added this wave can be silently disarmed with every checker green
+
+**Files:**
+`docs/environmental_restore_check.py:72` and `:84` (the two entries added by 11-08 and 11-10),
+`docs/environmental_restore_check.py:181-186` (the assertion)
+
+**Issue.** The loop at `:181` asserts only `hasattr(builder, name)` and `callable(...)`. The
+comments added beside the two new entries claim more than that:
+
+> *"Delete it and the primitives can silently return to doing nothing at all, with every count in
+> this file still green."* (`:69-72`)
+> *"Listed here for the same reason as the three above: deleting the guard is invisible at runtime
+> and every count in this file would stay green."* (`:82-84`)
+
+Both describe deleting the **guard**. What actually disarms a guard in this codebase is deleting
+its **call**, and that is exactly what this file cannot see. Verified: on an isolated copy I
+removed `verify_environmental_reachability(actions)` and `verify_panic_escape_isolation(actions)`
+from `main()` in **both** `tools/build_state_engine.py` and `tools/build_sentient.py`, leaving the
+function definitions untouched:
+
+```
+python3 tools/build_state_engine.py   -> EXIT 0
+python3 tools/build_sentient.py       -> EXIT 0
+docs/environmental_restore_check.py   -> EXIT 0
+docs/phase9_self_check.py             -> EXIT 0
+docs/sentient_core_check.py           -> EXIT 0   (+ every other checker)
+```
+
+The safety property SAFE-05 now rests on two guards whose removal from the build pipeline is
+invisible to the file that exists to make their removal loud. `verify_capture_persistence` (Phase
+16) carries the same weakness; this wave added two more instances rather than closing it.
+
+**Fix.** Use the idiom this file already uses two dozen lines further down
+(`inspect.getsource(builder.manual_emergency_restore)` at `:208`), applied to the builders' own
+`main()`:
+
+```python
+CALLED_GUARDS = ("verify_environmental_reachability", "verify_panic_escape_isolation",
+                 "verify_capture_persistence", "verify_restore_gates", "verify_state_seed")
+
+for module, label in ((builder, BUILDER.name), (sentient, SENTIENT_BUILDER.name)):
+    body = inspect.getsource(module.main)
+    for name in CALLED_GUARDS:
+        require(f"{name}(" in body,
+                f"{label}'s main() no longer CALLS {name}() -- the function still exists, so "
+                f"the symbol check above stays green while the guard is disarmed and the "
+                f"primitives can silently return to a dead arm")
+```
+
+---
+
+### WR-18: gap 3's invariant has no build guard, and the checker named as its second line of defence cannot detect the defect
+
+**Files:**
+`tools/build_sentient.py:340-359` (marker collection and insertion; no post-insertion assertion),
+`docs/sentient_audit_check.py:22`, `:42-45`
+
+**Issue.** `build_sentient.py` derives the OPEN arm structurally, collects every contract marker
+inside it and inserts one `audit_block()` at each — which is the right fix. But nothing in
+either builder then **asserts** that the number of `askllm` actions equals the number of OPEN-arm
+renderings. The only thing that does is `docs/sentient_core_check.py`, a standalone script that
+is not chained into either build.
+
+Verified: reverting the insertion loop to the first marker only (`markers[:1]`) produces
+
+```
+python3 tools/build_sentient.py       -> "built src/PROSOCHE-Sentient.xml (e3ed3603…)", EXIT 0
+python3 docs/sentient_audit_check.py  -> "sentient audit check: 1 block(s), …", EXIT 0
+python3 docs/sentient_core_check.py   -> EXIT 1
+```
+
+So a defective Aware fork is **built and written to disk** with a silent success, and one of the
+two files the wave nominates as coverage passes it. `docs/sentient_audit_check.py` never opens
+`src/PROSOCHE-Dumb.xml` (`:22` loads the Sentient fork only) and reconciles span count against
+model count *within* Aware (`:42-45`), so one block plus one model is a clean run. The
+corresponding claim in `11-09-SUMMARY.md` — *"Both Aware checkers derive the audit count from the
+Core fork"* and *"count derived in the builder and both checkers, so one block cannot satisfy
+it"* — is not true of that file and not true of the builder. `T-11-47` is therefore closed by a
+single, unchained checker.
+
+**Fix.** Assert it where the artifact is written, using values `main()` already has in hand:
+
+```python
+    for ordinal, index in reversed(list(enumerate(markers))):
+        actions[index:index] = audit_block(ordinal)
+    inserted = sum(1 for item in actions
+                   if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.askllm")
+    if inserted != len(markers):
+        raise SystemExit(
+            f"{len(markers)} OPEN-arm dispatch rendering(s) but {inserted} Use Model action(s). "
+            f"CONSEQUENCE: a rendering reaches Intention with no contract audit, so an Aware "
+            f"install silently behaves as Core on that path with nothing observable on device.")
+```
+
+and either give `docs/sentient_audit_check.py` the same Core-derived expectation
+`sentient_core_check.py` already computes, or drop the SUMMARY's claim that it carries one.
+
+---
+
+### WR-19: the two Panic Escape guards assert the resolved *variable* set is non-empty, never the resolved *gate* set
+
+**Files:**
+`tools/build_state_engine.py:3400-3408` (`verify_panic_escape_seed`, the `if not guarded` raise),
+`tools/build_state_engine.py:3530-3541` (`verify_panic_escape_isolation`, `if not guarded` then
+the `groups` comprehension)
+
+**Issue.** Both guards raise when `_panic_escape_variables()` returns an empty set, which is the
+right instinct and closes the rename case. Neither raises when the set is non-empty but **no
+conditional tests any member of it** — at which point `verify_panic_escape_seed()`'s assertion (3)
+iterates over nothing and `verify_panic_escape_isolation()` intersects the surfaces against an
+empty `groups` set and reports isolation without having tested a single enclosure. This is the
+concrete mechanism behind WR-16's Control G, and it is worth its own one-line fix because it also
+catches partial disconnections (some gates re-routed, others not) that a transitive-provenance
+fix alone would not flag as suspicious.
+
+**Fix.** In `verify_panic_escape_isolation()`, immediately after the `groups` comprehension:
+
+```python
+    if not groups:
+        raise SystemExit(
+            f"{len(guarded)} variable(s) resolve to {PANIC_ESCAPE_KEY!r} by provenance but no "
+            "mode-0 conditional tests any of them, so no Panic Escape group could be located "
+            "and this guard would report Emergency Restore isolated without testing anything -- "
+            "a gate reading an intermediate copy of the flag orphans both Panic Escape guards")
+```
+
+and the equivalent in `verify_panic_escape_seed()`: fail when the number of conditionals whose
+tested variable is in `guarded` is zero.
+
+## Info
+
+### IN-01: `dimming()`'s already-dim short-circuit is unreachable under the shipped `dim_target = 0`, and MANIFEST states an unreachability claim wider than the new guard supports
+
+**Files:** `tools/build_state_engine.py:741-748`; `artifacts/shortcuts/MANIFEST.md:90-91`
+
+**Issue.** Inside `capture_g` (`Captured Brightness > 0`), `already_dim_g` tests
+`Captured Brightness <= Dim Target`. The Config literal ships `"dim_target": 0` (action 7, both
+forks, per D-01), so the two conditions are exact complements and `already_dim_g`'s TRUE arm — a
+bare `Nothing` — cannot be reached in any of the 11 renderings per fork. `verify_environmental_reachability()`
+cannot see it: it derives permanence only from `settings_snapshot`-rooted existence gates, and
+this one is a numeric gate over a device reading. The behaviour is correct post-D-01 (a write of
+`0` never brightens anything), so this is dead code rather than a defect — but MANIFEST's
+`**0 actions per fork remain unreachable.**` is a stronger statement than the guard beneath it
+can carry, in a file that ships beside the artifacts. The shipped Shortcuts comment bullet
+*"Do not brighten an already dim screen"* likewise now describes a branch that never fires.
+
+**Fix.** Narrow the MANIFEST sentence to what is measured — *"0 environmental actions per fork
+remain in a dead arm"* — and either drop `already_dim_g` while `dim_target` is `0`, or leave it
+with a one-line comment recording that it is inert until a non-zero dim target returns.
+
+---
+
+### IN-02: the Circle-6 `Eject` interim is not named as interim in the generator's comment text, though `BUILD-NOTES.md` §34 presents three agreeing records
+
+**Files:** `tools/build_state_engine.py:977-991`; `docs/BUILD-NOTES.md` §34 (the three-record table)
+
+**Issue.** Plan 11-02's prohibition requires each interim to be named as interim *in the
+generator's own comment text* **and** in `docs/BUILD-NOTES.md`, with its replacing phase. §34
+discharges the BUILD-NOTES half for both interims correctly. For Circle 8 the generator half is
+genuinely present (`:982-987`, `DELIBERATE INTERIM`, `PHASE 15` named). For Circle 6 it is not:
+`grep -n 'Redirect\|Phase 17\|PHASE 17' tools/build_state_engine.py` returns nothing, and §34's
+table fills that cell with *"the same `primitive_dispatch()` tuple, which emits no `Redirect`
+branch at all"* — an absence, not a comment. A reader working from the generator alone still has
+no way to learn that `("Eject", exile)` occupying Circle 6 in `Classic` and `Ambient` is
+temporary.
+
+**Fix.** One comment line beside the branch tuple, matching the Circle-8 wording:
+
+```python
+    # "Eject" (Circle 6 in all three sequences) is a DELIBERATE INTERIM in Classic and Ambient:
+    # BD-06 gives that slot to Redirect there, and Redirect has no implementation, so a branch
+    # cannot be emitted before a sequence can name it.  PHASE 17 emits Redirect and flips
+    # exactly two cells, Classic[5] and Ambient[5]; BlackMirror[5] is already correct.
+```
+
+---
+
+### IN-03: the newest stated Aware action total in two shipped/reference files is 4372; the shipped fork is 4438
+
+**Files:** `docs/phase9_self_check.py:114`; `artifacts/shortcuts/MANIFEST.md:93` (and `:160`)
+
+**Issue.** Both figures are correctly dated to plan 11-08, and both files declare their totals as
+dated measurements that no assertion pins — so neither is dishonest. But 11-09 added 66 actions
+per Aware fork afterwards and neither figure was refreshed, so the most recent Aware total a
+reader finds anywhere in either file is 68 short of the artifact on disk (measured: Core 4304,
+Aware 4438). Given that this project's own convention treats stale counts as a defect class, the
+gap is worth closing rather than inheriting.
+
+**Fix.** Append the post-11-09 figures beside the dated ones (`Aware 4438 at 11-09`), or add the
+totals to `docs/environmental_restore_check.py`'s asserted table so they cannot go stale again
+without turning a checker red.
+
+## What I verified and found clean
+
+Recorded so a future reader knows what was actually exercised rather than assumed.
+
+| Check | Result |
+|---|---|
+| Both builders byte-idempotent, reproduce shipped `src/` | `md5` identical across 2 rebuilds in an isolated `git archive` copy, both forks |
+| 13 structural checkers on the tracked tree | 13/13 exit 0 (`retired_clause_check` clean; its 4 HEAD failures are the known gitignored `graphify-out/` sites) |
+| Gate A, both forks | `Validation passed.`, exit 0 |
+| 11-08 gate shape | 22 `Outstanding … Original` conditionals per fork, all condition 2 / `WFNumberValue 0`, all with `WFCoercionVariableAggrandizement` + `WFNumberContentItem` (axis 6) in a bare `WFTextTokenAttachment` slot (axis 5) |
+| 11-08 dotted-read safety (axis 7) | `SNAPSHOT_SEED` still seeds `original_value` under both groups; `clear_snapshot()` writes the leaf only; `verify_sentinel_gates()` raises on a condition-100 gate over that leaf (control run, 11 offenders) |
+| 11-07 consumption chain | Both `text.match` sites → `getitemfromlist` `First Item` (axis 4 literal) on `OutputName: "Matches"`; `text` is the corpus-attested input key (8 occurrences) |
+| 11-09 identifier discrimination | Every `uid()` and every `if_block(key=)` in `audit_block()` routes through `aid()`; no new duplicate action `UUID` or `GroupingIdentifier` in either fork versus the pre-wave baseline |
+| 11-09 audit placement | `askllm` at 1095 and 1413, both inside the OPEN arm (94→1627), one per Panic-Escape arm; 9 MANUAL-arm markers carry none |
+| 11-09 WR-11 closure | All 3 import questions in both forks target a `gettext` that defines `WFTextActionText`; `Import Voice` anchor is unique |
+| 11-10 `MINIMUM_TOKEN_STRINGS` | `1104` equals the measured Core count under the checker's own walk; Aware 1112 |
+| T-11-22 guard, both directions | Deleting all 4 Emergency Restore surfaces raises; wrapping one in a Panic Escape conditional raises with the enclosing group named |
+| WR-01 closure | Emitter rename + condition-100 flip now exits 1 naming the renamed variable |
+| CR-01 closure | Container-gate revert exits 1 with 22 offenders |
+| CR-03 closure | First-marker revert makes `sentient_core_check` exit 1 with the derived-count message |
+| Retired D-01 clause | No restatement in any file changed by waves 7–10 |
+
+## Explicitly not reported
+
+Per the review brief, and confirmed present rather than assumed:
+
+- `docs/retired_clause_check.py`'s 4 occurrences inside `.planning/graphs/` and `graphify-out/`
+  (gitignored, pre-existing, separately tracked).
+- The duplicate action `UUID` `792D1640-FEB7-5FAF-AD6D-0E66CC1A1075` on both forks, and the
+  absence of an action-`UUID` uniqueness guard — both recorded in `deferred-items.md` with a
+  stated reason I agree with (11-09 was required to leave `src/PROSOCHE-Dumb.xml` byte-identical).
+  I confirmed the duplicate set is identical before and after this wave set.
+- Gate B's single waived line per fork.
+- `verify_output_names()` being unable to fire in either builder because
+  `normalise_output_names()` runs first over the identical token set — `11-07-SUMMARY.md` and
+  `BUILD-NOTES.md` §32 both state this explicitly, and the normaliser closes the class for every
+  listed identifier, so the verifier's redundancy is documented rather than hidden.
+
+## Device evidence
+
+Nothing in this review is a device observation. `DIST-03` is open. Every result above is rung 1
+(file-level analysis of the generators, the two built plists and the checkers) except the negative
+controls, which are builds of mutated generator copies — still rung 1. The `11-07` probe result
+recorded in `BUILD-NOTES.md` §31 is a rung-2 simulator observation and is labelled as such there;
+I did not re-run it and I make no claim about it.
+
+---
+
+_Reviewed: 2026-08-18_
+_Reviewer: Claude (gsd-code-reviewer)_
+_Depth: standard_
+_Scope: waves 7–10, diff base `5421772`_
+
+---
+
+# ARCHIVE — waves 1–6 review (2026-08-17, retained verbatim)
+
+> Everything below this line is the original `11-REVIEW.md` body as written on 2026-08-17,
+> unedited. Its frontmatter was replaced by the block at the top of this file; its finding
+> dispositions as of 2026-08-18 are in the table above. Its `CR-`/`WR-` numbering is preserved,
+> and the waves 7–10 findings deliberately start at `WR-16` / `IN-01` so nothing collides.
 
 # Phase 11: Code Review Report
 
