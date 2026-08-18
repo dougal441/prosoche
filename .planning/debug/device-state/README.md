@@ -293,3 +293,186 @@ clean bootstrap could be spent on the phase 4/6/16 tests instead.
 note named `PROSOCHĒ`. The Find Notes filter is `Name contains "PROSOCHĒ"` with limit 1, so all
 three match and which one wins is unspecified. A rename of the note, or a user with any note
 whose title contains the word, silently redirects the Control Room.
+
+---
+
+# Device UAT results — 2026-08-18 22:04–22:30 AEST, over iPhone Mirroring
+
+All timestamps below are **local wall clock**. Remember F-5: every epoch inside `state.json`
+is `local + 10 h`, so the two never match directly.
+
+## F-10 — Phase 4: the CLOSE pipeline and the session race hold on the new build
+
+Seven OPEN/CLOSE cycles were driven across the two tracked apps. Every session recorded is
+**arithmetically exact** and **uniquely identified**:
+
+| started | ended | `duration_seconds` | `ended - started` | id unique |
+|---|---|---:|---:|---|
+| 22:04:45 | 22:05:47 | 62 | 62 | ✔ |
+| 22:07:13 | 22:08:16 | 63 | 63 | ✔ |
+| 22:09:08 | 22:09:12 | 4 | 4 | ✔ |
+| 22:11:04 | 22:11:24 | 20 | 20 | ✔ |
+| 22:11:40 | 22:11:51 | 11 | 11 | ✔ |
+
+`last_close_at` tracked the newest `ended_at` exactly throughout, and `active_session.id`
+returned to the cleared sentinel after every CLOSE.
+
+**The race was genuinely exercised, and it held.** At 22:11:04 an OPEN on AliExpress displayed
+its Circle-3 Leaving/Continue menu; at 22:11:21 the app was left while **that menu was still on
+screen and unanswered**; CLOSE fired and completed at 22:11:24, writing a correct 20 s session
+**concurrently with the still-running OPEN instance**; a second app then opened at 22:11:40 and
+closed at 22:11:51. No phantom session, no duplicate id, no overlapping intervals, no
+corruption. That concurrency — a CLOSE writing state while an OPEN instance is parked on a
+modal — is the hardest part of SESS-04 and it is now device-observed.
+
+**The honest limit on Test 3.** The canonical `open A, open B, close A, close B` interleaving in
+which **OPEN-B lands before CLOSE-A** was *not* reproduced, and may not be reachable by hand on
+this device: every route out of a foreground app — Spotlight, the App Switcher, Home — fires
+`App Is Closed` *first*. So what was tested is the reachable ordering, which is the one real
+users produce.
+
+**A behavioural consequence worth recording separately: invoking Spotlight ends a session.**
+The 22:09:08 → 22:09:12 session is 4 s long because pulling down Spotlight over the foreground
+app fires `App Is Closed`. Sessions are therefore truncated by *any* excursion, including ones
+the user experiences as staying in the app. Session-duration figures should be read with that
+in mind.
+
+## F-11 — Phase 4 / G-04-4b: the intervention now identifies itself. CONFIRMED
+
+The Leaving/Continue menu renders with real explanatory copy:
+
+> You just opened a tracked app. PROSOCHĒ is at Circle 3.
+>
+> Leaving: PROSOCHĒ suggests somewhere better to go and takes you there.
+> Continue: you go into the app, after this Circle's intervention.
+
+That is the fix G-04-4b asked for — it names the Circle and says what each choice does. The
+gap's own complaint (*"encountered a 'Leaving / Continue' menu popup and could not tell what it
+signified"*) no longer reproduces.
+
+## F-12 — ⚠ Phase 4/6, NEW AND SERIOUS: an OPEN's intervention can be deferred by minutes
+
+**Observed.** After the 22:11 sequence, three consecutive OPENs (22:12:46, 22:14:06 and one at
+22:15) each advanced Heat, Pressure and Circle and wrote `state.json` normally — and displayed
+**nothing at all**. No Leaving/Continue menu, no primitive. The app opened clean.
+
+Then, at **22:16**, on returning to the Home screen, the menu for the **22:12:46** OPEN
+surfaced — *"PROSOCHĒ is at Circle 5"* — roughly **three and a half minutes late**, with the
+triggering app long since closed.
+
+**Why this is severe rather than cosmetic.** The product's stated core value is that when the
+user reaches for a tracked app, *"PROSOCHĒ interrupts strongly enough that the user makes an
+actual choice"*. An interruption that arrives three minutes later, after the app has been used
+and closed, is not that. It is worse than no interruption: it trains the user to dismiss a
+prompt that no longer refers to anything they are doing. State still accumulates correctly, so
+this is invisible in `state.json` — only a person watching the screen can see it.
+
+**Mechanism — hypothesis, NOT established.** The most likely trigger is the 22:11:40 OPEN on the
+Screen-Time-limited app: Apple's own *"You've reached your limit"* sheet took the foreground
+while PROSOCHĒ's menu was pending, and from then on Shortcuts appeared to serialise its
+interactive surfaces behind that un-dismissed run. That is a plausible reading of the ordering,
+not a measurement, and it should be treated as the first thing a diagnosis tries to reproduce —
+ideally against a tracked app with **no** Screen Time limit, to separate the two.
+
+## F-13 — Phase 16: the capture → apply → restore → clear cycle is DEVICE-PROVEN for volume
+
+This is the first time in this project that an environmental primitive has been shown to change
+a real device and put it back. Every step was measured numerically rather than inferred, using a
+two-action probe (`Get Device Details` → `Show Content`) built on the phone.
+
+| step | `Current Volume` (measured) | `state.json` |
+|---|---:|---|
+| before Silence | `1` | no capture key present |
+| after **Silence** (Circle 3) | **`0.10000000149`** | flat key `settings_snapshot.volume.original_value = 1` |
+| after **Emergency Restore** | **`1`** | same flat key back to `"null"` |
+
+So: the original was **captured**, **persisted to disk before the change**, the change was
+**actually applied to the device**, and Emergency Restore **restored the exact original and
+cleared the sentinel**. `16-UAT.md` Tests 2, 4 and 11 all pass — **for volume**.
+
+**This also proves F-4 was load-bearing, in the way that mattered most.** The capture landed in
+a **flat top-level key**; the nested `settings_snapshot` block read `"null"` the entire time. A
+tester reading only the nested block — which is what `16-UAT.md` Test 2 as written would lead
+you to do — would have recorded a false negative on the very test this phase exists to pass.
+
+## F-14 — ⚠ Phase 16: brightness cannot be settled over iPhone Mirroring. Dimming fails SAFE
+
+Running Circle 5 (Dim) produced, verbatim:
+
+> **Dim** — Brightness could not be captured, so nothing was changed.
+
+and `state.json` gained **no** brightness capture key. Three direct probe readings explain it
+and bound it:
+
+| property | reading on this iPhone 15 Pro, over Mirroring |
+|---|---|
+| `Current Brightness` | **`0`** |
+| `Current Volume` | `1` (correct) |
+| `Device Is Locked` | **`No`** |
+
+The capture gate is a numeric `> 0` test, so a `0` reading fails it and Dimming correctly
+**skips the change rather than applying an unrestorable one**. **The safety property therefore
+holds, and is confirmed working on hardware** — `16-UAT.md` Test 3 (the has-any-value/`> 0`
+guard correctly skips) **passes**, with a clear, honest user-facing message.
+
+**What is NOT established, and must not be recorded as though it were.** Whether
+`Current Brightness` returns a usable value on a phone *in the user's hand* is **still open**.
+The `0` reading is not attributable to the device being locked — the probe says it is not — so
+the leading explanation is that the physical display is off while the phone is mirrored. That
+is untested. **Do not promote "brightness cannot be captured on iOS 26" to a capability
+verdict from this session.**
+
+**Methodological consequence, which is the durable part.** `.claude/CLAUDE.md` §9's ladder gives
+rung 3 (iPhone Mirroring) no stated ceiling; §9's *"Rung 2's ceiling"* section is the only place
+a ceiling is written down. **Rung 3 has one too, and this session measured its first member:**
+every brightness observation. The Dim/restore half of phase 16 needs rung 4 — the user, phone in
+hand, unmirrored. Volume has no such restriction and is now settled.
+
+## F-15 — ⚠ F-9 is broader than first recorded: it is the Note APPEND, not the first run
+
+F-9 recorded the note picker plus unlabelled text prompt as first-run-only. **That was wrong,
+and the correction sharpens it into something actionable.** The prompts recur on **every manual
+menu choice that appends to the Control Room Note** — reproduced twice on **Emergency Restore**,
+long after first run. Read-only **Status** stays clean, which is exactly the discriminator: it
+displays the snapshot and never appends.
+
+So the failing action is `is.workflow.actions.appendnote`, and it fails on **both** of its
+parameters at once — Shortcuts asks the user to pick the note (`entity`) *and* then to type the
+text (`text`). Both are **well-formed in the artifact** (`entity` a proper variable
+`WFTextTokenAttachment`; `text` a proper `WFTextTokenString` with its single attachment at
+`{114, 1}`), so this is not one of the nine parameter-defect axes — it is a runtime
+variable-binding / entity-resolution failure, the class only a device can see.
+
+**Aggravating factor already on record:** the device holds three notes whose names contain
+`PROSOCHĒ` (two `PROSOCHĒ — Control Room`, one `PROSOCHĒ` created by this install), and the
+find-or-create filter is `Name contains "PROSOCHĒ"` limit 1. Which one wins is unspecified.
+
+## F-16 — Onboarding: the Save File grant does not generalise, and prompts recur mid-intervention
+
+**Three separate Save File permission dialogs** were raised during ordinary use, each after
+`Always Allow` had already been granted for the previous one:
+
+1. *"…to save **1 dictionary** to a file?"* — first automated OPEN
+2. *"…to save **2 dictionaries** to a file?"* — first automated CLOSE
+3. *"…to save **1 dictionary and 1 number** to a file?"* — first Silence
+
+The grant is evidently scoped to the **shape of the payload**, not to the shortcut, so a new
+shape re-prompts. A separate notification-permission dialog also fired on the first CLOSE. All
+of these appear **in the middle of an intervention**, on top of the tracked app, in the first
+few minutes of a new install — precisely when the product is trying to establish that it is
+calm and predictable.
+
+## F-17 — `Test a Circle` exercises a primitive's UI but not its session-dependent state
+
+Circle 4 (Intention) was driven from the manual menu: the free-text prompt
+(*"What are you reaching for? (optional)"*) accepted `Watch stupid videos for ten minutes`
+verbatim with no challenge, the boundary menu offered `2 / 5 / 10 / 15 / Custom`, and **Custom**
+correctly raised its own numeric *"How many minutes?"* prompt. So the contract UI works, and
+deliberate leisure is accepted rather than moralised at — `06-UAT.md` Tests 2, 3 and 4 are
+satisfied **at the UI level**.
+
+**But nothing persisted:** `active_session.intention` stayed `"null"` and
+`declared_duration_seconds` stayed `0`, because there was no active session for
+`persist_contract()` to own. That is correct behaviour, not a defect — and it means
+**`Test a Circle` cannot settle any contract-persistence test.** Tests 5, 6, 8 and 9 need a real
+OPEN that lands on Circle 4 with a live session.
