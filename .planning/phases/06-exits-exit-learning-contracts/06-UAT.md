@@ -50,7 +50,20 @@ Canonical strategy §11 Primitive D, §13.2, §6.1, §6.7, §8, §9, §16, §23,
 ### 1. Resolve the Phase 6 verification conflict
 expected: read both `06-VERIFICATION.md` and `VERIFICATION.md`, determine which is
 current, record the answer. Do not proceed against an unclear static baseline.
-result: pending
+result: pass
+note: "Resolved 2026-08-18 from git chronology — no device needed. Three commits, in order:
+  a03f737 (18:14:14) 'docs(06): record verification gaps' wrote VERIFICATION.md with
+  status gaps_found, 1/5 must-haves; e6ea081 (18:19:38) 'fix(06): close exit learning semantic
+  gaps'; 4f28084 (18:23:17) 'docs(06): reverify exit learning phase' wrote 06-VERIFICATION.md
+  with status passed, 5/5, whose own header calls itself a 'Gap-fix audit after e6ea081'.
+  Each of the four gaps recorded in the older file maps to a truth marked VERIFIED in the newer
+  one (Consult menu gained Notes/Reminders/Calendar/Back plus a user query; Create reloads and
+  re-proves ownership; the selector picks exactly one canonical candidate; no-contract outcomes
+  serialise distinctly and next-OPEN feedback is guarded on a positive declared duration).
+  VERDICT: 06-VERIFICATION.md (passed, 5/5) is current and authoritative.
+  The bare VERIFICATION.md has been renamed VERIFICATION-superseded.md so this conflict cannot
+  be re-raised by a future /gsd-verify-work run."
+
 
 ### 2. Free-text intention accepted and persisted
 expected: intention text is accepted and persisted verbatim — watch for silently-empty

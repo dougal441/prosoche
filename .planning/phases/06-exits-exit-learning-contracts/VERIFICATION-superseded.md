@@ -1,3 +1,17 @@
+<!--
+  SUPERSEDED — DO NOT TREAT AS CURRENT.
+
+  This is the PRE-FIX Phase 6 verification snapshot (status: gaps_found, 1/5).
+  It was written at commit a03f737 (2026-08-13 18:14:14). The four gaps it
+  records were fixed at e6ea081 (18:19:38) and re-verified at 4f28084
+  (18:23:17), which produced `06-VERIFICATION.md` (status: passed, 5/5) —
+  the authoritative report for this phase.
+
+  Kept for history only. Renamed from VERIFICATION.md on 2026-08-18 because
+  its presence caused the same settled conflict to be re-raised; resolving it
+  was `06-UAT.md` Test 1, now recorded as pass.
+-->
+
 ---
 phase: 06-exits-exit-learning-contracts
 verified: 2026-08-13T08:13:08Z

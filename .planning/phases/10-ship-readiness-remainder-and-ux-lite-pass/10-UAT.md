@@ -197,7 +197,6 @@ Wait five seconds. Close it. Then run the Shortcut by hand → `Status`.
   failure — the band suppressing accumulation as well as display — and is more serious than a
   visible surface.
 
-outcome:
 
 ---
 
@@ -272,7 +271,6 @@ expected behaviour.
 **Failure evidence to capture.** A screenshot of the banner, with its full text legible, plus
 which open number of Test 2 it appeared on.
 
-outcome:
 
 ---
 
@@ -430,7 +428,6 @@ here understand from this prompt why they did? Write the answer in the outcome f
 `WFMenuPrompt` — if it is cut off on the device, that is itself the finding), plus the reader's
 own account of what they understood it to mean.
 
-outcome:
 
 ---
 
