@@ -476,3 +476,107 @@ satisfied **at the UI level**.
 `persist_contract()` to own. That is correct behaviour, not a defect — and it means
 **`Test a Circle` cannot settle any contract-persistence test.** Tests 5, 6, 8 and 9 need a real
 OPEN that lands on Circle 4 with a live session.
+
+---
+
+# Phase 6 — exits and exit learning, 22:30–22:41 AEST
+
+## F-18 — ⚠⚠ BLOCKER: `enabled_exits()` filters nothing, and offers disabled exits
+
+**This is the most severe functional defect found in the session, and it is fully characterised.**
+
+Choosing *Leaving → Choose another* presents the exit list. With the shipped profile — all six
+exits enabled — the list contained **36 entries**: `Capture` ×6, `Coordinate` ×6, `Create` ×6,
+`Connect` ×6, `Consult` ×6, `Close` ×6.
+
+**The controlled experiment.** `profile_snapshot.enabled_exits` was edited on the device to
+`["Capture", "Close"]` — four exits disabled — and the menu re-triggered. It then contained
+**12 entries**: every one of the six canonical exits, **twice each**.
+
+That is `6 canonical × N enabled`, measured at two values of N (36 at N=6, 12 at N=2). It
+identifies the mechanism exactly: `enabled_exits()`'s **nested Repeat With Each** appends the
+outer `Canonical Exit` on *every* inner iteration, i.e. its inner conditional
+(`Enabled Exit Candidate` *string is* `Canonical Exit`) evaluates **TRUE unconditionally**.
+
+**The consequence is worse than the duplication.** `Coordinate`, `Create`, `Connect` and
+`Consult` were all **disabled** and were all still offered — and **`Coordinate` was selected and
+fully routed**, presenting its `Reminders / Calendar` sub-menu. So the filter is not weak, it is
+a **complete no-op**: a disabled exit is offered, selectable and functional.
+
+This directly violates the canonical requirement that exploration never selects an exit the user
+has disabled. **`06-UAT.md` Test 12 FAILS**, Test 10's menu is wrong, and Tests 13–14 cannot be
+meaningful while the selector's counter arithmetic runs over a `6N`-item list instead of an
+`N`-item one.
+
+**Why nothing caught it before now.** `.claude/CLAUDE.md` already records that the control-flow
+identifiers (`conditional`, `repeat.*`) are **absent from the ToolKit catalog entirely**, so
+catalog-driven sweeps are blind to them, and that operator/operand validity is invisible in the
+plist. This defect is both: a conditional, inside a repeat, whose comparator resolves wrongly at
+runtime. Only a device shows it. Note the generator sets `WFConditionalActionString` **twice** at
+this site — first to a bare `"￼"`, then to `token("Canonical Exit")` — which is the same
+two-step pattern whose *unfinished* form caused G-04-1/G-04-3; here the second assignment is
+present, so the shape is not obviously wrong and needs a device-side comparison against a
+known-good conditional.
+
+## F-19 — Phase 6 Test 11: the load-bearing field is CORRECT
+
+The exit → return-time cycle was measured end to end:
+
+- `Capture` exit recorded at epoch `1787092241`, with `pending_exit.type = "Capture"` and
+  `pending_exit.timestamp` set.
+- Next tracked OPEN at epoch `1787092494`.
+- `exit_stats.Capture.sum_return_seconds` → **253**, and `1787092494 − 1787092241 = 253` exactly.
+- `exit_stats.Capture.count` → 1, and `pending_exit.type` correctly cleared back to `"null"`.
+
+So **"time until the next target-app OPEN" — the field `06-UAT.md` Test 11 calls load-bearing —
+is captured correctly.** Exit-outcome recording also carries app, timestamp, type, heat and
+circle. (It does **not** carry the return time *per event*; that lives only in the aggregate.
+Whether §9.1 requires per-event retention is still the open scope question from F-3.)
+
+## F-20 — The single-item list collapse is GENERAL, and it self-heals at n = 2
+
+Three independent containers were observed collapsing to a bare object at exactly one element,
+and two were then observed recovering:
+
+| container | at n = 1 | at n = 2 |
+|---|---|---|
+| `recent_sessions` | bare object | **proper 2-element array** ✔ |
+| `exit_events` | bare object | **proper 2-element array** ✔ |
+| `exit_stats.Capture.samples` | bare scalar `253` | not yet observed at n = 2 |
+
+**This corrects the expectation behind `seed_exit_events()`.** That fix seeds `exit_events: []`
+and the fresh bootstrap does carry `[]` — yet the very first exit still wrote a bare object. **So
+seeding an empty array does not prevent the collapse**; it prevents only the *unseeded* read.
+The collapse is a property of how a one-item Shortcuts list serialises into the dictionary, and
+`seed_exit_events()`'s docstring should be corrected to say so rather than implying the shape is
+now guaranteed.
+
+Severity is genuinely low for the two containers that self-heal — every downstream consumer here
+tolerated the n=1 object and produced a correct array at n=2. It is **not** dismissible for
+`exit_stats.<Exit>.samples`, which is the one §16 trims as a rolling window and the one that
+feeds exploit-phase averaging; that consumer has not yet been observed at n≥2.
+
+## F-21 — Exit routing (Test 10), partial pass
+
+| exit | observed |
+|---|---|
+| Capture | ✔ sub-menu `Notes / Voice Memos / Camera`; **Notes** selected and the Notes app opened |
+| Coordinate | ✔ sub-menu `Reminders / Calendar`; **Calendar** selected and Calendar opened |
+| Create / Connect / Consult / Close | not yet exercised this session |
+
+**One observation that is NOT a defect, recorded so it is not re-raised as one.** Capture → Notes
+landed on the **PROSOCHĒ Control Room note**, not a blank note. The route is
+`open_app("Notes")` (`tools/build_state_engine.py:1148` and the `Capture` branch of
+`route_exit()`), so iOS simply restored the last-viewed note — and the last note PROSOCHĒ itself
+opened is its own Control Room. Correct per the implementation; worth a product decision, since
+a user sent to "capture a thought" lands in the app's settings page.
+
+## F-22 — Circle 6 (`Eject`) behaves correctly
+
+Choosing *Continue* at Circle 6 returned the device to the Home Screen, which is `exile()`'s
+designed behaviour. Circles 1 (`Pause`), 2 (`Black and White`), 3 (`Silence`), 4 (`Intention`),
+5 (`Dim`) and 6 (`Eject`) have now all been observed firing on hardware this session — the first
+time more than one Circle has ever run on a real device in this project.
+
+**Circle 2 (`Black and White`) showed its alert but the screen did not turn grey.** Phase 14
+territory, recorded here only because it was observed in passing and not investigated.
