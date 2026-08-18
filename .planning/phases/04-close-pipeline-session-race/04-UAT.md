@@ -42,6 +42,39 @@ before.
 Canonical strategy §20 (CLOSE handler, 17 steps), §30 (state races), §32 (OPEN/CLOSE
 acceptance criteria).
 
+## Pre-install device forensics — 2026-08-18 (rung 1 over a rung-4 artifact)
+
+Before the freshly-installed build was run, the previous build's accumulated `state.json` was
+recovered from the device and preserved at
+`.planning/debug/device-state/state-2026-08-18T1931-stale-preinstall.json`. Full analysis:
+`.planning/debug/device-state/README.md`.
+
+**What it settles for this phase.** Fourteen `recent_sessions` entries spanning eleven hours,
+every one satisfying `duration_seconds == ended_at - started_at` **exactly**, with
+`last_close_at` equal to the newest entry's `ended_at` and `active_session` back to its cleared
+sentinel. That is a far stronger sample for Test 6's "recompute by hand for at least two cases"
+than one sitting could produce. It is recorded against Test 6 below rather than treated as a
+pass, because Test 6 asks for the numbers **after each of Tests 3-5**, and none of those cases
+appears anywhere in the file (finding F-7).
+
+**Two new defects surfaced, neither previously recorded** — both are cross-cutting rather than
+Phase 4-specific, and both are written up in full in the README:
+
+- **F-4** — a dotted `Set Dictionary Value` writes a **literal flat top-level key**, and a
+  dotted read then resolves that flat key in preference to traversing the nested container.
+  Writes and reads agree, so the engine is self-consistent and correct; but the nested
+  containers seeded at bootstrap are shadowed and permanently stale. This is a new
+  device-established runtime semantic. Note its direct bearing on **Test 3**: the CLOSE
+  ownership comparison reads `active_session.id`, so it compares real flat values on both
+  sides and is a genuine check, not a vacuous `"null" == "null"`.
+- **F-5** — `Now Epoch` is anchored on a `Specified Date` of `1970-01-01 00:00:00`, which iOS
+  parses in the **device's local zone**. Every stored timestamp is therefore
+  `true_epoch + utc_offset` (+10 h on this device, confirmed to the second against the file's
+  own mtime). All *differences* are correct, so Test 1 and the arithmetic above are unaffected,
+  and `behavioural_day` is derived separately and is correct. It bites only when the offset
+  changes while state is live — a DST transition or the user travelling — which is worth
+  knowing before **Test 5** interprets anything.
+
 ## Tests
 
 ### 1. Simple OPEN → wait → CLOSE records a plausible session
@@ -87,7 +120,16 @@ expected: after each case above, `recent_sessions`, `last_close_at`, and the cle
 `active_session` hold exactly what §20 says they should. "No error dialog" is not a pass —
 recompute by hand for at least two cases.
 result: pending
-note: "Re-opened — the CLOSE automation typo blocking Test 1 is now fixed."
+note: "Re-opened — the CLOSE automation typo blocking Test 1 is now fixed.
+  PARTIAL EVIDENCE 2026-08-18 (pre-install forensics, finding F-1): the simple-case arithmetic
+  is confirmed 14/14 by hand against the recovered device state.json — every recent_sessions
+  entry has duration_seconds == ended_at - started_at exactly, last_close_at equals the newest
+  ended_at, and active_session is correctly cleared. The one contracted session also recomputes:
+  declared 120, duration 21, overrun -99, respected true. This satisfies the 'recompute by hand
+  for at least two cases' clause seven times over FOR THE SIMPLE CASE ONLY. It is NOT a pass,
+  because the clause that governs is 'after each case above': the race (Test 3), the
+  lock/app-switch path (Test 4) and the rollover (Test 5) appear nowhere in that file. Held
+  pending those three."
 
 ## Summary
 

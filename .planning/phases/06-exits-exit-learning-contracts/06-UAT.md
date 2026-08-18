@@ -45,6 +45,18 @@ the time (§30, §36 — explicitly not the goal).
 
 Canonical strategy §11 Primitive D, §13.2, §6.1, §6.7, §8, §9, §16, §23, §27, §30, §32.
 
+## Pre-install device forensics — 2026-08-18 (rung 1 over a rung-4 artifact)
+
+The previous build's accumulated `state.json` was recovered from the device before the new
+install was run, preserved at
+`.planning/debug/device-state/state-2026-08-18T1931-stale-preinstall.json`, and analysed in
+`.planning/debug/device-state/README.md`. Two of this phase's tests are advanced by it, and one
+is resolved against the build itself rather than the device.
+
+**It was written by a PRE-PHASE-16 build** (it still carries the `changed_at` /
+`changed_by_session_id` leaves that decision D-02 removed, and `exit_events` is not the `[]` the
+current template seeds). Nothing in it confirms a current-build fix.
+
 ## Tests
 
 ### 1. Resolve the Phase 6 verification conflict
@@ -97,7 +109,21 @@ result: pending
 ### 8. recent_contracts bounded window is correct
 expected: state.json's `recent_contracts` holds the last ~10 per §16; fidelity figures are
 arithmetically right — recompute by hand for at least two cases.
-result: pending
+result: issue
+reported: "recent_contracts is never written by any code path, on any build. Confirmed from
+  both sides on 2026-08-18. DEVICE: the recovered state.json has recent_contracts: [] while
+  simultaneously holding a fully-evaluated contract (declared_duration_seconds 120,
+  overrun_seconds -99, respected true) inside a recent_sessions entry. GENERATOR:
+  `grep -c 'set_value(\"recent_contracts\"' tools/build_state_engine.py` returns 0 — the key is
+  seeded [] by the bootstrap template and nothing ever appends to it. Contract outcomes are
+  instead folded into the recent_sessions record. So the test as written cannot pass on any
+  build. NOTE the capability may nonetheless be intact: contract fidelity is computable from
+  recent_sessions today, and the arithmetic there is correct (21 - 120 = -99; respected =
+  overrun <= 0). The open question is whether §16's named rolling contract window is genuinely
+  required or was superseded by the fold-into-sessions design — a scope call, recorded as an
+  issue rather than silently re-scoped."
+severity: major
+evidence: ".planning/debug/device-state/README.md finding F-2"
 
 ### 9. No phantom contract-overrun Mirror message
 expected: a time-overrun message is never shown when no contract existed (§13.1).
@@ -116,6 +142,19 @@ expected: exit type, timestamp, triggering app, Circle, Heat/Pressure, time of d
 the load-bearing field — time until the next target-app OPEN (§9.1). If that last field
 isn't captured correctly, learning is decorative.
 result: pending
+note: "PRE-INSTALL FORENSICS (finding F-3), two things to carry into the device run.
+  (1) On the OLD build exit_events degraded to a SINGLE OVERWRITTEN OBJECT rather than a list —
+  {app, timestamp, type, heat, circle} — because the key was never seeded. This settles
+  assumption A1 in seed_exit_events()'s docstring, which recorded the pre-fix failure mode as
+  [ASSUMED] and settleable only at rung 2: it is a SILENT SHAPE DEGRADATION, not a crash and not
+  a zero-iteration no-op. The current build seeds exit_events: [], so verify on device that a
+  second exit APPENDS rather than replaces — that is the actual regression risk this test now
+  carries. seed_exit_events()'s docstring should be updated from [ASSUMED] to measured.
+  (2) The recorded event object carries NO per-event field for time-until-next-OPEN. The return
+  time is accumulated only into exit_stats.<Exit>.sum_return_seconds (1044 s for the single
+  Capture event on the old build). Since this test names that field 'load-bearing', decide
+  explicitly on device whether per-event retention is required or whether the aggregate
+  satisfies §9.1."
 
 ### 12. Explore phase rotates across enabled exits only
 expected: exploration never selects an exit the user has disabled.
@@ -136,9 +175,40 @@ result: pending
 expected: per-exit aggregates respect §16's rolling-window rule across a long test — no
 unbounded growth.
 result: pending
+note: "PRE-INSTALL FORENSICS (finding F-4) — read before testing this. exit_stats is written
+  through dotted keys, and on device a dotted Set Dictionary Value creates a LITERAL FLAT
+  top-level key rather than writing into the nested container. The recovered file holds
+  exit_stats.Capture.count = 1 (flat) alongside exit_stats.Capture.count = 0 (nested, the
+  bootstrap seed), and exit_stats.Capture.samples = 1044 as a FLAT SCALAR alongside a nested
+  samples: []. A dotted read prefers the flat key, so the aggregates are read correctly and the
+  engine works — but when checking boundedness, inspect the FLAT keys. The nested exit_stats
+  subtree is shadowed and permanently stale, and reading it would report zeros forever."
 
 ## Summary
 
 total: 15
-passed: 0
-issues: 0
+passed: 1
+issues: 1
+pending: 13
+skipped: 0
+blocked: 0
+
+## Gaps
+
+- gap_id: G-06-8
+  truth: "state.json's recent_contracts holds the last ~10 per §16; fidelity figures are arithmetically right."
+  status: failed
+  reason: "recent_contracts is seeded [] and never written by any generator path (0 set_value sites); the recovered device state.json confirms it stayed empty while a contract was evaluated and stored inside recent_sessions instead."
+  severity: major
+  test: 8
+  root_cause: "No append path exists. Contract outcome fields (declared_duration_seconds, overrun_seconds, respected) are written into the recent_sessions record by close_pipeline() and nowhere else."
+  artifacts:
+    - path: "tools/build_state_engine.py"
+      issue: "Bootstrap template seeds \"recent_contracts\": [] but no set_value(\"recent_contracts\", ...) call exists anywhere in the file."
+    - path: ".planning/debug/device-state/state-2026-08-18T1931-stale-preinstall.json"
+      issue: "Device confirmation: recent_contracts: [] alongside a fully-evaluated contract in recent_sessions."
+  missing:
+    - "DECIDE FIRST, then implement: is §16's named rolling contract window required, or was it superseded by folding contract outcomes into recent_sessions? Contract fidelity is already computable from recent_sessions, so this may be a documentation fix rather than a code fix."
+    - "If required: add the append + rolling-window trim in close_pipeline() beside the recent_sessions append, and treat recent_contracts as a COMPOUND_STATE_KEYS member (it is already listed there) so it is read with get_value(), never read_value()."
+    - "If superseded: restate §16 and this UAT test, and remove the dead seeded key or document it as reserved."
+  debug_session: ".planning/debug/device-state/README.md (finding F-2)"

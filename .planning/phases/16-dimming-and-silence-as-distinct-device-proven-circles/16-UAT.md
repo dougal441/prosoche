@@ -232,6 +232,47 @@ real finding — capture it, and note which Circle and which sequence were activ
 
 ---
 
+## Pre-install device forensics — 2026-08-18, before Setup ran
+
+The outgoing build's `state.json` was recovered from the phone and preserved at
+`.planning/debug/device-state/state-2026-08-18T1931-stale-preinstall.json` **before** it was
+deleted, with full analysis in `.planning/debug/device-state/README.md`. Three things in it
+bear directly on this file.
+
+**F-6 — the capture-persistence P0 is confirmed from the device side, and its limit is stated.**
+`settings_snapshot` holds the cleared sentinel for both groups, and — decisively — the file
+contains **no flat `settings_snapshot.brightness.original_value` key at all**. Per F-4 below, a
+persisted capture would necessarily have left one. So on that build the capture reached
+`state.json` by no path whatsoever, exactly as this file's "What this phase changed" paragraph
+describes. **This confirms the defect, not the fix.** And it is weaker than it first looks: the
+device's `circle` was `4` under sequence `BlackMirror`, whose Circle 4 is **Mirror** — Silence
+sits at 5 and Dim at 7 — so Dimming and Silence were most likely never reached at all. The
+empty snapshot is *consistent with* the P0 without proving a capture was attempted and lost.
+
+**The live hazard did not apply to this device.** It was at normal brightness and volume when
+recovered.
+
+**Test 12's upgrade case is still exercisable, and the window was deliberately kept open.** The
+recovered file carries both leaves D-02 removed, so it *is* the "older, larger file" Test 12
+asks about. It has been preserved byte-for-byte, so after the fresh-bootstrap tests are done it
+can be copied back onto the device and one Dimming cycle run against it. Run the fresh cases
+first; do not spend the clean bootstrap on the upgrade case.
+
+**F-4 changes how every `state.json` reading in this file must be taken.** A dotted
+`Set Dictionary Value` writes a **literal flat top-level key** — the nested container is not
+touched — and a dotted read then resolves that flat key in preference to traversing. So when
+Test 2 asks whether "a real capture is VISIBLE in `state.json`", the thing to look for is a new
+**top-level** `"settings_snapshot.brightness.original_value"` key. The nested
+`settings_snapshot` block will still read `"null"`, and that is **not** a failure — reading only
+the nested block would report a false negative on the very test this phase exists to pass.
+Test 12's seed-shape check is unaffected: it inspects the bootstrap seed, which is nested.
+
+**F-5 — stored epoch timestamps carry the device's UTC offset** (`Now Epoch` is anchored on a
+`Specified Date` of `1970-01-01 00:00:00`, parsed locally). Every timestamp in `state.json` is
+`true_epoch + 10 h` on this device. Differences are all correct, so nothing in this file's
+arithmetic is affected — but do not try to reconcile a stored timestamp against the Mac's clock
+without subtracting the offset.
+
 ## Setup
 
 Complete every step in order before Test 1. Steps 6 and 7 are the ones the whole file depends
