@@ -466,7 +466,7 @@ gate immediately; Phase 15 replaces it with the designed Voice.
 **Severity:** major
 **Requirements**: AUDIT-02, CIRC-02, CIRC-06, CIRC-08, ROOM-01, ROOM-02, DIST-01, DIST-02
 **Depends on:** Phase 10
-**Plans:** 7/10 plans executed
+**Plans:** 8/10 plans executed
 
 **Gap closure (waves 7–10).** `11-VERIFICATION.md` scored 13/18 with three failed truths and two
 partials. Plans `11-07` … `11-10` close all five and are strictly sequential, because every one of
@@ -509,7 +509,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 11-08-PLAN.md — GAP 1: Dim and Silence re-gated on the captured-original leaf so their bodies are reachable; a reachability build guard armed in both builders; the false capability claim corrected in the MANIFEST, the ROADMAP and the deviation log (wave 8, **not autonomous** — one blocking checkpoint between the guard's proof and the gate fix)
+- [x] 11-08-PLAN.md — GAP 1: Dim and Silence re-gated on the captured-original leaf so their bodies are reachable; a reachability build guard armed in both builders; the false capability claim corrected in the MANIFEST, the ROADMAP and the deviation log (wave 8, **not autonomous** — one blocking checkpoint between the guard's proof and the gate fix)
 
 **Wave 9** *(blocked on Wave 8 completion)*
 
@@ -766,10 +766,13 @@ capture-and-restore** — the outstanding half of Phase 9, which merged its code
 landed the numeric-coercion fix for all 28 `setbrightness` (14) / `setvolume` (14) operand
 sites (`2e2261e`, artifacts in `c6d8737`), and Phase 10 pinned the whole surface with
 `docs/environmental_restore_check.py` so it cannot be removed by accident. **But they have
-never run on a phone, and the merge made them live** — before the coercion fix these actions
-silently no-opped; now they actually change brightness and volume, and the code that puts
-them back has never once executed on hardware. `09-UAT.md` has 12 tests; exactly one has
-passed — test 1, the static "coercion chip does not render red" gate.
+never run on a phone, and the merge did NOT make them live** — the coercion fix was necessary
+and not sufficient. Both bodies sat in the never-taken arm of a permanently-true
+`settings_snapshot` container gate and were unreachable until plan 11-08, independently of and
+prior to Phase 16's own persistence fix; 44 environmental actions per fork could not run. They
+are reachable now, and the code that puts them back has still never once executed on hardware.
+`09-UAT.md` has 12 tests; exactly one has passed — test 1, the static "coercion chip does not
+render red" gate.
 
 **The coercion shape itself is analogy-based, not donor-confirmed.**
 `WFCoercionVariableAggrandizement` / `CoercionItemClass: WFNumberContentItem` is confirmed
