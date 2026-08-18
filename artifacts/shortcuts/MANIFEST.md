@@ -1,5 +1,31 @@
 # Shortcut Distribution Manifest
 
+**PHASE 11 GAP-CLOSURE, wave 10 (2026-08-18, plan 11-10) — NO ARTIFACT MOVED, and this block
+adds no hash row.** The table's six hash/size rows below remain plan 11-09's and are correct
+unchanged. Plan 11-10 touched build guards and one checker constant only: it emitted no action,
+so both forks rebuild **byte-identical** to the 11-09 build and neither container was re-signed.
+Verified rather than assumed — `git status --short -- src/` is empty after a full rebuild of both
+forks, the Aware source re-serialises to the same SHA-256 `c52edd93…`, and `docs/manifest_check.py`
+is green **with no exception**, which is what makes "no hash moved" a measurement rather than an
+expectation. Both forks still pass gate A (`--target-macos 26 --target-platform all`).
+
+**One claim in this file is now superseded by an executable guard, and that is the point of the
+wave.** The earlier blocks record T-11-22 — that no Emergency Restore surface is enclosed by a
+Panic Escape conditional — as a **hand-measurement**: 4 surfaces per fork, 0 enclosed. That
+measurement was correct and is unchanged, re-derived this wave on both rebuilt forks. What has
+changed is that it is no longer the *only* thing standing behind the phase's only `critical`
+threat: `verify_panic_escape_isolation()` is armed in both builders, fails when a surface becomes
+enclosed **and** when every surface disappears, and both directions are demonstrated on negative
+controls. A prose measurement is not re-run by the next change to `universal_leaving()`; a build
+guard is. Full record: `docs/BUILD-NOTES.md` §35.
+
+**NOTHING HERE IS A DEVICE CLAIM.** Every result in this wave is rung 1, structural. Emergency
+Restore has still never been tapped on a phone, the capture-and-restore loop it protects has
+still never run on hardware, and `DIST-03` is open. A guard proven to fail on a synthesised
+defect is proof about the guard, not about the device.
+
+---
+
 **This table's six hash/size rows describe the PHASE 11 GAP-CLOSURE re-sign (2026-08-18, plan
 11-09), superseding the plan 11-08 re-sign whose header block follows immediately below.** Per
 this file's own convention that block is retained as its own rebuild's record and is superseded
