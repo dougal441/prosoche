@@ -817,7 +817,14 @@ device screen mapped through the window rect measured at run time**, never pixel
 | A8 | Omitting `WFSpeakTextWait` leaves Shortcuts' own default, which does not raise an unfilled-parameter error | Pitfall 5, Alternatives | It is omitted today at 22 sites and the shipped artifact validates and signs; whether the *runtime* accepts it is only established once speech is observed running. Setting it would require a donor for the bool encoding |
 | A9 | Phase 14 (Ash) has not executed, so `ash()` is still alert-only and Circle 3-under-`Ambient` reasoning is unaffected | Pitfall 4 | `.planning/phases/14-*/` is empty. If 14 lands first, re-derive the Circle-3 exoneration against the new `ash()` |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+All five questions below were closed during planning by locked decisions D-04 and D-05 and by
+the plan set that implements them. **The questions' original text is unmodified** — each
+carries an appended `**RESOLVED**` bullet naming what closed it and where the closure lives, so
+the record shows both what was open and what settled it. A question closed by a *decision* is
+not the same as a question closed by *evidence*: Q2 and Q3 are closed as far as the phase's
+scope goes, and the underlying device fact they concern stays open until plan 15-02 measures it.
 
 1. **Does `voice_enabled = true` (JSON boolean, read through Get Text, coerced to
    `WFNumberContentItem`) satisfy `> 0`?**
@@ -832,6 +839,12 @@ device screen mapped through the window rect measured at run time**, never pixel
      probe (`Set Variable = "true"` → conditional `> 0` → `Return to Home Screen` vs. an
      ejecting alternative) settles it with no Notes, no AI, no automations and no hardware
      dependency.
+   - **RESOLVED — by decision D-05, implemented in plan 15-03.** The recommendation was taken:
+     `voice_enabled` is normalised to numeric `1`/`0` at *both* writers (bootstrap and Control
+     Room `Toggle Voice`) with a `schema_version` bump 4 → 5, which makes the coercion question
+     moot rather than answering it. **The underlying device fact — whether a JSON boolean
+     coerced to `WFNumberContentItem` satisfies `> 0` — remains unmeasured and stays unaudited
+     under nine-axes rule 6.** No device session was spent on it, by design.
 
 2. **Which of `list` / `getitemfromlist` / `speaktext` carries the axis-4 unfilled picker?**
    - *What we know:* the failure is device-reproduced ×3 across 2 installs, follows the
@@ -846,6 +859,13 @@ device screen mapped through the window rect measured at run time**, never pixel
    - *Scope note for the planner:* the fix itself may belong to the standalone `blocker`
      todo rather than to Phase 15. **The discrimination belongs here** — Phase 15 is
      rewriting the span, and doing it blind guarantees a rework.
+   - **RESOLVED — by decision D-04, implemented in plan 15-02.** The recommendation was taken
+     verbatim: plan 15-02 builds the alert-free three-leg discriminator (Task 1) and runs it on
+     the simulator with a bisection (Task 2), at rung 2, with no device session. **This closes
+     the question of *how* the answer is obtained, not the answer itself** — the verdict does
+     not exist until 15-02 Task 2 runs, and `not discriminated at rung 2` is a first-class
+     outcome of that run, enumerated in the plan's acceptance criteria alongside the three
+     positive ones.
 
 3. **Should the phase own the axis-4 fix, or discriminate and hand off?**
    - *What we know:* the defect affects Circle 7 equally; the todo is filed at `blocker`
@@ -856,6 +876,15 @@ device screen mapped through the window rect measured at run time**, never pixel
    - *Recommendation:* structure the plan so the discriminator runs **early**, then branch:
      one-line class fix → absorb it; anything larger → record it and mark CIRC-08
      device-unproven rather than silently implying otherwise.
+   - **RESOLVED — by D-04's two-branch routing rule, implemented in plan 15-02 Task 3.**
+     Discriminate-and-branch was chosen over owning the fix unconditionally. Branch A absorbs a
+     one-line class fix (a single missing required picker at a single emitter, applied
+     everywhere by the generator's own construction, plus a `verify_required_pickers()`
+     expectation so it cannot recur); Branch B records the narrowing into the blocker todo
+     `.planning/todos/pending/2026-08-18-mirror-primitive-unfilled-picker.md` and states in
+     writing that **CIRC-08 remains device-unproven for Phase 15**. There is no third branch.
+     Branch A is additionally gated on plan 15-01 being committed, because it edits
+     `tools/build_state_engine.py`, which 15-01 owns.
 
 4. **Does `Test a Circle` reach `voice()` with a usable `Circle Next`?**
    - *What we know:* line 2237 sets `Circle Next` from `Test Circle` before
@@ -865,12 +894,24 @@ device screen mapped through the window rect measured at run time**, never pixel
      `Test a Circle → Circle 8 · Fraud` as the harness rather than trying to accumulate real
      Pressure to Circle 8 (which STATE.md records as ~30 tests' worth of prerequisite work).
    - *Recommendation:* use the Test-a-Circle harness. It never writes Pressure (ROOM-12).
+   - **RESOLVED — by the harness choice recorded in plan 15-05's UAT instrument.** The
+     recommendation was taken: every Circle-8 and Circle-7 test in `15-UAT.md` is driven from
+     `Test a Circle → Circle 8 · Fraud` and `Test a Circle → Circle 7 · Violence` rather than
+     by accumulating real Pressure, which STATE.md prices at roughly thirty tests' worth of
+     prerequisite work. No plan attempts the Pressure route.
 
 5. **Should `docs/BUILD-NOTES.md` gain a new section for this phase's decisions?**
    - *What we know:* the project's convention is that a probe's result is *recorded, not
      consumed*, into BUILD-NOTES and CAPABILITY-DECISIONS.
    - *Recommendation:* yes — D-15-A, the Circle-7 speech removal, and the Q2 discriminator
      result all need a home. §19.7 and §34's first stand-in both need superseding notes.
+   - **RESOLVED — yes; `docs/BUILD-NOTES.md` §36 is authored in plan 15-05 Task 2.** It carries
+     D-01 through D-06, the declined alternatives, the omitted-`WFSpeakText*` deviation, the
+     15-02 probe verdict *with its evidence rung*, and CIRC-08's device status. The two
+     supersessions are split by ownership so one file's edits do not straddle two waves:
+     §34's Circle-8 stand-in is discharged in plan 15-01 Task 3, and §19.7 is superseded in
+     15-05 Task 2. §34's Circle-6 `Eject` subsection is left in force — that stand-in is
+     Phase 17's.
 
 ## Environment Availability
 
