@@ -2266,7 +2266,7 @@ def manual_note_refresh():
           otherwise(setup_g), action("is.workflow.actions.nothing"), end_if(setup_g)]
     sync_g, sync_if = if_block("Manual Sync Requested", 2, number=0)
     text_id, match_id = uid(), uid()
-    a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The extracted text is saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), set_value("profile_snapshot.proforma", output(match_id, "Matched Text")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g)]
+    a += [sync_if, comment("Sync My Profile parses only the editable proforma between its two headings:\n- Input is the selected Control Room Note from this manual run.\n- No OPEN action can enter this branch.\n- The extracted text is saved with its sync time."), action("is.workflow.actions.gettext", UUID=text_id, WFTextActionText=variable("Control Room Note")), action("is.workflow.actions.text.match", UUID=match_id, WFMatchTextPattern="(?s)## MY PHONE, ON PURPOSE.*?(?=## CURRENT SETTINGS)", text=output(text_id, "Text")), set_value("profile_snapshot.proforma", output(match_id, "Matches")), set_value("profile_snapshot.synced_at", variable("Now Epoch")), *save_state(), otherwise(sync_g), action("is.workflow.actions.nothing"), end_if(sync_g)]
     a += panic_escape_branch()
     a += [comment("--- PHASE 7 MANUAL CONTROL ROOM REFRESH END ---")]
     return a
@@ -2325,11 +2325,13 @@ def panic_escape_branch():
           action("is.workflow.actions.text.match", UUID=match_id,
                  WFMatchTextPattern=PANIC_ESCAPE_SECTION_PATTERN,
                  text=output(note_id, "Text")),
-          # Coerce the match to Text before comparing it: a Matched Text value compared
+          # Coerce the match to Text before comparing it: a Matches value compared
           # directly renders blank, the same gotcha read_value() exists to avoid for
-          # dictionary values.
+          # dictionary values.  The LABEL is "Matches" -- corpus-attested 15/0, see
+          # ACTION_OUTPUT_NAMES.  The coercion reasoning is unchanged and still correct;
+          # only the output name it resolves through was wrong.
           action("is.workflow.actions.gettext", UUID=section_id,
-                 WFTextActionText=output(match_id, "Matched Text")),
+                 WFTextActionText=output(match_id, "Matches")),
           set_var("Panic Escape Section", output(section_id, "Text"))]
     a += read_value("panic_escape_enabled", variable("State"), "Panic Escape Stored")
 
@@ -4475,8 +4477,28 @@ def verify_numeric_operands(actions):
 #       device donor (.planning/debug/"Donor - notes.shortcut") AND golden shortcut
 #       f44f5caf5e3e48d4817e73af450c4404.xml action 14 both reference this action's
 #       output by that name.  This artifact said "Rich Text".
+#   text.match -> "Matches"                                        PHASE 11 (11-07), CR-02
+#       Two independent sources, both re-taken this session rather than transcribed.
+#       (1) Golden corpus, all 19 shipped XMLs, every ActionOutput token resolved back to
+#           its producing identifier: this action publishes "Matches" 15 times across 3
+#           files, and the label this engine used to guess ZERO times.  (2)
+#           tools/build_sentient.py's own audit_block() already reads this identifier's
+#           output as "Matches".  The engine guessed differently at two sites, so ONE
+#           artifact shipped TWO contradictory names for ONE identifier.
+#       The retired guess is deliberately NOT spelled out anywhere in this file: a comment
+#       that names a wrong output name is the seed of the next recurrence, and the string
+#       is also the negative-control search term.  Its wording is in 11-07-SUMMARY.md.
+#       WHAT THE WRONG NAME COSTS, and why it went unnoticed for three phases: nothing
+#       errors.  The reference simply does not resolve, so the Panic Escape section reads
+#       EMPTY, the condition-99 contains test over it is therefore always FALSE, control
+#       falls to the otherwise arm, and the user who asked to remove their bypass is shown
+#       a confident "Nothing was changed."  No error, no log, no Note append -- the removal
+#       half of the phase's headline deliverable silently did nothing.  Listing the
+#       identifier here is what lets verify_output_names() see the site at all; while it
+#       was absent, the guard that exists for exactly this defect class was blind to it.
 ACTION_OUTPUT_NAMES = {
     "is.workflow.actions.getrichtextfrommarkdown": "Rich Text from Markdown",
+    "is.workflow.actions.text.match": "Matches",
 }
 
 

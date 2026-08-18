@@ -102710,7 +102710,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 								<key>OutputUUID</key>
 								<string>5DC6D475-7D2E-5D59-B3AE-CFB92EA23C1B</string>
 								<key>OutputName</key>
-								<string>Matched Text</string>
+								<string>Matches</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
@@ -103016,7 +103016,7 @@ This reports whether PROSOCHĒ has ever recorded a genuine open or an owning clo
 								<key>OutputUUID</key>
 								<string>B3D32842-47A2-5425-9785-96B792985873</string>
 								<key>OutputName</key>
-								<string>Matched Text</string>
+								<string>Matches</string>
 								<key>Type</key>
 								<string>ActionOutput</string>
 							</dict>
