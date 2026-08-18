@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 11
-current_phase_name: Build Addendum 01 — Dante Circle names and the ten-primitive roster
+current_phase: 15
+current_phase_name: Circle 8 — the Voice primitive
 status: verification-deferred
 stopped_at: "TWO concurrent streams, both recorded. (1) Phase 11 execution ran to verification_deferred_human — device-blocked on DIST-03. (2) Device UAT session 2026-08-17/18 on Core b07497ba (hash-matched) — DIST-03 IS NOW LIFTED: an iPhone is reachable via Mirroring and both Personal Automations are verified correct, so Phase 11's device-blocked UAT and every other file still carrying blocked_on: DIST-03 can now be run. 24 UAT items answered (11 pass, 6 partial, 4 fail, 3 blocked). Two product blockers open: the Mirror primitive's axis-4 unfilled picker (proven to follow the primitive, not the Circle index) and Control Room Note resolution on state-changing manual runs. Next highest-value step: accumulate Pressure to Inferno's Circle-1 entry (>=2) via repeated tracked-app opens to unlock the intervention/exits surface, which gates ~30 remaining tests in phases 06/12/13."
-last_updated: "2026-08-18T09:14:03.596Z"
+last_updated: "2026-08-18T10:06:36.403Z"
 last_activity: 2026-08-18
-last_activity_desc: Phase 11 execution started
+last_activity_desc: Phase 15 execution started
 progress:
   total_phases: 24
-  completed_phases: 11
+  completed_phases: 12
   total_plans: 57
-  completed_plans: 48
+  completed_plans: 52
 ---
 
 # Project State
@@ -23,11 +23,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 11 — Build Addendum 01 — Dante Circle names and the ten-primitive roster
+**Current focus:** Phase 15 — Circle 8 — the Voice primitive
 
 ## Current Position
 
-Phase: 11 (Build Addendum 01 — Dante Circle names and the ten-primitive roster) — EXECUTING
+Phase: 15 (Circle 8 — the Voice primitive) — EXECUTING
 Plans: 4/4 complete; verifier 25/27, 0 failed; the 2 outstanding are device-gated and abstained
 
 **Phase 13 research rewrote the phase.** Donor 5 was decrypted for the first time and
@@ -105,7 +105,7 @@ target**, so an observation on it is same-major-version evidence rather than an 
 Personal Automations are user-created on the device regardless, so DIST-03 would gate this work
 even with a live tunnel.
 
-Last activity: 2026-08-18 — Phase 11 execution started
+Last activity: 2026-08-18 — Phase 15 execution started
 
 Progress: [██████████] 100%
 
