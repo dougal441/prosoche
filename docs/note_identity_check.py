@@ -77,11 +77,33 @@ BODY_ANCHOR = "## READ THIS FIRST"
 PLACEHOLDER = "￼"
 RANGE_KEY = re.compile(r"^\{\s*(\d+)\s*,\s*(\d+)\s*\}$")
 
-# Measured at the phase-11 baseline (`ae0226c`) and re-measured on the decrypted payload of
-# both signed containers.  A DROP below this floor means token strings were replaced by bare
-# `WFTextTokenAttachment` values -- parameter-defect axis 2, which resolves to empty text at
-# runtime while validating and importing cleanly.
-MINIMUM_TOKEN_STRINGS = 775
+# Derivation, in the same style as docs/environmental_restore_check.py's EXPECTED_SITES, so a
+# future reader can tell a legitimate change from a regression rather than "fixing" the number:
+#
+#   RE-MEASURED 2026-08-18 (plan 11-10), with check_offsets()'s OWN walk below -- the same
+#   predicate, on the same two artifacts, in the same session as this edit.  Counting it any
+#   other way would let the constant and the check disagree about what is being counted.
+#     src/PROSOCHE-Dumb.xml      (Core)   1104
+#     src/PROSOCHE-Sentient.xml  (Aware)  1112
+#   THE FLOOR IS THE LOWER OF THE TWO, so one constant serves both forks.  Aware forks the
+#   built Core source and only ever ADDS (its Use Model audit blocks), so Core is the lower
+#   bound by construction rather than by coincidence -- but both are measured, never inferred.
+#
+# WHY IT MOVED.  The previous value was 775, measured at the phase-11 baseline `ae0226c` and
+# never revised while the artifacts grew past it.  That left ~330 units of slack: this check
+# named the axis-2 defect and would have tolerated roughly a THIRD of every token string in
+# the artifact being converted to a bare attachment before it went red.  A floor that far
+# below the value it claims to have measured is decoration, not a guard.
+#
+# WHAT A DROP MEANS.  Token strings were replaced by bare `WFTextTokenAttachment` values --
+# parameter-defect axis 2.  That mutation validates at gate A, signs, and imports perfectly,
+# and then resolves to EMPTY TEXT at runtime, so the symptom on device is a blank alert body
+# or an unfilled parameter with no error anywhere to attribute it.
+#
+# A legitimate reason for this to move is a build that genuinely emits fewer token strings --
+# but only by exactly what that change explains.  Re-measure both forks and reset the floor to
+# the new lower value IN THE SAME COMMIT as the change that moved it; do not widen the gap.
+MINIMUM_TOKEN_STRINGS = 1104
 
 
 def require(value: bool, message: str) -> None:
