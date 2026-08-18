@@ -228,6 +228,44 @@ def _nest_persisting_save(actions):
     return nested, count
 
 
+def _misdirect_capture_dictionary(actions):
+    """A deep copy of `actions` with the CAPTURE re-pointed at another dictionary.
+
+    THE THIRD DEFECT SHAPE, added after 16-REVIEW WR-05, and note carefully which side is
+    moved.  Re-pointing the SAVE at `Reloaded State` was tried first and rejected as a
+    control: measured, EVERY version of the guard already caught that direction, because a
+    `State` capture stayed pending when no `State` save followed.  An assertion nobody has
+    seen fail is not a control.
+
+    The real hole was the MIRROR.  The pending flag used to be raised only when the
+    capture's WFDictionary named `State`, so a capture written into `Reloaded State` -- a
+    dictionary clear_snapshot() already accepts as a parameter -- was never tracked at all,
+    and the guard was silent on both halves: silent when no save followed, and silent when
+    the wrong one did.  This fixture writes the capture into `Reloaded State` and leaves the
+    generator's own `State` save exactly where it is, so the artifact changes the device
+    while state.json still holds the sentinel.  That is threat T-16-04, and dimming()'s
+    docstring calls the dictionary name load-bearing for exactly this reason.
+
+    One fixture exercises both halves of the WR-05 fix: the capture must be TRACKED into any
+    dictionary, and the clear must demand a save of that SAME dictionary.
+
+    Returns (misdirected_actions, rewritten_count).  A zero count means the fixture
+    reproduced nothing and the caller must treat that as a failure, not as a pass.
+    """
+    misdirected = copy.deepcopy(actions)
+    count = 0
+    for item in misdirected:
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.setvalueforkey":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        key = parameters.get("WFDictionaryKey")
+        if isinstance(key, str) and key.startswith("settings_snapshot.") \
+                and key.endswith(".original_value"):
+            parameters["WFDictionary"] = bse.variable("Reloaded State")
+            count += 1
+    return misdirected, count
+
+
 def capture_persistence_negative_control() -> None:
     """Prove bse.verify_capture_persistence() raises when the persisting save is removed.
 
@@ -279,6 +317,27 @@ def capture_persistence_negative_control() -> None:
             f"persisting save sunk one arm deeper -- the arm-scoped clear is not "
             f"load-bearing, and a save on an untaken branch can again vouch for a "
             f"capture it never persisted")
+
+        # Third defect shape (16-REVIEW WR-05): the capture is written into `Reloaded
+        # State` while the generator's own `State` save stays exactly where it is -- so the
+        # device changes while state.json still holds the cleared sentinel. The guard MUST
+        # raise. Before WR-05 the flag was only ever raised for a `State` capture, so this
+        # whole variant was invisible. See _misdirect_capture_dictionary() for why this
+        # side is moved and not the save.
+        misdirected, rewritten = _misdirect_capture_dictionary(post_fix)
+        assert rewritten == 1, (
+            f"{name}(): expected to re-point exactly one settings_snapshot capture at "
+            f"another dictionary, re-pointed {rewritten} -- the fixture no longer "
+            f"reproduces the wrong-dictionary bypass")
+        raised = False
+        try:
+            bse.verify_capture_persistence(misdirected)
+        except SystemExit:
+            raised = True
+        assert raised, (
+            f"verify_capture_persistence() did NOT raise against {name}() with the capture "
+            f"written into `Reloaded State` -- a capture into a dictionary the save never "
+            f"sources is invisible again, which is threat T-16-04 exactly")
 
         # Post-fix state: the real generator output. The same guard must stay silent.
         try:

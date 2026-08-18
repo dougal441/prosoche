@@ -3795,18 +3795,28 @@ def verify_capture_persistence(actions):
     THE INVARIANT, stated over the APPLY rather than over the save: no
     is.workflow.actions.setbrightness / setvolume may be reached, in action order, from a
     setvalueforkey writing settings_snapshot.<group>.original_value unless a
-    documentpicker.save SOURCING `State` occurs between them, AT OR ABOVE that capture's
-    own arm depth.  A save of `State` writes the WHOLE dictionary, so it persists every
-    snapshot leaf at once and therefore clears every pending capture whose arms enclose it
-    -- a volume save genuinely does vouch for a pending brightness capture, and an earlier
-    revision of this docstring wrongly claimed a per-<group> barrier the code never had
-    (16-REVIEW CR-01(b)).  The per-<group> keying is real but belongs to the APPLY side:
-    it is what stops a brightness capture arraigning a Set Volume.  What the CLEAR is
-    scoped by is ARM DEPTH, not group -- a save nested deeper than the capture sits on a
-    branch that need not run, so it cannot vouch for anything on the path that reaches the
-    apply.  The save's source is resolved through _save_source_dictionary(): a save of
-    `Reloaded State` persists a dictionary that never received the capture, which is the
-    exact mechanism of the defect (T-16-04) and must NOT clear the pending flag.
+    documentpicker.save SOURCING THAT CAPTURE'S OWN DICTIONARY occurs between them, AT OR
+    ABOVE that capture's own arm depth.  Bookkeeping is keyed by (<group>, <dictionary>),
+    and each half of that key earns its place:
+
+      <dictionary> -- the capture is tracked into ANY dictionary, and only a save sourcing
+        the SAME one discharges it (16-REVIEW WR-05).  Tracking only `State` captures left
+        a capture into `Reloaded State` -- which clear_snapshot() already accepts as a
+        parameter -- invisible on both halves.  The save's source is resolved through
+        _save_source_dictionary(): a save of `Reloaded State` persists a dictionary that
+        never received a `State` capture, which is the exact mechanism of the defect
+        (T-16-04) and must NOT clear it.
+
+      <group> -- belongs to the APPLY side: it is what stops a brightness capture
+        arraigning a Set Volume.  It is NOT a barrier between the two on the clear side,
+        and an earlier revision of this docstring wrongly claimed it was (16-REVIEW
+        CR-01(b)).  A save writes the WHOLE dictionary, so it persists every snapshot leaf
+        in it at once and a volume save genuinely does vouch for a brightness capture in
+        the same dictionary.
+
+    What the CLEAR is additionally scoped by is ARM DEPTH: a save nested deeper than the
+    capture sits on a branch that need not run, so it cannot vouch for anything on the path
+    that reaches the apply.
 
     WHY THE RESTORE SIDE IS NOT FALSELY FLAGGED, by construction rather than by exemption:
     restore_managed_settings() also emits setbrightness/setvolume, fed by Restore Brightness
@@ -3836,28 +3846,48 @@ def verify_capture_persistence(actions):
             key = parameters.get("WFDictionaryKey")
             if isinstance(key, str) and key.startswith(f"{SNAPSHOT_ROOT}.") \
                     and key.endswith(".original_value"):
+                # ANY dictionary, not just `State` (16-REVIEW WR-05).  The flag used to be
+                # raised only for a capture whose WFDictionary named `State`, so a capture
+                # into `Reloaded State` -- a dictionary clear_snapshot() already accepts --
+                # was invisible on BOTH halves: untracked at the capture, and a matching
+                # `Reloaded State` save correctly cleared nothing because nothing was
+                # pending.  That is the same wrong-dictionary mechanism (T-16-04) that
+                # dimming()'s docstring calls load-bearing, and it was the one variant the
+                # guard could not see.  Tracking the dictionary NAME is what lets the clear
+                # below demand a save of that SAME dictionary.
                 target = (parameters.get("WFDictionary") or {}).get("Value", {})
-                if target.get("VariableName") == "State":
-                    pending[key.split(".")[1]] = enclosing
+                dictionary = target.get("VariableName")
+                if isinstance(dictionary, str):
+                    pending[(key.split(".")[1], dictionary)] = enclosing
         elif identifier == "is.workflow.actions.documentpicker.save":
-            if _save_source_dictionary(actions, index) == "State":
-                # ARM-SCOPED, exactly as the drop above is (16-REVIEW CR-01).  An
-                # unscoped pending.clear() let a save nested DEEPER than the capture
-                # vouch for it -- and that save sits on a branch that need not run, so
-                # on the path that actually reaches the apply nothing was persisted.
-                # A save may only discharge a capture when it is reached on every path
-                # from that capture to the apply, i.e. when the save's own enclosing IF
-                # arms are a SUBSET of the capture's.  (Given the drop above has already
-                # removed every capture whose arms the walk has left, `scope` is always a
-                # subset of `enclosing` here, so this reduces to equality -- stated as
-                # the subset test because that is the property being asserted.)
-                for group in [g for g, scope in pending.items() if enclosing <= scope]:
-                    del pending[group]
+            saved = _save_source_dictionary(actions, index)
+            if isinstance(saved, str):
+                # TWO conditions, and each closes a separate hole.
+                #
+                # SAME DICTIONARY (16-REVIEW WR-05): a save persists the dictionary it
+                # sources and no other, so a `Reloaded State` save can never vouch for a
+                # capture written into `State` -- that is the defect (T-16-04) itself.
+                #
+                # ARM-SCOPED (16-REVIEW CR-01): an unscoped pending.clear() let a save
+                # nested DEEPER than the capture vouch for it -- and that save sits on a
+                # branch that need not run, so on the path that actually reaches the apply
+                # nothing was persisted.  A save may only discharge a capture when it is
+                # reached on every path from that capture to the apply, i.e. when the
+                # save's own enclosing IF arms are a SUBSET of the capture's.  (Given the
+                # drop above has already removed every capture whose arms the walk has
+                # left, `scope` is always a subset of `enclosing` here, so this reduces to
+                # equality -- stated as the subset test because that is the property being
+                # asserted.)
+                for entry in [(g, d) for (g, d), scope in pending.items()
+                              if d == saved and enclosing <= scope]:
+                    del pending[entry]
         elif identifier in {"is.workflow.actions.setbrightness", "is.workflow.actions.setvolume"}:
             group = "brightness" if identifier.endswith("setbrightness") else "volume"
-            if group in pending:
+            stranded = sorted({d for g, d in pending if g == group})
+            if stranded:
                 offenders.append((index, f"applies {group} while the captured original is "
-                                         f"still only in the State variable, never saved"))
+                                         f"still only in the "
+                                         f"{' / '.join(stranded)} variable, never saved"))
     if offenders:
         raise SystemExit(
             "a brightness/volume apply is reachable from an unpersisted capture -- the "
