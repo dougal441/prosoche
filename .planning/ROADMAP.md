@@ -749,14 +749,32 @@ once Voice dispatches, remove its `KNOWN_ORPHAN_ENTRIES` exemption rather than m
 satisfying it — after the rename the entry is `"Loud Mirror"`, so a stale exemption would
 whitelist anything named `"Voice"` forever.
 
+> **PLANNING CORRECTION, 2026-08-18 — the Goal text above is a historical statement of intent and
+> six of its seven factual claims are now false.** It was written 2026-08-16, *before* Phase 11
+> executed on 2026-08-18. Phase 11 already renamed the Circle-8 sequence entry `Voice` → `Loud
+> Mirror` in all three sequences, emitted a real dispatch branch for it, moved dispatch from
+> condition 99 ("contains") to condition 4 ("string is"), and promoted
+> `docs/sequence_dispatch_check.py` to a hard gate with `KNOWN_ORPHANS = {}`. **Circle 8 is not
+> silent — it currently runs the interim Mirror implementation. There is no `KNOWN_ORPHAN_ENTRIES`
+> exemption to remove; that symbol does not exist and `KNOWN_ORPHANS` must stay empty. The
+> `Spoken This Run` warning is retired** — exactly one dispatch branch fires per run under
+> condition 4, so Mirror and Loud Mirror can never both speak (locked decision D-06). The residual
+> work is replacing the interim with a designed `voice()`, plus the `voice_enabled` type
+> normalisation and the guard set. `15-RESEARCH.md` § Pitfall 1 tabulates every stale claim. The
+> Goal is struck rather than rewritten so the correction has something to point at.
+
 **Severity:** major
 **Requirements**: CIRC-08, CIRC-09, CIRC-14, DIST-01
 **Depends on:** Phase 11
-**Plans:** 0 plans
+**Plans:** 5 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 15 to break down)
+- [ ] 15-01-PLAN.md — TRACER: split `mirror_and_voice()` into `mirror()` (Circle 7 shows) and `voice()` (Circle 8 speaks), retarget the dispatch tuple, add `verify_speaktext_placement()`, rebuild and gate-A both forks
+- [ ] 15-02-PLAN.md — rung-2 simulator probe discriminating the inherited axis-4 unfilled picker across `list` / `getitemfromlist` / `speaktext`, then route the verdict per D-04
+- [ ] 15-03-PLAN.md — normalise `voice_enabled` to numeric `1`/`0` at the bootstrap writer, bump `schema_version` 4→5, add `verify_voice_enabled_seed()` (D-05)
+- [ ] 15-04-PLAN.md — `verify_voice_gates()`, `verify_voice_path_volume_silence()`, and the "no two entry names are action-equal" assertion in `docs/sequence_dispatch_check.py`
+- [ ] 15-05-PLAN.md — rebuild, sign and payload-assert both forks, re-derive MANIFEST, discharge the recording duty into BUILD-NOTES §36, author `15-UAT.md`
 
 ### Phase 16: Dimming and Silence as distinct device-proven Circles
 
