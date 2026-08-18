@@ -2,10 +2,23 @@
 """Gate the build on which Config sequence entries dispatch nothing, and which branches nothing names.
 
 THIS IS A GATE.  It exits non-zero on any orphan, any unreachable branch, any branch of
-unknown matching semantics, and any entry matched by more than one distinct branch name.
+unknown matching semantics, any entry matched by more than one distinct branch name, and
+(PHASE 15, 15-04) any two DISTINCT entry names whose dispatch bodies are action-equal.
 It was written as a reporter, and it stayed one for as long as the defect it reports was
 owned elsewhere; phase 11 plan 02 closed that defect and this is the promotion its own
 docstring anticipated.
+
+PHASE 15's ADDITION IS THE GENERAL FORM OF THE DEFECT THIS FILE HAS ALWAYS EXISTED TO CLOSE.
+Every check above asks whether a name has A receiver.  None of them asks whether two names
+have DIFFERENT receivers.  'Mirror' and 'Loud Mirror' dispatched the identical function
+(`mirror_and_voice()`) for four phases while this script, `verify_dispatch_coverage()`,
+`validate_shortcut.py`, the ToolKit catalog and a decrypt of the signed container all stayed
+green throughout, because a structurally perfect plist looks identical whether two branches
+that share no code happen to test different names, or two branches that ARE the identical
+code happen to as well.  `branch_bodies()` / `action_equal_pairs()` compare each dispatch
+branch's own action span, normalised so two renderings of the SAME behaviour compare equal
+and two DIFFERENT behaviours compare on content alone -- the assertion that would have
+caught the original defect.
 
 WHY A GATE AND NOT A REPORT.  A sequence entry that names no emitted dispatch branch is a
 SILENT RUNTIME NO-OP: the Circle produces no intervention, no error and no log, the run
@@ -186,6 +199,119 @@ def resolving_names(component: str, branches) -> set:
             and resolves(branch["tested"], component, branch["strategy"])}
 
 
+def _branch_end(actions, start_index: int, group_id) -> int | None:
+    """The index of the mode-2 endpoint matching `group_id`, walking forward from a branch's
+    own mode-0 conditional (never assuming a fixed action count between them).
+
+    primitive_dispatch()'s per-branch shape is
+    [mode-0 If, <implementation()>, mode-1 Otherwise, is.workflow.actions.nothing, mode-2 End],
+    but this walk makes no assumption about what lies between the If and its own End -- it
+    looks only for the End sharing the SAME GroupingIdentifier, which is what makes it
+    survive an implementation whose body is longer or shorter than another's.
+    """
+    for index in range(start_index + 1, len(actions)):
+        item = actions[index]
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if (item.get("WFWorkflowActionIdentifier") == CONDITIONAL
+                and parameters.get("WFControlFlowMode") == 2
+                and parameters.get("GroupingIdentifier") == group_id):
+            return index
+    return None
+
+
+# The three keys whose VALUES are freshly generated on every rebuild and legitimately differ
+# between any two renderings of the identical behaviour: an action's own identity (UUID), a
+# control-flow block's identity (GroupingIdentifier), and a reference to another action's
+# output (OutputUUID).  Normalising all three to one fixed placeholder each is what turns
+# "two renderings of the same function" into two byte-identical bodies, and what keeps two
+# GENUINELY different bodies genuinely different -- their literal parameters, action
+# identifiers and ordering are untouched.
+_NORMALISED_KEYS = ("UUID", "GroupingIdentifier", "OutputUUID")
+
+
+def normalise_body(node):
+    """Strip every UUID, GroupingIdentifier and OutputUUID reference from an action span.
+
+    Recurses through the whole parameter tree rather than a named slot -- the same reasoning
+    tools/build_state_engine.py's _reference_descriptors() docstring gives for its own
+    whole-tree walk: enumerating slots is a rename hazard, and a reference to normalise away
+    can sit wherever Shortcuts permits one (a bare attachment, a WFItems row wrapper, a nested
+    if_block() input), not only at the top level of WFWorkflowActionParameters.
+    """
+    if isinstance(node, dict):
+        return {key: ("<normalised>" if key in _NORMALISED_KEYS else normalise_body(value))
+                for key, value in node.items()}
+    if isinstance(node, list):
+        return [normalise_body(item) for item in node]
+    return node
+
+
+def branch_bodies(actions, branches) -> dict[str, list[str]]:
+    """Every dispatch branch's normalised action span, grouped by its tested NAME.
+
+    Each span runs from a branch's own mode-0 conditional (inclusive) to the matching mode-2
+    endpoint (inclusive) sharing its GroupingIdentifier -- located by _branch_end(), which
+    walks forward from the START collect_dispatch_branches() already found, rather than
+    assuming a fixed action count between them.  Every UUID, GroupingIdentifier and
+    OutputUUID reference is normalised away by normalise_body() before comparison, so what
+    remains is BEHAVIOUR: which actions, in which order, with which literal parameters --
+    never the freshly generated identifiers that legitimately differ between any two
+    renderings of the identical thing.  A malformed branch (no matching mode-2 endpoint)
+    RAISES rather than being silently skipped: a body that cannot be extracted cannot be
+    compared, and skipping it would let this check report a name's placement clean without
+    ever having looked at it.
+    """
+    bodies: dict[str, list[str]] = {}
+    for branch in branches:
+        if not isinstance(branch["tested"], str):
+            continue
+        start = branch["index"]
+        group_id = actions[start].get("WFWorkflowActionParameters", {}).get("GroupingIdentifier")
+        end = _branch_end(actions, start, group_id)
+        if end is None:
+            raise AssertionError(
+                f"branch bodies: the dispatch branch at action {start} testing "
+                f"{branch['tested']!r} has no matching mode-2 endpoint sharing its "
+                "GroupingIdentifier -- the control-flow block is malformed and no body can be "
+                "extracted to compare it against any other branch")
+        span = actions[start:end + 1]
+        bodies.setdefault(branch["tested"], []).append(json.dumps(normalise_body(span), sort_keys=True))
+    return bodies
+
+
+def action_equal_pairs(bodies: dict[str, list[str]]) -> list[tuple[str, str]]:
+    """Every pair of DISTINCT branch names whose normalised bodies intersect.
+
+    This is the general form of the defect this phase exists to close.  'Mirror' and 'Loud
+    Mirror' dispatched the identical function for four phases while verify_dispatch_coverage(),
+    validate_shortcut.py, the ToolKit catalog and a decrypt of the signed container all stayed
+    green, because every one of them asks whether a name has A receiver and none asks whether
+    two names have DIFFERENT receivers.  Comparing normalised bodies pairwise, across every
+    combination of distinct names, is what asks that second question.
+
+    NEGATIVE CONTROL (measured 2026-08-18, both mutations exercised in-memory against
+    branch_bodies()'s real output for the shipped Core artifact rather than by mutating disk):
+      (a) simulating the retarget ('Loud Mirror', voice) -> ('Loud Mirror', mirror) at the
+          bodies level -- overwriting every "Loud Mirror" body with a real "Mirror" body --
+          made this function return [('Loud Mirror', 'Mirror')], and passing that result to
+          require() raised.  This mutation cannot be reproduced by editing
+          tools/build_state_engine.py's dispatch tuple and rebuilding: that retarget is caught
+          BEFORE this script ever runs, by verify_speaktext_placement() (11-01),
+          verify_voice_gates() and verify_voice_path_volume_silence() (both 15-04), all of
+          which halt the build before SOURCE.write_bytes() -- so the artifact this script
+          reads from disk would simply never change.  Simulating the retarget at the bodies
+          level is what makes this specific assertion's own teeth measurable in isolation from
+          those three earlier gates;
+      (b) computing bodies with NO normalisation (raw span JSON, UUIDs and
+          GroupingIdentifiers intact) made every pair compare as DISTINCT, including
+          'Mirror'/'Loud Mirror' -- confirming that normalisation, not the pairwise
+          comparison itself, is what gives this assertion any power to catch a real collision.
+    """
+    names = sorted(bodies)
+    return [(name_a, name_b) for index, name_a in enumerate(names) for name_b in names[index + 1:]
+            if set(bodies[name_a]) & set(bodies[name_b])]
+
+
 def main() -> None:
     actions = load_actions()
     components = sequence_components(config_literal(actions))
@@ -215,6 +341,13 @@ def main() -> None:
     for branch in branches:
         if branch["strategy"] == "unknown":
             unknown.append(branch)
+
+    # ACTION-EQUAL PAIRS.  Skip a branch of unknown matching semantics -- its span cannot be
+    # trusted to be a real dispatch receiver, and the UNKNOWN MATCH SEMANTICS gate above
+    # already fails the run on it, so comparing its body here would only be noise on a run
+    # that is failing for a different, already-reported reason.
+    bodies = branch_bodies(actions, [branch for branch in branches if branch["strategy"] != "unknown"])
+    action_equal = action_equal_pairs(bodies)
 
     print(f"dispatch surface: {len(branches)} branch(es) testing {SELECTED_PRIMITIVE!r}, "
           f"{len(set(b['tested'] for b in branches))} distinct name(s); "
@@ -247,10 +380,17 @@ def main() -> None:
     for component, matched in duplicates:
         print(f"  {component}: matched by {matched}")
 
+    print("\nACTION-EQUAL PAIRS -- distinct names whose dispatch bodies are behaviourally identical:")
+    if not action_equal:
+        print("  (none)")
+    for name_a, name_b in action_equal:
+        print(f"  {name_a!r} and {name_b!r}")
+
     unexpected = [component for component in orphans if component not in KNOWN_ORPHANS]
     print(f"\nsequence dispatch check: {len(orphans)} orphan(s) "
           f"({len(unexpected)} unexpected), {len(unreachable)} unreachable, "
-          f"{len(unknown)} of unknown semantics, {len(duplicates)} duplicate(s)")
+          f"{len(unknown)} of unknown semantics, {len(duplicates)} duplicate(s), "
+          f"{len(action_equal)} action-equal pair(s)")
 
     # The gate.  Every message states the CONSEQUENCE, not merely the fact.
     require(
@@ -288,6 +428,26 @@ def main() -> None:
         "branch fires whenever its name is a substring of the entry, so the entry silently "
         "runs two interventions back to back and the user sees the wrong Circle.  Move the "
         "dispatch to condition 4 ('string is') or rename the colliding branch",
+    )
+    # PHASE 15 (15-04).  The GENERAL form of the defect this phase exists to close: two
+    # distinct sequence-entry names must not resolve to action-equal dispatch branch bodies.
+    # 'Mirror' and 'Loud Mirror' dispatched the identical function for four phases while
+    # every OTHER check in this file -- and verify_dispatch_coverage(), validate_shortcut.py,
+    # the ToolKit catalog and a decrypt of the signed container -- stayed green throughout,
+    # because every one of them asks whether a name has A receiver and none asks whether two
+    # names have DIFFERENT receivers.  This is the assertion that would have caught it.
+    require(
+        not action_equal,
+        f"{len(action_equal)} distinct sequence-entry name pair(s) resolve to ACTION-EQUAL "
+        "dispatch branch bodies: "
+        + "; ".join(f"{name_a!r} and {name_b!r}" for name_a, name_b in action_equal)
+        + ".  A stronger Circle is replaying a weaker Circle's prompt verbatim (CIRC-14): two "
+        "differently-named entries that emit byte-identical behaviour, once every UUID, "
+        "GroupingIdentifier and OutputUUID reference is normalised away, are the same "
+        "intervention wearing two names.  Give the stronger Circle's entry its own "
+        "implementation in primitive_dispatch()'s name tuple, or accept that the two Circles "
+        "are, by design, the same intervention and record that decision explicitly -- do not "
+        "leave two names silently pointing at one behaviour",
     )
     print("\nsequence dispatch check: passed")
 

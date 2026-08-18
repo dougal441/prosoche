@@ -2321,6 +2321,260 @@ def verify_speaktext_placement(actions):
             "8 to differ from Circle 7, and a Mirror branch that speaks again makes it not")
 
 
+# The run-scoped Shortcuts variable D-06 keeps verbatim -- named here as a constant, not a
+# bare literal at the call site, so verify_voice_gates() and voice() cannot drift apart the
+# way the Panic Escape variable name once did.  Unlike VOICE_ENABLED_KEY this has no
+# state.json provenance to resolve BY -- it is never written to a dictionary, only to a
+# run-scoped Shortcuts variable that resets every run by construction -- so it is
+# legitimately a named literal rather than a provenance-resolved set.
+SPOKEN_THIS_RUN_VARIABLE = "Spoken This Run"
+
+
+# Beside verify_speaktext_placement() because both are statements about is.workflow.actions.
+# speaktext, and neither implies the other: that one asks whether speech lands in the RIGHT
+# BRANCH (Circle 8, never Circle 7); this one asks whether it sits behind the RIGHT TWO GATES
+# once it is there.  A speech site can be correctly placed inside a 'Loud Mirror' branch span
+# and still be reachable without consent -- e.g. hoisted above the consent conditional inside
+# voice() -- and placement alone cannot see that.
+def verify_voice_gates(actions):
+    """Fail the build if any speaktext site is reachable without BOTH required gates.
+
+    WHY THIS NEEDS A GUARD AT ALL.  A partially-enclosed speech site is invisible to
+    validate-shortcut, invisible to the ToolKit catalog, and invisible to a decrypt of the
+    signed container, because all three see a well-formed is.workflow.actions.speaktext
+    action sitting inside a well-formed is.workflow.actions.conditional -- the only thing
+    wrong is WHICH conditional encloses it, and only a structural control-flow walk
+    (enclosing_groups()) can see that.
+
+    Four assertions, each naming the failure it prevents:
+      (1) the resolved speech-site set (every is.workflow.actions.speaktext action) is
+          non-empty -- a guard inspecting zero sites would report every enclosure satisfied
+          without having tested anything;
+      (2) the resolved consent-variable set, from _voice_enabled_variables(actions) resolved
+          BY PROVENANCE against VOICE_ENABLED_KEY (never a hardcoded variable-name literal),
+          is non-empty -- the same vacuity failure one level up: if provenance resolves no
+          variable at all, the per-site consent check below could never fire and every site
+          would pass by default;
+      (3) every speech site's enclosing groups (enclosing_groups(actions), one structural
+          left-to-right stack pass) include a mode-0 conditional with WFCondition == 2 and
+          WFNumberValue == 0 whose tested variable is in that resolved consent set -- a site
+          reachable without this enclosure could speak to a user who never consented to be
+          spoken to;
+      (4) every speech site's enclosing groups also include a mode-0 conditional with
+          WFCondition == 101 ("does not have any value") testing SPOKEN_THIS_RUN_VARIABLE --
+          a site reachable without this enclosure could speak more than once in a single run,
+          breaking CIRC-08's "at most once per run" clause.  D-06 keeps this guard verbatim
+          from the retired mirror_and_voice(): Shortcuts variables reset every run by
+          construction, which is exactly CIRC-08's semantics, and condition-4 dispatch means
+          Mirror and Loud Mirror are never both reached in one run -- see voice()'s own
+          docstring.
+
+    An enclosing conditional whose shape this guard does not recognise -- any condition code
+    other than the 2/0 consent shape or the 101 once-per-run shape -- is simply not counted
+    toward satisfying either role.  It is never treated as absent when a recognised gate of
+    that role exists elsewhere in the enclosure, and it is never treated as satisfying the
+    role in place of a recognised one; the two per-site checks below only ever look for the
+    two specific shapes named above.
+
+    NEGATIVE CONTROL (measured 2026-08-18 on this exact build):
+      (a) hoisting voice()'s speaktext action out of the consent conditional so it sits at
+          branch base depth (temporarily edited into voice() itself, then
+          `python3 tools/build_state_engine.py` run for real and reverted) -> exited non-zero,
+          naming all 11 un-consented sites: "reachable WITHOUT the user's consent gate
+          (voice_enabled > 0) enclosing them";
+      (b) deleting the Spoken This Run conditional pair from voice() so speech is enclosed by
+          the consent gate only (same real-build methodology, reverted) -> exited non-zero,
+          naming all 11 sites missing the once-per-run enclosure: "reachable WITHOUT the
+          once-per-run 'Spoken This Run' gate enclosing them" (spoken_groups resolves empty,
+          so every site's enclosure intersection with it is empty too);
+      (c) severing every getvalueforkey site reading the literal key "voice_enabled" (13
+          sites across 3 source call sites -- voice(), Toggle Voice, and Sync Profile --
+          matching verify_voice_enabled_seed()'s own mutation (c)) so
+          _voice_enabled_variables resolves nothing -> raised rather than the build exiting 0
+          with a vacuous pass, naming exactly the failure this guard's assertion (2) exists to
+          prevent: "no variable in the artifact resolves to 'voice_enabled' by provenance, so
+          the consent check below would inspect no gate and every speech site would pass by
+          default".  Measured against an IN-MEMORY deepcopy of the already-built actions list
+          (never written to src/PROSOCHE-Dumb.xml, no revert needed) -- the same
+          methodology plan 15-03 established for its own multi-site provenance mutation, and
+          functionally identical evidence for a build-time guard that only ever sees an
+          in-memory actions list.  A same-name-preserving rename of a single reader was tried
+          FIRST and did NOT sever provenance: the walk tracks the emitted data-flow GRAPH, not
+          variable-name literals, so a variable renamed consistently at both its write site
+          and its read site keeps exactly the provenance it had -- the same property that lets
+          a legitimate rename survive this guard at all (see _read_variable_keys()'s own
+          WR-16/WR-20 history).  Severing at the SOURCE, across every reader, is what a real
+          disconnection looks like.
+
+    DELIBERATE NON-COVERAGE.  This guard says nothing about device volume -- that is
+    verify_voice_path_volume_silence()'s job, sited immediately beside this one.
+    """
+    speech_sites = [index for index, item in enumerate(actions)
+                    if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.speaktext"]
+    if not speech_sites:
+        raise SystemExit(
+            "voice gates: zero is.workflow.actions.speaktext sites exist anywhere in the "
+            "artifact -- this guard would report every speech site correctly gated without "
+            "having tested a single one.  Check that primitive_dispatch()'s tuple still "
+            "dispatches ('Loud Mirror', voice); see verify_speaktext_placement()")
+
+    guarded = _voice_enabled_variables(actions)
+    if not guarded:
+        raise SystemExit(
+            f"voice gates: no variable in the artifact resolves to {VOICE_ENABLED_KEY!r} by "
+            "provenance, so the consent check below would inspect no gate and every speech "
+            "site would pass by default -- either voice()'s consent read was removed or a "
+            "rename disconnected this guard; see verify_voice_enabled_seed()")
+
+    consent_groups = {item["WFWorkflowActionParameters"].get("GroupingIdentifier")
+                      for item in actions
+                      if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+                      and item.get("WFWorkflowActionParameters", {}).get("WFControlFlowMode") == 0
+                      and item.get("WFWorkflowActionParameters", {}).get("WFCondition") == 2
+                      and item.get("WFWorkflowActionParameters", {}).get("WFNumberValue") == 0
+                      and _tested_variable(item.get("WFWorkflowActionParameters", {})) in guarded}
+    consent_groups.discard(None)
+
+    spoken_groups = {item["WFWorkflowActionParameters"].get("GroupingIdentifier")
+                     for item in actions
+                     if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+                     and item.get("WFWorkflowActionParameters", {}).get("WFControlFlowMode") == 0
+                     and item.get("WFWorkflowActionParameters", {}).get("WFCondition") == 101
+                     and _tested_variable(item.get("WFWorkflowActionParameters", {})) == SPOKEN_THIS_RUN_VARIABLE}
+    spoken_groups.discard(None)
+
+    enclosing = enclosing_groups(actions)
+
+    unconsented = [index for index in speech_sites if not (set(enclosing[index]) & consent_groups)]
+    if unconsented:
+        raise SystemExit(
+            f"voice gates: {len(unconsented)} speaktext site(s) at action(s) {unconsented} are "
+            "reachable WITHOUT the user's consent gate (voice_enabled > 0) enclosing them -- "
+            "The Voice could speak to a user who never consented to be spoken to, breaking "
+            "CIRC-08's consent clause")
+
+    unonce = [index for index in speech_sites if not (set(enclosing[index]) & spoken_groups)]
+    if unonce:
+        raise SystemExit(
+            f"voice gates: {len(unonce)} speaktext site(s) at action(s) {unonce} are reachable "
+            f"WITHOUT the once-per-run {SPOKEN_THIS_RUN_VARIABLE!r} gate enclosing them -- The "
+            "Voice could speak more than once in a single run, breaking CIRC-08's 'at most "
+            "once per run' clause (D-06)")
+
+
+# Beside verify_voice_gates() -- neither implies the other.  That one asserts speech happens
+# only with consent; this one asserts speech never comes with a device change to make it
+# audible.  is.workflow.actions.speaktext exposes no volume parameter at all (see the
+# deliberate non-coverage note below), so "never at unsafe levels" is a property of ABSENCE:
+# nothing in the Voice path may ever write device volume, because there is nothing there that
+# could legitimately need to.
+def verify_voice_path_volume_silence(actions):
+    """Fail the build if anything inside a 'Loud Mirror' (Circle 8) branch span writes volume.
+
+    WHY THIS NEEDS A GUARD AT ALL.  "Never at unsafe levels" reads like a parameter and is not
+    one: is.workflow.actions.speaktext has exactly six parameters (WFText, WFSpeakTextWait,
+    WFSpeakTextRate, WFSpeakTextPitch, WFSpeakTextLanguage, WFSpeakTextVoice) and none of them
+    is volume.  So the property is satisfied by ABSENCE, not by a setting -- and absence is
+    precisely the kind of invariant that erodes silently when a later pass adds a well-meaning
+    "make sure the user can hear it" is.workflow.actions.setvolume before the utterance.  That
+    addition is invisible to validate-shortcut, the ToolKit catalog and a decrypt of the signed
+    container: all three see a well-formed setvolume action inside a well-formed dispatch
+    branch, and none of them asks which branch.
+
+    Dispatch branches are located the SAME WAY verify_speaktext_placement() locates them:
+    mode-0 is.workflow.actions.conditional actions whose WFInput variable is Selected
+    Primitive, with matching semantics resolved PER SITE from that site's own WFCondition --
+    never filtered on a hardcoded code.  BD-06 Decision 5 abolished combined dispatch entries,
+    so the only strategy any 'Mirror'/'Loud Mirror' branch can legitimately use is condition 4
+    ("string is"); anything else RAISES rather than being excluded, exactly as
+    verify_speaktext_placement() does.
+
+    Three assertions, each naming the failure it prevents:
+      (1) the resolved 'Loud Mirror' branch set is non-empty -- a guard that located no branch
+          would report the Voice path free of volume writes without having checked a single
+          one;
+      (2) the artifact-wide is.workflow.actions.setvolume count is non-zero -- so this guard
+          cannot pass because volume writing was removed from the product entirely rather than
+          kept out of this one path.  Measured baseline: 15 sites per fork on 2026-08-18, all
+          belonging to silence() and restore_managed_settings(), all Media-scoped;
+      (3) zero of those setvolume sites lie inside any 'Loud Mirror' branch span (enclosing
+          groups intersecting the resolved branch-group set) -- a site that did would raise
+          device volume to make The Voice audible, which is exactly the startling, unrequested
+          output SAFE-02 forbids.
+
+    NEGATIVE CONTROL (measured 2026-08-18):
+      (a) inserting a volume write immediately before voice()'s speaktext action (temporarily
+          edited into voice() itself, then `python3 tools/build_state_engine.py` run for real
+          and reverted) -> exited non-zero, naming all 11 offending sites and the
+          startling-audio-output failure they cause;
+      (b) renaming every 'Loud Mirror' dispatch branch's tested literal so no branch resolves
+          to that name (measured against an IN-MEMORY deepcopy, calling this guard directly --
+          run through the real build this would first hit verify_dispatch_coverage()'s orphan
+          check on the resulting Config/branch mismatch, which is a different guard entirely;
+          the in-memory call isolates THIS guard's own vacuity assertion) -> raised naming
+          exactly assertion (1)'s failure: "no dispatch branch resolves to 'Loud Mirror' ...
+          this guard cannot tell whether the Voice path ever writes device volume", rather
+          than the build exiting 0 with a vacuous pass.
+
+    DELIBERATE NON-COVERAGE.  This guard covers volume only.  Brightness is owned by
+    verify_restore_gates() and verify_capture_persistence() and is deliberately out of scope
+    here: is.workflow.actions.speaktext exposes no brightness parameter either, so the same
+    absence argument applies, but the environmental-restore guards already own that surface
+    and duplicating it here would only create a second place for the two to drift apart.
+    """
+    branches = []
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("WFControlFlowMode") != 0:
+            continue
+        variable_name = (parameters.get("WFInput", {}).get("Variable", {})
+                         .get("Value", {}).get("VariableName"))
+        if variable_name != SELECTED_PRIMITIVE:
+            continue
+        code = parameters.get("WFCondition")
+        tested = parameters.get("WFConditionalActionString")
+        if not (isinstance(tested, str) and code == 4):
+            raise SystemExit(
+                f"voice path volume: dispatch branch at action {index} has unresolvable "
+                f"matching semantics (condition {code!r} against {tested!r}) -- guessing which "
+                "rule applies would let this guard report the Voice path free of volume "
+                "writes without ever having checked it; see verify_dispatch_coverage()")
+        branches.append((index, tested, parameters.get("GroupingIdentifier")))
+
+    if not branches:
+        raise SystemExit(
+            "voice path volume: no dispatch branch resolves at all -- this guard would report "
+            "the Voice path free of volume writes without having located a single branch to "
+            "check it against")
+
+    loud_groups = {group for _, tested, group in branches if tested == "Loud Mirror" and group}
+    if not loud_groups:
+        raise SystemExit(
+            "voice path volume: no dispatch branch resolves to 'Loud Mirror' -- Circle 8's "
+            "branch span could not be located, so this guard cannot tell whether the Voice "
+            "path ever writes device volume (CIRC-08)")
+
+    volume_sites = [index for index, item in enumerate(actions)
+                    if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setvolume"]
+    if not volume_sites:
+        raise SystemExit(
+            "voice path volume: zero is.workflow.actions.setvolume sites exist anywhere in "
+            "the artifact -- this guard would pass because volume writing was removed from "
+            "the product entirely, not because it was kept out of the Voice path specifically. "
+            "Check that silence() and restore_managed_settings() still emit setvolume")
+
+    enclosing = enclosing_groups(actions)
+    offenders = [index for index in volume_sites if set(enclosing[index]) & loud_groups]
+    if offenders:
+        raise SystemExit(
+            f"voice path volume: {len(offenders)} is.workflow.actions.setvolume action(s) at "
+            f"action(s) {offenders} lie inside a 'Loud Mirror' (Circle 8) dispatch branch "
+            "span -- the Voice path would raise device volume to make itself heard, producing "
+            "startling, unrequested audio output and violating SAFE-02")
+
+
 def install_cooldown_branches(actions):
     """Install Ice only in the true/otherwise arms of the named cooldown If."""
     # Removing both first repairs builds made by the earlier broad-anchor helpers.
@@ -6005,6 +6259,15 @@ def main():
     # that one asks whether every named entry has a receiver, this one asks whether two
     # receivers ('Mirror' and 'Loud Mirror') actually differ in what they DO (CIRC-14).
     verify_speaktext_placement(actions)
+    # PHASE 15 (15-04).  Beside verify_speaktext_placement() -- both are statements about
+    # is.workflow.actions.speaktext, and neither implies the other: that one asks whether
+    # speech lands in the right BRANCH, this one asks whether it sits behind the right two
+    # GATES once it's there (consent, and at most once per run).
+    verify_voice_gates(actions)
+    # Beside verify_voice_gates() -- neither implies the other: that one asserts speech
+    # happens only with consent, this one asserts speech never comes with a device change to
+    # make it audible.
+    verify_voice_path_volume_silence(actions)
     # Declare that this shortcut consumes Shortcut Input.  The routing block reads the
     # ExtensionInput token, and PLIST_FORMAT.md defines this root key as "True if
     # shortcut uses input variables"; every modern golden shortcut that references
