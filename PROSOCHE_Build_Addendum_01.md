@@ -1,4 +1,13 @@
-# PROSOCHĒ — Build Addendum
+# PROSOCHĒ — Build Addendum 01
+
+> **APPLIED IN FULL by Phase 11 (2026-08-17/18) and folded into canonical strategy v2
+> (2026-08-19).** This file is retained as the historical input that Phase 11 and BD-06
+> executed against — the Dante names, the Core/Aware rename, the `PROSOCHĒ` Note title, and
+> Panic Escape removability are all live in the build and restated as current truth in canon
+> v2. Two of its details have since been superseded: the §5 intervention mapping is replaced
+> by **BD-09 Decision 7's** slot table (Mirror at Circle 5, Redirect at 6, Eject at 7), and
+> Panic Escape is re-expressed as the in-surface leave affordance (BD-09 Decision 9) rather
+> than the pre-menu. Do not build from this file; build from canon v2.
 
 ## 1. Use Dante's Circle names exactly
 

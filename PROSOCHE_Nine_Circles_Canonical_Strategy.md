@@ -1,3117 +1,795 @@
 # PROSOCHĒ — Nine Circles
-## Canonical Product Strategy, Research Brief, Architecture and Agent Build Specification
+## Canonical Product Strategy v2 — The Covenant Model
 
-**Status:** Canonical strategy for prototype build  
-**Date:** 13 August 2026  
-**Target:** iOS 26.x  
-**Build tool:** Shortcuts Playground  
-**Distribution intent:** Free and open source  
-**Product forks:** PROSOCHĒ Dumb + PROSOCHĒ Sentient
+**Status:** Canonical strategy, version 2.0 — supersedes v1.0 **in full**
+**Date:** 19 August 2026 (v1.0: 13 August 2026)
+**Provenance:** v1.0 is preserved verbatim at git tag `pre-covenant-overhaul` (commit `10305e6`). Appendix A maps v1 section numbers to their v2 home, so historical citations of "canonical strategy §N" remain resolvable.
+**Target:** iOS 26.x
+**Build tool:** Shortcuts Playground
+**Distribution intent:** Free and open source
+**Product forks:** PROSOCHĒ Core (deterministic) + PROSOCHĒ Aware (adds Apple On-Device Intelligence)
+
+**Authority.** This document is the live product spec. Where any earlier document, plan, or conversation conflicts with it, this document wins. Dated capability and design decisions live in `docs/CAPABILITY-DECISIONS.md`; a decision recorded there after this document's date wins until folded in here. The v1 interaction model — one primitive fired on every OPEN at Circle ≥ 1, a universal `Leaving / Continue` pre-menu, Intention as a rung with no routing consequence — is retired. The shipped artifacts still implement it until the conversion phases in `.planning/ROADMAP.md` (Phases 17–20) land; that gap is a recorded build state, not a contradiction.
 
 ---
 
 # 0. Executive design brief
 
-PROSOCHĒ is a free, open-source iPhone Shortcut designed to return agency to the user at the exact moment habitual phone use begins.
+PROSOCHĒ is a free, open-source iPhone Shortcut that restores the missing interval between the impulse to open a habit-forming app and the act of consuming it.
 
-It is not primarily a screen-time blocker. It is an **adaptive friction system**.
-
-The central product hypothesis is:
+The central hypothesis is unchanged from v1:
 
 > The problem is not that people use phones. The problem is that intention disappears between the impulse to open an app and the act of consuming it.
 
-Modern social apps compress:
+Modern social apps compress **cue → action → consumption**. PROSOCHĒ restores the missing middle: **cue → awareness → intention → deliberate action**.
 
-**cue → action → consumption**
+What v2 changes is *how the product decides when to act*. Version 1 had one axis: behavioural Pressure mapped to a Circle, and the Circle's primitive fired on every open. That model punished conscious use and unconscious use alike — a person deliberately enjoying ten minutes of videos got the same grey screen as a person thrashing through their sixth automatic reopen. Version 2 has **two axes**:
 
-PROSOCHĒ restores the missing middle:
+1. **The ladder** — Pressure (Heat + Gravity) mapped to nine Circles. This is the system's *behavioural evidence of automaticity*, computed deterministically from opens, reopens, and contract outcomes. It is unchanged from v1 and is already built.
+2. **The covenant** — a declared intention with a time boundary (an **intention contract**). This is the user's *declared evidence of consciousness*. In v2 it is not a rung on the ladder; it is a **gate above it**: an open covered by a valid contract fires **nothing**. Not a gentler primitive — nothing. State still accumulates silently.
 
-**cue → awareness → intention → deliberate action**
+The product's stance follows from the two axes:
 
-The Shortcut watches user-selected distracting apps through native iOS Personal Automations. Repeated and clustered app openings increase behavioural **Pressure**, which causes the user to descend through nine progressively stronger “Circles.” Early Circles are almost invisible speed bumps. Later Circles make the phone increasingly uncooperative with automatic behaviour.
+**Silence is the reward.** When use is intentional, PROSOCHĒ is invisible. When behavioural evidence says intention has disappeared, it escalates — first ambient friction that demands nothing, then a direct ask, then rescue. An honest declaration at the ask buys back the silence. The mechanism is benevolent: it hums in the background, capturing what it needs, and speaks only when it must — and every escalation is an escalation in *salience*, never in *frequency*.
 
-The user chooses how aggressively this happens:
+The architecture is unchanged: **one signed `.shortcut`** per fork containing the logic, **one Apple Note (`PROSOCHĒ`)** as the human setup guide, manifesto, and readable ledger, **one small JSON state file** as the machine store. No CSV, no companion app, no cloud, no telemetry leaving the device.
 
-- **Paradise** — gentle descent
-- **Limbo** — balanced/default
-- **Inferno** — rapid descent
-
-The system has two behavioural signals:
-
-- **Heat** — short-term compulsive clustering: rapid reopenings, repeated returns, contract overruns.
-- **Gravity** — slower accumulation across the behavioural day.
-
-Together:
-
-**Pressure = Heat + Gravity**
-
-Pressure maps to the current Circle.
-
-The architecture is deliberately self-contained:
-
-1. **One signed `.shortcut`** contains the application logic.
-2. **One Apple Note — `PROSOCHĒ — Control Room`** is the human-readable setup guide, personal phone-use manifesto, configuration surface and readable behavioural history.
-3. **One small JSON state file** is the fast machine-state store.
-
-There is no CSV. The Note is the human log. JSON is the machine state.
-
-The user experience must remain “self-saucing”:
-
-1. Import shortcut.
-2. Answer the few native import questions that Shortcuts can reliably support.
-3. Tap PROSOCHĒ once.
-4. PROSOCHĒ creates its Control Room Note and JSON state automatically.
-5. The Note tells the user exactly how to create the two Personal Automations that Apple does not permit a shared Shortcut to install on their behalf.
-6. Once those automations exist, PROSOCHĒ runs itself.
-
-Two forks will be built from the same core:
-
-### PROSOCHĒ Dumb
-
-For iOS 26-compatible iPhones that do not support Apple Intelligence, or for users who choose not to use a model.
-
-It uses deterministic rules, telemetry, scripts, message banks, intention prompts and learned exit routing.
-
-It must be fully useful on its own.
-
-### PROSOCHĒ Sentient
-
-For Apple Intelligence-capable devices, beginning with iPhone 15 Pro / 15 Pro Max and later supported models.
-
-It uses the **On-Device** Apple Intelligence model only. No ChatGPT. No Private Cloud Compute. No external API.
-
-The model acts as an increasingly context-aware “attention mirror”: it sees only locally derived PROSOCHĒ telemetry and the user's own declared values, intentions and recent behavioural contracts.
-
-It does **not** claim to read the user's mind or know what happened inside an app.
-
-The desired feeling is not:
-
-> My phone is policing me.
-
-It is:
-
-> My phone has noticed exactly what I am doing.
+The self-saucing flow is unchanged: import, answer a few native questions, tap once, PROSOCHĒ creates its Note and state, the Note teaches the user to create the two Personal Automations Apple will not let a shared Shortcut install, and from then on PROSOCHĒ runs itself.
 
 ---
 
 # 1. The problem
 
-There is a large category of commercial products — blockers, timers, focus apps and physical tokens — that monetize a problem created partly by the attention economy itself.
+There is a large category of commercial products — blockers, timers, focus apps, physical tokens — that monetize a problem created partly by the attention economy itself. The user should not need another subscription to regain control of their own device.
 
-PROSOCHĒ begins from a different premise.
+Apple's Screen Time measures and sets simple limits, but its friction is easy to dismiss and does not adapt to behaviour. My friends dismiss its prompt without reading it — the dismissal itself has become the habit. Commercial blockers add stronger enforcement, but the core behavioural mechanisms can be explored with native Shortcuts.
 
-The user should not need another subscription merely to regain control of their own device.
+The opportunity is: **how far can native iOS go when friction is adaptive, personal, contextual, and — crucially — absent whenever it is not needed?**
 
-Apple's native Screen Time is useful for measurement and simple limits, but its friction is easy to dismiss and its design is not adaptive to behaviour. Commercial products such as Opal, Brick and similar tools add stronger enforcement, but the core behavioural mechanisms can be explored using native Shortcuts.
-
-The opportunity is not to reproduce every paid blocker feature.
-
-The opportunity is to ask:
-
-**How far can native iOS go when friction is adaptive, personal, contextual and increasingly difficult to ignore?**
-
-The product should preserve useful smartphone capabilities.
-
-A phone can be:
-
-- a map;
-- a camera;
-- a notebook;
-- a communications device;
-- a music player;
-- a library;
-- a research tool;
-- a calendar;
-- a creative instrument;
-- an accessibility device;
-- a way to connect with people.
-
-The design should not confuse “less phone” with “better life.”
-
-The better distinction is:
-
-**deliberate use versus automatic use.**
-
-A ten-minute deliberately chosen session watching ridiculous videos may be entirely compatible with PROSOCHĒ.
-
-Opening the same app six times in fifteen minutes without knowing why is the behaviour PROSOCHĒ is designed to interrupt.
+A phone is a map, a camera, a notebook, a communications device, an instrument, a library. The design must not confuse "less phone" with "better life." The distinction that matters is **deliberate use versus automatic use**. A ten-minute deliberately chosen session of ridiculous videos is fully compatible with PROSOCHĒ. Opening the same app six times in fifteen minutes without knowing why is what PROSOCHĒ exists to interrupt.
 
 ---
 
 # 2. Philosophy
 
-## 2.1 Attention is the scarce resource
+## 2.1 Prosochē — Epictetus and the practice of attention
 
-The product is fundamentally about attention rather than screen time.
+The product is named for the Stoic discipline of **prosochē** (προσοχή): sustained attention to one's own assent, treated not as a mood but as a *practice*.
 
-Time is useful as a measurement, but attention determines what a period of time becomes.
-
-The central product language should therefore revolve around:
-
-- attention;
-- intention;
-- agency;
-- choice;
-- habit;
-- finite time;
-- deliberate leisure;
-- returning to what matters;
-- using the phone as a tool.
-
-Avoid pseudo-neuroscientific marketing about “dopamine detox” or claims that the brain is being chemically depleted by individual app openings.
-
-The mechanism can be described more accurately:
-
-- repeated cues can become habitual;
-- low-friction interfaces make automatic behaviour easy;
-- small amounts of friction can interrupt a habitual action sequence;
-- explicit intention can restore a deliberate choice point;
-- repeated successful choices may reshape future behaviour.
-
-## 2.2 Epictetus and prosochē
-
-The philosophical lineage should become part of the future marketing strategy.
-
-Epictetus opens the *Enchiridion* by distinguishing what is “up to us” from what is not. In *Discourses* 4.12, “On Attention,” he treats sustained attention — **prosochē** — as a practice that itself becomes habitual, and warns that inattention can become a habit when repeatedly deferred.
-
-PROSOCHĒ can translate that ancient practice into interface design.
-
-The phone constantly presents impressions.
-
-The user cannot always control what appears, what others post, what notifications exist, what the algorithm rewards, or what external events occur.
-
-The intervention point is the moment before assent and action.
-
-A concise philosophical model for PROSOCHĒ is:
+Epictetus opens the *Enchiridion* by dividing what is up to us from what is not. The phone constantly presents impressions the user does not control — what appears, what others post, what the algorithm rewards. What is up to the user is the moment **before assent**: whether an impression becomes an action. The concise model PROSOCHĒ operationalizes is:
 
 **impression → attention → assent → action → habit**
 
-Modern persuasive interfaces often try to compress this into:
+Persuasive interfaces compress this into **impression → action**. PROSOCHĒ's whole purpose is to reinsert the attention-and-assent interval — and the intention contract is *the act of assent made explicit*. When the user has assented deliberately, the mechanism withdraws; that is the covenant.
 
-**impression → action**
+In *Discourses* 4.12, "On Attention," Epictetus makes two observations that map directly onto v2's design:
 
-PROSOCHĒ's purpose is to restore the missing interval.
+1. **Attention practiced becomes habitual, and so does inattention.** "When you have relaxed your attention for a while, do not fancy you will recover it whenever you please" — the deferral of attention ("I will attend tomorrow") is itself a habit under formation. This is precisely the **ritualisation failure mode** (§13): a user who dismisses an attention prompt mechanically is practicing inattention *through the intervention itself*. The anti-ritualisation variability in §13 exists because Epictetus was right about deferral.
+2. **The goal of the practice is that it becomes second nature and the scaffold withdraws.** PROSOCHĒ's definition of success (§21) is that it gradually has less work to do. The mechanism fading into silence is the practice being internalized.
 
-Potential future product language:
+Do not falsely attribute modern slogans as ancient quotations. The honest framing: PROSOCHĒ is a modern application of Epictetus' dichotomy of control and discipline of attention to interface design. Product language that carries this accurately:
 
 > Your phone should wait for an intention.
 
-> Attention becomes a life by being spent.
-
 > You cannot control everything that asks for your attention. You can practice deciding what receives it.
 
-Do not falsely attribute a modern slogan such as “attention is the only thing you can control” as a direct ancient quotation. The relationship should be described accurately as a modern application of Epictetus' dichotomy of control and practice of attention.
+> Attention becomes a life by being spent.
+
+## 2.2 Thaler and choice architecture — nudge, ask, shove
+
+Richard Thaler's nudge theory is the second load-bearing philosophy, and in v2 it structures the bands themselves:
+
+- **Band B is a nudge.** Salience changes (grayscale, silence, reduced brightness) alter the choice environment without removing choice and without demanding anything. Thaler's core claim — small changes to choice architecture meaningfully alter behaviour while preserving freedom — is Band B's entire design.
+- **The intention contract is a commitment device.** Thaler's work on self-control (the planner–doer model; Save More Tomorrow) shows people willingly bind their future selves when asked at the right moment. The contract is exactly that: a self-authored commitment ("ten minutes of reels"), made binding not by enforcement but by the system remembering it and reflecting the outcome back.
+- **The bands are a libertarian-paternalism gradient the user opted into.** Band B nudges, Band C asks, Band D shoves — and the shove exists only because the user installed a tool whose stated job is to shove them when their own declared standard has been abandoned. Escalation is proportionate to evidence, which is what keeps the paternalism honest.
+- **Defaults do the work.** The default is silence (Band A / coverage). Friction is the exception that behaviour must earn, never the ambient condition.
+
+## 2.3 The other design influences, carried forward
+
+- **Cal Newport / digital minimalism:** ask not just "what do you want to use less?" but "what is your phone for, and what do you want the reclaimed attention for?" — this is the `MY PHONE, ON PURPOSE` proforma (§15).
+- **Atomic Habits / environment design:** make the unwanted automatic behaviour harder and the desired alternative easier. The six exits (§14) place a better action one tap away; the redirect is never mere punishment.
+- **Steve Jobs / the computer as tool:** the aspirational frame is the smartphone as an instrument that extends capacity, not an environment that captures attention.
+- **Black Mirror as aesthetic:** the uncanny quality must come from **accurate memory**, never surveillance theatre or fake mind-reading. "This is your fourth return in seventeen minutes" is stronger than "Stop wasting time." The Mirror only ever states recorded facts.
+
+## 2.4 The covenant, stated once
+
+The covenant is the product's moral core and its routing rule in one sentence:
+
+**If you tell PROSOCHĒ what you are doing and stay inside your own boundary, it does nothing at all; the more your behaviour departs from any declared intention, the more visible it becomes.**
+
+Punishment is never the point. Every intervention is an attempt to restore the interval where a choice can happen — and the strongest interventions exist for the moments when the user's own declared standard, not the system's, has been abandoned.
 
 ---
 
-# 3. Design influences
+# 3. Evidence
 
-PROSOCHĒ deliberately combines several traditions.
+The research does not prove the Nine Circles design. It supports its mechanisms — and v2 aligns the product *more* tightly to this evidence than v1 did. Each source, with the v2 mechanism it grounds:
 
-## Richard Thaler / behavioural nudges
+## 3.1 Lukoff et al. 2018 — meaningful vs meaningless use → deliberate leisure is valid
 
-Small changes to choice architecture can meaningfully alter behaviour without removing choice.
+86,402 logged sessions. Habitual use to pass time correlated with lower perceived meaningfulness and a felt loss of autonomy; yet apparently "meaningless" use could serve a real function (micro-escape). The correct distinction is purposeful/unpurposeful, autonomous/automatic, bounded/unbounded — not productive/unproductive. **v2 mechanism:** a bounded deliberate-leisure contract ("ten minutes of stupid videos") is approved and earns full silence. The product never treats leisure as failure.
 
-PROSOCHĒ should generally prefer:
+## 3.2 The regret preprint (2026) — the intention–actual gap → the contract is the metric
 
-- friction;
-- defaults;
-- changed salience;
-- interruption;
-- visible consequences;
-- deliberate re-entry;
+In-the-wild data suggesting the **gap between intended and actual use** predicts regret more strongly than duration. Exploratory, not established — but it names v2's central measurement: **contract fidelity** (intended vs observed), which the covenant model makes the co-primary metric (§21). The contract is the intention–actual gap made operational.
 
-before hard restriction.
+## 3.3 Keller et al. RCT — planning and self-efficacy → the ask is a planning act
 
-## Cal Newport / digital minimalism
+The goal-directed intervention was not superior to active control on main outcomes, but the mechanism findings were: self-efficacy mediated improvement, and each unit of planning associated with roughly six fewer unlocks/day. **v2 mechanism:** the Band C ask is a planning act, not a lecture — state a purpose, set a boundary. Repeated successful planning is the active ingredient, which is why the ask must never degrade into a ritual (§13).
 
-Technology should be deliberately selected because it supports a valued life, not passively accepted because it is available.
+## 3.4 one sec field study — choice architecture beats the clever sentence
 
-PROSOCHĒ should therefore ask not only:
+280 participants, six weeks: friction plus an easy option to abandon the opening dismissed ~36% of attempts; openings fell ~57% first-to-sixth week. The decomposition experiment (n=500) found **the dismissal option was the strongest single mechanism** — stronger than the deliberation message. **v2 mechanism:** every interactive surface carries a one-tap leave route (§12), and Band D's forceful moves *are* the dismissal, performed for the user. The design never over-invests in message text at the expense of the choice architecture.
 
-> What do you want to use less?
+## 3.5 Grayscale field experiments — ambient friction works
 
-but:
+A preregistered field experiment (n=112) found grayscale produced an immediate, significant, objectively measured reduction in screen time, larger and faster than goal-setting; two further studies concur. **v2 mechanism:** Band B. Note honestly: the evidence is for sustained grayscale; per-session toggling remains a product hypothesis under test.
 
-> What is your phone actually for?
+## 3.6 Wellspent RCT — self-defined boundaries, just-in-time
 
-and:
+Personalized full-screen reminders at a **self-defined limit** reduced time on the most problematic app (~29 min/day) without reducing the study's problematic-use score. **v2 mechanism:** boundaries are always the user's own (the contract boundary, the severity elicitation in §11), and interventions are just-in-time, never scheduled.
 
-> What do you want your reclaimed attention for?
+## 3.7 Almoallim & Sas 2022 — beyond screen time
 
-## Atomic Habits / environment and friction
+Digital-wellbeing tools should support meaningful use rather than only suppress use, employ navigation/friction, and design ethically. Aligned throughout.
 
-Make unwanted automatic behaviours harder.
+## 3.8 MindShift — LLM interventions are promising, exploratory
 
-Make desired alternatives easier.
+Context-aware LLM persuasion showed higher acceptance in a small field trial. **v2 mechanism:** Aware's model role stays modest and bounded (§20): an attention mirror and contract auditor inside a deterministic envelope, positioned as experimental.
 
-The redirect is therefore not merely punishment. It should place a better action one tap away.
+## 3.9 Habituation — why variability exists
 
-## Steve Jobs / computer as tool
-
-The aspirational frame is the smartphone as an instrument that extends human capacity, rather than an environment that continuously captures attention.
-
-## Black Mirror
-
-The “Black Mirror” quality is a deliberate aesthetic principle.
-
-It must not come from hostility, surveillance theatre or fake mind-reading.
-
-It should come from accurate memory.
-
-For example:
-
-> This is your fourth return in seventeen minutes.
-
-is stronger than:
-
-> Stop wasting time.
-
-Likewise:
-
-> The last three sessions you called “quick replies” lasted 8, 11 and 13 minutes.
-
-is stronger than:
-
-> You're lying to yourself.
-
-The system should become uncanny because it notices patterns the user normally fails to notice.
+The general habituation literature (response decrement under repeated identical stimulation; recovery under stimulus variation) plus the observed real-world failure of Screen Time prompts — dismissed by reflex, contents unread — ground §13: an intervention surface repeated identically trains its own dismissal. This is stated as design rationale, not as a clinical claim.
 
 ---
 
-# 4. Current product boundaries
+# 4. Product boundaries
 
-This section supersedes earlier ideas.
+## In scope
 
-## In scope now
+- One master Shortcut per fork; user-created OPEN/CLOSE Personal Automations over user-selected apps.
+- The two-axis covenant model: nine Circles + Circle 0, four bands, intention contracts with coverage.
+- Heat, Gravity, Pressure; Paradise / Purgatory / Inferno profiles; severity-based onboarding.
+- The `PROSOCHĒ` Apple Note; one JSON state file; readable ledger.
+- ALLOW / CHALLENGE / DENY verdicts in **both** forks (deterministic in Core; model-shaped within a deterministic envelope in Aware).
+- Six exits with local explore/exploit learning; safe reversible environmental friction; Emergency Restore.
+- Deterministic anti-ritualisation variability (counter-based; ships off until researched — §13).
+- Free, open-source distribution; future-value telemetry stored locally.
 
-- One master Shortcut.
-- User-selected app-open automation.
-- User-selected app-close automation.
-- Nine escalating Circles.
-- Paradise / Limbo / Inferno profiles.
-- Heat, Gravity and Pressure.
-- Apple Note Control Room.
-- One JSON machine-state file.
-- Readable event logging in the Note.
-- Intent contracts.
-- Replacement / exit pathways.
-- Explore/exploit learning to discover which exits work for the user.
-- Safe reversible environmental friction where iOS actions allow it.
-- On-device Apple Intelligence in the Sentient fork.
-- Fully deterministic fallback in the Dumb fork.
-- Free/open-source distribution.
-- Future-value telemetry stored locally.
+## Explicitly out of scope
 
-## Explicitly out of scope for the current build
-
-### Focus
-
-Focus-based design was explored and deliberately removed from v1.
-
-Focus may be revisited later as an environmental layer, but it is not required for the Nine Circles engine.
-
-### NFC
-
-Physical NFC gating was explored and deliberately removed from v1.
-
-It remains a possible future “physical commitment device” extension.
-
-### Screen Time blocking APIs
-
-The current project does not require a companion iOS application using FamilyControls / ManagedSettings / DeviceActivity.
-
-PROSOCHĒ is a behavioural intervention Shortcut, not a secure parental-control system.
-
-### CSV
-
-Do not create a CSV in addition to JSON.
-
-Human-readable history belongs in the Note.
-
-Machine state belongs in JSON.
-
-### External/cloud AI
-
-Sentient must use Apple's On-Device model.
-
-Do not use:
-
-- ChatGPT;
-- Private Cloud Compute;
-- arbitrary web APIs;
-- analytics services.
-
-### Hard A/B testing infrastructure
-
-The initial product will support multiple intervention sequences so the creator and friends can manually test them.
-
-Do not build a remote experimentation platform.
+- **Focus modes** — explored, removed from v1, unchanged in v2.
+- **NFC / physical commitment tokens** — future extension (SEED-001 holds the Circle IX physical-unlock concept).
+- **Screen Time blocking APIs / any companion app** — PROSOCHĒ is a behavioural intervention, not secure access control.
+- **CSV or any second machine store** — one JSON, one Note.
+- **Cloud AI as a requirement** — Aware uses the On-Device model; Private Cloud Compute is an authorised fallback only (BD-04-R); ChatGPT/extension models are excluded; no external analytics ever.
+- **Remote A/B infrastructure** — sequences and knobs are switchable locally.
+- **Tamper-proofing claims** — the user can always disable the automation; the product must say so plainly.
+- **Mid-session timers.** Shortcuts has no timer trigger a distributed Shortcut can install. Boundary enforcement happens at the *next event*: CLOSE records the overrun; the next OPEN re-engages. No design may assume an intervention can fire while a session is in progress, and none may fabricate a timer mechanism.
+- **True randomness in strong interventions.** Variability (§13) is deterministic (counter-based). Nothing nondeterministic ever touches Frozen, cooldown durations, safety paths, or environmental changes; downward "punishment lottery" Circle jumps are explicitly rejected (§13).
+- **Lie detection, addiction diagnosis, therapy intake** — unchanged from v1.
 
 ---
 
-# 5. Technical viability
+# 5. The two axes
 
-## 5.1 App-open and app-close events are viable
+## 5.1 Axis one — the ladder (behavioural evidence)
 
-Apple's Shortcuts App trigger supports:
+Unchanged from v1 and already built:
 
-- **Is Opened** — fires when the user opens or switches to a selected app.
-- **Is Closed** — fires when the user closes or switches away from a selected app.
+- **Heat** — short-term compulsive clustering: base per open, bonuses for rapid reopening, penalty for contract overrun, relief for a kept contract, decay with time away, floor 0, cap 30.
+- **Gravity** — slow accumulation: `floor(opens_today / 6)`, cap 5, over the behavioural day (date − 4h).
+- **Pressure = Heat + Gravity**, mapped to Circle 0–9 through the active profile's ascending threshold table (ordered ≥ scan, never equality).
 
-Apple also lists App automations among the Personal Automations that can run automatically rather than requiring confirmation.
+The ladder answers one question: *how much does recent behaviour look like automaticity?* It is fully deterministic and the model never touches it.
 
-This gives PROSOCHĒ the basic event stream:
+## 5.2 Axis two — the covenant (declared intention)
 
-**OPEN → intervention → CLOSE → session duration**
+An **intention contract** is free text plus a time boundary, exactly as v1 defined it — "watch stupid videos, 10 minutes" is valid. What v2 adds is consequence:
 
-Important limitation:
+- A valid contract **covers** opens inside its window: covered opens fire nothing (§7).
+- Contract outcomes feed the verdict history (§8) as well as Heat.
+- Contracts can be **invalidated** by behaviour before their window ends (§7.3), which is what re-engages the system.
 
-A Shortcut is reacting to the app-open trigger.
+The covenant answers the other question: *has the user told the truth about what they are doing, and are they inside their own boundary?*
 
-It is not a kernel-level interception mechanism.
+## 5.3 The routing rule
 
-Therefore Circle IX can immediately eject, redirect or lock the phone using available actions, but the target app may briefly become active first.
+On every genuine OPEN, after the state engine runs and persists:
 
-The user can also disable the Personal Automation.
+1. **Circle 0** → silent. (Band A.)
+2. **Valid contract covering this open, and Circle ≤ coverage ceiling** → silent. (Coverage.)
+3. **Otherwise** → the current Circle's primitive fires, per the active sequence. (Bands B–D.)
 
-PROSOCHĒ must never claim to be tamper-proof.
-
-That is acceptable because the product goal is self-directed behaviour change, not coercive access control.
-
-## 5.2 A shared shortcut cannot fully install the Personal Automations
-
-Personal Automations are device-specific.
-
-The distributed Shortcut can contain all behaviour, but the user must create the OPEN and CLOSE automation wrappers on their own iPhone.
-
-Therefore the first-run Control Room Note must contain clear setup instructions.
-
-This is a deliberate product constraint.
-
-## 5.3 Native Shortcuts can be large
-
-Apple's documentation tells users to add as many actions as needed when building Shortcuts/automations. No useful documented hard maximum number of ordinary Shortcut actions has been identified.
-
-Therefore the main engineering risk is not a nominal “number of steps” ceiling.
-
-The relevant risks are:
-
-- runtime complexity;
-- variable wiring;
-- control-flow errors;
-- data volume;
-- model latency;
-- Notes parsing;
-- overlapping automation runs;
-- state restoration failures.
-
-The Shortcuts Playground project itself says generated shortcuts can get roughly 90% of the way to a complete solution and specifically warns that variables and repeat-loop wiring should be inspected.
-
-The agent must therefore validate the generated plist and manually reason through the state graph rather than assuming generation equals correctness.
-
-## 5.4 The Note can log, but should not be the hot-path database
-
-Native Shortcuts supports Note creation and `Append to Note`.
-
-A pure Notes database is technically possible.
-
-However, using an indefinitely growing rich-text Note as the authoritative machine state creates avoidable problems:
-
-- every OPEN may require finding the Note;
-- its body grows over time;
-- extracting the latest state requires parsing;
-- Notes may sync through iCloud;
-- concurrent OPEN/CLOSE runs create race concerns;
-- a document store is not a transactional key-value store.
-
-The current architecture is therefore:
-
-### JSON = current machine state
-
-Small.
-
-Fast.
-
-Rewritten transactionally where possible.
-
-Contains the data required for the next decision.
-
-### Note = human Control Room and readable ledger
-
-Append meaningful behavioural events.
-
-Contain the user's manifesto/profile.
-
-Show trends and value.
-
-Provide setup instructions.
-
-This retains the self-saucing experience without forcing the blocker to parse its complete autobiography before each intervention.
-
-## 5.5 No CSV
-
-CSV was previously considered for structured events.
-
-It is now rejected.
-
-There should be one machine store, not two.
-
-If deeper event history is needed for learning, JSON can contain:
-
-- a compact rolling event history;
-- counters;
-- recent contracts;
-- per-exit reward summaries;
-- daily aggregate snapshots.
-
-The Note remains the long-lived human-readable record.
-
-## 5.6 Apple Intelligence is technically viable
-
-iOS 26 includes a `Use Model` Shortcut action.
-
-Apple allows the action to select:
-
-- On-Device;
-- Private Cloud Compute;
-- Extension Model / ChatGPT.
-
-PROSOCHĒ Sentient must select **On-Device**.
-
-Apple states that this model can handle simple requests without a network connection and that model inputs may include variables and outputs from previous actions.
-
-That makes the following viable:
-
-- classify an intention;
-- produce a concise behavioural mirror;
-- inspect consistency between a declared intention and recent behavioural telemetry;
-- select among a small set of intervention styles;
-- formulate one clarification question;
-- summarize a recent pattern;
-- generate a spoken intervention.
-
-It should not be used for:
-
-- arithmetic;
-- Heat/Gravity calculation;
-- timers;
-- threshold decisions;
-- authoritative safety decisions;
-- claims of deception;
-- Circle IX lockout logic.
-
-Apple also warns generative outputs may vary. Therefore deterministic fallbacks are mandatory.
-
-## 5.7 Device split
-
-Apple Intelligence support begins on the iPhone 15 Pro and iPhone 15 Pro Max generation and later compatible Apple Intelligence iPhones.
-
-Many older iPhones can run iOS 26 without Apple Intelligence.
-
-Therefore the two-fork strategy is technically sensible:
-
-- **Dumb:** broad iOS 26 support.
-- **Sentient:** Apple Intelligence-capable devices.
-
-Do not build Dumb as a degraded afterthought.
-
-It should be a coherent product with the same behavioural architecture.
+That is the whole model. Everything else in this document is the content of those three lines.
 
 ---
 
-# 6. Why the evidence supports PROSOCHĒ's direction
-
-The research does not prove that this exact Nine Circles design will work.
-
-It does, however, support several of its core mechanisms.
-
-## 6.1 Meaningful versus meaningless smartphone use
-
-Lukoff, Yu, Kientz and Hiniker's 2018 study, *What Makes Smartphone Use Meaningful or Meaningless?*, combined interviews, experience sampling and logging of **86,402 app-use sessions**.
-
-Key findings relevant to PROSOCHĒ:
-
-- habitual use to pass time was associated with lower perceived meaningfulness;
-- entertainment and passive social media were associated with lower meaningfulness;
-- participants described a loss of autonomy during these forms of use;
-- motivation to achieve a specific purpose tended to decline during app use, especially passive social media and entertainment;
-- apparently “meaningless” use could still serve a broader meaningful function, such as a micro-escape from an unpleasant situation.
-
-This matters.
-
-PROSOCHĒ should not assume all leisure is bad.
-
-The correct distinction is closer to:
-
-- purposeful versus unpurposeful;
-- autonomous versus automatic;
-- bounded versus unbounded;
-- aligned versus displaced.
-
-That directly supports the product decision to accept:
-
-> I deliberately want ten minutes of stupid videos.
-
-as a legitimate intention.
-
-## 6.2 Goal-directed smartphone use RCT — “Not Less But Better”
-
-Keller et al. evaluated a theory-based intervention called **Not Less But Better** in a 20-day randomized controlled trial.
-
-The intervention consisted of five four-day modules:
-
-1. **Observe** — notice impulses, physical reactions and checking behaviour.
-2. **Reflect** — understand habitual/problematic use.
-3. **Vision** — mindfulness, values and goal setting.
-4. **Plan** — action planning and alternative responses.
-5. **Support** — sustainable behaviour-change support.
-
-The active control was a conventional digital-detox approach where participants planned at least one hour of phone timeout per day.
-
-Important numbers:
-
-- 232 people enrolled.
-- 110, about 47%, provided post-intervention data.
-- 88, about 38%, remained at three-week follow-up.
-
-This attrition is important and prevents overclaiming.
-
-Both conditions reduced problematic smartphone use and phone time.
-
-The goal-directed intervention was **not clearly superior to the active digital-detox control on the main outcomes**.
-
-However, the mechanism findings are highly relevant:
-
-- increased self-efficacy statistically mediated improvement in problematic smartphone use;
-- higher planning was associated with fewer daily unlocks;
-- each one-unit increase in planning was associated with roughly six fewer unlocks/day in the reported model;
-- planning had an indirect association with problematic smartphone use through unlock frequency.
-
-Design implication for PROSOCHĒ:
-
-The product should not merely restrict.
-
-It should help the user develop:
-
-- awareness;
-- a vision of good phone use;
-- plans;
-- alternative behaviours;
-- self-efficacy.
-
-This is the evidence basis for the Control Room manifesto, intention contracts and replacement exits.
-
-## 6.3 Wellspent RCT — personalized nudges and self-defined limits
-
-A 2026 randomized controlled trial evaluated the **Wellspent** app.
-
-Design:
-
-- 70 iPhone users.
-- 35 intervention / 35 control.
-- Three-week trial.
-- Participants nominated at least one problematic social-media app.
-- The intervention used personalized full-screen reminders when a session exceeded a **self-defined time limit**, giving the user a choice to quit or continue.
-
-Results:
-
-- no statistically significant reduction in the study's problematic-social-media-use outcome;
-- no significant increase in self-efficacy;
-- approximately **29.35 minutes/day lower screen time** on the most problematic app in the intervention group;
-- a significant reduction in perceived problematic smartphone use.
-
-The study is small and short-term.
-
-It should not be marketed as definitive proof.
-
-But it supports two PROSOCHĒ choices:
-
-1. let people define their own target apps and boundaries;
-2. use just-in-time interventions rather than a single daily limit.
-
-## 6.4 one sec — friction plus an exit choice
-
-A peer-reviewed field study of the one sec self-nudge app is especially relevant.
-
-Field component:
-
-- 280 participants;
-- six weeks.
-
-one sec interrupted target-app opening with friction and an opportunity to cancel.
-
-Observed:
-
-- users dismissed approximately **36%** of target-app opening attempts after intervention;
-- target-app opening attempts decreased by approximately **37%** over the six weeks;
-- the combined reduction in actual target-app openings reached approximately **57%** from first to sixth week.
-
-A separate preregistered experiment with **500 participants** decomposed the intervention.
-
-The most useful finding for PROSOCHĒ:
-
-**Giving the user the option to dismiss the consumption attempt had the strongest effect.**
-
-Time-delay friction also had an effect.
-
-The deliberation message by itself was not the strongest mechanism.
-
-This is an important challenge to an overly verbal “Black Mirror” design.
-
-The model's clever sentence should not become the product.
-
-The behavioural choice architecture is the product.
-
-PROSOCHĒ should always make leaving easy.
-
-## 6.5 Grayscale as design friction
-
-A preregistered randomized field experiment with 112 participants compared:
-
-- grayscale/design friction;
-- goal-setting/self-commitment;
-- self-monitoring control.
-
-Grayscale produced an immediate significant reduction in objectively measured screen time compared with control.
-
-Goal-setting produced a smaller, more gradual reduction.
-
-A separate 2023 experimental study also reported reductions associated with grayscale, and a small 2026 cross-over feasibility study in medical students reported about 28 fewer minutes/day in grayscale versus colour.
-
-This supports grayscale as a low-level passive intervention.
-
-It does **not** prove that dynamically toggling grayscale only during target-app sessions will have the same effect.
-
-That remains a product hypothesis.
-
-## 6.6 Research-informed digital wellbeing design
-
-A 2022 functionality review of digital-wellbeing tools argued that interventions should go beyond raw screen time.
-
-Its design implications included:
-
-- broader digital wellbeing rather than only time reduction;
-- supporting meaningful use rather than merely suppressing meaningless use;
-- using digital navigation/friction;
-- explicit time-based visualisation;
-- ethical design.
-
-This aligns closely with PROSOCHĒ.
-
-## 6.7 Recent research strengthens the intention gap hypothesis
-
-A 2026 in-the-wild research preprint on regretful social-media sessions reported that the **gap between intended and actual use** predicted regret more strongly than duration alone in its sample.
-
-This is not yet evidence equivalent to a large peer-reviewed trial and should be treated as exploratory.
-
-However, it supports a particularly important PROSOCHĒ metric:
-
-**contract fidelity = intended use versus observed duration/return behaviour**
-
-That may ultimately be more informative than total screen time.
-
-## 6.8 LLM interventions are promising but still exploratory
-
-Research prototypes such as MindShift have explored LLM-generated, context-aware smartphone interventions.
-
-A small five-week field experiment reported higher intervention acceptance and lower usage duration for context-aware LLM persuasion compared with simpler baselines.
-
-The evidence base is still small.
-
-PROSOCHĒ Sentient should therefore be positioned as an experimental adaptive interface, not as a scientifically proven AI treatment.
+# 6. The four bands
+
+Circles group into four bands with fixed boundaries. Dante's names stay **positional** (BD-06 Decisions 1–2): the name labels the depth, the sequence table decides the intervention.
+
+| Band | Circles | Dante names | Character | Thaler reading | Uncovered open shows |
+|---|---|---|---|---|---|
+| **A — Silent** | 0 | The Indifferent | Trust by default. State accumulates; nothing is shown, ever. | The default | Nothing |
+| **B — Ambient** | 1–3 | Limbo, Lust, Gluttony | Passive friction. The phone becomes slightly less rewarding. **No dialogs** except Circle 1's single-tap pause. Nothing is demanded. | Nudge | Pause (1) · Black and White (2) · Silence (3) |
+| **C — Ask** | 4–6 | Greed, Wrath, Heresy | Declared-intent engagement. The ask *is* the intervention; the verdict routes it. An honest answer ends the encounter and buys silence. | Ask / commitment device | Intention (4) · Mirror (5) · Redirect (6) |
+| **D — Rescue** | 7–9 | Violence, Fraud, Treachery | Behaviour has overridden declaration. No questions. Forceful rescue with guaranteed routes out. | Shove (opted into) | Eject (7) · Loud Mirror (8) · Frozen (9) |
+
+Band rules:
+
+- **Band boundaries are fixed at 0 / 1–3 / 4–6 / 7–9 across all sequences and profiles.** Sequences vary the order *within* a band only (§9.2). Config reserves per-profile band-entry keys (`bands.ask_entry`, `bands.rescue_entry`, both defaulting to 4 and 7) as tuning capability for device evidence — a reserved knob, not a v2 behaviour.
+- **Band A is inviolable.** No surface, no notification, no model call, no variability event is ever reachable from a Circle 0 open. (Built — Phase 10's silent band; guarded by `verify_circle_zero_silence()`.)
+- **Band B is silent friction.** Black and White, Silence, and (in the Ambient sequence) Dim apply with no announcement and no menu — the environmental change *is* the touchpoint. Circle 1's Pause is the single exception: one alert, one tap, no question. There is deliberately no "declare your intention" affordance inside Band B surfaces; a user who wants standing coverage can declare voluntarily from the manual menu (§7.1), and pressure that stays in Band B rarely warrants the ask.
+- **Band C engages.** Circle 4 asks directly (Intention). Circle 5 reflects — the Mirror shows the recorded gap ("You said reply to Maya, 5 minutes. This is your fourth open in nine minutes.") and offers three routes: continue, leave, or declare. Circle 6 stops asking: Redirect lands the user in a deterministically selected exit, no menu (BD-06 Decision 6, reaffirmed).
+- **Band D rescues.** Eject (7) sends the user straight to the Home Screen. Loud Mirror (8) speaks the reflection once — Fraud is the right name for the depth at which the system says aloud what the gap between word and deed has been. Frozen (9) is the deterministic cooldown, untouched from v1.
+- **Descending never replays the shallower bands' prompts.** One primitive per open, always (built: exact-match dispatch, BD-06 Decision 5).
 
 ---
 
-# 7. Onboarding: what PROSOCHĒ needs to learn
+# 7. The covenant lifecycle
 
-Earlier onboarding concepts became too complex for the constraints of a Shortcut.
+## 7.1 Creation
 
-The current principle is:
+A contract is created at:
 
-**Ask only what can materially change the intervention.**
+- **The Band C ask** (Circle 4's Intention primitive, or Circle 5's "declare" route): free-text purpose + boundary (2/5/10/15/custom minutes). Blank or vague text is accepted without sincerity judgment (Core never polices wording); the **boundary is mandatory** — it is what makes coverage computable, expiry detectable, and fidelity measurable. Without an end there is no window, and the system could neither go silent nor come back. If the user declines the boundary picker, a config default (`contract.default_boundary_minutes`) is applied and said aloud in the confirmation line.
+- **Voluntarily**, from the manual menu ("Set an intention") — a user who knows they want twenty minutes tonight can declare before any descent, and the coverage rules are identical.
 
-Do not build a therapy intake.
+To reduce the cost of honesty, the ask prefills from history where facts exist: the previous intention is offered as a one-tap option ("Same as last time: reply to Maya · 5 min").
 
-Do not build a 20-question survey.
+## 7.2 Coverage
 
-Use two layers.
+A contract covers a **time window**, not a single session: from `made_at` to `made_at + boundary`. Closing at minute 3 and reopening at minute 6 of a 10-minute contract is covered — that is a person using their granted time, and check-close-recheck within a declared window is not the behaviour this product interrupts.
 
-## 7.1 Layer A — native import questions
+A covered open: runs the full state engine, records everything, applies **no primitive, no surface, no model call**. Coverage is checked deterministically (epoch comparisons and flat reads) after the state save and before any dispatch.
 
-Use `WFWorkflowImportQuestions` only for simple, robust parameters.
+**The coverage ceiling.** A contract cannot cover an open at Circle ≥ `contract.coverage_ceiling_circle` (ships at 7, the Band D boundary). By construction a user only reaches Band D through behaviour that has already invalidated coverage; the ceiling is the deterministic backstop that guarantees a declaration can never outrun the record, and it keeps Frozen absolutely independent of anything declared.
 
-Recommended:
+## 7.3 Invalidation
 
-### 1. Choose your descent
+Coverage ends early — and the *next* open re-engages at whatever Circle Pressure says — when any of these deterministic conditions is met:
 
-`Paradise / Limbo / Inferno`
+1. **Expiry:** the window has ended.
+2. **Open-count breach:** opens within the window exceed `contract.max_opens_per_window` (ships at 3).
+3. **Rapid-return breach:** the rapid-reopen Heat bonus fires more than `contract.max_rapid_returns_per_window` times within the window (ships at 1 — the second rapid return invalidates).
 
-Default: Limbo.
+Invalidation is silent at the moment it happens (PROSOCHĒ cannot act mid-session and does not pretend to); its consequence is that the next open is uncovered. When that open lands in Band C, the Mirror or the ask does exactly what re-engagement should: reflect the recorded gap, then invite a new declaration.
 
-### 2. Sentient capability / preference
+## 7.4 Fidelity
 
-For the Sentient fork:
+Contract fidelity is measured per window: `consumed_seconds` (the sum of tracked session time inside the window, accumulated at each CLOSE) against the declared boundary.
 
-`Use on-device intelligence? yes/no`
+- **Kept** (window ends with consumed ≤ boundary, no invalidation): recorded as respected; Heat relief applies (`heat.contract_respected_relief`). Silence continues to be the reward — no congratulation surface is shown; success may be acknowledged later through the Mirror's positive templates (§19), never through a new touchpoint.
+- **Overrun:** recorded with magnitude; the existing Heat penalty applies (`heat.overrun_penalty` under the ratio + absolute-seconds AND-rule).
+- Outcomes append to `recent_contracts` (rolling window, last ~10) — which the verdict history (§8) and the Aware auditor both read. This makes `recent_contracts` load-bearing for the first time; v1 defined it and never wrote it.
 
-For the Dumb fork this does not exist.
+## 7.5 Covered reopens and Heat
 
-### 3. Voice
+A reopen inside a covered window adds `heat.open_base` and counts toward Gravity, but earns **no rapid-return bonus** (`heat.covered_reopen_bonus` ships as `none`; PROTOTYPE INTERPRETATION, tunable). Reopening within one's own declared window is granted time, not compulsive clustering — but the open still exists, so a day of wall-to-wall covered windows still accumulates Gravity and still descends. Coverage silences surfaces; it never silences the ledger.
 
-`May PROSOCHĒ speak to you at the highest circles? yes/no`
+## 7.6 Why gaming fails
 
-This is enough import-time configuration.
-
-Do not try to collect a detailed behavioural profile through import questions.
-
-## 7.2 Layer B — pre-filled Control Room proforma
-
-The first manual run creates:
-
-**PROSOCHĒ — Control Room**
-
-Near the top is a human-editable section:
-
-## MY PHONE, ON PURPOSE
-
-The user fills this directly in Notes.
-
-Suggested proforma:
-
-### What is my phone genuinely for?
-
-Write a few things your phone does that improve your life.
-
-Examples:
-- communicate with the people I love;
-- navigate;
-- capture ideas;
-- take photographs;
-- make/listen to music;
-- learn;
-- organise my life;
-- deliberately relax.
-
-### Which apps take more attention than I intend to give them?
-
-List the apps you are configuring the OPEN/CLOSE automations for.
-
-Example:
-- Instagram
-- Facebook
-- Reddit
-- TikTok
-
-### What do I actually want the reclaimed attention for?
-
-Examples:
-- books;
-- making music;
-- training;
-- cooking;
-- friends;
-- my partner;
-- my children;
-- being outside;
-- thinking;
-- sleeping;
-- doing nothing.
-
-### When PROSOCHĒ stops an automatic open, what would I rather do?
-
-Choose several from the six exits below and name preferred apps/actions.
-
-### What does deliberate leisure look like for me?
-
-Example:
-- ten minutes of Reels after dinner is fine;
-- I do not want to turn five minutes into forty;
-- I do not want to repeatedly check the same feed.
-
-### Optional sentence to my future self
-
-Example:
-- “I installed this because I was tired of checking without deciding.”
-
-The Note should make clear that the user can write naturally.
-
-## 7.3 How the Shortcut uses the proforma
-
-The fast OPEN path should **not parse the entire Note every time**.
-
-Instead:
-
-- first run creates the Note;
-- the manual Control Room menu includes `Sync My Profile`;
-- that action extracts the human-profile section;
-- the profile is mirrored into `state.json`;
-- Sentient receives the compact JSON profile when it needs personal context.
-
-Manual runs can also check whether the Note has changed and offer to resync.
-
-This keeps the user-facing setup natural without making every app opening depend on Notes parsing.
+"Declare the maximum every time" does not defeat the system: every open still counts toward Gravity; overruns still burn Heat; invalidation still ends coverage mid-window; and a **verdict history** of blown contracts pulls CHALLENGE earlier (§8). Honest declarers live shallow with a clean phone. Dishonest declarers descend anyway — just with their own words on the record, which is what the Mirror is for.
 
 ---
 
-# 8. The six exits
+# 8. Verdicts — ALLOW / CHALLENGE / DENY in both forks
 
-When PROSOCHĒ successfully interrupts an automatic app opening, the next design question is:
+The ask returns a verdict. In v1 this existed only in the Aware fork and changed almost nothing; in v2 it exists in both forks and routes the encounter.
 
-> Where should attention go?
+## 8.1 The deterministic envelope
 
-Do not assume “productive app” is always the answer.
+The set of verdicts *available* at each Circle is deterministic and identical in both forks:
 
-The system should support six directions.
+| Circle | Available verdicts |
+|---|---|
+| 4 (Greed) | ALLOW, CHALLENGE |
+| 5 (Wrath) | ALLOW, CHALLENGE |
+| 6 (Heresy) | ALLOW, CHALLENGE, DENY |
 
-All start with C for coherence.
+- **ALLOW** → the contract is created, coverage begins, the run ends. Clean phone.
+- **CHALLENGE** → exactly one revision round (never an interrogation loop): tighten the wording or accept a shorter boundary, then ALLOW. A challenge that the user answers still ends in coverage.
+- **DENY** → Redirect: the user lands in the deterministically selected exit. DENY exists only at Circle 6 and means redirect, never punishment — no settings change, no Heat surcharge, no cooldown.
 
-## 8.1 Capture
+## 8.2 Core's verdict — behavioural, never textual
 
-Purpose:
+Core cannot and does not judge wording (no sincerity policing — carried from v1's intent-gate rule). Its verdict is computed from recorded behaviour only:
 
-**Get something out of your head.**
+- Default **ALLOW**.
+- **CHALLENGE** when the recent record argues for it: `recent_contracts` shows ≥ `verdict.challenge_overrun_count` substantial overruns in the rolling window, or the previous contract was invalidated by breach rather than kept.
+- **DENY** at Circle 6 when the same conditions hold there.
 
-Possible targets:
+All thresholds are Config values. The whole function is arithmetic over recorded facts.
 
-- Notes;
-- Voice Memos;
-- Camera;
-- a configured journaling app.
+## 8.3 Aware's verdict — judgment inside the same envelope
 
-Examples:
+Aware submits the stated intention plus the compact context window (§20) to the On-Device model, which audits **specificity, boundedness, consistency** — never sincerity, never mental states, never app contents — and returns a structured verdict. The rules that keep it safe are unchanged from v1 and now have sharper teeth:
 
-- capture an idea;
-- write a thought;
-- record a voice note;
-- photograph something deliberately.
+- The model chooses **only within the deterministic envelope** for the current Circle; a verdict outside it is discarded.
+- Malformed, empty, or slow output falls back to Core's deterministic verdict, silently.
+- At most one CHALLENGE round, ever.
+- The model never touches Heat, Gravity, Pressure, thresholds, timers, exit selection, coverage arithmetic, or Frozen.
+- **Covered opens make no model call at all.** Silence includes the model.
 
-This is ideal when the original impulse was partly driven by internal restlessness or a thought the user did not want to lose.
-
-## 8.2 Coordinate
-
-This replaces the earlier name “Orient.”
-
-Purpose:
-
-**Turn vague mental load into a plan.**
-
-Possible targets:
-
-- Reminders;
-- Calendar;
-- Notes task list.
-
-Examples:
-
-- look at what is actually next;
-- schedule something;
-- capture a task;
-- check the day's commitments.
-
-Coordinate should not be framed as “be productive.”
-
-It is about reducing ambiguity.
-
-## 8.3 Create
-
-Purpose:
-
-**Make rather than consume.**
-
-Targets are user-defined and may include:
-
-- music apps;
-- GarageBand;
-- creative writing;
-- drawing;
-- camera;
-- editing;
-- a musical instrument app;
-- Notes.
-
-The user should choose what “create” means.
-
-## 8.4 Connect
-
-Purpose:
-
-**Move from passive social consumption to actual human contact.**
-
-Possible targets:
-
-- Messages;
-- Phone;
-- FaceTime;
-- a selected messaging app;
-- Contacts.
-
-Do not randomly call people.
-
-The Shortcut may simply open the communication tool or show a short prompt:
-
-> Is there someone you actually wanted to speak to?
-
-Connection should be optional because not every user wants social pressure as a behavioural intervention.
-
-## 8.5 Consult
-
-This is the new information-seeking route.
-
-Purpose:
-
-**Find the thing without entering a feed.**
-
-A significant amount of apparently problematic social-app use begins with a legitimate information need:
-
-- find a restaurant someone mentioned;
-- look up an event;
-- research a product;
-- find a place;
-- answer a factual question;
-- find a reference;
-- locate a post or creator.
-
-The problem is that the user enters an environment optimized for unrelated discovery and loses the original information need.
-
-Consult should create a direct search route.
-
-Examples:
-
-- Ask: `What are you trying to find?`
-- Open a web search for that query.
-- If the query sounds like a place, route to Maps search.
-- If it is a reminder or known personal item, route to Notes/Reminders search where supported.
-- Sentient may classify the information need into:
-  - web;
-  - maps/place;
-  - personal notes;
-  - calendar/reminders;
-  - direct communication.
-
-The Dumb fork can present a small menu instead.
-
-Research rationale:
-
-Meaningful smartphone-use research consistently distinguishes specific-purpose use from habitual/passive consumption. Recent qualitative work also classifies accessing information and coordinating activities as examples of effectual, goal-directed smartphone use.
-
-The design goal is not “never search.”
-
-It is:
-
-**replace feed-shaped information seeking with query-shaped information seeking.**
-
-## 8.6 Close
-
-This replaces the earlier label “Leave.”
-
-Purpose:
-
-**The phone is not the next action.**
-
-Close means:
-
-- return Home;
-- Lock Screen where appropriate;
-- optionally start already-selected audio;
-- put the device down.
-
-Its paired message may use the user's values:
-
-> You said you wanted this time for making music.
-
-or:
-
-> Nothing on the phone is the next step.
-
-This is a critical product principle:
-
-**The best alternative app may be no app.**
+A clearly bounded deliberate-leisure contract can receive ALLOW in both forks. Consistency challenges use only recorded facts: "You have called the last four sessions 'quick replies.' They averaged eleven minutes. What exactly are you replying to?" is factual and challengeable; "you're lying" is forbidden.
 
 ---
 
-# 9. Learning which exits work: explore/exploit
+# 9. Primitives and sequences
 
-Do not permanently choose one default redirect.
+## 9.1 The roster — eleven primitives
 
-PROSOCHĒ should learn which exit actually breaks the loop for this user.
+BD-06's structure stands: names are Addendum-01 shipped names, internal Python identifiers keep their original names, each sequence selects nine.
 
-This can be entirely local and deterministic.
+| # | Internal | Shipped name | Band | Status |
+|---|---|---|---|---|
+| 1 | knock | **Pause** | B | Built. One alert, one tap, real telemetry, no lecture. |
+| 2 | ash | **Black and White** | B | Built as a real Color Filters toggle (BD-01-R2); restore leg wired at all four recovery paths; device proof pending. |
+| 3 | silence | **Silence** | B | Built with capture-persist-restore; device proof pending (Phase 22). |
+| 4 | dimming | **Dim** | B | Built (soft dim). Ambient sequence only until the capture-and-restore loop is device-proven. |
+| 5 | confession | **Intention** | C | Built; v2 gives its verdict routing consequence (§8). |
+| 6 | mirror | **Mirror** | C | Built (30 fact-gated templates); v2 moves it to Circle 5 and adds the three-route surface (§6). |
+| 7 | — | **Redirect** | C | To build (Phase 18): lands the user in the deterministically selected exit, no menu; records through the same learning loop as voluntary exits. |
+| 8 | exile | **Eject** | D | Built (straight to Home Screen). |
+| 9 | voice | **Loud Mirror** | D | Built (Phase 15); speaks the reflection once, gated on consent, safe volume. |
+| 10 | ice_start | **Frozen** | D | Built. Deterministic cooldown; never model-touched; route out guaranteed. |
+| 11 | — | **Blackout** | D | **Parked.** Hard dim to the device minimum as a Band D primitive — not in any sequence until the capture-and-restore loop is device-proven *and* a sequence slot is deliberately re-cut for it. Recorded so the idea is kept without a stale slot claim. |
 
-## 9.1 Observation
+The v1 single "Dim at Circle 5" is retired: the user's design splits dimming into soft ambient friction (Dim, Band B) and a forceful variant (Blackout, parked). D-01 is untouched — `safety.brightness_floor` and `safety.dim_target` ship at `0`, and the safety property is the capture-and-restore loop (§18), not any particular target value.
 
-When an exit is used, record:
+## 9.2 Sequences — band-invariant orderings
 
-- exit type;
-- timestamp;
-- target app that triggered it;
-- current Circle;
-- current Heat/Pressure;
-- time of day;
-- time until the next target-app OPEN.
+Three sequences remain, re-derived under one invariant: **band composition is fixed; only order within a band varies.** Band B draws from {Pause, Black and White, Silence, Dim}, Band C is {Intention, Mirror, Redirect}, Band D is {Eject, Loud Mirror, Frozen} with **Frozen pinned at Circle 9** always. This is what keeps the coverage gate, the verdict envelope, and the band rules identical whichever sequence is active.
 
-The simplest outcome signal is:
+| Circle | Classic (default) | BlackMirror | Ambient |
+|---|---|---|---|
+| 1 | Pause | Pause | Black and White |
+| 2 | Black and White | Silence | Silence |
+| 3 | Silence | Black and White | Dim |
+| 4 | Intention | Mirror | Intention |
+| 5 | Mirror | Intention | Mirror |
+| 6 | Redirect | Redirect | Redirect |
+| 7 | Eject | Loud Mirror | Eject |
+| 8 | Loud Mirror | Eject | Loud Mirror |
+| 9 | Frozen | Frozen | Frozen |
 
-**How long did it take before the user returned to a tracked app?**
+- **Classic** is the covenant ladder as designed: the reference escalation.
+- **BlackMirror** surfaces reflection before the ask (Mirror at 4) and speaks before it ejects — the uncanny sequence.
+- **Ambient** is environmental-first (no Pause; Dim replaces it in Band B) — for the user who prefers quiet changes over dialogs (§11).
+- Classic and BlackMirror drop Dim; Ambient drops Pause; all three drop Blackout (parked). Redirect at 6 in all three: with verdicts routing Band C, the colder Eject-at-6 variant BD-06 gave BlackMirror is retired — Eject is Band D's business.
 
-Useful derived outcomes:
-
-- returned within 2 minutes;
-- returned within 10 minutes;
-- returned within 30 minutes;
-- no return within 30 minutes.
-
-## 9.2 Exploration phase
-
-Initially, rotate reasonably evenly across the user's enabled exits.
-
-Do not randomize to an exit they explicitly disabled.
-
-The purpose is to learn.
-
-## 9.3 Exploitation phase
-
-After enough observations exist, prefer exits associated with longer periods away from target apps.
-
-A simple epsilon-greedy policy is sufficient.
-
-Conceptually:
-
-- most of the time choose the historically stronger exit;
-- occasionally test another enabled exit so the system continues learning.
-
-The exact exploration percentage must be configuration, not marketing doctrine.
-
-Do not use the LLM to calculate the winning exit.
-
-## 9.4 Contextual learning later
-
-Once basic learning works, success can be conditioned on:
-
-- morning/day/evening;
-- weekday/weekend;
-- target app;
-- current intention category;
-- current Circle.
-
-Example:
-
-- Coordinate may work well during work hours.
-- Create may work well in evenings.
-- Close may work best during late-night rapid-return clusters.
-- Consult may work best when the stated intention is information-seeking.
-
-This is a future refinement after basic exit learning is proven stable.
+This table supersedes BD-06 Decision 4's slot allocation (recorded as BD-09). Sequence switching from the manual menu, the exact-match dispatch, and the dispatch-coverage build guard all carry forward unchanged.
 
 ---
 
 # 10. Behavioural state model
 
-## 10.1 Behavioural day
+## 10.1 Unchanged core
 
-Do not reset at midnight.
+Behavioural day (date − 4h, 04:00 rollover), Heat pipeline (decay → base → reopen bonus per `reopen_bonus_mode` → overrun penalty → respected relief → clamp), Gravity, Pressure, ordered-scan Circle resolution, duplicate-OPEN debounce, race-proof CLOSE with session ownership, rolling windows, flat-key discipline, the nine parameter-defect axes, and every build guard: all carried forward exactly as built. The v2 conversion adds to this engine; it does not alter it.
 
-Define:
+## 10.2 Covenant state (new keys, same discipline)
 
-**Behavioural Day = Current Date minus 4 hours**
-
-Format as date key.
-
-This creates an approximate 04:00–03:59 day.
-
-It avoids an obvious midnight loophole.
-
-## 10.2 Heat
-
-Heat measures local compulsive clustering.
-
-Candidate baseline logic:
-
-1. Decay Heat according to time since the last genuine target-app interaction.
-2. Add Heat for the new OPEN.
-3. Add extra Heat for rapid reopening.
-4. Add Heat when the previous declared time boundary was substantially exceeded.
-5. Reduce Heat when the user respected a declared boundary.
-6. Cap Heat.
-
-The exact coefficients are initial defaults and must remain easy to change during testing.
-
-Suggested initial rule:
-
-- base genuine OPEN: `+1`
-- reopen <2 minutes: additional `+2`
-- reopen <10 minutes: additional `+1`
-- previous session exceeded declared duration by >50% and >2 minutes: `+2`
-- previous contract respected: `-1`
-- decay: `-1` per ~10 minutes away
-- floor: `0`
-- cap: `30`
-
-Heat is not “addiction severity.”
-
-It is an operational intervention signal.
-
-## 10.3 Gravity
-
-Gravity measures slower accumulation across the day.
-
-Suggested initial rule:
-
-`gravity = floor(opens_today / 6)`
-
-cap at `5`.
-
-Gravity means that repeated use across an entire day still gradually increases intervention even without rapid bursts.
-
-## 10.4 Pressure
-
-`pressure = heat + gravity`
-
-Pressure maps to the Nine Circles.
-
-## 10.5 Profiles
-
-### Paradise
-
-Slow descent:
-
-`1, 4, 7, 10, 13, 16, 19, 22, 25`
-
-### Limbo
-
-Balanced:
-
-`1, 3, 5, 7, 9, 11, 14, 17, 20`
-
-### Inferno
-
-Fast descent:
-
-`1, 2, 4, 6, 8, 10, 12, 14, 16`
-
-These are prototype parameters.
-
-The product should make them easy to tune.
-
-The names are part of the experience, not clinical classifications.
-
----
-
-## 10.6 Circle 0 — the silent band
-
-Pressure below the active profile's first threshold resolves to **Circle 0**.
-
-In Circle 0 the behavioural state engine runs and persists in full — behavioural day, Heat, Gravity, Pressure, open count, and the active session are all computed and written to `state.json` exactly as they are at any other Circle.
-
-Nothing is shown. No notification, no menu, no primitive. Circle 0 is a band the person never sees.
-
-The Leaving/Continue offer and every intervention primitive begin at Circle 1.
-
-The band exists because a user buried in pop-ups from the very first open of the day deletes the Shortcut — which section 12's testing philosophy already names as the key failure. A system that interrupts an open the person has not yet repeated has spent its credibility before it has earned any.
-
-The entry thresholds are prototype values for on-device tuning. The currently shipped entry values — the Pressure at which Circle 1 is first reached — are **Paradise 4, Limbo 3, Inferno 2**.
-
-BD-06's Dante naming covers Circles 1 through 9 only. Circle 0 needs no name, because it is never surfaced; the later Build Addendum 01 rename phase therefore has nothing to assign here.
-
----
-
-# 11. Nine intervention primitives
-
-The exact order is intentionally testable.
-
-The nine primitives occupy Circles 1 through 9; Circle 0 has no primitive by design (see section 10.6).
-
-The system needs nine behavioural primitives.
-
-## Primitive A — The Knock
-
-A small interruption.
-
-Example:
-
-> Open #4 today · Heat 3  
-> One breath. What did you come here for?
-
-No lecture.
-
-The Knock is Circle 1's intervention in the Classic and Black Mirror orderings, but it is not the first thing a user encounters — Circle 0 precedes it silently.
-
-## Primitive B — Ash
-
-Grayscale where iOS can apply and restore it safely.
-
-Passive reduction of visual salience.
-
-## Primitive C — Silence
-
-Mute/reduce media audio only if PROSOCHĒ can safely capture and restore state.
-
-Never blast sound as punishment.
-
-## Primitive D — Confession / Intention Contract
-
-Ask:
-
-> What exactly did you come here to do?
-
-Accept free text.
-
-Then require a boundary:
-
-- 2 min
-- 5 min
-- 10 min
-- 15 min
-- Custom
-
-“Watch stupid videos for ten minutes” is a valid answer.
-
-## Primitive E — Dimming
-
-Reduce display salience with safe brightness adjustment if reversible.
-
-Never set zero brightness.
-
-Never interfere with accessibility settings in a way that can strand the user.
-
-## Primitive F — Exile
-
-Immediately remove the target app from the path of least resistance.
-
-Use an exit.
-
-No permission prompt.
-
-Conceptually:
-
-> Come back if you still mean to.
-
-The user remains free to return.
-
-Returning is now an affirmative act and creates another OPEN.
-
-## Primitive G — The Mirror
-
-Show a precise behavioural reflection.
-
-Dumb:
-
-deterministic telemetry-based message.
-
-Sentient:
-
-on-device model-generated reflection.
-
-## Primitive H — The Voice
-
-The Mirror becomes spoken once.
-
-Never shout.
-
-Never manipulate sound to unsafe levels.
-
-## Primitive I — Ice
-
-Deterministic cooldown / strongest available safe ejection.
-
-The model does not decide Ice.
-
-This is a behavioural threshold.
-
-If native Lock Screen is available and verified, it may be used.
-
-Otherwise route to Close / Control Room / another strongest safe exit.
-
-The user must eventually cool out of Ice.
-
----
-
-# 12. Candidate Circle sequences
-
-Do not assume one order is correct.
-
-Include several arrangements for manual testing.
-
-All three candidate sequences are nine-slot orderings over Circles 1 through 9; none of them assigns anything to Circle 0.
-
-## 12.1 Classic
-
-Designed to introduce passive friction before cognitive demands.
-
-1. The Knock
-2. Ash
-3. Silence
-4. Confession
-5. Dimming
-6. Exile
-7. The Mirror
-8. The Voice
-9. Ice
-
-## 12.2 Black Mirror
-
-Designed to introduce behavioural self-awareness earlier.
-
-1. The Knock
-2. Confession
-3. Ash + Confession
-4. The Mirror
-5. Silence + Mirror
-6. Dimming + Mirror
-7. Exile
-8. The Voice
-9. Ice
-
-## 12.3 Ambient
-
-Designed to minimize interruption burden.
-
-1. Ash
-2. Silence
-3. Dimming
-4. The Knock
-5. Confession
-6. Exile
-7. The Mirror
-8. The Voice
-9. Ice
-
-## Testing philosophy
-
-Do not build a remote A/B infrastructure.
-
-Allow the sequence to be changed from the manual Control Room menu.
-
-The creator and test group can compare:
-
-- subjective annoyance;
-- disable rate;
-- rapid-return rate;
-- target-app openings;
-- contract fidelity;
-- time until return following an exit.
-
-The key failure mode is:
-
-**The intervention is so annoying that the user disables PROSOCHĒ.**
-
-That is a product failure even if it theoretically blocks more openings.
-
----
-
-# 13. PROSOCHĒ Dumb
-
-Dumb is not “Sentient without the good bits.”
-
-It is the baseline product.
-
-Everything structural is deterministic:
-
-- Heat;
-- Gravity;
-- Pressure;
-- thresholds;
-- contracts;
-- exit learning;
-- cooldown;
-- restoration;
-- telemetry;
-- profile;
-- sequence.
-
-## 13.1 Dumb Mirror engine
-
-Use telemetry templates that never invent facts.
-
-Examples:
-
-> This is open #12 today.
-
-> You were here three minutes ago.
-
-> The last five-minute session lasted thirteen minutes.
-
-> You have returned four times in twenty minutes.
-
-> You said you wanted five minutes. You left after four.
-
-> The next ten minutes are still unspent.
-
-> You said you came here to reply to someone.
-
-> The feed has no natural stopping point. Your task does.
-
-Maintain at least 30 templates.
-
-Select templates according to available facts.
-
-Do not show a time-overrun message if there was no contract.
-
-## 13.2 Dumb intent gate
-
-Ask:
-
-1. What exactly did you come here to do?
-2. For how long?
-
-A blank/vague response can trigger a redirect at higher Circles.
-
-Do not try to parse philosophical sincerity.
-
-## 13.3 Dumb Consult
-
-Ask what information the user needs.
-
-Offer:
-
-- Search Web
-- Search Maps
-- Open Notes
-- Open Reminders
-- Open Calendar
-- Back
-
-This preserves the information need without a model.
-
----
-
-# 14. PROSOCHĒ Sentient
-
-Sentient uses the same state engine but adds the on-device model at multiple Circles.
-
-It should feel increasingly aware as Pressure increases.
-
-The key rule:
-
-**Sentient observes behaviour; it does not claim access to hidden mental states.**
-
-## 14.1 What Sentient can know
-
-It can know:
-
-- target app;
-- current time;
-- open count;
-- Heat;
-- Gravity;
-- Pressure;
-- recent return intervals;
-- user's reclaim goal;
-- phone-purpose profile;
-- enabled exits;
-- declared current intention;
-- declared duration;
-- previous intentions;
-- previous session durations;
-- whether previous time contracts were respected;
-- which exits tended to prevent rapid returns;
-- recent model messages.
-
-It cannot know:
-
-- what content was viewed inside Instagram;
-- whether a message was actually sent;
-- whether the user felt bored/anxious;
-- whether the user is “lying.”
-
-## 14.2 From lie detector to contract auditor
-
-Do not ask:
-
-> Is the user lying?
-
-Ask:
-
-> Is the current contract specific, bounded and behaviourally consistent with recent observed contracts?
-
-Three dimensions:
-
-### Specificity
-
-Is there a recognizable purpose?
-
-### Boundedness
-
-Is there a stopping condition or time limit?
-
-### Consistency
-
-Have similar stated intentions repeatedly resulted in substantial overruns or immediate returns?
-
-Sentient may become sceptical.
-
-Example:
-
-> You have called the last four sessions “quick replies.” They averaged eleven minutes. What exactly are you replying to?
-
-This is factual and challengeable.
-
-## 14.3 Sentient verdicts
-
-Structured output:
-
-- `ALLOW`
-- `CHALLENGE`
-- `DENY`
-
-DENY only at sufficiently high Circles.
-
-A denial means redirect, not system-level punishment.
-
-At most one challenge round.
-
-Never create an interrogation loop.
-
-Circle IX remains deterministic.
-
-## 14.4 Sentient should appear at multiple Circles
-
-A possible design:
-
-### Circle I
-
-Deterministic.
-
-Speed matters more than intelligence.
-
-### Circle II
-
-Optional lightweight model mirror only when cached/fast enough; otherwise deterministic.
-
-### Circle III
-
-Model may choose between a small set of message tones based on recent pattern, but may not alter Pressure.
-
-### Circle IV
-
-Sentient classifies the intention and can ask one precision question.
-
-### Circle V
-
-Sentient adds a short observation using current contract and recent history.
-
-### Circle VI
-
-Sentient can classify which of the six exits best matches the user's stated intent, but the explore/exploit engine still governs long-term routing.
-
-### Circle VII
-
-Full Contract Auditor / Mirror.
-
-### Circle VIII
-
-Full Mirror + Voice.
-
-### Circle IX
-
-No model.
-
-Deterministic Ice.
-
-## 14.5 Model latency and caching concept
-
-Do not force model inference onto every early OPEN if it makes the intervention visibly slow.
-
-A useful future optimization:
-
-**precompute the next likely Mirror on CLOSE.**
-
-CLOSE already has:
-
-- completed session duration;
-- contract outcome;
-- return history;
-- user profile.
-
-Sentient could generate a short “next reflection” and cache it in JSON.
-
-The next OPEN can display this immediately and update with deterministic facts.
-
-This should only be implemented if Shortcuts Playground testing shows it is reliable.
-
-## 14.6 Sentient system prompt principles
-
-The system instruction should say, in substance:
-
-You are PROSOCHĒ, an attention mirror running privately on this device.
-
-You are not a therapist, parent, moral authority or lie detector.
-
-Distinguish deliberate use from automatic use using only supplied behavioural telemetry.
-
-Deliberate leisure is valid.
-
-Never invent what happened inside an app.
-
-Never diagnose addiction.
-
-Use concrete behavioural facts.
-
-Be calm, concise, lucid, slightly uncanny and unsentimental.
-
-Prefer one specific observation over a motivational slogan.
-
-Return structured output suitable for Shortcut parsing.
-
-Avoid:
-- addiction
-- dopamine
-- weakness
-- lazy
-- failure
-- shame
-- exclamation marks
-- emoji
-
----
-
-# 15. Longitudinal memory: where Sentient becomes interesting
-
-The most powerful model context is not the present open.
-
-It is the pattern across time.
-
-Example state:
-
-- rapid returns today: 7
-- “quick reply” contracts this week: 9
-- median planned duration: 3 min
-- median actual duration: 11 min
-- deliberate-leisure contracts: 6
-- median deliberate-leisure overrun: 4%
-- best-performing exit at night: Close
-- weakest exit at night: Coordinate
-
-Then Sentient can produce useful observations such as:
-
-> Your deliberate scrolling is usually bounded. The sessions you call “quick replies” are the ones that expand.
-
-or:
-
-> You don't stay here longest at night. You come back most often within six minutes of leaving.
-
-or:
-
-> Three Tuesdays ago this was your hottest evening. Rapid returns have been falling since.
-
-This is the core “Black Mirror” opportunity.
-
-The user gets a behavioural mirror they could not easily create unaided.
-
-## Rules
-
-- Do not invent trends.
-- Only make comparative claims when enough data exists.
-- Prefer medians to means for session duration.
-- Label estimated metrics as estimates.
-- Never infer mental-state labels from telemetry alone.
-
----
-
-# 16. JSON state design
-
-The exact schema may change during implementation, but it should include:
+A permanent seeded container (axis-7 discipline: seed at bootstrap, write and clear leaves flat, numeric or sentinel gates, never condition-100 over a container; mind the single-item list collapse):
 
 ```json
-{
-  "schema_version": 1,
-  "profile": "Limbo",
-  "sequence": "Classic",
-  "fork": "Dumb|Sentient",
-  "voice_enabled": true,
-  "ai_enabled": true,
-  "behavioural_day": "2026-08-13",
-  "opens_today": 0,
-  "heat": 0,
-  "gravity": 0,
-  "pressure": 0,
-  "circle": 1,
-  "last_open_at": null,
-  "last_close_at": null,
-  "last_app": null,
-  "active_session": null,
-  "recent_sessions": [],
-  "recent_contracts": [],
-  "exit_stats": {},
-  "cooldown_until": null,
-  "settings_snapshot": {},
-  "profile_snapshot": {},
-  "last_model_message": null
+"active_contract": {
+  "made_at": 0,
+  "expires_at": 0,
+  "intention": "none",
+  "boundary_seconds": 0,
+  "opens_within": 0,
+  "rapid_returns_within": 0,
+  "consumed_seconds": 0,
+  "status": "none"
 }
 ```
 
-Do not blindly preserve unbounded arrays.
+plus `recent_contracts` (rolling ~10, now actually written — outcome, declared vs consumed, invalidation reason), and a persisted `variability_counter` (§13). Schema version bumps with the usual migration honesty; every new key gets a seed and a `verify_*_seed()` guard.
 
-Use rolling windows plus aggregates.
+## 10.3 Config additions
 
-Examples:
+All PROTOTYPE DEFAULTs, tunable in the single Config block, never hardcoded inline:
 
-- last 20 sessions;
-- last 10 contracts;
-- per-exit counts/reward aggregates;
-- daily aggregate records for a limited period.
+```json
+"contract": {
+  "default_boundary_minutes": 10,
+  "max_opens_per_window": 3,
+  "max_rapid_returns_per_window": 1,
+  "coverage_ceiling_circle": 7
+},
+"verdict": {
+  "challenge_overrun_count": 2,
+  "deny_min_circle": 6
+},
+"bands": {
+  "ask_entry": 4,
+  "rescue_entry": 7
+},
+"variability": {
+  "spot_check_interval": 0
+},
+"heat": { "covered_reopen_bonus": "none" }
+```
 
-The Note contains the readable longer history.
-
----
-
-# 17. Control Room Note
-
-The Note is part of the product, not just debug output.
-
-Its tone should be calm and clean.
-
-Suggested structure:
-
-# PROSOCHĒ — CONTROL ROOM
-
-## READ THIS FIRST
-
-What PROSOCHĒ is.
-
-How to create OPEN automation.
-
-How to create CLOSE automation.
-
-Safety warning: do not target Phone, Maps, Wallet, authenticators, password managers or other essential apps.
-
-## MY PHONE, ON PURPOSE
-
-The editable proforma.
-
-## CURRENT SETTINGS
-
-- Fork
-- Profile
-- Sequence
-- Voice
-- AI
-- Enabled exits
-
-## CURRENT STATE
-
-A human-readable state snapshot updated periodically/manual run.
-
-## ATTENTION LEDGER
-
-Readable events.
-
-Do not append every tiny implementation detail.
-
-Prefer meaningful entries:
-
-- Circle changes;
-- contracts;
-- redirects;
-- rapid-return clusters;
-- successful cool-downs;
-- daily summaries;
-- profile changes.
-
-Example:
-
-`08:17 — Instagram opened. Heat 6 → Circle IV. Intention: reply to Maya. Contract: 5m.`
-
-`08:22 — Session closed at 4m 36s. Contract kept.`
-
-`08:25 — Instagram reopened after 3m. Heat 7.`
-
-`08:26 — Exit: Consult → web search.`
-
-## VALUE / LIFE RETURNED
-
-Reserved for later measurement design.
-
-## SUPPORT PROSOCHĒ
-
-Reserved for later pay-after-value design.
+(`heat.covered_reopen_bonus` shown here in its family; it joins the existing `heat` object.)
 
 ---
 
-# 18. First-run self-saucing flow
+# 11. Profiles and personalized descent
 
-## Import
+Two people with identical usage can deserve different products: one is content with their use and wants a light touch; the other uses the same amount, is unhappy about it, and wants strictness. v2 personalizes on **how much of a problem the person says it is**, not on how much they use.
 
-User installs either Dumb or Sentient.
+## 11.1 Severity → profile
 
-Native import questions capture simple static configuration.
+The existing three-profile machinery (Paradise / Purgatory / Inferno threshold tables, Circle 0 entry points, Ice durations) is the substrate. What changes is the elicitation: the import question stops asking users to choose between three mythological words cold and asks the severity question in plain language:
 
-## First tap
+> **How do you feel about your use of the apps you'll track?**
+> - "Mostly fine — keep a light touch" → **Paradise** (slow descent; Band C is rare)
+> - "Somewhat concerned — balance it" → **Purgatory** (default)
+> - "It's a real problem — be strict with me" → **Inferno** (fast descent; the ask arrives early)
 
-PROSOCHĒ checks for state.
+The mythological names remain the profiles' names everywhere else (Note, Status, Change Profile); the elicitation maps a feeling to a pace. Mechanically this is the existing import question with new option text and the same If-chain mapping — `WFWorkflowImportQuestions` remains a literal-prefill mechanism and is used within its limits.
 
-If absent:
+## 11.2 Modality → sequence
 
-1. create PROSOCHĒ directory in the Shortcuts-accessible file location;
-2. create `state.json`;
-3. create Control Room Note;
-4. populate Note with the setup instructions and human profile proforma;
-5. populate JSON with initial profile/fork/config;
-6. open/show the Control Room Note.
+A second plain-language question selects the default sequence:
 
-The Note explicitly tells the user to create:
+> **When PROSOCHĒ does step in, what should it prefer?**
+> - "Questions and reflections" → **Classic**
+> - "Quiet changes to the screen and sound" → **Ambient**
 
-One automation covers every watched app. The Shortcut consumes no app identity, and Heat, Gravity, Pressure, Circle and `active_session` are global, so per-app automations are unnecessary. OPEN and CLOSE stay split only because they pass different literals.
+BlackMirror remains a connoisseur's choice, switchable from the manual menu as all sequences are.
 
-### Automation A — OPEN
+## 11.3 Descent pace is the personalization mechanism
 
-- Trigger: App
-- select target apps
-- `Is Opened`
-- `Run Immediately` (not `Run After Confirmation`)
-- on the shortcut-picker screen, **Create New Shortcut** — selecting PROSOCHĒ here yields a no-input automation
-- inside that new shortcut: a `Text` action holding exactly `OPEN`, then `Run Shortcut` targeting `PROSOCHĒ — Nine Circles`, with its Input bound to that `Text` magic variable
+Fixed bands plus per-profile thresholds already produce the requested behaviour: the content user's Pressure climbs slowly, so they live in Bands A–B and may never meet the ask; the unhappy user's Pressure climbs fast, so the ask arrives quickly. The reserved `bands.ask_entry` / `bands.rescue_entry` keys (§6) allow future per-profile band-boundary tuning if device evidence shows pace alone is not enough — a deliberate second knob, unused in v2.0.
 
-### Automation B — CLOSE
+## 11.4 Re-elicitation
 
-- same target apps
-- `Is Closed`
-- `Run Immediately` (not `Run After Confirmation`)
-- on the shortcut-picker screen, **Create New Shortcut**
-- inside that new shortcut: a `Text` action holding exactly `CLOSE`, then `Run Shortcut` targeting `PROSOCHĒ — Nine Circles`, with its Input bound to that `Text` magic variable
-
-The literal must be exact. `Run Shortcut`'s Input parameter takes a variable, never typed literal text, and the router matches the passed string exactly — `CLOSED` for `CLOSE` fails silently into the MANUAL branch.
-
-The Shortcut cannot truthfully claim to install these automatically.
-
-## Second manual run
-
-Show Control Room menu:
-
-- Status
-- Open Control Room
-- Sync My Profile
-- Change Profile
-- Change Sequence
-- Toggle Voice
-- Test a Circle
-- Reset Today
-- Emergency Restore
-
-Sentient only:
-
-- Toggle On-Device AI
-- Test Model
+Severity drifts. `Change Profile` and `Change Sequence` exist in the manual menu; the Attention Receipt moment (Phase 27) is the natural future point to gently re-ask the severity question. Recorded as a v2-later idea, not a v2.0 surface.
 
 ---
 
-# 19. OPEN handler
+# 12. Touchpoint invariants
+
+These are product law, testable, and the acceptance criteria in §24 assert them:
+
+1. **A conscious user's day produces zero surfaces.** All opens land in Band A or under coverage.
+2. **At most one interactive surface per OPEN, ever.** The ask-plus-one-challenge counts as one surface flow. There is no announcement before a primitive and no second dialog after it. The v1 universal `Leaving / Continue` pre-menu is retired; its two jobs move into the primitives themselves.
+3. **Every interactive surface carries a one-tap leave route** (§3.4's strongest lever): Pause offers leave/continue; the ask offers "take me somewhere better" alongside declaration; the Mirror offers continue/leave/declare. Band B's non-interactive surfaces have nothing to dismiss — the friction itself is the whole encounter. Band D's forceful moves *are* the leave, performed for the user.
+4. **Escalate salience, never frequency.** Depth changes what a touchpoint is, not how many there are.
+5. **Silence is never interrupted to praise.** Success is reflected only inside surfaces that were already firing (§19's positive templates).
+6. **Panic Escape** is re-expressed: it is no longer a pre-menu but the **leave affordance inside interactive surfaces**. Its deliberate removability (Addendum 01 §3) survives with the same Note-edit-plus-confirmation path; removing it strips the leave option from Band B–C surfaces. **Emergency Restore is not Panic Escape** and remains unconditionally reachable — that separation is safety-critical and carries forward verbatim from Phase 11.
+
+---
+
+# 13. Variability against ritualisation
+
+## 13.1 The failure mode
+
+An intervention repeated identically trains its own dismissal: the user's finger learns the geometry, and the prompt is gone before the words are read — attention deferred by reflex, which is Epictetus' warning in *Discourses* 4.12 made literal, and exactly what has happened to Screen Time's daily-limit prompt in the wild. For PROSOCHĒ this failure is fatal rather than incidental, because the product's entire value lives in the moment of genuine consideration.
+
+## 13.2 The design answer — deterministic variability
+
+The stimulus varies so the response cannot become motor. All variability is **counter-based and deterministic** (persisted counters and modulo tests, the same idiom as the exit epsilon step): reproducible under test, auditable in state, no `number.random` anywhere. The standing decision that nothing nondeterministic enters the exit path extends product-wide: **nothing nondeterministic, and no variability of any kind, ever touches Frozen, cooldown durations, coverage arithmetic, verdict envelopes, safety paths, or environmental changes.**
+
+Three sanctioned mechanisms:
+
+1. **Surface rotation** (exists, extend): the Mirror already selects among 30 fact-gated templates; Pause gains a small copy bank so its words are not constant. Rotation is keyed off persisted counters, not chance.
+2. **The spot check** (new, ships off): when `variability.spot_check_interval = N > 0`, every Nth *uncovered Band B* open runs the Intention ask in place of the slotted passive primitive. A jump **into the ask band only** — never into Band D, never out of Band A, never during cooldown, never altering Pressure or thresholds. The rationale: an occasional unpredicted ask at a shallow depth keeps the ask an event rather than a station on a memorized route, and gives an honest user an unprompted chance to buy standing silence cheaply. Downward jumps into Band D are rejected by design: a punishment lottery breaks proportionality, violates the benevolence stance, and would make the strongest interventions arbitrary precisely where trust matters most.
+3. **Exit exploration** (exists): the epsilon-greedy exit rotation already makes the *destination* of redirects usefully non-monotonous.
+
+## 13.3 Research posture
+
+`spot_check_interval` ships at `0` (off). Phase 23 owns the research: turn it on after the covenant model has device evidence, and evaluate against contract specificity over time, fidelity trends, and observed dismissal cost (SEED-009 item 2's dismissibility observations), plus self-report. Honesty note: on-device measurement of "was this dismissal mechanical?" is weak; the phase must define its proxies before tuning and record what they cannot see.
+
+---
+
+# 14. The six exits
+
+Carried forward from v1 without structural change, with Redirect now a Band C primitive feeding the same machinery:
+
+- **Capture** — get something out of your head (note, voice memo, camera).
+- **Coordinate** — turn vague load into a plan (reminders, calendar).
+- **Create** — make rather than consume (user-defined target).
+- **Connect** — an actual human instead of a feed (never initiates contact on the user's behalf).
+- **Consult** — satisfy the information need without entering a feed: query-shaped search (web/maps/notes/reminders/calendar menu in Core; classification assist in Aware).
+- **Close** — the phone is not the next action: home or lock, a first-class outcome, never decorated.
+
+Exit learning is unchanged: outcomes are time-until-next-tracked-OPEN; epsilon-greedy with even rotation below `exits.exploit_min_observations`; exploration rate is Config; selection is deterministic and never the model's. Voluntary leaves, DENY redirects, and Circle 6 Redirects all record through `record_exit_and_route()` so the involuntary path feeds the same learning loop. Route deepening (each exit landing somewhere real, seeded with the current intention where one exists) is Phase 18 scope.
+
+---
+
+# 15. Onboarding and the Note
+
+## 15.1 Import questions (Layer A)
+
+Simple, robust, literal-prefill only:
+
+1. **Severity** → profile (§11.1). Default Purgatory.
+2. **Modality** → sequence (§11.2). Default Classic.
+3. **Voice** — "May PROSOCHĒ speak to you at the deepest circles? yes/no."
+4. **On-device intelligence** (Aware only) — yes/no.
+
+## 15.2 The Note (Layer B)
+
+`PROSOCHĒ` (renamed from `PROSOCHĒ — Control Room` by Addendum 01; internal name unchanged) carries, as built: READ THIS FIRST with the exact steps for both Personal Automations and the plain statement that PROSOCHĒ cannot install them and is bypassable; the essential-apps safety warning; the **Color Filters disclosure and its kill switch** (`safety.ash_managed_color_filters`); the editable `MY PHONE, ON PURPOSE` proforma; CURRENT SETTINGS; CURRENT STATE; the ATTENTION LEDGER (meaningful events only); the optional-hardening note (adding Shortcuts itself to the target list); and the Panic Escape removal path. `Sync My Profile` remains the only path that parses the proforma into state; the OPEN path never reads the Note.
+
+The v2 addition to the Note's teaching voice: one short paragraph explaining the covenant — *tell it what you're doing and stay inside your boundary, and it stays out of your way.* The manual menu carries forward (Status, Open Control Room, Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Test a Circle, Reset Today, Emergency Restore, Setup Check; plus Toggle On-Device AI and Test Model in Aware) and gains **Set an intention** (§7.1).
+
+---
+
+# 16. OPEN handler
 
 When input = `OPEN`:
 
-1. load JSON state;
-2. if missing, self-heal/bootstrap;
-3. calculate behavioural-day rollover;
-4. obtain Current App if available/verified;
-5. debounce duplicate OPEN events;
-6. check cooldown;
-7. calculate time since prior real interaction;
-8. decay Heat;
-9. increment open count;
-10. add rapid-return Heat;
-11. incorporate previous contract fidelity;
-12. calculate Gravity;
-13. calculate Pressure;
-14. map Pressure to Circle;
-15. create session ID;
-16. persist state;
-17. log meaningful OPEN if appropriate;
-18. execute current Circle behaviour.
+1. load state; self-heal if missing/corrupt;
+2. behavioural-day rollover;
+3. duplicate-OPEN debounce;
+4. cooldown check (a live Frozen short-circuits to the redirect, unchanged);
+5. pending-exit outcome recording;
+6. Heat decay → open count → covered-reopen-aware rapid-return bonus (§7.5) → contract-fidelity adjustment → Gravity → Pressure → Circle;
+7. contract bookkeeping: increment `opens_within` / `rapid_returns_within` if a window is live; apply invalidation rules (§7.3);
+8. create session; persist state;
+9. **route (§5.3):** Circle 0 → end. Covered and Circle < ceiling → end. Otherwise → variability spot check if armed and eligible (§13.2), else the current Circle's primitive per the active sequence;
+10. log meaningful events to the ledger where appropriate — never ahead of the intervention.
 
-Where possible, show the behavioural intervention before non-essential Note logging.
+# 17. CLOSE handler
 
-No Screen Time API blocking.
+Unchanged race-proof structure (reload, ownership check, abort if superseded), plus covenant accounting:
 
----
-
-# 20. CLOSE handler
-
-CLOSE gives PROSOCHĒ observed session duration.
-
-Race-proof it.
-
-1. load JSON;
-2. capture active session ID;
-3. capture start timestamp;
-4. brief wait if needed for app-switch race handling;
-5. reload state;
-6. if active session ID changed, a newer OPEN owns state — stop;
-7. calculate actual session duration;
-8. compare against declared contract;
-9. calculate overrun;
-10. update contract fidelity;
-11. update recent sessions;
-12. restore any settings PROSOCHĒ itself changed;
-13. update exit-learning outcome if relevant;
-14. clear active session;
-15. persist JSON;
-16. append readable CLOSE/contract outcome to Note when useful;
-17. Sentient may optionally precompute future mirror context.
+1. measure session duration from the recorded start;
+2. add it to `active_contract.consumed_seconds` when a window is live; settle the contract outcome on expiry (§7.4) into `recent_contracts` and the Heat inputs;
+3. update recent sessions; record exit outcomes where relevant;
+4. **restore every environmental setting PROSOCHĒ changed** — brightness, volume, Color Filters off — through `restore_managed_settings()`;
+5. clear the session; persist; append a readable CLOSE line when useful;
+6. Aware may precompute the next Mirror (v2-later, OPT-01/02).
 
 ---
 
-# 21. Environmental state safety
+# 18. Environmental safety
 
-Any system-setting friction is subordinate to safety.
+Current truth, stated directly (the dated decision trail is BD-02, D-01, D-02, BD-01-R2 in `docs/CAPABILITY-DECISIONS.md`):
 
-## Brightness
-
-- Never zero.
-- Only change if PROSOCHĒ can reliably restore.
-- Prefer ~10–15% as a prototype dim value.
-- If original state cannot be read, do not make a stateful brightness intervention.
-
-## Volume
-
-- Never increase volume as punishment.
-- Never produce startling output.
-- If changing volume for Silence, restore original value.
-- If original value cannot be captured reliably, skip the intervention.
-
-## Grayscale / Color Filters
-
-Accessibility settings may already be intentionally configured by the user.
-
-Do not blindly disable a pre-existing state.
-
-If Shortcuts cannot detect and restore the original condition safely, either:
-
-- skip dynamic grayscale; or
-- require the user to opt into a known PROSOCHĒ-managed configuration.
-
-## Emergency Restore
-
-Manual menu must provide an Emergency Restore action.
-
-It clears:
-
-- PROSOCHĒ cooldown;
-- active session;
-- any recoverable temporary brightness;
-- recoverable volume;
-- recoverable colour settings.
+- **The safety property is capture → durable persist → apply → restore.** Every environmental change captures its original value and persists it to disk *before* the device is changed, and every recovery path restores it: CLOSE, Emergency Restore, Ice expiry, the live-Ice redirect. A setting whose original cannot be captured is left unchanged.
+- **Brightness:** `safety.brightness_floor` and `safety.dim_target` both ship at `0` (D-01) — iOS's practical minimum renders dim, not black, per the owner's on-device report. The bound is a tuning value; the loop above is the safety mechanism. The loop is structurally proven and **device-unproven** — Phase 22 owns the proof, including force-quit, restart, CLOSE-never-fires, overlapping sessions, and locked-screen cases. `setbrightness.WFBrightness` is OPTIONAL and defaults to 50%, so device tests must verify the *value applied*, never the absence of an error.
+- **Volume:** capture-and-restore proven end-to-end at rung 3 for volume; never raised, never startling, `Media` channel pinned at all sites.
+- **Color Filters (Black and White):** a two-valued setting with no read-back anywhere in iOS — so "restore" is unconditionally "set it off," wired first in `restore_managed_settings()` so no dotted read can abort ahead of it. Default ON, disclosed in the Note with the `safety.ash_managed_color_filters` kill switch; the pre-existing-grayscale user is accepted and backlogged, not silently harmed twice.
+- **Emergency Restore** clears cooldown and the active session and restores recoverable brightness, volume, and colour state; it is reachable from the manual menu and from inside Frozen, and is never gated on any Note-editable setting.
+- **Accessibility:** pre-existing accessibility configuration is never blindly overridden; the kill switch and disclosure are the §21-lineage opt-in mechanism.
 
 ---
 
-# 22. Circle IX — Ice
+# 19. What PROSOCHĒ sounds like
 
-No NFC in this version.
-
-No model judgement.
-
-Ice is reached deterministically through Pressure.
-
-Initial concept:
-
-- Paradise: ~60 sec
-- Limbo: ~3 min
-- Inferno: ~5 min
-
-Exact values are prototype parameters.
-
-During Ice:
-
-- target-app OPEN immediately ejects/locks/redirects;
-- blocked attempts should not endlessly inflate Heat;
-- show remaining cooldown if practical.
-
-When Ice expires:
-
-- provide Heat relief;
-- clear cooldown.
-
-There must be a route out.
-
-The product should not trap the user in permanent escalating punishment.
+Carried from v1 in full. Concrete behavioural facts; no slogans, no exclamation marks, no emoji; never "addiction," "dopamine," "weakness," "lazy," "failure," "shame." One specific observation beats a motivational sentence. The Mirror's 30+ templates are fact-gated (no overrun line without a contract; no trend without data; medians over means) and include success acknowledgment — "You said five minutes and left after four. Deliberate use appears to be working." — so opening a tracked app never reliably predicts criticism. The system's memory is its uncanniness; accuracy is its licence.
 
 ---
 
-# 23. Measurement
+# 20. PROSOCHĒ Aware
 
-Measurement is local.
+Core is the baseline product and the control condition, not a degraded afterthought; Aware adds judgment, never authority.
 
-The first objective metrics:
-
-- target-app OPEN count;
-- rapid-return count;
-- session duration;
-- declared duration;
-- contract overrun;
-- Circle distribution;
-- redirects;
-- exit selected;
-- time to next target-app return;
-- daily Heat maxima;
-- user resets;
-- profile changes.
-
-## Primary prototype metric
-
-**Rapid-return rate**
-
-This may be more diagnostic of habitual looping than raw screen time.
-
-Examples:
-
-- percentage of sessions followed by another tracked OPEN within 2 minutes;
-- percentage followed within 10 minutes.
-
-## Second metric
-
-**Contract fidelity**
-
-For time-bound sessions:
-
-`actual duration / intended duration`
-
-Use medians and distributions.
-
-Do not turn this into moral scoring.
-
-## Disable rate
-
-In friend testing, ask whether the system was disabled and why.
-
-That is a critical product-quality signal.
-
-A blocker that users turn off is not effective.
+- **Model:** Apple On-Device via `Use Model`, pinned with the device-evidenced literal `Apple Intelligence on Device` (BD-04-R2). PCC remains an authorised fallback only; ChatGPT/extension models excluded. The no-network runtime guarantee stays unclaimed until device-verified.
+- **Where the model appears:** the Band C ask (verdict within the envelope, §8.3) and reflection generation for Mirror/Loud Mirror. Nowhere else. Covered opens and Bands A/B/D make no model call. Frozen never involves the model.
+- **Context:** the compact window only — profile goals, current telemetry, current and recent contracts, exit history. Never the Note, never app contents, never invented mental states.
+- **Failure:** malformed, empty, or slow output falls through to Core behaviour without breaking the run. Deterministic fallbacks are mandatory everywhere.
+- **The longitudinal opportunity** (v1 §15, carried): patterns across time — "Your deliberate scrolling is usually bounded. The sessions you call 'quick replies' are the ones that expand." — remain the strongest Aware material, built strictly from recorded aggregates.
 
 ---
 
-# 24. “Life Returned” — record now, design later
+# 21. Measurement
 
-This idea is intentionally parked for a later product phase.
+Local only. The v2 metric set:
 
-PROSOCHĒ should eventually quantify value created.
+- **Co-primary: rapid-return rate** (sessions followed by another tracked OPEN within 2/10 minutes) **and contract fidelity** (consumed vs declared, medians and distributions, never moral scoring).
+- **Covered-open share:** the fraction of opens under coverage — rising is the covenant working.
+- **Surfaces per day:** the touchpoint budget made measurable — falling while covered share rises is the product succeeding.
+- **Circle distribution, exit outcomes, time-to-return** — unchanged.
+- **Disable rate** — still the critical product-quality signal: an intervention annoying enough to be switched off is a failure whatever it blocked.
 
-But it must be mathematically honest.
-
-Do not claim:
-
-`100 blocked opens = X hours saved`
-
-without evidence.
-
-## Observed metrics can be stated directly
-
-Examples:
-
-- 1,284 automatic opens interrupted;
-- 412 rapid returns broken;
-- 73 exits accepted;
-- median target-app session fell from X to Y;
-- observed target-app Screen Time fell from X to Y if Screen Time telemetry is available.
-
-## Estimated attention reclaimed
-
-A future conservative estimate can use a personal counterfactual baseline.
-
-Concept:
-
-`expected comparable session duration - observed session duration`
-
-with lower bound zero.
-
-Use rolling personal medians rather than a global assumption.
-
-Potential baseline dimensions:
-
-- app;
-- time of day;
-- Circle;
-- deliberate versus automatic contract type.
-
-Label this:
-
-**Estimated Attention Reclaimed**
-
-or:
-
-**Estimated Life Returned**
-
-Never present it as exact.
-
-## Screen Time telemetry
-
-iOS 26 added `Get App & Website Data` to Shortcuts.
-
-This may become a useful measurement source.
-
-It is not required for blocking.
-
-Before implementing value metrics, the build agent must inspect the action's actual schema and runtime granularity on iPhone.
-
-Do not assume it provides arbitrary historical querying until tested.
+Definition of success, unchanged in spirit and now mechanically visible: fewer automatic opens, fewer rapid returns, more bounded deliberate sessions, lower Heat, **more silence** — PROSOCHĒ gradually has less work to do.
 
 ---
 
-# 25. Pay after value — record now, implement later
+# 22. Failure modes
 
-The product will remain free and open source.
-
-No feature gate.
-
-No subscription required.
-
-No ads.
-
-No sale of behavioural data.
-
-The monetization philosophy is:
-
-**Pay after value.**
-
-PROSOCHĒ should first create measurable value.
-
-Only later should it gently offer the user a way to support the project.
-
-Possible triggers:
-
-- 100 automatic openings interrupted;
-- a threshold of estimated attention reclaimed;
-- 30 active days;
-- another conservative milestone.
-
-Example future copy:
-
-> PROSOCHĒ has interrupted 184 automatic opens.  
-> Estimated attention returned: 3h 17m.  
->  
-> PROSOCHĒ is free and open source, permanently.  
-> If that time has been worth something to you, you can pay what you think it was worth.
-
-Options:
-
-- Support PROSOCHĒ
-- Not now
-- Never ask again
-
-Important:
-
-- payment is not a behavioural intervention;
-- never display the payment ask while the user is being blocked;
-- never use guilt;
-- never threaten loss of functionality;
-- never transmit the user's attention history to the creator merely to calculate payment.
-
-Potential infrastructure later:
-
-- GitHub Sponsors;
-- a pay-what-you-want payment link.
-
-This is a future product/marketing workstream, not MVP build scope.
+- **Intervention fatigue** → Band A/B silence, coverage, concise copy, template rotation.
+- **Ritualisation** (new, first-class) → §13's variability; the ask prefills to stay cheap for honest users; fidelity trends watched as the proxy.
+- **Coverage gaming** (new) → §7.6: Gravity still counts, invalidation still bites, verdict history pulls CHALLENGE earlier.
+- **Disablement** → deliberate leisure respected, silence as default, Paradise available, strong moves only on strong evidence.
+- **State races** → session IDs, reload-before-commit, idempotent restore (built).
+- **Notes growth** → JSON is live state; the Note logs meaningful events only.
+- **Generative inconsistency** → structured output, parse validation, deterministic fallback, envelope discipline (built).
+- **Accessibility interference** → disclosure + kill switch + unconditional off-leg (built).
+- **False psychological inference** → banned vocabulary, facts only (built).
+- **Phone-shaped substitution** → Close is first-class; exit learning rewards time away, not app-swapping.
 
 ---
 
-# 26. Open-source principles
+# 23. What is already built and stands
 
-PROSOCHĒ should be understandable by its users.
+The v2 conversion is a routing and surface change on top of a proven foundation. Delivered and carried forward without redesign:
 
-Repository should eventually contain:
-
-- signed release `.shortcut`;
-- unsigned XML source;
-- human-readable architecture docs;
-- model prompts;
-- Heat/Gravity logic;
-- known iOS limitations;
-- privacy explanation;
-- contribution guide;
-- changelog.
-
-The README should make clear:
-
-- all behavioural data stays on the user's device in the default design;
-- no external analytics;
-- Sentient uses Apple's On-Device model;
-- model output can be wrong;
-- the system is self-directed and bypassable;
-- the user owns the Shortcut and can inspect/edit it.
-
-The product should be forkable.
+- **The deterministic state engine** — behavioural day, Heat/Gravity/Pressure, profile threshold tables, Circle 0 silent band, duplicate debounce (Phases 3, 10).
+- **The race-proof CLOSE pipeline** and session-ownership protocol (Phase 4).
+- **Bootstrap, routing, self-healing** — corrupt/missing state recovery, Note recreation, import questions (Phase 2).
+- **The Control Room Note** and manual menu, Sync My Profile, Test a Circle, Setup Check (Phases 2, 7, 10).
+- **Ten primitives** including the real Color Filters toggle (Phase 14), the Voice primitive (Phase 15), and capture-persist-restore environmental machinery (Phases 9, 16) — device proof pending, owned by Phase 22.
+- **Six exits with epsilon-greedy learning** and the pending-exit outcome loop (Phase 6).
+- **The Aware fork** as one additive gated insertion with the device-evidenced model literal (Phase 8; SEED-005 tracks the refork).
+- **The whole build discipline:** the nine parameter-defect axes, the two-gate validator rule with `gate_a_residue_check.py`, 14 structural checkers, dispatch-coverage and seed guards, AEA1 decrypt verification, donor evidence, the evidence-escalation ladder. None of this is model-dependent; all of it is what makes the conversion safe to attempt.
+- **Dante naming and fork naming** (Addendum 01 / BD-06 Decisions 1–3, 5 / BD-06-A1): positional Circle names, Paradise/Purgatory/Inferno, Core/Aware, the `PROSOCHĒ` Note title.
 
 ---
 
-# 27. Privacy model
+# 24. Build strategy and acceptance criteria
 
-Default:
+## 24.1 Conversion strategy
 
-**No behavioural data leaves the phone.**
+The roadmap (Phases 17–20) converts the artifacts in dependency order: covenant substrate (state, coverage gate, Core verdict) → bands and surfaces (pre-menu retirement, slot table v2, Redirect, Mirror surface) → personalized onboarding → Aware envelope alignment. Device debugging and the full UAT follow (Phases 21–22); variability research after evidence (Phase 23). One generator, both forks, every change through the existing guard suite; no phase re-litigates settled capability decisions.
 
-The Note and JSON may sync through the user's own iCloud depending on their device configuration, but PROSOCHĒ itself does not transmit telemetry to its creator.
+## 24.2 Acceptance criteria (delta over the v1 criteria, which remain in force for everything carried)
 
-Sentient:
+**Coverage**
+- A covered open shows no surface, sends no notification, calls no model, and still updates state fully.
+- Coverage never applies at Circle ≥ the ceiling; a live cooldown always short-circuits first.
+- Each invalidation rule (expiry, open-count, rapid-return) ends coverage and the next uncovered open routes normally.
+- Contract outcomes land in `recent_contracts` losslessly and feed both Heat and the verdict history.
 
-- use On-Device model only;
-- never send PROSOCHĒ profile/history to ChatGPT;
-- never select Private Cloud Compute;
-- pass only a compact recent context window;
-- do not pass the whole Note;
-- store only final model outputs required for continuity;
-- do not store hidden reasoning.
+**Bands and surfaces**
+- A Circle 0 open shows nothing; an uncovered Band B open shows only its primitive (single alert at Circle 1; no dialog at 2–3); an uncovered Band C open shows exactly one interactive surface; Band D fires forcefully with no question.
+- No open ever shows two surfaces. The pre-menu is gone; every interactive surface carries its leave route; Panic Escape removal strips exactly those leave routes and nothing else; Emergency Restore is untouched by all of it.
+- The three sequences differ only within bands; Frozen is Circle 9 in all three; dispatch coverage remains a hard build gate.
 
----
+**Verdicts**
+- Core's verdict is pure recorded-fact arithmetic; Aware's is envelope-bounded with silent deterministic fallback; one challenge round maximum; DENY only at Circle 6 and only ever a redirect.
 
-# 28. Model-context design
+**Personalization**
+- The severity and modality questions map to profile and sequence; all three profiles produce demonstrably different descent for identical open patterns; band-entry keys exist in Config and default to 4/7.
 
-Sentient input should be compact.
+**Variability**
+- Ships off. When armed in test: spot checks fire only on eligible uncovered Band B opens at the counter interval, deterministically reproducible from state; nothing nondeterministic anywhere in Frozen, safety, environmental, or coverage paths.
 
-Example:
-
-```text
-GOAL:
-Make music, read more, train, spend time with people.
-
-PHONE PURPOSE:
-Communication, navigation, music, capture ideas, research.
-
-CURRENT:
-App: Instagram
-Time: 22:41
-Open today: 12
-Heat: 11
-Gravity: 2
-Pressure: 13
-Circle: 7
-Time since last close: 2m 14s
-
-CURRENT CONTRACT:
-"Reply to Hannah about Saturday"
-5 minutes
-
-RECENT CONTRACTS:
-1. "Reply to Tom" planned 3m / actual 10m / return 4m
-2. "Watch reels" planned 10m / actual 9m / return 48m
-3. "Reply to Alex" planned 5m / actual 12m / return 3m
-
-EXIT HISTORY:
-Close: 6 samples / median return 31m
-Coordinate: 5 samples / median return 4m
-Create: 4 samples / median return 18m
-```
-
-This gives the model enough context to be useful without needing the complete Note.
+**Safety (unchanged and re-asserted)**
+- Environmental capture-persist-restore on every path; Emergency Restore recovers every failure mode found; no unsafe volume; no accessibility stranding; Frozen always expires with a route out.
 
 ---
 
-# 29. What “Sentient” should sound like
-
-The model is not a motivational quote generator.
-
-Bad:
-
-> Believe in yourself! Put the phone down and chase your dreams!
-
-Bad:
-
-> Your dopamine system is hijacked.
-
-Bad:
-
-> You're lying again.
-
-Good:
-
-> The last three “quick reply” sessions ran past ten minutes.
-
-Good:
-
-> Your deliberate ten-minute leisure sessions usually stop on time. This one has no stopping condition yet.
-
-Good:
-
-> You returned two minutes after leaving. What is different about this opening?
-
-Good:
-
-> Close has kept you away longer than any app redirect tonight.
-
-Good:
-
-> You said this time was for making music. The phone is still available later.
-
-The model should occasionally acknowledge success.
-
-The product must not create a learned association that opening a target app always produces criticism.
-
-Examples:
-
-> You said five minutes and left after four. Deliberate use appears to be working.
-
-> This is your first return in two hours. Heat has cooled.
-
-> Your recent leisure contracts have mostly stayed within their boundaries.
-
-Positive reinforcement is part of the nudge architecture.
-
----
-
-# 30. Failure modes
-
-## Intervention fatigue
-
-Symptom:
-
-User dismisses prompts mechanically.
-
-Mitigation:
-
-- passive early Circles;
-- sequence variation;
-- concise copy;
-- no repetitive lecture;
-- Sentient avoids repeating the same Mirror.
-
-## Disablement
-
-Symptom:
-
-User turns off automation.
-
-Mitigation:
-
-- respect deliberate leisure;
-- avoid excessive prompts;
-- allow Paradise;
-- make strong interventions conditional on actual Pressure;
-- learn effective exits rather than always punishing.
-
-## State races
-
-Symptom:
-
-OPEN/CLOSE overlap during rapid app switching.
-
-Mitigation:
-
-- session IDs;
-- JSON as authoritative state;
-- reload state before CLOSE commit;
-- idempotent restoration.
-
-## Notes growth
-
-Symptom:
-
-Control Room becomes huge.
-
-Mitigation:
-
-- JSON carries live state;
-- Note logs meaningful events, not every internal calculation;
-- later add archival/daily summaries if needed.
-
-## Generative inconsistency
-
-Symptom:
-
-Sentient output is malformed or inappropriate.
-
-Mitigation:
-
-- structured output;
-- parse validation;
-- deterministic fallback;
-- model never controls arithmetic or Ice;
-- one challenge maximum.
-
-## Accessibility interference
-
-Symptom:
-
-Grayscale/brightness manipulation conflicts with user needs.
-
-Mitigation:
-
-- capability/state audit;
-- opt out;
-- never blindly override accessibility configuration.
-
-## False psychological inference
-
-Symptom:
-
-Model states the user is bored, anxious, addicted or dishonest without evidence.
-
-Mitigation:
-
-- strict prompt;
-- behavioural facts only;
-- deterministic safety checks;
-- product copy avoids diagnosis.
-
-## Over-optimization for phone-based alternatives
-
-Symptom:
-
-PROSOCHĒ merely changes which app consumes time.
-
-Mitigation:
-
-- Close is a first-class exit;
-- user profile includes offline life;
-- exit-learning rewards time away from tracked apps.
-
----
-
-# 31. Build strategy for the Shortcuts Playground agent
-
-The agent's job is not to write another strategy.
-
-It must build working shortcuts from this strategy.
-
-## Deliverables
-
-Produce:
-
-- `PROSOCHĒ — Nine Circles — Dumb.shortcut`
-- `PROSOCHĒ — Nine Circles — Sentient.shortcut`
-- unsigned XML draft for each
-- build notes documenting unsupported/deviated actions
-
-Prefer a shared source architecture where practical.
-
-## Before authoring
-
-Read Shortcuts Playground:
-
-- `SKILL.md`
-- `BEST_PRACTICES.md`
-- `ACTIONS.md`
-- `APPINTENTS.md`
-- `PLIST_FORMAT.md`
-- `VARIABLES.md`
-- `CONTROL_FLOW.md`
-- `DATE_TIME.md`
-- relevant golden shortcut XML
-- validator documentation
-
-Run self-test.
-
-Target iOS.
-
-## Capability audit
-
-Verify the exact iOS action identifier and parameter shape for:
-
-- Get Current App
-- Get File
-- Save File / overwrite
-- Dictionary / JSON parsing
-- Get Dictionary Value
-- date arithmetic
-- Notes search/find
-- Create Note
-- Append to Note
-- show/open note if available
-- Ask for Input
-- Choose from Menu/List
-- Open App
-- Open URLs / web search
-- Maps search/deep link capability
-- Set Brightness
-- get current brightness
-- Set Volume
-- get current volume
-- Color Filters / grayscale
-- Speak Text
-- Lock Screen
-- Base64 encoding if needed
-- Use Model / On-Device model
-- model structured output capability
-- Get App & Website Data (research/measurement only, not core v1)
-
-Do not fabricate an action because the strategy requests it.
-
-If an action cannot be verified:
-
-- use the safest fallback;
-- record the deviation;
-- keep the Shortcut runnable.
-
-## Import questions
-
-Implement only simple robust setup values.
-
-Do not over-engineer import-time UX.
-
-## Build Dumb first
-
-Dumb establishes:
-
-- invocation routing;
-- bootstrap;
-- JSON;
-- Control Room;
-- OPEN;
-- CLOSE;
-- Heat;
-- Gravity;
-- Pressure;
-- profiles;
-- sequences;
-- all non-AI Circle primitives;
-- contracts;
-- exits;
-- explore/exploit;
-- restoration;
-- cooldown;
-- fallback mirrors.
-
-Only after Dumb is stable, fork Sentient.
-
-## Build Sentient second
-
-Add:
-
-- model capability checks;
-- On-Device Use Model;
-- intent classification;
-- contract auditing;
-- Mirror generation;
-- voice;
-- exit classification assistance;
-- malformed-output fallback.
-
-Do not alter the deterministic state engine.
-
----
-
-# 32. Agent acceptance criteria
-
-The build is not done because the plist validates.
-
-It must also satisfy behavioural/state cases.
-
-## Bootstrap
-
-- Fresh import works.
-- First manual run creates JSON.
-- First manual run creates one Control Room.
-- Control Room contains OPEN/CLOSE automation instructions.
-- Human profile proforma is present.
-- Existing state is not overwritten on later manual runs.
-
-## OPEN/CLOSE
-
-- OPEN increments once.
-- Duplicate trigger debounce works.
-- CLOSE measures session duration.
-- Rapid switching between two tracked apps does not corrupt state.
-- Behavioural day rolls at 04:00.
-- Heat decays.
-- Rapid return increases Heat.
-- Gravity accumulates.
-- Pressure maps correctly.
-- all three profiles differ.
-
-## Contracts
-
-- Free-text intention works.
-- Duration selection works.
-- deliberate leisure is accepted.
-- contract overrun recorded.
-- contract success recorded.
-- future Heat can use contract outcome.
-
-## Exits
-
-All enabled exits can be invoked:
-
-- Capture
-- Coordinate
-- Create
-- Connect
-- Consult
-- Close
-
-Consult supports at least a direct search route.
-
-Exit outcomes are recorded.
-
-Basic explore/exploit selection functions.
-
-## Circles
-
-- candidate sequence can be changed.
-- Circle mapping changes accordingly.
-- stronger Circle does not necessarily show every earlier prompt.
-- ambient effects are restored.
-- Circle IX cooldown is deterministic.
-- cooldown attempts do not endlessly inflate Heat.
-- user exits Ice.
-
-## Dumb
-
-- no Apple Intelligence dependency.
-- fallback Mirrors use only real facts.
-- no malformed telemetry messages.
-
-## Sentient
-
-- uses On-Device model only.
-- no cloud/ChatGPT.
-- model can fail without breaking shortcut.
-- output is parsed/validated.
-- one CHALLENGE maximum.
-- model never claims to know app contents.
-- model never decides Circle IX.
-- deliberate leisure can be ALLOW.
-- prior contract consistency can inform challenge.
-- spoken intervention occurs at most once per run.
-
-## Safety
-
-- no zero brightness.
-- no unsafe volume.
-- no accessibility-stranding behaviour.
-- Emergency Restore works.
-- deleting Control Room does not crash app; safe recovery occurs.
-- corrupt/missing JSON triggers safe recovery.
-
-## Privacy
-
-- no external network dependency for core functionality.
-- no behavioural telemetry sent away.
-- no cloud model.
-
-## Distribution
-
-- validator passes.
-- shortcut signs.
-- shortcut imports.
-- both forks are named clearly.
-- source XML retained.
-
----
-
-# 33. Research questions for prototype testing
-
-These are product questions, not requirements to implement formal experimentation.
-
-## Question 1
-
-Which sequence produces the best balance between:
-
-- reduced rapid-return behaviour;
-- low annoyance;
-- low disablement?
-
-Compare Classic / Black Mirror / Ambient.
-
-## Question 2
-
-Is Heat more useful than raw open count?
-
-Look for users who have the same daily opens but different clustering.
-
-## Question 3
-
-Which exit classes actually interrupt the loop?
-
-Measure time to next tracked OPEN.
-
-## Question 4
-
-Does Sentient add meaningful value over Dumb?
-
-Not:
-
-> Which one sounds cooler?
-
-But:
-
-- Does it lead to fewer rapid returns?
-- Does it make intention contracts more specific?
-- Is it less repetitive?
-- Does it annoy users more?
-- Do users report learning something about their behaviour?
-
-## Question 5
-
-What messages become stale?
-
-The system should not repeatedly show the same philosophical line.
-
-## Question 6
-
-At what Circle does friction become counterproductive?
-
-This is why Paradise/Limbo/Inferno exist.
-
----
-
-# 34. Future roadmap — intentionally not in current build
-
-## Phase A — prove the Shortcut
-
-- Dumb and Sentient
-- Notes + JSON
-- Nine Circles
-- Heat/Gravity
-- exits
-- learning
-
-## Phase B — value
-
-- Screen Time telemetry audit
-- honest personal baselines
-- Estimated Attention Reclaimed / Life Returned
-- daily/weekly summaries
-
-## Phase C — pay after value
-
-- support link
-- local milestone prompt
-- never-pay option
-- no functionality gate
-
-## Phase D — physical commitment
-
-Revisit NFC.
-
-Potential use:
-
-- deliberately located physical tag;
-- optional Circle IX unlock;
-- commitment through movement/physical separation.
-
-## Phase E — stronger native enforcement
-
-Only if needed:
-
-- open-source companion iOS app;
-- Screen Time / ManagedSettings APIs;
-- tighter blocking.
-
-The core Nine Circles philosophy should remain independent from stronger enforcement.
-
-## Phase F — community science
-
-If there is interest:
-
-- optional export of anonymized local metrics initiated by the user;
-- open analysis;
-- publish protocol;
-- transparent intervention comparisons.
-
-No hidden analytics.
-
----
-
-# 35. Canonical product decisions
-
-These decisions supersede earlier exploration.
+# 25. Canonical product decisions
 
 | Decision | Current answer |
 |---|---|
-| Core product | Adaptive friction / attention intervention |
-| Target | iOS 26 |
-| Focus | No |
-| NFC | No |
-| Screen Time blocking | No |
-| Screen Time telemetry | Later / optional measurement |
-| Machine persistence | One JSON |
-| Human persistence | One Control Room Note |
-| CSV | No |
-| Target-app trigger | App OPEN Personal Automation |
-| Session measurement | App CLOSE Personal Automation |
-| Profiles | Paradise / Limbo / Inferno |
-| Escalation | Heat + Gravity = Pressure |
-| Circles | Nine |
-| Sequence | Configurable; Classic default |
-| User intention | Free text + time boundary |
-| Leisure | Explicitly valid |
-| Exit system | Capture / Coordinate / Create / Connect / Consult / Close |
-| Exit selection | Explore/exploit learning |
-| AI | Two product forks |
-| Dumb | Deterministic |
-| Sentient | Apple On-Device model |
-| Cloud LLM | No |
-| “Lie detection” | No |
-| AI role | Contract auditor / attention mirror |
-| AI control of hard lock | No |
-| Open source | Yes |
-| Payment | Free forever; pay after value later |
-| “Life Returned” | Record concept now; design rigorously later |
-| Marketing philosophy | Attention / agency / Epictetus / prosochē |
+| Core product | Adaptive-friction attention system on the covenant model |
+| Interaction model | Two axes: Pressure ladder + contract coverage; four fixed bands |
+| Coverage | Valid contract → silence; ceiling at Circle 7; deterministic invalidation |
+| Target | iOS 26.x, native Shortcuts only |
+| Forks | Core (deterministic) + Aware (On-Device model); one-product question owned by Phase 25 |
+| Verdicts | ALLOW/CHALLENGE/DENY in both forks; deterministic envelope; DENY = redirect at Circle 6 only |
+| Circles | Nine + silent Circle 0; Dante names positional; Frozen pinned at 9 |
+| Sequences | Three, band-invariant; Classic default; switchable locally |
+| Profiles | Paradise / Purgatory / Inferno, selected by plain-language severity question |
+| Personalization | Severity → profile; modality → sequence; band-entry keys reserved |
+| Intention | Free text + mandatory boundary; deliberate leisure explicitly valid; blank text never judged |
+| Variability | Deterministic, counter-based; spot check into Band C only; ships off; never in Frozen/safety/environmental |
+| Exits | Six; epsilon-greedy learning; deterministic selection; Redirect feeds the same loop |
+| AI role | Attention mirror and contract auditor inside a deterministic envelope; no model on covered opens |
+| Model control of state, thresholds, timers, Frozen | Never |
+| Machine store / human store | One JSON / one Note; no CSV |
+| Privacy | Nothing leaves the device; compact model context only |
+| Environmental safety | Capture → persist → apply → restore; kill switch + disclosure for Color Filters |
+| Distribution | Free, open source, forkable; pay-after-value later; never during a block |
+| Marketing spine | Attention / agency / Epictetus / prosochē / Thaler's choice architecture |
 
 ---
 
-# 36. Product-manager summary
+# 26. Open source and privacy
 
-## Problem
+Unchanged from v1: the repository ships signed artifacts, unsigned XML source, architecture docs, prompts, and honest limitation notes. The README states plainly that behavioural data stays on the device, there is no analytics, model output can be wrong, and the system is self-directed and bypassable. The Note and JSON may sync through the user's own iCloud; PROSOCHĒ itself transmits nothing. Aware stores only final model outputs needed for continuity, never hidden reasoning. "Life Returned" estimation (personal counterfactual baselines, always labelled estimates) and pay-after-value support (never during a block, never guilt, never a functionality gate, `Never ask again` honoured permanently) remain recorded-now-designed-later, owned by Phases 26–28.
 
-People frequently open social apps without a deliberate decision, then remain inside environments designed to remove natural stopping cues.
+---
 
-Existing products often respond with static limits or hard blocks.
-
-PROSOCHĒ will instead target the **moment intention disappears**.
-
-## User
-
-Someone who wants to keep an iPhone and its useful functions while reducing automatic, repetitive use of selected apps.
-
-They are opting into friction.
-
-They do not want another subscription or a moralizing productivity coach.
-
-## Job to be done
-
-> When I automatically reach for an app that repeatedly takes more attention than I intend, interrupt the habit strongly enough that I make an actual choice, and help me move toward what I meant to do instead.
-
-## Value proposition
-
-**PROSOCHĒ makes your phone wait for an intention.**
-
-It is:
-
-- free;
-- open source;
-- local;
-- adaptive;
-- self-configuring;
-- user-owned;
-- increasingly difficult to ignore only when behaviour warrants it.
-
-## Product mechanism
-
-1. User opens target app.
-2. Shortcut receives OPEN.
-3. Local JSON state is loaded.
-4. Heat decays/increases according to recent behaviour.
-5. Gravity reflects accumulated use.
-6. Pressure determines Circle.
-7. Circle applies appropriate friction.
-8. At stronger Circles, user states an intention and boundary.
-9. PROSOCHĒ may redirect to one of six exits.
-10. CLOSE records actual session duration.
-11. Behavioural outcomes affect future Heat and exit learning.
-12. Sentient can reflect patterns back to the user using only local telemetry.
-
-## Why this is different
-
-It does not optimize solely for “less screen time.”
-
-It optimizes for:
-
-**more deliberate use, fewer automatic returns, better contract fidelity and more attention available for the life the user says they want.**
-
-## Product forks
-
-### Dumb
-
-Deterministic.
-
-Broad compatibility.
-
-The scientific/control baseline.
-
-### Sentient
-
-Same engine plus on-device behavioural interpretation.
-
-Increasingly personalized and context-aware.
-
-The model is a mirror, not the enforcement authority.
-
-## Data architecture
-
-### JSON
-
-Fast state.
-
-### Note
-
-Human memory, manifesto, setup and readable history.
-
-No CSV.
-
-## Onboarding
-
-Keep native import questions simple.
-
-Use a pre-filled Note proforma for the richer questions:
-
-- What is your phone for?
-- Which apps take more attention than intended?
-- What do you want the reclaimed attention for?
-- What exits would genuinely be better?
-- What does deliberate leisure mean to you?
-
-Sync this profile into JSON.
-
-## Six exits
-
-- **Capture** — externalize an idea.
-- **Coordinate** — turn mental load into a plan.
-- **Create** — make something.
-- **Connect** — contact a person rather than consume a social feed.
-- **Consult** — satisfy a specific information need directly.
-- **Close** — no phone is the next action.
-
-Learn locally which exit actually prevents rapid return.
-
-## Core metric
-
-Rapid-return rate.
-
-Secondary:
-
-- contract fidelity;
-- target-app session duration;
-- intervention/exit success;
-- disablement.
-
-## Research basis
-
-The design is consistent with evidence showing:
-
-- purpose and autonomy matter more than raw screen time alone;
-- planning and self-efficacy are relevant mechanisms;
-- personalized just-in-time nudges can reduce targeted use;
-- friction and an explicit opportunity to exit can substantially reduce app openings;
-- grayscale can act as useful design friction;
-- the intention/actual-use gap may be a particularly useful behavioural signal.
-
-The evidence does **not** prove Nine Circles.
-
-The prototype exists to test the combined architecture.
-
-## Commercial model
-
-Not freemium.
-
-Not subscription-gated.
-
-Not advertising.
-
-Not data monetization.
-
-Future:
-
-**free forever, pay after value.**
-
-Only ask for support after the user's own local metrics show meaningful value.
+# 27. Sources
 
 ## Philosophy
 
-PROSOCHĒ is ultimately not about Instagram.
+Epictetus, *Enchiridion*, ch. 1 — the dichotomy of control.
+https://classics.mit.edu/Epictetus/epicench.html
 
-It is about the practice of attention.
+Epictetus, *Discourses*, Book IV, ch. 12 — "On Attention" (prosochē; the habit-forming cost of deferred attention).
+https://en.wikisource.org/wiki/The_Discourses_of_Epictetus%3B_with_the_Encheiridion_and_Fragments/Book_4/Chapter_12
 
-The ancient Stoic concept of *prosochē* treated attention as something cultivated through repeated practice.
+Thaler R, Sunstein C. *Nudge: Improving Decisions About Health, Wealth, and Happiness.* 2008 — choice architecture, defaults, libertarian paternalism.
 
-Modern devices have become extraordinarily good at removing the interval between impulse and action.
+Thaler R, Benartzi S. *Save More Tomorrow: Using Behavioral Economics to Increase Employee Saving.* Journal of Political Economy, 2004 — commitment devices.
 
-PROSOCHĒ puts that interval back.
-
-## Definition of success
-
-The best outcome is not that the user reaches Circle IX every day.
-
-It is the opposite.
-
-Over time:
-
-- fewer automatic opens;
-- fewer rapid returns;
-- more bounded deliberate sessions;
-- lower Heat;
-- fewer high-Circle interventions;
-- the phone returns to being a tool.
-
-The endpoint is that PROSOCHĒ gradually has less work to do.
-
----
-
-# 37. Primary sources and research references
-
-## Apple / technical
-
-Apple Support — What's new in Shortcuts for iOS, iPadOS, macOS, watchOS and visionOS 26  
-https://support.apple.com/en-au/125148
-
-Apple Support — Setting triggers in Shortcuts on iPhone or iPad  
-https://support.apple.com/en-ca/guide/shortcuts/apde31e9638b/ios
-
-Apple Support — Enable or disable a personal automation in Shortcuts  
-https://support.apple.com/en-au/guide/shortcuts/apd602971e63/ios
-
-Apple Support — Intro to personal automation  
-https://support.apple.com/en-gb/guide/shortcuts/apd690170742/9.0/ios/26
-
-Apple Support — Use Apple Intelligence in Shortcuts on iPhone  
-https://support.apple.com/guide/iphone/use-apple-intelligence-in-shortcuts-iph78c41eaf8/ios
-
-Apple Support — Share actions / Append to Note  
-https://support.apple.com/en-au/guide/shortcuts/apdaf74d75a5/ios
-
-Apple Support — Create a new personal automation  
-https://support.apple.com/en-gb/guide/shortcuts/apdfbdbd7123/9.0/ios/26
-
-Shortcuts Playground  
-https://github.com/viticci/shortcuts-playground-plugin
+Thaler R, Shefrin H. *An Economic Theory of Self-Control.* Journal of Political Economy, 1981 — the planner–doer model.
 
 ## Behavioural / digital wellbeing
 
-Lukoff K, Yu C, Kientz J, Hiniker A. *What Makes Smartphone Use Meaningful or Meaningless?* Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technologies. 2018.  
-https://doi.org/10.1145/3191754
+Lukoff K, Yu C, Kientz J, Hiniker A. *What Makes Smartphone Use Meaningful or Meaningless?* IMWUT, 2018. https://doi.org/10.1145/3191754
 
-Keller J, Roitzheim C, Radtke T, Schenkel K, Schwarzer R. *A Mobile Intervention for Self-Efficacious and Goal-Directed Smartphone Use in the General Population: Randomized Controlled Trial.* JMIR mHealth and uHealth. 2021.  
-https://pubmed.ncbi.nlm.nih.gov/34817388/
+Keller J, Roitzheim C, Radtke T, Schenkel K, Schwarzer R. *A Mobile Intervention for Self-Efficacious and Goal-Directed Smartphone Use…* JMIR mHealth and uHealth, 2021. https://pubmed.ncbi.nlm.nih.gov/34817388/
 
-*Promoting Self-Regulated Social Media Use on Smartphones With a Mobile Intervention App (Wellspent): Randomized Controlled Trial.* JMIR mHealth and uHealth. 2026.  
-https://pubmed.ncbi.nlm.nih.gov/41950504/
+*Promoting Self-Regulated Social Media Use… (Wellspent): RCT.* JMIR mHealth and uHealth, 2026. https://pubmed.ncbi.nlm.nih.gov/41950504/
 
-Grüning DJ, Riedel F, Lorenz-Spreen P. *Directing smartphone use through the self-nudge app one sec.*  
-https://pmc.ncbi.nlm.nih.gov/articles/PMC9974409/
+Grüning DJ, Riedel F, Lorenz-Spreen P. *Directing smartphone use through the self-nudge app one sec.* https://pmc.ncbi.nlm.nih.gov/articles/PMC9974409/
 
-Zimmermann L, Sobolev M. *Digital Strategies for Screen Time Reduction: A Randomized Field Experiment.* Cyberpsychology, Behavior, and Social Networking. 2023.  
-https://pubmed.ncbi.nlm.nih.gov/36577008/
+Zimmermann L, Sobolev M. *Digital Strategies for Screen Time Reduction: A Randomized Field Experiment.* 2023. https://pubmed.ncbi.nlm.nih.gov/36577008/
 
-Almoallim S, Sas C. *Toward Research-Informed Design Implications for Interventions Limiting Smartphone Use: Functionalities Review of Digital Well-being Apps.* JMIR Formative Research. 2022.  
-https://pubmed.ncbi.nlm.nih.gov/35188897/
+Almoallim S, Sas C. *Toward Research-Informed Design Implications for Interventions Limiting Smartphone Use…* JMIR Formative Research, 2022. https://pubmed.ncbi.nlm.nih.gov/35188897/
 
-*Suffering from problematic smartphone use? Why not use grayscale setting as an intervention! — An experimental study.* Computers in Human Behavior Reports. 2023.  
-https://doi.org/10.1016/j.chbr.2023.100294
+*Suffering from problematic smartphone use? Why not use grayscale setting…* Computers in Human Behavior Reports, 2023. https://doi.org/10.1016/j.chbr.2023.100294
 
-*Before You Scroll Again: Predicting Regretful Social Media Sessions from In-the-Wild Contextual and Wearable Sensing.* 2026 preprint. Treat as emerging evidence, not established clinical fact.  
-https://arxiv.org/abs/2606.08965
+*Before You Scroll Again: Predicting Regretful Social Media Sessions…* 2026 preprint — treat as emerging evidence. https://arxiv.org/abs/2606.08965
 
-Wu R et al. *MindShift: Leveraging Large Language Models for Mental-States-Based Problematic Smartphone Use Intervention.* 2023 research preprint.  
-https://arxiv.org/abs/2309.16639
+Wu R et al. *MindShift: LLMs for Mental-States-Based Problematic Smartphone Use Intervention.* 2023 preprint. https://arxiv.org/abs/2309.16639
 
-## Philosophy
+## Apple / technical
 
-Epictetus, *Enchiridion*, Chapter 1 — distinction between what is and is not in our control.  
-https://classics.mit.edu/Epictetus/epicench.html
-
-Epictetus, *Discourses*, Book IV, Chapter 12 — On Attention.  
-https://en.wikisource.org/wiki/The_Discourses_of_Epictetus%3B_with_the_Encheiridion_and_Fragments/Book_4/Chapter_12
+Apple Support — What's new in Shortcuts (iOS 26): https://support.apple.com/en-au/125148
+Apple Support — Setting triggers in Shortcuts: https://support.apple.com/en-ca/guide/shortcuts/apde31e9638b/ios
+Apple Support — Personal automation intro / creation / enable-disable: https://support.apple.com/en-gb/guide/shortcuts/apd690170742/9.0/ios/26 · https://support.apple.com/en-gb/guide/shortcuts/apdfbdbd7123/9.0/ios/26 · https://support.apple.com/en-au/guide/shortcuts/apd602971e63/ios
+Apple Support — Apple Intelligence in Shortcuts: https://support.apple.com/guide/iphone/use-apple-intelligence-in-shortcuts-iph78c41eaf8/ios
+Shortcuts Playground: https://github.com/viticci/shortcuts-playground-plugin
 
 ---
 
-# 38. Final instruction to the build agent
+# Appendix A — v1 → v2 section map
 
-Treat this file as the canonical product strategy.
+Historical documents cite "canonical strategy §N" against v1 (git tag `pre-covenant-overhaul`). Resolution table:
 
-Where earlier conversation ideas conflict with this document, this document wins.
+| v1 § | Subject | v2 home |
+|---|---|---|
+| 0 | Executive brief | §0 |
+| 1 | The problem | §1 |
+| 2 | Philosophy / Epictetus | §2 (expanded: §2.1–2.4) |
+| 3 | Design influences (Thaler, Newport, Clear, Jobs, Black Mirror) | §2.2–2.3 |
+| 4 | Product boundaries | §4 |
+| 5 | Technical viability (triggers, no self-install, size, Note-vs-JSON, no CSV, Use Model, device split) | Facts carried into §0, §4, §15, §20; the full v1 analysis is historical and stands at the tag |
+| 6 | Evidence | §3 |
+| 7 | Onboarding | §15 (severity/modality: §11) |
+| 8 | The six exits | §14 |
+| 9 | Explore/exploit | §14 |
+| 10 | Behavioural state model; 10.5 profiles; 10.6 Circle 0 | §5.1, §10, §11; Circle 0: §6 (Band A) |
+| 11 | Nine primitives | §9.1 (roster now eleven; Dim split; Blackout parked) |
+| 12 | Candidate sequences + testing philosophy | §9.2, §21–22 |
+| 13 | Dumb fork | Core throughout; templates/voice: §19; verdict: §8.2 |
+| 14 | Sentient fork; 14.3 verdicts | §20; verdicts: §8 (**changed:** both forks, routing consequence) |
+| 15 | Longitudinal memory | §20 |
+| 16 | JSON state design | §10 |
+| 17 | Control Room Note | §15.2 |
+| 18 | First-run flow / automations | §15; the exact automation steps live in the Note literal (quick task 260817-au7) |
+| 19 | OPEN handler | §16 (**changed:** coverage gate at step 9) |
+| 20 | CLOSE handler | §17 (**changed:** consumed-seconds accounting) |
+| 21 | Environmental safety | §18 (**changed:** states D-01-era truth directly; the v1 floor clause is retired and not restated) |
+| 22 | Circle IX / Ice | §6 Band D, §9.1, §18; unchanged mechanics |
+| 23 | Measurement | §21 (**changed:** fidelity co-primary; covered share; surfaces/day) |
+| 24 | Life Returned | §26; Phases 26–27 |
+| 25 | Pay after value | §26; Phase 28 |
+| 26 | Open-source principles | §26 |
+| 27 | Privacy model | §26 |
+| 28 | Model-context design | §20 |
+| 29 | What Sentient sounds like | §19 |
+| 30 | Failure modes | §22 (**expanded:** ritualisation, coverage gaming) |
+| 31 | Build strategy | §24 |
+| 32 | Acceptance criteria | §24.2 (v1 criteria remain in force for carried behaviour) |
+| 33 | Research questions | §13.3, §21, Phase 22–23 goals |
+| 34 | Future roadmap | `.planning/ROADMAP.md` |
+| 35 | Canonical decisions | §25 |
+| 36 | PM summary | §0, §2.4, §21 |
+| 37 | Sources | §27 |
+| 38 | Final instruction | Authority note in the header |
 
-Do not expand scope with Focus, NFC, CSV, cloud AI or Screen Time blocking.
+# Appendix B — Vocabulary
 
-Do not simplify the product into a timer.
-
-Build the deterministic behavioural engine first.
-
-Build the Dumb fork until it is reliable.
-
-Fork it into Sentient and layer the On-Device model onto the same deterministic state machine.
-
-Preserve the core idea throughout implementation:
-
-**PROSOCHĒ is not trying to make the phone unusable.**
-
-It is trying to make unconscious use progressively harder than conscious choice.
-
-The strongest version of the product is one that, over time, intervenes less because the user has learned to arrive at the phone with an intention.
+- **The covenant model** — the v2 design: silence for declared, bounded use; proportionate escalation otherwise.
+- **Intention contract / contract** — the mechanism term (state keys, code, metrics): free text + boundary + window.
+- **Coverage / covered open** — an open inside a valid contract window at a Circle below the ceiling; fires nothing.
+- **Bands** — Silent (0) · Ambient (1–3) · Ask (4–6) · Rescue (7–9); fixed boundaries, sequence-invariant.
+- **Verdict envelope** — the deterministic per-Circle set of available verdicts the model may choose within.
+- **Spot check** — a counter-scheduled ask fired in place of an Ambient primitive; the anti-ritualisation jump, Band C only.
+- **Panic Escape** — the removable one-tap leave affordance inside interactive surfaces. Never Emergency Restore.
+- **Ritualisation** — mechanical dismissal of a repeated identical surface; the failure mode §13 exists to interrupt.
