@@ -7,6 +7,9 @@ files:
   - tools/build_state_engine.py:1705
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** Owned by Phase 17, folded into the covenant substrate; land before any Pressure-accumulation run. Profile names read Paradise / Purgatory / Inferno since BD-06-A1.
+
+
 ## Problem
 
 Canonical strategy §10.3 specifies:

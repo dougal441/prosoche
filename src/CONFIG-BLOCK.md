@@ -1,5 +1,16 @@
 # PROSOCHĒ — Config Block
 
+> **BUILD-STATE NOTE (2026-08-19, the covenant overhaul).** This file mirrors the Config
+> literal **as shipped**, and the shipped forks still implement the v1 interaction model —
+> so the `sequences` arrays below carry the pre-BD-09 slot table, and none of the covenant
+> keys (`contract.*`, `verdict.*`, `bands.*`, `variability.*`, `heat.covered_reopen_bonus`)
+> exist yet. That is correct: this file is the transcription source for the *build*, not the
+> design, and `docs/retired_clause_check.py` asserts its agreement with the built artifacts.
+> **Phase 17** adds the covenant keys and **Phase 18** applies BD-09 Decision 7's slot table,
+> each updating this mirror in the same commit as the literal. The target values live in
+> canonical strategy v2 §9.2 and §10.3. `§N` provenance citations below refer to canon **v1**
+> (git tag `pre-covenant-overhaul`) and resolve through canon v2 Appendix A.
+
 **Cross-references:** This is one of three Phase 1 artifacts. The capability audit table, deviation log, user action items, and coverage check live at `docs/BUILD-NOTES.md`. The five blocker decisions (BD-01 through BD-05) that shape several of this file's values — most directly the `Ash` sequence entry below, whose governing record is now **BD-01-R2** rather than BD-01, both BD-01 and BD-01-R having been superseded — live at `docs/CAPABILITY-DECISIONS.md`.
 
 ## How to use this file
@@ -27,7 +38,7 @@ This is the complete literal: nine sibling top-level keys, transcribed once from
 
 **One entry here is deliberately INTERIM and is not BD-06's final table:**
 
-- **Circle 6 holds `Eject` in all three sequences.** BD-06 gives Circle 6 to `Redirect` in `Classic` and `Ambient`, and to `Eject` only in `BlackMirror`. `Redirect` — the *routed* Exile, which lands the user in a deterministically selected exit — has no implementation until **Phase 17**, and `tools/build_state_engine.py`'s `verify_dispatch_coverage()` fails the build on any dispatch branch that no sequence names, so a `Redirect` branch cannot be emitted before a sequence can name it. **Phase 17 flips exactly two cells:** `Classic[5]` and `Ambient[5]`, `Eject` → `Redirect`.
+- **Circle 6 holds `Eject` in all three sequences.** `Redirect` — the *routed* Exile, which lands the user in a deterministically selected exit — has no implementation yet, and `tools/build_state_engine.py`'s `verify_dispatch_coverage()` fails the build on any dispatch branch that no sequence names, so a `Redirect` branch cannot be emitted before a sequence can name it. *(Updated 2026-08-19: the target table is now **BD-09 Decision 7**, which supersedes BD-06 Decision 4 — Redirect at Circle 6 in **all three** sequences, Mirror to 5, Eject to 7 — and **Phase 18** applies it whole, replacing the two-cell flip the pre-overhaul Phase 17 would have made.)*
 
 **Circle 8's `Loud Mirror` is settled.** It dispatches the designed `voice()` primitive, distinct from Circle 7's `Mirror` (which dispatches `mirror()`). The escalation between the two Circles is the modality, not the copy: both read from the same 30 fact-gated Mirror templates (D-03), and `voice()` additionally speaks the reflection once, gated on the user's import-time consent and the run-scoped `Spoken This Run` guard. This is no longer an interim entry.
 

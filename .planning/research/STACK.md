@@ -1,5 +1,16 @@
 # Stack Research
 
+> **v1-ERA RESEARCH (2026-08-13) — read with the re-foundation in mind.** The project was
+> re-founded 2026-08-19 on canonical strategy **v2.0** (the covenant model; decisions
+> BD-09..BD-12 in `docs/CAPABILITY-DECISIONS.md`): contract coverage above the Circle ladder,
+> four fixed bands, verdicts in both forks, the BD-09 slot table. `§N` citations below refer
+> to canon **v1** (preserved at git tag `pre-covenant-overhaul`) and resolve via canon v2
+> Appendix A. Toolchain, plist, and capability findings here remain valid; claims about the
+> interaction model (combined sequence entries, Confession as a Circle-4 rung with no routing
+> consequence, the `Limbo` profile name — now `Purgatory` — and the universal Leaving menu)
+> are historical.
+
+
 **Domain:** Native iOS 26 Shortcuts automation (adaptive-friction / digital-wellbeing), authored as Shortcuts plist XML via the Shortcuts Playground plugin, optional Apple On-Device Intelligence layer
 **Researched:** 2026-08-13
 **Confidence:** HIGH for toolchain/paths/validator/signing and most control-flow/variable-wiring facts (read directly from the installed plugin). MEDIUM for several action parameter shapes (present in the plugin's OS27/macOS-only schema catalog but not confirmed for iOS). LOW/UNVERIFIED explicitly flagged for `Use Model` model-source pinning and Get Device Details brightness/volume property names — these are NOT fabricated and must be confirmed empirically during build.

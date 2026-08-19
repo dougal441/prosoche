@@ -1,5 +1,16 @@
 # Architecture Research: PROSOCHĒ — Nine Circles
 
+> **v1-ERA RESEARCH (2026-08-13) — read with the re-foundation in mind.** The project was
+> re-founded 2026-08-19 on canonical strategy **v2.0** (the covenant model; decisions
+> BD-09..BD-12 in `docs/CAPABILITY-DECISIONS.md`): contract coverage above the Circle ladder,
+> four fixed bands, verdicts in both forks, the BD-09 slot table. `§N` citations below refer
+> to canon **v1** (preserved at git tag `pre-covenant-overhaul`) and resolve via canon v2
+> Appendix A. Toolchain, plist, and capability findings here remain valid; claims about the
+> interaction model (combined sequence entries, Confession as a Circle-4 rung with no routing
+> consequence, the `Limbo` profile name — now `Purgatory` — and the universal Leaving menu)
+> are historical.
+
+
 **Domain:** Single large stateful iOS 26 Shortcut — three invocation modes, persistent JSON state, escalating intervention state machine
 **Researched:** 2026-08-13
 **Confidence:** MEDIUM-HIGH (control-flow and variable-wiring claims are grounded in the Shortcuts Playground plugin docs on disk and are HIGH confidence; a handful of specific action capabilities — brightness/volume *read*, `Use Model` on-device selection, list-sort/median, remove-item — are not evidenced in the bundled docs and are flagged explicitly below as build-time capability-audit items, per the canonical strategy's own §31 instruction not to fabricate actions)

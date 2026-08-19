@@ -8,6 +8,9 @@ files:
   - .planning/debug/device-state/README.md
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** Owned by Phase 17 (EXIT-08 fix folded into the covenant substrate), because Redirect (Phase 18) and DENY routing both land on `select_exit()` and inherit this defect until it is fixed.
+
+
 ## Problem
 
 **Device-confirmed 2026-08-18/19, finding F-18 — the most severe functional defect found in that

@@ -7,6 +7,9 @@ trigger_when: whenever Sentient work resumes — hard prerequisite for SEED-006 
 scope: small — re-run an existing generator script, then a first Sentient device pass
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** Owned by Phase 20 (Aware verdict alignment), which rebuilds Aware from the post-conversion Core rather than patching it.
+
+
 # SEED-005: Re-fork Sentient now that Dumb's OPEN path is device-confirmed
 
 ## Why This Matters

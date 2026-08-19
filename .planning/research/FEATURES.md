@@ -1,5 +1,16 @@
 # Feature Research
 
+> **v1-ERA RESEARCH (2026-08-13) — read with the re-foundation in mind.** The project was
+> re-founded 2026-08-19 on canonical strategy **v2.0** (the covenant model; decisions
+> BD-09..BD-12 in `docs/CAPABILITY-DECISIONS.md`): contract coverage above the Circle ladder,
+> four fixed bands, verdicts in both forks, the BD-09 slot table. `§N` citations below refer
+> to canon **v1** (preserved at git tag `pre-covenant-overhaul`) and resolve via canon v2
+> Appendix A. Toolchain, plist, and capability findings here remain valid; claims about the
+> interaction model (combined sequence entries, Confession as a Circle-4 rung with no routing
+> consequence, the `Limbo` profile name — now `Purgatory` — and the universal Leaving menu)
+> are historical.
+
+
 **Domain:** Adaptive-friction attention/digital-wellbeing intervention, delivered as a native iOS Shortcut (no companion app, no blocking APIs)
 **Researched:** 2026-08-13
 **Confidence:** HIGH (all features traced to the canonical strategy document; competitor benchmarking MEDIUM — based on current marketing/review pages, not internal telemetry)

@@ -7,6 +7,9 @@ trigger_when: before any public release, launch post, or Substack announcement â
 scope: medium (a declaration file is small; the licensing decision underneath it is not)
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** The licence half of this seed is SETTLED by BD-12: PolyForm Noncommercial 1.0.0 going forward (not retroactive; everything through tag `pre-covenant-overhaul` remains MIT as published). The provenance/attribution half stays live and folds into Phases 27â€“28.
+
+
 # SEED-008: A robots.txt-equivalent for AI readers, carrying licence and attribution intent
 
 Ship a machine-readable declaration aimed at the AI agents that will parse this

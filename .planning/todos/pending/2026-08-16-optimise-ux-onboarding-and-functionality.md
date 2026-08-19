@@ -10,6 +10,9 @@ files:
   - PROSOCHE_Build_Addendum_01.md
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** PARTLY RESOLVED BY DESIGN: the announcement-menu tension is settled by BD-09 Decision 9 (pre-menu retired; leave affordance in-surface), and Circle-order tuning by BD-09 Decision 7. The surviving scope — funnel instrumentation, latency, copy voice, Note restructure — is Phase 24 (renumbered from 20).
+
+
 ## Problem
 
 The MVP is device-verified as a *mechanism* (OPEN → Heat/Gravity/Pressure → Circle →

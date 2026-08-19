@@ -10,6 +10,9 @@ files:
   - tools/build_state_engine.py
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** Owned by Phase 22 (renumbered from 19), which additionally tests the covenant scenarios (coverage silence, invalidation, verdicts, the ceiling) and records dismissibility per SEED-009 item 2.
+
+
 ## Problem
 
 **This is a running meta todo. It does not close when a build lands — it closes when all

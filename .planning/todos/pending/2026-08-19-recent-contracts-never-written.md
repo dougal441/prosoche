@@ -8,6 +8,9 @@ files:
   - .planning/phases/06-exits-exit-learning-contracts/06-UAT.md
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** The scope question this todo parks is ANSWERED by canon v2 §7.4 / BD-09: `recent_contracts` records per-window covenant outcomes (kept / overrun / invalidated, declared vs consumed, rolling ~10) and is load-bearing for Core's verdict history (VERD-02). Owned by Phase 17 (COV-06).
+
+
 ## Problem
 
 **Device-confirmed 2026-08-18/19, finding F-2.** `recent_contracts` is `[]` in `state.json` on a

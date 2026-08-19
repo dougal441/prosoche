@@ -10,6 +10,9 @@ files:
   - src/PROSOCHE-Sentient.xml
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** COMPLETED by Phase 11 (2026-08-17/18); retained as record. The addendum itself now carries an applied-historical banner, and its §5 mapping is superseded by BD-09 Decision 7.
+
+
 ## Problem
 
 Apply `PROSOCHE_Build_Addendum_01.md` across the authoritative build source, both product variants, the PROSOCHĒ Note, documentation, requirements, generated XML, and signed deliverables.

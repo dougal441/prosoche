@@ -7,6 +7,9 @@ trigger_when: after the device-UAT backlog closes and state-shape discipline is 
 scope: large — a full milestone; schema audit, observed-metrics display, estimate design, plus the Attention Receipt sub-feature
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** Owned by Phases 26–27 (renumbered from 22–23). The covenant model adds covered-open share and surfaces-per-day to the metric set (MET-01..03), and kept covenants become the receipt's shareable pride — the incentive-inversion risk this seed names is answered by pointing the pride at fidelity, never depth.
+
+
 # SEED-004: Build the VALUE / LIFE RETURNED functionality
 
 ## Why This Matters

@@ -6,13 +6,17 @@ description: Implementation blueprint from PROSOCHĒ spike experiments — donor
 <context>
 ## Project: PROSOCHĒ — Nine Circles
 
-PROSOCHĒ is a free, open-source iPhone Shortcut that restores the missing interval between
-the impulse to open a habit-forming app and the act of consuming it. It watches user-selected
-apps through native iOS Personal Automations (App Is Opened / Is Closed), accumulates
-behavioural **Pressure** from clustered and repeated openings, and escalates the user through
-nine progressively stronger friction "Circles." It ships as two forks from one engine —
-**Dumb** (fully deterministic) and **Sentient** (same engine plus Apple's On-Device model as
-an attention mirror). iOS 26.x, native Shortcuts only, no companion app, no private APIs.
+PROSOCHĒ is a free iPhone Shortcut (source-available, free for noncommercial use) that
+restores the missing interval between the impulse to open a habit-forming app and the act of
+consuming it. Since the 2026-08-19 re-foundation it runs the **covenant model** (canonical
+strategy v2, BD-09..BD-12): behavioural **Pressure** maps to nine Circles in four fixed bands
+(Silent 0 / Ambient 1-3 / Ask 4-6 / Rescue 7-9), and a valid intention contract covers opens
+inside its window so they fire nothing. It ships as two forks from one engine — **Core**
+(fully deterministic; source `PROSOCHE-Dumb.xml`) and **Aware** (same engine plus Apple's
+On-Device model as an attention mirror inside a deterministic envelope; source
+`PROSOCHE-Sentient.xml`). iOS 26.x, native Shortcuts only, no companion app, no private APIs.
+The spike findings below are toolchain and capability ground truth and are unaffected by the
+re-foundation.
 
 Spike sessions wrapped: 2026-08-16, 2026-08-17
 </context>

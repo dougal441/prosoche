@@ -7,6 +7,9 @@ trigger_when: after SEED-005 (Sentient re-fork) lands, and only after capability
 scope: large — requires a canonical-strategy amendment plus new device evidence before design can start
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** Owned by Phase 25 (renumbered from 21). New evidence in its favour: BD-09 Decision 6 puts the ALLOW/CHALLENGE/DENY verdict in BOTH forks, shrinking the Aware delta to the model call itself.
+
+
 # SEED-006: Merge Dumb and Sentient into one fork, selected at onboarding
 
 ## Why This Matters

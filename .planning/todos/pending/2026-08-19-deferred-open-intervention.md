@@ -8,6 +8,9 @@ files:
   - artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** Owned by Phase 21. Under canon v2 the argument sharpens: an intervention arriving after the interval has closed contradicts the covenant model's whole premise, and the core-value line quoted below is the v1 wording — the v2 line makes the same case more strongly.
+
+
 ## Severity raised to blocker — 2026-08-19
 
 Recorded rather than silently changed. This was filed `major`; it is now `blocker` because the

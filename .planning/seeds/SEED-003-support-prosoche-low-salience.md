@@ -7,6 +7,9 @@ trigger_when: after SEED-004 (VALUE / LIFE RETURNED) ships — "pay after value"
 scope: small — one Note section, one manual-menu item, one Open URL action, three-option persisted choice
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** Owned by Phase 28 (renumbered from 24). BD-12's licence change removes the MIT tension this seed's pay-after-value path inherited.
+
+
 # SEED-003: Build the low-salience "Support PROSOCHĒ" contribution path
 
 ## Why This Matters

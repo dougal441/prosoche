@@ -1,5 +1,16 @@
 # Pitfalls Research: PROSOCHĒ — Nine Circles
 
+> **v1-ERA RESEARCH (2026-08-13) — read with the re-foundation in mind.** The project was
+> re-founded 2026-08-19 on canonical strategy **v2.0** (the covenant model; decisions
+> BD-09..BD-12 in `docs/CAPABILITY-DECISIONS.md`): contract coverage above the Circle ladder,
+> four fixed bands, verdicts in both forks, the BD-09 slot table. `§N` citations below refer
+> to canon **v1** (preserved at git tag `pre-covenant-overhaul`) and resolve via canon v2
+> Appendix A. Toolchain, plist, and capability findings here remain valid; claims about the
+> interaction model (combined sequence entries, Confession as a Circle-4 rung with no routing
+> consequence, the `Limbo` profile name — now `Purgatory` — and the universal Leaving menu)
+> are historical.
+
+
 **Domain:** Large stateful iOS 26 Shortcut implementing a behavioural intervention (Shortcuts Playground build)
 **Researched:** 2026-08-13
 **Confidence:** HIGH for Class A (verified against the Shortcuts Playground plugin on disk) and Class C action-availability findings (verified against the bundled ToolKit identifier lists); MEDIUM for Class B and Class D (grounded in the canonical strategy's own stated failure modes, not independently runtime-tested)

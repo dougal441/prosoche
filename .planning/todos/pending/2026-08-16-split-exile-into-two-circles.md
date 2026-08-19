@@ -10,6 +10,9 @@ files:
   - src/CONFIG-BLOCK.md:46
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** ABSORBED by Phase 18 under BD-09 Decision 7: Redirect at Circle 6 in all three sequences, Eject at Band D. The nine-slots-vs-ten-primitives decision this todo owned was settled by BD-06 Decision 3 and re-cut once more by BD-09 (roster now eleven with Blackout parked).
+
+
 ## Problem
 
 **User decision, 2026-08-16: Exile becomes two Circles.** One is a bare ejection to the

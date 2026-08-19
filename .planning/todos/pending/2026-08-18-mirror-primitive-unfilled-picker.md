@@ -9,6 +9,9 @@ files:
   - artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** Owned by Phase 21. Note the Mirror moves to Circle 5 (Band C) in Phase 18, so this defect will sit on the re-engagement path — fixing it precedes any covenant device UAT.
+
+
 ## Problem
 
 **Device-observed three times, across two independent installs.** Choosing

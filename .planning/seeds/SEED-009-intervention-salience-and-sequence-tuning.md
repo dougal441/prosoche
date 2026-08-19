@@ -7,6 +7,9 @@ trigger_when: when planning Phase 17, Phase 19 or Phase 20 — each item below n
 scope: medium — one rename is trivial, the salience and sequence questions are design work with device evidence as their input
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** Items 1, 3 and 4 are RESOLVED BY DESIGN, not deferred to tuning: BD-09 retires the `Leaving / Continue` pre-menu entirely (item 1's sharp half), folds the leave affordance into each interactive surface with the `Exit / Stay`-style naming landing in Phase 18 (item 3), and supersedes BD-06 Decision 4's slot table with the covenant ladder (item 4 — the re-cut this seed said must land as a decision record did, as BD-09 Decision 7). Item 2 (record dismissibility per Circle) STAYS LIVE and is written into Phase 22's device-UAT goal. Old phase numbers in this seed read through STATE.md's 2026-08-19 renumbering entry.
+
+
 # SEED-009: Intervention salience, notification volume, and sequence tuning
 
 Four related observations about how PROSOCHĒ *feels* in use rather than whether it works.
