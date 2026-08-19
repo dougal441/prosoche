@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 15
-current_phase_name: Circle 8 — the Voice primitive
+current_phase: 17
+current_phase_name: Covenant substrate
 status: re-founded
 stopped_at: The covenant overhaul (2026-08-19) re-founded the project on canonical strategy v2 — coverage as a routing axis, four fixed bands, verdicts in both forks, personalized descent, deterministic variability (BD-09..BD-12). PROJECT.md, REQUIREMENTS.md, ROADMAP.md rewritten; v1 planning state at git tag pre-covenant-overhaul; licence now PolyForm Noncommercial 1.0.0 going forward. Phases 14/15 remain verification-deferred on device access. Next step is /gsd-plan-phase 17 (covenant substrate); the standing device sitting (14-UAT beside 16-UAT, 15-UAT cold-runnable with its schema-ordering constraint) is unchanged and now lives under Phases 21–22.
 last_updated: "2026-08-19T12:00:00.000Z"
@@ -20,7 +20,7 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-13)
+See: .planning/PROJECT.md (re-founded 2026-08-19)
 
 **Core value:** When use is intentional, PROSOCHĒ is invisible. When intention disappears, it interrupts exactly strongly enough to restore it — and an honest declaration buys back the silence.
 **Current focus:** The covenant conversion — Phase 17 (covenant substrate) is next to plan
@@ -40,7 +40,7 @@ implement the v1 interaction model until Phases 17–20 land** — a recorded bu
 contradiction. The licence moved MIT → **PolyForm Noncommercial 1.0.0** going forward (BD-12,
 not retroactive). Next step: `/gsd-plan-phase 17`.
 
-Phase 15 (the last v1-foundation phase executed): 4/4 plans complete; verifier 25/27, 0 failed; the 2 outstanding are device-gated and abstained
+Phase 15 (the last v1-foundation phase executed): 5/5 plans complete; verifier 25/27, 0 failed; the 2 outstanding are device-gated and abstained
 
 **Phase 13 research rewrote the phase.** Donor 5 was decrypted for the first time and
 **refuted family 1**: iOS itself authors a variable in a conditional's TEXT slot as a
@@ -79,15 +79,12 @@ display names, and decrypt-verified 9/9.
 **Everything Phase 10 shipped is structurally proven and behaviourally unproven.** The
 MANIFEST carries three stacked warnings saying so.
 
-**Phases 11-20 are scoped and queued but none is planned.** They correspond 1:1 to the
-remaining pending todos, in the agreed execution order: 11 Addendum 01 / 12 sentinel gaps /
-13 red operators / 14 Ash grayscale / 15 Voice / 16 Dimming+Silence device proof / 17 Exile
-split / 18 locked-screen CLOSE / 19 device UAT / 20 heavy UX. Each ROADMAP goal is written to
-be plannable cold, without the session that produced it.
-
-**Two hard prerequisites inside that order:** Phase 12 (`exit_events`) gates Phase 17, and
-Phase 13 (blank Lists, red operators) should land before Phase 19 so a blank Circle in device
-testing is a real finding rather than a known artifact.
+~~**Phases 11-20 are scoped and queued but none is planned.**~~ **[SUPERSEDED 2026-08-19 by
+the covenant overhaul — retained struck as the record of the pre-overhaul queue.]** Phases
+11–16 of that queue are executed; the covenant conversion replaced the rest and renumbered
+everything downstream (see the Roadmap Evolution entry below). The standing sequencing fact
+that survives: Phase 13's blank-List/red-operator fixes landed, so a blank Circle in Phase 22's
+device testing is a real finding rather than a known artifact.
 
 **Standing device backlog**, all blocked on DIST-03 and best run in one session:
 `16-UAT.md` (12 tests — dimming/silence capture-and-restore, **the highest-risk untested path
@@ -249,8 +246,10 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 Reorganized 2026-08-16 into todo / backlog / seed. Todo = worked directly. Backlog =
-bare-minimum-to-working-product device verification, tracked as ROADMAP.md 999.x phases.
-Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
+bare-minimum-to-working-product device verification (the former ROADMAP 999.x mechanism —
+retired; device verification now lives in phase-directory `*-UAT.md` files rolled up by
+`audit-uat`, and Phase 22 owns the sweep). Seed = forward-looking, tracked in
+`.planning/seeds/`.
 
 **Ownership re-mapped 2026-08-19 by the covenant overhaul:** `recent_contracts` (F-2) and
 `enabled_exits` (F-18) and the Gravity floor are owned by **Phase 17**; the deferred-intervention
@@ -267,23 +266,23 @@ through STATE.md's renumbering entry above.
 - [major] Gravity is never floored; escalation off-spec on all three profiles — `.planning/todos/pending/2026-08-19-floor-gravity-to-match-spec.md` (one-line fix; land **before** the next Pressure-accumulation run or that run measures the defect)
 - [major] `recent_contracts` is never written by any code path — `.planning/todos/pending/2026-08-19-recent-contracts-never-written.md` (F-2; scope decision first, then phase work; Phase 06 Test 8 is currently unpassable)
 
-**Todo (worked directly):**
+**Todo list re-derived 2026-08-19 (covenant overhaul hygiene).** Six former entries here had
+already moved to `.planning/todos/completed/` (automation onboarding — quick 260817-au7;
+red-operator/List-wrapper — Phase 13; ship-readiness — Phase 10; Use Model literal — quick
+260817-2ng; Dimming/Silence experimental fork — Phase 9; Circle 8 Voice — Phase 15). The
+current pending set:
 
-- [cosmetic] Apply Build Addendum 01 — `.planning/todos/pending/2026-08-14-apply-build-addendum-01.md`
-- [major] Repair iOS 26 automation onboarding — `.planning/todos/pending/2026-08-14-repair-ios-26-automation-onboarding.md`
-- [major] Close the remaining state-shape sentinel gaps (exit_events, active_session) — `.planning/todos/pending/2026-08-15-close-state-shape-sentinel-gaps.md`
-- [major] Fix the WFConditionalActionString red-operator sites and the WFItems List wrapper — `.planning/todos/pending/2026-08-15-fix-red-operator-and-list-wrapper-defects.md`
-- [major] Ship-readiness cleanup for PROSOCHĒ Dumb — `.planning/todos/pending/2026-08-15-ship-readiness-cleanup.md` (item 1 done; **item 5 SUPERSEDED 2026-08-16 — the brightness/volume cut is cancelled**)
-- [major] Recover the Use Model On-Device literal (UA-02) — `.planning/todos/pending/2026-08-16-recover-the-use-model-on-device-literal.md`
-- [major] Optimise and streamline the UX — onboarding and in-run functionality — `.planning/todos/pending/2026-08-16-optimise-ux-onboarding-and-functionality.md`
-- [major] ~~Reintroduce and validate Dimming/Silence stateful restore on an experimental fork~~ — `.planning/todos/pending/2026-08-16-reintroduce-and-validate-dimming-and-silence-stateful-restor.md` (**ABSORBED** — experiment ran as Phase 9 and merged to main; device proof moved to the successor below)
+**Still open, executed-but-device-unproven (files annotated; device proof owned by Phase 22):**
 
-**Circle build-out (captured 2026-08-16 — the intervention layer is thinner than the nine-Circle design):**
+- Apply Build Addendum 01 — `.planning/todos/pending/2026-08-14-apply-build-addendum-01.md` (**completed by Phase 11**; retained as record)
+- Close the state-shape sentinel gaps — `.planning/todos/pending/2026-08-15-close-state-shape-sentinel-gaps.md` (**executed by Phase 12**; device exit-path test outstanding)
+- Build Ash as real Color Filters grayscale — `.planning/todos/pending/2026-08-16-build-ash-as-real-color-filters-grayscale.md` (**executed by Phase 14**; `14-UAT.md` blank)
+- Dimming and Silence as distinct Circles, device-proven — `.planning/todos/pending/2026-08-16-dimming-and-silence-as-distinct-circles.md` (**built; the device-proven half is Phase 22 / `16-UAT.md`**)
 
-- [major] Build Circle 8 — the Voice primitive dispatches nothing — `.planning/todos/pending/2026-08-16-build-circle-8-voice-primitive.md`
-- [major] Build Ash as real Color Filters grayscale — `.planning/todos/pending/2026-08-16-build-ash-as-real-color-filters-grayscale.md` (unblocked by spike 005: `AXToggleColorFiltersIntent`, both legs donor-confirmed)
-- [major] Dimming and Silence as distinct Circles, device-proven — `.planning/todos/pending/2026-08-16-dimming-and-silence-as-distinct-circles.md` (successor to the two entries above it; ⚠️ writes are live on main with zero device evidence)
-- [major] Split Exile into two Circles — straight-to-home and routed-exit — `.planning/todos/pending/2026-08-16-split-exile-into-two-circles.md` (**owns the nine-slots-vs-ten-primitives decision that gates the other three**)
+**Still open, owned by covenant-conversion phases:**
+
+- Optimise/streamline UX — `.planning/todos/pending/2026-08-16-optimise-ux-onboarding-and-functionality.md` (surviving scope → **Phase 24**; menu/order questions resolved by BD-09)
+- Split Exile into two Circles — `.planning/todos/pending/2026-08-16-split-exile-into-two-circles.md` (**absorbed by Phase 18** under BD-09 Decision 7)
 
 **Backlog (genuinely new work; see ROADMAP.md `## Backlog`):**
 
@@ -478,8 +477,9 @@ unrequested 50% with no capture and no error; Test 1 must observe the *value app
 absence of an error. And `dim_target = 0` ships on one unrepeated user report — D-01 is a settled
 *decision*, not a settled *device fact*.
 
-Batch the session: `16-UAT.md` shares its setup with `12-UAT.md` Test 3, Phase 18 (locked-screen
-CLOSE, which owns that case deliberately), Phase 19, `13-UAT.md` and `10-UAT.md`. Resume with
+Batch the session: `16-UAT.md` shares its setup with `12-UAT.md` Test 3, Phase 21 (locked-screen
+CLOSE, which owns that case deliberately — renumbered from 18 on 2026-08-19), Phase 22 (the
+covenant device UAT, renumbered from 19), `13-UAT.md` and `10-UAT.md`. Resume with
 `/gsd-verify-work 16`.
 
 ## Session Continuity

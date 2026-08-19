@@ -4,8 +4,9 @@
 
 **Re-founded 2026-08-19 on canonical strategy v2 — the covenant model.** Phases 1–16 are the
 delivered v1 foundation: capability audit, routing/bootstrap/Note onboarding, the deterministic
-Heat/Gravity/Pressure engine, the race-proof CLOSE protocol, ten built primitives (including real
-Color Filters grayscale and the Voice primitive), six exits with deterministic learning, the
+Heat/Gravity/Pressure engine, the race-proof CLOSE protocol, nine of the eleven-primitive
+roster built (all but Redirect — Phase 18 — and the parked Blackout; including real Color
+Filters grayscale and the Voice primitive), six exits with deterministic learning, the
 Aware fork as an additive wrap, and the full build-guard discipline. Their detail sections below
 are retained verbatim as the execution record — they describe work done under the v1 model and
 are history, not live instruction; the live spec is canon v2, and historical `§N` citations
@@ -226,69 +227,6 @@ Plans:
 - [x] 08-01-PLAN.md
 - [x] 08-02-PLAN.md
 - [x] 08-03-PLAN.md
-
-## Progress
-
-**Execution Order:**
-Delivered: 1 → … → 16 (see the checklist above). Conversion: 17 → 18 → {19, 20} → 22, with 21
-runnable beside 17–20 whenever a device session exists; then 23 and 24 after 22; 25 after 24;
-26 → 27 → 28 (26 can start any time after 17).
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Capability Audit & Config Foundation | 5/5 | Complete | 2026-08-13 |
-| 2. Routing, Bootstrap & Control Room Onboarding | 4/4 | Complete | 2026-08-13 |
-| 3. Deterministic State Engine | 1/1 | Complete | 2026-08-13 |
-| 4. CLOSE Pipeline & Session Race Protocol | 3/3 | Complete (device UAT partial) | 2026-08-14 |
-| 5. Nine Primitives & Environmental Safety | 3/3 | Complete | 2026-08-13 |
-| 6. Exits, Exit Learning & Contracts | 3/3 | Complete | 2026-08-13 |
-| 7. Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze | 1/1 light | Complete (human verify open) | 2026-08-14 |
-| 8. Sentient Fork & Dual Distribution | 3/3 | Complete (DIST-03 open) | 2026-08-14 |
-| 9. Dimming/Silence Stateful Restore | 2/2 | Complete | 2026-08-16 |
-| 10. Ship-readiness remainder and UX-lite pass | 5/5 | Complete | 2026-08-17 |
-| 11. Build Addendum 01 | 10/10 | Complete | 2026-08-18 |
-| 12. State-shape sentinel gaps | 5/5 | Complete | 2026-08-18 |
-| 13. Red operators & WFItems wrapper | 4/4 | Complete | 2026-08-18 |
-| 14. Ash as real Color Filters grayscale | 3/3 | Complete | 2026-08-19 |
-| 15. Circle 8 — the Voice primitive | 5/5 | Complete | 2026-08-19 |
-| 16. Dimming/Silence persistence & D-01/D-02 | 6/6 | Complete | 2026-08-18 |
-| 17–28 (covenant conversion and beyond) | 0 | Not started | - |
-
-## Backlog
-
-Unsequenced items that are genuinely new work rather than verification of an already-built
-phase. (The six device-UAT items formerly listed here were reclassified 2026-08-16 — they
-verify claims Phases 4/5/6/7 already make, so they now live as `{N}-UAT.md` files in those
-phase directories, tracked via `/gsd-verify-work {phase}` and rolled up by
-`/gsd-audit-uat`, not as roadmap phases.) Promote with `/gsd-review-backlog` when ready to
-sequence.
-
-### Phase 999.3: Grayscale / Ash capability donor test — **RETIRED 2026-08-19** (was BACKLOG)
-
-**RETIRED, not promoted and not abandoned — every step of it is discharged.** Closed by
-decision **D-14-03** when Phase 14 landed. Step accounting, from this item's own outcome block:
-
-| Step | State | Discharged by |
-|---|---|---|
-| 1. Decrypt the donor already on disk | ✅ complete | Spike 005 decrypted **three** donors, not one — On, Off and Toggle |
-| 2. Settle the §21 / BD-01 read-back question | ✅ complete | **No `Get*`/`Query*` intent exists for any accessibility setting** across all 35 intents in the framework. That is the finding, and it is why the remedy is disclosure plus a kill switch rather than detection |
-| 3. Close CAP-20 as absent-on-iOS | **n/a** | The action *does* exist on iOS — the branch this step was conditioned on never opened |
-| 4. Update the audit trail | ✅ complete | `docs/CAPABILITY-DECISIONS.md` **BD-01-R2**, which supersedes BD-01-R's build recipe and now carries a phase-14 IMPLEMENTED note |
-| 5. Decide whether to rebuild Ash | ✅ complete | **This is Phase 14.** Decided yes, and built: 15 `AXToggleColorFiltersIntent` sites per fork, both forks re-signed 2026-08-19 |
-| 6. Never guess the identifier or enum cases | ✅ complete | Nothing was guessed; every literal in the shipped emitter traces to a donor, and a build guard fails the build on any unverified parameter key |
-
-**Closing evidence:** Phase 14 above, and its three summaries — `14-01-SUMMARY.md`,
-`14-02-SUMMARY.md`, `14-03-SUMMARY.md`.
-
-**Severity:** minor
-**Requirements:** AUDIT-02 (via Phase 14)
-**Plans:** 0 plans — retired without being promoted
-
-Plans:
-
-- [x] Retired 2026-08-19 per D-14-03; step 5 is Phase 14
-
-Full context (retained): `.planning/phases/999.3-grayscale-ash-capability-donor-test/2026-08-16-grayscale-ash-capability-donor-test.md`
 
 ### Phase 9: Dimming/Silence Stateful Restore (Experimental Fork)
 
@@ -1388,3 +1326,81 @@ known.
 Plans:
 
 - [ ] TBD (run /gsd-plan-phase 28 to break down)
+
+## Progress
+
+**Execution Order:**
+Delivered: 1 → … → 16 (see the checklist above). Conversion: 17 → 18 → {19, 20} → 22, with 21
+runnable beside 17–20 whenever a device session exists; then 23 and 24 after 22; 25 after 24;
+26 → 27 → 28 (26 can start any time after 17).
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Capability Audit & Config Foundation | 5/5 | Complete | 2026-08-13 |
+| 2. Routing, Bootstrap & Control Room Onboarding | 4/4 | Complete | 2026-08-13 |
+| 3. Deterministic State Engine | 1/1 | Complete | 2026-08-13 |
+| 4. CLOSE Pipeline & Session Race Protocol | 3/3 | Complete (device UAT partial) | 2026-08-14 |
+| 5. Nine Primitives & Environmental Safety | 3/3 | Complete | 2026-08-13 |
+| 6. Exits, Exit Learning & Contracts | 3/3 | Complete | 2026-08-13 |
+| 7. Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze | 1/1 light | Complete (human verify open) | 2026-08-14 |
+| 8. Sentient Fork & Dual Distribution | 3/3 | Complete (DIST-03 open) | 2026-08-14 |
+| 9. Dimming/Silence Stateful Restore | 2/2 | Complete | 2026-08-16 |
+| 10. Ship-readiness remainder and UX-lite pass | 5/5 | Complete | 2026-08-17 |
+| 11. Build Addendum 01 | 10/10 | Complete | 2026-08-18 |
+| 12. State-shape sentinel gaps | 5/5 | Complete | 2026-08-18 |
+| 13. Red operators & WFItems wrapper | 4/4 | Complete | 2026-08-18 |
+| 14. Ash as real Color Filters grayscale | 3/3 | Complete | 2026-08-19 |
+| 15. Circle 8 — the Voice primitive | 5/5 | Complete | 2026-08-19 |
+| 16. Dimming/Silence persistence & D-01/D-02 | 6/6 | Complete | 2026-08-18 |
+| 17. Covenant substrate | 0 | Not started | - |
+| 18. Bands and surfaces | 0 | Not started | - |
+| 19. Personalized descent | 0 | Not started | - |
+| 20. Aware verdict alignment | 0 | Not started | - |
+| 21. Device debug and locked-screen CLOSE | 0 | Not started | - |
+| 22. Device UAT — bands, coverage, Circles, sequences | 0 | Not started | - |
+| 23. Variability against ritualisation | 0 | Not started | - |
+| 24. UX optimisation | 0 | Not started | - |
+| 25. One product or two | 0 | Not started | - |
+| 26. Cumulative state | 0 | Not started | - |
+| 27. The Attention Receipt | 0 | Not started | - |
+| 28. Impact and reciprocity | 0 | Not started | - |
+
+*Plan counts are execution history. Three early phases (3, 4, 7) predate the current
+`NN-NN-PLAN.md` file conventions, so the counts above sum to 63 while 60 plan files exist on
+disk; STATE.md's frontmatter carries the on-disk figure.*
+
+## Backlog
+
+Unsequenced items that are genuinely new work rather than verification of an already-built
+phase. (The six device-UAT items formerly listed here were reclassified 2026-08-16 — they
+verify claims Phases 4/5/6/7 already make, so they now live as `{N}-UAT.md` files in those
+phase directories, tracked via `/gsd-verify-work {phase}` and rolled up by
+`/gsd-audit-uat`, not as roadmap phases.) Promote with `/gsd-review-backlog` when ready to
+sequence.
+
+### Phase 999.3: Grayscale / Ash capability donor test — **RETIRED 2026-08-19** (was BACKLOG)
+
+**RETIRED, not promoted and not abandoned — every step of it is discharged.** Closed by
+decision **D-14-03** when Phase 14 landed. Step accounting, from this item's own outcome block:
+
+| Step | State | Discharged by |
+|---|---|---|
+| 1. Decrypt the donor already on disk | ✅ complete | Spike 005 decrypted **three** donors, not one — On, Off and Toggle |
+| 2. Settle the §21 / BD-01 read-back question | ✅ complete | **No `Get*`/`Query*` intent exists for any accessibility setting** across all 35 intents in the framework. That is the finding, and it is why the remedy is disclosure plus a kill switch rather than detection |
+| 3. Close CAP-20 as absent-on-iOS | **n/a** | The action *does* exist on iOS — the branch this step was conditioned on never opened |
+| 4. Update the audit trail | ✅ complete | `docs/CAPABILITY-DECISIONS.md` **BD-01-R2**, which supersedes BD-01-R's build recipe and now carries a phase-14 IMPLEMENTED note |
+| 5. Decide whether to rebuild Ash | ✅ complete | **This is Phase 14.** Decided yes, and built: 15 `AXToggleColorFiltersIntent` sites per fork, both forks re-signed 2026-08-19 |
+| 6. Never guess the identifier or enum cases | ✅ complete | Nothing was guessed; every literal in the shipped emitter traces to a donor, and a build guard fails the build on any unverified parameter key |
+
+**Closing evidence:** Phase 14 above, and its three summaries — `14-01-SUMMARY.md`,
+`14-02-SUMMARY.md`, `14-03-SUMMARY.md`.
+
+**Severity:** minor
+**Requirements:** AUDIT-02 (via Phase 14)
+**Plans:** 0 plans — retired without being promoted
+
+Plans:
+
+- [x] Retired 2026-08-19 per D-14-03; step 5 is Phase 14
+
+Full context (retained): `.planning/phases/999.3-grayscale-ash-capability-donor-test/2026-08-16-grayscale-ash-capability-donor-test.md`

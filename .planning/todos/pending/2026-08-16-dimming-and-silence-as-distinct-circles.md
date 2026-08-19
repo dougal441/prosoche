@@ -10,6 +10,9 @@ files:
   - src/CONFIG-BLOCK.md:46
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** BUILT (Phases 9, 11-08, 16): coercion fix, reachability fix, capture persisted before the device changes. The 'device-proven' half of this todo's own title is exactly what remains, owned by Phase 22 / `16-UAT.md` (12 tests, blank). Under BD-09, Dim is Band B soft friction in the Ambient sequence only, and Blackout (hard dim) is parked — see canon v2 §9.1.
+
+
 ## Problem
 
 **User decision, 2026-08-16: Dimming and Silence are both back, on main, each as its own

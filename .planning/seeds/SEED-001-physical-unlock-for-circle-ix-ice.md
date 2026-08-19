@@ -7,6 +7,9 @@ trigger_when: after the device-UAT backlog closes, and only once Phase 999.5 (Ci
 scope: medium — requires a canonical-strategy amendment before any code
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** Trigger housekeeping only — the design is untouched by the overhaul (BD-11 explicitly keeps all variability and every unlock mechanism out of Frozen's determinism, which is this seed's own constraint). Its trigger anchored on retired 999.x phases; re-anchor on Phase 22, where Frozen gets its device scrutiny.
+
+
 # SEED-001: Physical unlock (QR scan or NFC tap) to exit Circle IX / Frozen
 
 ## Why This Matters

@@ -71,7 +71,7 @@ one. For each Circle record *what it cost to get past it* — taps, seconds, whe
 had to do anything at all — alongside whether it fired. A Circle that fires and is waved
 through in under a second has not been verified working in any sense that matters.
 
-## 3. Rename `Leaving / Continue` → `Exit / Stay` → **Phase 17**
+## 3. Rename `Leaving / Continue` → `Exit / Stay` → **Phase 18** *(was Phase 17 pre-overhaul; see banner)*
 
 Shorter, plainer, and `Exit` aligns the menu with the product's own exit vocabulary — the six
 exit routes, `select_exit()`, `record_exit_and_route()`. `Stay` is more honest than `Continue`

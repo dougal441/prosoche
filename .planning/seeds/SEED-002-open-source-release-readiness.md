@@ -7,6 +7,9 @@ trigger_when: after the device-UAT backlog (Phases 999.1-999.7) closes — do no
 scope: medium — README, licence, docs, and a public-facing extraction of the iOS Shortcuts findings
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** Re-scope before acting on this seed. BD-12 (2026-08-19) changed the licence to PolyForm Noncommercial 1.0.0 going forward, so this seed's 'free and open source' framing and its claim that no licence file exists are both superseded — a LICENSE exists and the honest public phrasing is now 'source-available, free for noncommercial use' (canon v2 §26). Its trigger anchored on the retired 999.x backlog phases; re-anchor on Phase 22 (device UAT complete) or the first public-release decision. Release readiness now includes propagating the PolyForm notice and the non-retroactive MIT history into public-facing surfaces.
+
+
 # SEED-002: Open-source release readiness
 
 ## Why This Matters

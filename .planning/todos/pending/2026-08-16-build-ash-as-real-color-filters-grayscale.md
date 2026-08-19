@@ -9,6 +9,9 @@ files:
   - docs/CAPABILITY-DECISIONS.md
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** EXECUTED by Phase 14 (2026-08-19): 15 AXToggleColorFiltersIntent sites per fork, unconditional off-leg at all four recovery paths, disclosure + kill switch shipped. Retained pending because nothing is device-proven — `14-UAT.md` is blank and owned by Phase 22.
+
+
 ## Problem
 
 **Ash ships as an alert box.** The entire primitive is:

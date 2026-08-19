@@ -2,7 +2,7 @@
 
 ## What This Is
 
-PROSOCHĒ is a free, open-source iPhone Shortcut that restores the missing interval between the impulse to open a habit-forming app and the act of consuming it. It watches user-selected apps through native iOS Personal Automations (App Is Opened / Is Closed) and runs the **covenant model** on two axes: behavioural **Pressure** (Heat + Gravity) maps to nine Circles grouped into four bands — Silent (0), Ambient (1–3), Ask (4–6), Rescue (7–9) — while a valid **intention contract** covers opens inside its window so that they fire nothing at all. Consciousness is rewarded with silence; escalation is proportionate to behavioural evidence and is always an escalation in salience, never frequency. It ships as two forks from one engine: **Core** (fully deterministic, broad iOS 26 support) and **Aware** (the same deterministic engine plus Apple's On-Device Intelligence as an attention mirror and contract auditor inside a deterministic envelope).
+PROSOCHĒ is a free iPhone Shortcut — source-available, free for any noncommercial purpose (PolyForm Noncommercial 1.0.0, BD-12) — that restores the missing interval between the impulse to open a habit-forming app and the act of consuming it. It watches user-selected apps through native iOS Personal Automations (App Is Opened / Is Closed) and runs the **covenant model** on two axes: behavioural **Pressure** (Heat + Gravity) maps to nine Circles grouped into four bands — Silent (0), Ambient (1–3), Ask (4–6), Rescue (7–9) — while a valid **intention contract** covers opens inside its window so that they fire nothing at all. Consciousness is rewarded with silence; escalation is proportionate to behavioural evidence and is always an escalation in salience, never frequency. It ships as two forks from one engine: **Core** (fully deterministic, broad iOS 26 support) and **Aware** (the same deterministic engine plus Apple's On-Device Intelligence as an attention mirror and contract auditor inside a deterministic envelope).
 
 It is not a screen-time blocker and not a parental-control system. It is an adaptive friction system for self-directed behaviour change, built on Epictetus' discipline of attention (prosochē) and Thaler's choice architecture.
 
@@ -26,7 +26,7 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → cove
 - [x] Single-shortcut invocation routing (manual / `OPEN` / `CLOSE`), first-run bootstrap, self-healing state and Note recovery
 - [x] `PROSOCHĒ` Note with READ THIS FIRST, both automation walkthroughs, safety warnings, Color Filters disclosure + kill switch, and the editable `MY PHONE, ON PURPOSE` proforma
 - [x] Race-proof CLOSE pipeline with session ownership, duration measurement, and environmental restore
-- [x] Ten primitives built, including real Color Filters grayscale, the Voice primitive, and capture-persist-restore for brightness/volume
+- [x] Nine of the eleven-primitive roster built (all but Redirect — Phase 18 — and the parked Blackout), including real Color Filters grayscale, the Voice primitive, and capture-persist-restore for brightness/volume
 - [x] Six exits (Capture, Coordinate, Create, Connect, Consult, Close) with deterministic epsilon-greedy exit learning
 - [x] Aware fork as one additive gated insertion with the device-evidenced `Apple Intelligence on Device` literal
 - [x] Build discipline: two-gate validation via `gate_a_residue_check.py`, 14 structural checkers, nine parameter-defect axes, AEA1 decrypt verification
@@ -62,14 +62,14 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → cove
 
 ## Context
 
-- **Canonical source:** `PROSOCHE_Nine_Circles_Canonical_Strategy.md` **v2.0 (2026-08-19, the covenant model)** — a ground-up rewrite that supersedes v1.0 in full. v1.0 is preserved at git tag `pre-covenant-overhaul`; canon Appendix A maps every v1 §N to its v2 home, so historical citations remain resolvable. Where any earlier idea conflicts with v2, v2 wins; dated decisions in `docs/CAPABILITY-DECISIONS.md` (through BD-11) win until folded in.
+- **Canonical source:** `PROSOCHE_Nine_Circles_Canonical_Strategy.md` **v2.0 (2026-08-19, the covenant model)** — a ground-up rewrite that supersedes v1.0 in full. v1.0 is preserved at git tag `pre-covenant-overhaul`; canon Appendix A maps every v1 §N to its v2 home, so historical citations remain resolvable. Where any earlier idea conflicts with v2, v2 wins; dated decisions in `docs/CAPABILITY-DECISIONS.md` (through BD-12) win until folded in.
 - **Build tool:** Shortcuts Playground (`shortcut-builder` / `shortcut-remixer`, `shortcuts-playground` skill). Plist validation is necessary but never sufficient; the nine parameter-defect axes and the evidence-escalation ladder in `.claude/CLAUDE.md` govern.
 - **Hard iOS constraints:** a distributed Shortcut cannot install Personal Automations (the Note teaches the user); the Shortcut reacts to an app-open trigger rather than intercepting it; there is no mid-session timer.
 - **Evidence base:** Epictetus (*Enchiridion* 1; *Discourses* 4.12 — attention as practice; deferred attention as a forming habit, which is the ritualisation failure mode); Thaler (choice architecture, commitment devices — the bands are a nudge→ask→shove gradient the user opts into); one sec field study (the easy dismissal option is the strongest lever — the choice architecture is the product); Lukoff et al. 2018 (deliberate leisure is valid); Keller et al. RCT (planning and self-efficacy are the active mechanisms); Wellspent RCT (self-defined boundaries, just-in-time); grayscale field experiments (ambient friction works); the 2026 regret preprint (the intention–actual gap is the metric — contract fidelity operationalizes it).
 - **Primary metrics:** rapid-return rate and contract fidelity (co-primary); covered-open share and surfaces-per-day as the covenant's own success curve; disable rate as the fatal signal.
 - **Dominant failure modes:** disablement (an intervention annoying enough to switch off is a failure whatever it blocked) and ritualisation (a surface dismissed by reflex is practicing inattention through the product itself).
 - **Current build state:** the shipped artifacts implement the v1 interaction model until Phases 17–20 land. Five device-session blockers from the 2026-08-18/19 UAT are open (see STATE.md); DIST-03 remains the standing device gate.
-- **Distribution:** free and open source, forkable, no feature gate, no ads, no data sale, no telemetry leaving the device.
+- **Distribution:** free for noncommercial use, source-available, forkable, no feature gate, no ads, no data sale, no telemetry leaving the device (PolyForm Noncommercial 1.0.0 going forward; MIT through tag `pre-covenant-overhaul`, not retroactive — BD-12).
 
 ## Constraints
 
@@ -98,7 +98,7 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → cove
 | Exits chosen by local epsilon-greedy learning, never by the model | Which exit breaks the loop is an empirical per-user question; the model must not do arithmetic | Carried |
 | Deliberate leisure is an explicitly valid contract | Evidence: apparently "meaningless" use can be meaningful; punishing leisure drives disablement | Carried; coverage makes it mechanical |
 | Personal Automations are user-created, documented in the Note | Apple does not permit a shared Shortcut to install them; honesty about this is part of the product | Carried |
-| Dante names positional; Paradise/Purgatory/Inferno; Core/Aware | BD-06 Decisions 1–3, 5 and BD-06-A1/A4 stand; only the slot table (Decision 4) is superseded by BD-09 | Carried |
+| Dante names positional; Paradise/Purgatory/Inferno; Core/Aware | BD-06 Decisions 1–3, 5, 6 and BD-06-A1/A4 stand (6 reaffirmed by BD-09); only the slot table (Decision 4) is superseded | Carried |
 
 ## Evolution
 

@@ -19,4 +19,4 @@ This is self-directed and bypassable: users can decline AI, choose not to use th
 
 ## License
 
-**PolyForm Noncommercial 1.0.0** (see `LICENSE`): free for any noncommercial purpose — personal use, forking, sharing, study. Commercial use is not licensed. This licence applies going forward from 2026-08-19; versions published before that date (through git tag `pre-covenant-overhaul`) were released under MIT and remain so. PROSOCHĒ is free for personal use, permanently — no feature gate, no ads, no data sale, no telemetry leaving the device.
+**PolyForm Noncommercial 1.0.0**, copyright (c) 2026 Dougal Hanson (see `LICENSE`): free for any noncommercial purpose — personal use, forking, sharing, study. Commercial use is not licensed. This licence applies going forward from 2026-08-19; versions published before that date (through git tag `pre-covenant-overhaul`) were released under MIT and remain so. PROSOCHĒ is free for personal use, permanently — no feature gate, no ads, no data sale, no telemetry leaving the device.

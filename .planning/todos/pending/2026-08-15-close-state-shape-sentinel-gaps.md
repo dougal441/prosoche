@@ -7,6 +7,9 @@ files:
   - tools/build_state_engine.py
 ---
 
+> **COVENANT OVERHAUL (2026-08-19):** EXECUTED by Phase 12 (2026-08-18): both containers seeded, leaf-gated, guards armed, KNOWN_SENTINEL_EXISTENCE_GATES emptied. Retained pending for the device exit-path test (`12-UAT.md`, owned by Phase 22). Phase 17's covenant substrate builds new state keys on the discipline this todo established.
+
+
 ## Problem
 
 The `open-routing-sequence-error` debug session's cycle 16 closed a live STATE-SHAPE +

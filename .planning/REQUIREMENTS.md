@@ -9,7 +9,7 @@
 ### Capability Audit (AUDIT)
 
 - [x] **AUDIT-01**: Every iOS action the build depends on is resolved to VERIFIED / UNVERIFIED / NOT AVAILABLE with its exact identifier and parameter shape, recorded in `docs/BUILD-NOTES.md`
-- [x] **AUDIT-02**: Grayscale / Color Filters resolved — the iOS `AX*` intent is donor-confirmed and shipped (BD-01-R2); the kill switch `safety.ash_managed_color_filters` is the §21-lineage opt-in
+- [x] **AUDIT-02**: Grayscale / Color Filters resolved — the iOS `AX*` intent is donor-confirmed and shipped (BD-01-R2); the kill switch `safety.ash_managed_color_filters` is the opt-in mechanism canon v2 §18 carries forward (v1 §21 lineage)
 - [x] **AUDIT-03**: Brightness read-back resolved; the stateful capture-and-restore path ships with a non-stateful per-run fallback; guarded by `docs/environmental_restore_check.py`
 - [x] **AUDIT-04**: Volume read-back resolved; same shape as AUDIT-03
 - [x] **AUDIT-05**: Notes actions confirmed usable on the iOS target
@@ -102,7 +102,12 @@
 
 ### Control Room (ROOM)
 
-- [x] **ROOM-01..06**: The `PROSOCHĒ` Note opens with READ THIS FIRST, exact steps for both automations, the cannot-self-install and bypassable statements, the essential-apps warning, and the editable `MY PHONE, ON PURPOSE` proforma
+- [x] **ROOM-01**: The Note opens with READ THIS FIRST explaining what PROSOCHĒ is and how to create both automations
+- [x] **ROOM-02**: The Note gives exact steps for Automation A (App / selected apps / Is Opened / run immediately / pass `OPEN`)
+- [x] **ROOM-03**: The Note gives exact steps for Automation B (same apps / Is Closed / run immediately / pass `CLOSE`)
+- [x] **ROOM-04**: The Note states plainly that the Shortcut cannot install these automations itself and that PROSOCHĒ is bypassable
+- [x] **ROOM-05**: The Note carries the safety warning not to target Phone, Maps, Wallet, authenticators, password managers, or other essential apps
+- [x] **ROOM-06**: The Note contains the editable MY PHONE, ON PURPOSE proforma with all its prompts
 - [x] **ROOM-07**: The Note shows current settings (fork, profile, sequence, voice, AI, enabled exits)
 - [x] **ROOM-08**: The Note shows a human-readable state snapshot refreshed on manual run
 - [x] **ROOM-09**: The Attention Ledger records meaningful events only
@@ -160,7 +165,7 @@
 
 ## v2 Covenant Requirements
 
-The conversion set. Each maps to exactly one roadmap phase (traceability below).
+The conversion set. Each ID is owned by exactly one roadmap phase (traceability below names the owner per ID).
 
 ### Coverage (COV)
 
@@ -246,19 +251,19 @@ The conversion set. Each maps to exactly one roadmap phase (traceability below).
 | ROOM-07..12, DUMB-01..06 | 7 | Complete |
 | SENT-01..15, DIST-01..08 | 8 (+11/13/14/15/16) | Complete except DIST-03 |
 | DIST-09 | Covenant overhaul (2026-08-19) | Complete |
-| COV-01..08, VERD-01..02, MET-01..02 | 17 | Pending |
-| BAND-01..06 | 18 | Pending |
+| COV-01..06, COV-08, VERD-01..02, MET-01..02 | 17 | Pending |
+| COV-07, VERD-04, VARY-04, BAND-01..06 | 18 | Pending |
 | PERS-01..04 | 19 | Pending |
-| VERD-03..04 | 20 | Pending |
+| VERD-03 | 20 | Pending |
 | (device debug, locked-screen CLOSE) | 21 | Pending |
 | (device UAT: bands, coverage, circles, environmental) | 22 | Pending |
-| VARY-01..04 | 23 | Pending |
+| VARY-01..03 | 23 | Pending |
 | MET-03 | 26 | Pending |
 
 **Coverage:**
 
 - Delivered v1 requirements: 117 (116 complete; DIST-03 pending on device access)
-- v2 covenant requirements: 26 (25 pending; DIST-09 complete)
+- v2 covenant requirements: 30 (29 pending; DIST-09 complete)
 - Unmapped: 0 ✓
 
 ---

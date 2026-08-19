@@ -6,7 +6,7 @@
 **Provenance:** v1.0 is preserved verbatim at git tag `pre-covenant-overhaul` (commit `10305e6`). Appendix A maps v1 section numbers to their v2 home, so historical citations of "canonical strategy §N" remain resolvable.
 **Target:** iOS 26.x
 **Build tool:** Shortcuts Playground
-**Distribution intent:** Free and open source
+**Distribution intent:** Free for noncommercial use, source-available (PolyForm Noncommercial 1.0.0 — BD-12)
 **Product forks:** PROSOCHĒ Core (deterministic) + PROSOCHĒ Aware (adds Apple On-Device Intelligence)
 
 **Authority.** This document is the live product spec. Where any earlier document, plan, or conversation conflicts with it, this document wins. Dated capability and design decisions live in `docs/CAPABILITY-DECISIONS.md`; a decision recorded there after this document's date wins until folded in here. The v1 interaction model — one primitive fired on every OPEN at Circle ≥ 1, a universal `Leaving / Continue` pre-menu, Intention as a rung with no routing consequence — is retired. The shipped artifacts still implement it until the conversion phases in `.planning/ROADMAP.md` (Phases 17–20) land; that gap is a recorded build state, not a contradiction.
@@ -15,7 +15,7 @@
 
 # 0. Executive design brief
 
-PROSOCHĒ is a free, open-source iPhone Shortcut that restores the missing interval between the impulse to open a habit-forming app and the act of consuming it.
+PROSOCHĒ is a free iPhone Shortcut — source-available, free for any noncommercial purpose (PolyForm Noncommercial 1.0.0) — that restores the missing interval between the impulse to open a habit-forming app and the act of consuming it.
 
 The central hypothesis is unchanged from v1:
 
@@ -154,7 +154,7 @@ The general habituation literature (response decrement under repeated identical 
 - ALLOW / CHALLENGE / DENY verdicts in **both** forks (deterministic in Core; model-shaped within a deterministic envelope in Aware).
 - Six exits with local explore/exploit learning; safe reversible environmental friction; Emergency Restore.
 - Deterministic anti-ritualisation variability (counter-based; ships off until researched — §13).
-- Free, open-source distribution; future-value telemetry stored locally.
+- Free noncommercial distribution, source-available and forkable; future-value telemetry stored locally.
 
 ## Explicitly out of scope
 
@@ -198,7 +198,7 @@ The covenant answers the other question: *has the user told the truth about what
 On every genuine OPEN, after the state engine runs and persists:
 
 1. **Circle 0** → silent. (Band A.)
-2. **Valid contract covering this open, and Circle ≤ coverage ceiling** → silent. (Coverage.)
+2. **Valid contract covering this open, and Circle below the coverage ceiling** → silent. (Coverage.)
 3. **Otherwise** → the current Circle's primitive fires, per the active sequence. (Bands B–D.)
 
 That is the whole model. Everything else in this document is the content of those three lines.
@@ -209,7 +209,7 @@ That is the whole model. Everything else in this document is the content of thos
 
 Circles group into four bands with fixed boundaries. Dante's names stay **positional** (BD-06 Decisions 1–2): the name labels the depth, the sequence table decides the intervention.
 
-| Band | Circles | Dante names | Character | Thaler reading | Uncovered open shows |
+| Band | Circles | Dante names | Character | Thaler reading | Uncovered open shows (Classic; see §9.2 for the other sequences) |
 |---|---|---|---|---|---|
 | **A — Silent** | 0 | The Indifferent | Trust by default. State accumulates; nothing is shown, ever. | The default | Nothing |
 | **B — Ambient** | 1–3 | Limbo, Lust, Gluttony | Passive friction. The phone becomes slightly less rewarding. **No dialogs** except Circle 1's single-tap pause. Nothing is demanded. | Nudge | Pause (1) · Black and White (2) · Silence (3) |
@@ -252,7 +252,7 @@ Coverage ends early — and the *next* open re-engages at whatever Circle Pressu
 
 1. **Expiry:** the window has ended.
 2. **Open-count breach:** opens within the window exceed `contract.max_opens_per_window` (ships at 3).
-3. **Rapid-return breach:** the rapid-reopen Heat bonus fires more than `contract.max_rapid_returns_per_window` times within the window (ships at 1 — the second rapid return invalidates).
+3. **Rapid-return breach:** reopens falling inside the rapid-reopen intervals (`heat.reopen_under_120s_bonus`'s and `heat.reopen_under_600s_bonus`'s bands) exceed `contract.max_rapid_returns_per_window` within the window (ships at 1 — the second rapid reopen invalidates). The `rapid_returns_within` counter tracks the reopen *intervals* themselves; §7.5's suppression of the Heat **bonus** for covered reopens does not hide a rapid reopen from this rule — otherwise this trigger could never fire during coverage.
 
 Invalidation is silent at the moment it happens (PROSOCHĒ cannot act mid-session and does not pretend to); its consequence is that the next open is uncovered. When that open lands in Band C, the Mirror or the ask does exactly what re-engagement should: reflect the recorded gap, then invite a new declaration.
 
@@ -558,7 +558,7 @@ Current truth, stated directly (the dated decision trail is BD-02, D-01, D-02, B
 - **Volume:** capture-and-restore proven end-to-end at rung 3 for volume; never raised, never startling, `Media` channel pinned at all sites.
 - **Color Filters (Black and White):** a two-valued setting with no read-back anywhere in iOS — so "restore" is unconditionally "set it off," wired first in `restore_managed_settings()` so no dotted read can abort ahead of it. Default ON, disclosed in the Note with the `safety.ash_managed_color_filters` kill switch; the pre-existing-grayscale user is accepted and backlogged, not silently harmed twice.
 - **Emergency Restore** clears cooldown and the active session and restores recoverable brightness, volume, and colour state; it is reachable from the manual menu and from inside Frozen, and is never gated on any Note-editable setting.
-- **Accessibility:** pre-existing accessibility configuration is never blindly overridden; the kill switch and disclosure are the §21-lineage opt-in mechanism.
+- **Accessibility:** pre-existing accessibility configuration is never blindly overridden; the kill switch and disclosure are this section's opt-in mechanism (the v1 §21 lineage).
 
 ---
 
@@ -617,11 +617,11 @@ The v2 conversion is a routing and surface change on top of a proven foundation.
 - **The race-proof CLOSE pipeline** and session-ownership protocol (Phase 4).
 - **Bootstrap, routing, self-healing** — corrupt/missing state recovery, Note recreation, import questions (Phase 2).
 - **The Control Room Note** and manual menu, Sync My Profile, Test a Circle, Setup Check (Phases 2, 7, 10).
-- **Ten primitives** including the real Color Filters toggle (Phase 14), the Voice primitive (Phase 15), and capture-persist-restore environmental machinery (Phases 9, 16) — device proof pending, owned by Phase 22.
+- **Nine of the eleven-primitive roster built** — all but Redirect (Phase 18) and the parked Blackout — including the real Color Filters toggle (Phase 14), the Voice primitive (Phase 15), and capture-persist-restore environmental machinery (Phases 9, 16); device proof pending, owned by Phase 22.
 - **Six exits with epsilon-greedy learning** and the pending-exit outcome loop (Phase 6).
 - **The Aware fork** as one additive gated insertion with the device-evidenced model literal (Phase 8; SEED-005 tracks the refork).
 - **The whole build discipline:** the nine parameter-defect axes, the two-gate validator rule with `gate_a_residue_check.py`, 14 structural checkers, dispatch-coverage and seed guards, AEA1 decrypt verification, donor evidence, the evidence-escalation ladder. None of this is model-dependent; all of it is what makes the conversion safe to attempt.
-- **Dante naming and fork naming** (Addendum 01 / BD-06 Decisions 1–3, 5 / BD-06-A1): positional Circle names, Paradise/Purgatory/Inferno, Core/Aware, the `PROSOCHĒ` Note title.
+- **Dante naming and fork naming** (Addendum 01 / BD-06 Decisions 1–3, 5, 6 / BD-06-A1): positional Circle names, Paradise/Purgatory/Inferno, Core/Aware, the `PROSOCHĒ` Note title.
 
 ---
 
@@ -680,14 +680,16 @@ The roadmap (Phases 17–20) converts the artifacts in dependency order: covenan
 | Machine store / human store | One JSON / one Note; no CSV |
 | Privacy | Nothing leaves the device; compact model context only |
 | Environmental safety | Capture → persist → apply → restore; kill switch + disclosure for Color Filters |
-| Distribution | Free, open source, forkable; pay-after-value later; never during a block |
+| Distribution | Free for noncommercial use, source-available, forkable (PolyForm NC 1.0.0, BD-12); pay-after-value later; never during a block |
 | Marketing spine | Attention / agency / Epictetus / prosochē / Thaler's choice architecture |
 
 ---
 
-# 26. Open source and privacy
+# 26. Licence, source availability, and privacy
 
-Unchanged from v1: the repository ships signed artifacts, unsigned XML source, architecture docs, prompts, and honest limitation notes. The README states plainly that behavioural data stays on the device, there is no analytics, model output can be wrong, and the system is self-directed and bypassable. The Note and JSON may sync through the user's own iCloud; PROSOCHĒ itself transmits nothing. Aware stores only final model outputs needed for continuity, never hidden reasoning. "Life Returned" estimation (personal counterfactual baselines, always labelled estimates) and pay-after-value support (never during a block, never guilt, never a functionality gate, `Never ask again` honoured permanently) remain recorded-now-designed-later, owned by Phases 26–28.
+**Licence (BD-12, 2026-08-19):** the repository is licensed under **PolyForm Noncommercial 1.0.0** — free for any noncommercial purpose (personal use, forking, sharing, study); commercial use is not licensed. This applies going forward and is not retroactive: everything published through git tag `pre-covenant-overhaul` was released under MIT and remains so. PROSOCHĒ therefore describes itself as *source-available and free for noncommercial use*, not "open source" in the OSI sense — the honesty matters more than the shibboleth.
+
+Otherwise unchanged from v1: the repository ships signed artifacts, unsigned XML source, architecture docs, prompts, and honest limitation notes. The README states plainly that behavioural data stays on the device, there is no analytics, model output can be wrong, and the system is self-directed and bypassable. The Note and JSON may sync through the user's own iCloud; PROSOCHĒ itself transmits nothing. Aware stores only final model outputs needed for continuity, never hidden reasoning. "Life Returned" estimation (personal counterfactual baselines, always labelled estimates) and pay-after-value support (never during a block, never guilt, never a functionality gate, `Never ask again` honoured permanently) remain recorded-now-designed-later, owned by Phases 26–28.
 
 ---
 
