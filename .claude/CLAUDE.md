@@ -88,13 +88,32 @@ If everything else fails, the OPEN → Heat/Gravity/Pressure → Circle → inte
 - **`--target-platform` selects which bundled ToolKit snapshot the validator consults.** It changes nothing in the plist and nothing about where the shortcut runs. It is Playground tooling, not a device-target declaration. Internally `all`/`any`/`latest` all normalise to "no platform filter"; `ios`/`ipados`/`iphone`/`ipad` normalise to `ios`; anything else to `macos`.
 - **`--target-macos` is the controlling variable.** It gates two independent things: the snapshot minimum-version filter, and — separately — whether the v78 first-party **parameter-key** and **enum-case** catalogs load *at all*. Below target 27 neither catalog is loaded, on any platform setting. This is why the second gate exists.
 
-#### Gate A — mandatory, must pass clean
+#### Gate A — mandatory, residue must equal exactly the enumerated waiver
 
 ```bash
 validate-shortcut <file.xml> --target-macos 26 --target-platform all
 ```
 
-Expect `Validation passed.`, exit 0. This is the **identifier / availability baseline at the project's real target**. It is the gate every plan, todo and `docs/*.py` checker names, and it is unchanged. It performs **zero** parameter-key or picker-literal checks — measured, not inferred.
+Expect **exit 1** with **exactly 30 error lines per fork** — the waiver table below and nothing else. This is the **identifier / availability baseline at the project's real target**. It is the gate every plan, todo and `docs/*.py` checker names. It performs **zero** parameter-key or picker-literal checks — measured, not inferred.
+
+**Amended 2026-08-19 (phase 14, decision D-14-01 item 1).** Gate A previously demanded a clean report; that wording is retired and is **cited, not restated** — it lived in this sub-heading, in the paragraph directly beneath this command block (which additionally claimed the gate was unchanged, a second assertion that also stops being true), and in the `Validator target` row of the Recommended Stack table below. All three are amended here. The reason: phase 14 ships `com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent`, which is absent from **all three** bundled ToolKit snapshots, and the validator offers no allowlist, no ignore flag, no waiver file and no environment override — measured, not assumed. Gate A can therefore never exit zero again. The obligation becomes the one gate B already models: **the residue must equal exactly the enumerated waiver**, and anything outside it is a real finding.
+
+Two line families are permitted, both scoped to that one identifier by its full string, index-normalised so a future run can diff against it:
+
+| Waived line (indices normalised to `N`) | Count per fork | Why waived |
+|---|---:|---|
+| `- Unknown AppIntent identifier at index N: com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent` | 15 | **A genuine catalog gap, not a project error.** The identifier is device-donor-established from three decrypted exports off the owner's iPhone; the two records that establish it are `docs/BUILD-NOTES.md` §4's CAP-20 row and `docs/CAPABILITY-DECISIONS.md` BD-01-R2. A tool that lacks a fact does not overrule the evidence that has it. |
+| `- AppIntent action missing AppIntentDescriptor at index N: com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent` | 15 | Follows from the same gap: with the identifier unknown, no `AppIntentDescriptor` resolves for it. Synthesising one is forbidden by D-14-01 — it fabricates three field values no donor supplies **and** does not silence the other family anyway. |
+
+**A descriptor-less action emits BOTH families, once per instance.** A waiver naming only one would be permanently unsatisfiable — which is precisely the outcome the decision exists to prevent — so both are enumerated.
+
+**Three things keep this narrow. They are stated separately so none is eroded one reading at a time:**
+
+1. **The waiver is scoped to one identifier by name.** Every *other* unknown identifier, every missing parameter key and every availability failure still fails gate A exactly as before. A waiver broad enough to swallow a second unknown identifier would gut the gate for every other action in the build.
+2. **The line count is derived from the emitted site count, not chosen.** 15 AX sites per fork × 2 families = 30. A site that stops being emitted *shrinks* the residue, and a shrunk residue fails as loudly as a grown one: silent loss of an emitted site is the failure mode a one-sided waiver would miss, and it would otherwise present as good news.
+3. **The catalog gap is recorded where a red gate sends a reader.** `docs/BUILD-NOTES.md` §5 `DEV-08` carries the reproduction command, the measured residue on both forks, and an explicit rejection of the `UA*` macOS twin — so the authority arrives before the temptation.
+
+**The waiver is mechanical, not remembered: `python3 docs/gate_a_residue_check.py`.** It runs gate A on both forks, classifies every reported line, permits exactly the two families above for exactly that one identifier, and exits non-zero on anything else *and* on any change to the permitted count in either direction. If it fires, investigate the new line. Never widen the waiver, and never substitute `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` — the macOS twin buys a green check by shipping an action that does nothing on an iPhone.
 
 #### Gate B — advisory, waivered, never blocking
 
@@ -113,6 +132,8 @@ Expect **exit 1** with **exactly one** error line per fork. This is the **parame
 **Gate B is advisory and must never be chained into a definition of done.** Because its waiver is permanent it can never exit 0, so it is structurally incapable of being an `&&`-linked build gate. A plan authored before 2026-08-17 that asserts `--target-macos 27` appears nowhere in the commands it runs **remains fully satisfied by gate A alone** — nothing about that plan is now wrong.
 
 **Gate B's own limit — why A stays mandatory.** At `--target-macos 27` the validator may *accept* an OS27-only parameter key that iOS 26 does not offer. Gate B can therefore produce false acceptances. It supplements gate A; it never replaces it.
+
+**Companion note, added 2026-08-19: gate A now joins gate B in never being an `&&`-linked build gate.** Both waivers are permanent, so neither raw invocation can ever exit zero, and either one chained into a success condition makes that definition of done permanently unsatisfiable. The two gates keep their different statuses — A mandatory, B advisory — and only the mechanism of satisfying A changes: **a plan satisfies its gate-A obligation by running `python3 docs/gate_a_residue_check.py`, never by chaining the raw validator command.** The checker is named here by path so the replacement is unambiguous. A plan authored before 2026-08-19 whose commands chain the raw gate-A invocation is satisfied by running the checker in its place; nothing else about such a plan is now wrong.
 
 #### Why the earlier rule went wrong
 
@@ -324,7 +345,7 @@ A probe's result is **recorded, not consumed**: into `docs/BUILD-NOTES.md`'s dev
 | Shortcuts Playground plugin | v1.2.1 (installed) | Skill docs, agents, validator, signer, hooks | The only tool on this machine capable of authoring, validating, and signing `.shortcut` files; ground-truthed against Apple's own ToolKit databases |
 | `shortcuts` CLI (macOS built-in) | whatever ships with the build Mac's OS | `shortcuts sign` — the real signer | No substitute exists; signing is macOS-only |
 | Python | ≥3.10 | Runs `validate_shortcut.py` (uses PEP 604 `X | None` syntax) | Hard requirement of the bundled validator; check via `shortcuts-playground-selftest` |
-| Validator target | Gate A (mandatory): `--target-macos 26 --target-platform all`. Gate B (advisory): `--target-macos 27 --target-platform all` | Gate A is the identifier/availability baseline at the project's real target and must pass clean; gate B is the parameter-key and picker-literal read, waivered and never blocking | The **two-gate rule** and its mechanism are stated once, in §1 `### Exact validator invocation` |
+| Validator target | Gate A (mandatory): `--target-macos 26 --target-platform all`, satisfied by `python3 docs/gate_a_residue_check.py`. Gate B (advisory): `--target-macos 27 --target-platform all` | Gate A is the identifier/availability baseline at the project's real target; since 2026-08-19 its obligation is that the **residue equal exactly the enumerated waiver** (two line families, one identifier, 30 lines per fork), not that the report be empty. Gate B is the parameter-key and picker-literal read, waivered and never blocking | The **two-gate rule**, both waivers and their mechanism are stated once, in §1 `### Exact validator invocation` |
 
 ### Build sequencing recommendation (per project's own stated order)
 
@@ -341,6 +362,7 @@ A probe's result is **recorded, not consumed**: into `docs/BUILD-NOTES.md`'s dev
 | Treating `plutil`/`xxd`/`file` failure on the outer signed `.shortcut` as proof that its plist is unrecoverable | Those tools see the AEA1 container, not the plist payload | Use §8's `aea decrypt` → `aa extract` workflow, convert `Shortcut.wflow` to XML, then inspect or pass that XML to `shortcut-remixer` |
 | Treating `--target-macos 27` as the sole or mandatory gate | At target 27 the validator may *accept* an OS27-only parameter key that iOS 26 does not offer, so it can produce false acceptances. It is a supplement, never a replacement | Gate A mandatory + gate B advisory — the **two-gate rule**, §1 `### Exact validator invocation` |
 | Pairing the iOS platform flag with `--target-macos 26` | Both bundled snapshots are filtered out — one by the platform gate, one by the version gate — leaving an empty allowlist that rejects 3675 of 3675 actions. A check that fails 100% of its inputs carries zero signal | Gate A: `--target-macos 26 --target-platform all` |
+| Chaining the **raw** gate-A validator command into an `&&` success condition, or "fixing" its non-zero status by widening the waiver, by synthesising an `AppIntentDescriptor`, by patching the plugin's bundled ToolKit snapshot, or by substituting `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent` | Since 2026-08-19 gate A carries a permanent two-family waiver and can never exit zero, so a raw chain is permanently unsatisfiable. Each listed "fix" is worse than the red gate: a wider waiver guts the gate for every other action, a synthesised descriptor fabricates values no donor supplies, a patched snapshot lives outside the repo and is lost on the next plugin update, and the macOS twin buys a green check by shipping an action that does nothing on an iPhone | `python3 docs/gate_a_residue_check.py` — it *is* the gate-A obligation in executable form; investigate any line it reports |
 | Treating a validator pass as "done" | The plugin's own explicit rule: "A valid XML draft without a signed `.shortcut` is not a useful stopping point" | Always complete the archive+sign+verify-non-zero-bytes step |
 | A CSV or second machine-readable store alongside `state.json` | Explicitly out of scope per PROJECT.md; also has no bearing on the Shortcuts toolchain — not a capability question, a design one, reaffirmed here because Get/Save File audit (§3 item 2) shows Shortcuts' file actions are perfectly adequate for one JSON | One `state.json`, rolling-window arrays, one Apple Note |
 

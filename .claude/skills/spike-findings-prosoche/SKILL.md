@@ -76,15 +76,29 @@ Validator invocation — the **two-gate rule** (stated in full in `.claude/CLAUD
 `### Exact validator invocation`; measurements in `docs/BUILD-NOTES.md` §22):
 
 ```bash
-validate-shortcut --target-macos 26 --target-platform all "X.xml"   # gate A: MANDATORY, must pass clean
+validate-shortcut --target-macos 26 --target-platform all "X.xml"   # gate A: MANDATORY, expect exit 1 + the waiver
 validate-shortcut --target-macos 27 --target-platform all "X.xml"   # gate B: ADVISORY, expect exit 1
+python3 docs/gate_a_residue_check.py                                # the executable form of gate A
 ```
 
-**Only gate A must pass.** Gate B is advisory and **cannot exit 0** — it carries a permanent
-one-line waiver per fork (`WFCreateNoteInput` on `com.apple.mobilenotes.SharingExtension`,
-device-donor ground truth that outranks the catalog). That single line is the expected
-result, not a build failure. Anything gate B reports *outside* the waiver is a real finding.
-Never chain gate B into a definition of done.
+**Both gates carry a permanent waiver, so neither can exit zero, and neither raw command
+belongs in a definition of done.** Amended 2026-08-19 (phase 14, D-14-01); the superseded
+wording — which demanded a clean gate-A report — lived in the code block above and in the
+paragraph that stood here, and is cited rather than restated.
+
+- **Gate A is mandatory and its obligation is that the residue equal exactly the enumerated
+  waiver.** Two line families, `Unknown AppIntent identifier` and the missing-
+  `AppIntentDescriptor` line, both scoped to
+  `com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent` alone —
+  15 sites per fork × 2 families = 30 lines. A descriptor-less action emits both per
+  instance, which is why a one-family waiver would be unsatisfiable. **Satisfy gate A by
+  running `python3 docs/gate_a_residue_check.py`**, which fails on any other line and on any
+  change to the count in either direction. Never widen the waiver and never substitute the
+  `UA*` macOS twin.
+- **Gate B is advisory** and carries a permanent one-line waiver per fork (`WFCreateNoteInput`
+  on `com.apple.mobilenotes.SharingExtension`, device-donor ground truth that outranks the
+  catalog). That single line is the expected result, not a build failure. Anything gate B
+  reports *outside* the waiver is a real finding.
 
 Gate B uses `--target-platform all`, not `ios`: the `ios` setting excludes every
 `macOS 27`-tagged catalog entry, dropping all four Notes actions out of checking

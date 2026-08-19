@@ -135,12 +135,26 @@ R="$HOME/.claude/plugins/cache/shortcuts-playground/shortcuts-playground/1.2.1"
 This is the project's **two-gate rule**, stated in full in `.claude/CLAUDE.md` §1
 `### Exact validator invocation`; measurements in `docs/BUILD-NOTES.md` §22.
 
-**Only gate A must pass** (`Validation passed.`, exit 0). **Gate B is advisory and cannot
-exit 0** — it carries a permanent one-line waiver per fork (`WFCreateNoteInput` on
-`com.apple.mobilenotes.SharingExtension`, device-donor ground truth that outranks the
+**Amended 2026-08-19 (phase 14, D-14-01).** The wording that stood here required gate A to
+produce a clean report; it is retired and cited rather than restated. **Both gates now carry
+a permanent waiver, so neither raw command can exit zero and neither belongs in a definition
+of done.**
+
+**Gate A stays mandatory**, but its obligation is that the residue equal exactly the
+enumerated waiver: two line families — `Unknown AppIntent identifier` and the missing-
+`AppIntentDescriptor` line — scoped to
+`com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent` alone, 15
+sites per fork × 2 families = 30 lines. A descriptor-less action emits both families per
+instance, so a one-family waiver would be permanently unsatisfiable. Satisfy the obligation
+by running `python3 docs/gate_a_residue_check.py`, which fails on any line outside those two
+families and on any change to the count in either direction. Never widen the waiver; never
+substitute the `UA*` macOS twin. For a probe carrying no AX Color Filters action the residue
+is empty and the checker is not the right instrument — read the raw report directly.
+
+**Gate B is advisory** and carries a permanent one-line waiver per fork (`WFCreateNoteInput`
+on `com.apple.mobilenotes.SharingExtension`, device-donor ground truth that outranks the
 `macOS 27`-tagged catalog entry). Expect that one line; treat anything else gate B reports
-as a real finding. Do not read gate B's nonzero exit as a build failure, and never chain it
-into a definition of done.
+as a real finding. Do not read either gate's nonzero exit as a build failure.
 
 Gate B is still the valuable one — it is the only mode that loads the enum-case catalog and
 can catch an invalid picker literal. It uses `--target-platform all`, **not** `ios`: the
