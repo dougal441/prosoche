@@ -500,6 +500,47 @@ def set_media_volume(source):
                   WFVolumeSetting="Media", ShowWhenRun=False)
 
 
+# The iOS Color Filters (grayscale) toggle.  Spelled EXACTLY as three device-authored donors
+# spell it -- .planning/spikes/005-ios-color-filters-identifier/, decrypted, tier-1 evidence.
+# It is an AX* Accessibility-Utilities intent.  The com.apple.UniversalAccess.UASettingsShortcuts
+# .UAToggleColorFiltersIntent twin is the macOS action; it IS in the bundled ToolKit catalog and
+# this one is NOT, so a red validator is a standing invitation to substitute it and thereby ship
+# an action that does nothing on an iPhone.  Never do that.  docs/phase5_self_check.py asserts
+# the twin's continued absence for exactly this reason, and PHASE 14 deliberately kept that half
+# of its assertion when it inverted the other half.
+COLOR_FILTERS = "com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent"
+
+
+def set_color_filters(on: bool):
+    """Turn iOS Color Filters on or off.  Donor-exact; every field below is evidenced.
+
+    `state` IS A BARE PLIST INTEGER -- 1 on, 0 off -- and is NOT wrapped in a text-token
+    envelope.  The cycle-2 string-envelope axes (.claude/CLAUDE.md `## Conventions` axes 2, 3
+    and 5) govern string, AttributedString and variable-slot parameters; this is a literal
+    integer parameter and applying them here would author a shape no donor has ever emitted.
+    All three donors serialise it as <integer>.
+
+    THE TURN FORMS OMIT `operation` ENTIRELY.  SetColourFilters-Shortcut.xml (On) and
+    Donor9.1-Shortcut.xml (Off) both carry `state` and NOTHING else beyond the structural
+    UUID.  Only the Toggle form writes `operation`, as the string "toggle"
+    (Donor9-Shortcut.xml action 1), and PROSOCHE never uses Toggle: a toggle desynchronises
+    the moment a run is interrupted, which is exactly the state that strands a user grey.
+    Writing the elided default would be authoring a literal no donor supplies.
+
+    THE OFF VALUE IS ZERO, NEVER THE INTENT DEFINITION'S CASE INDEX.  Apple's bundled
+    .intentdefinition declares `state` as Integer with an `off` case at index 2.  That
+    describes the intent's TYPE SYSTEM, not the plist encoding, and never outranks a donor
+    (.claude/CLAUDE.md `### Evidence hierarchy`: a device-authored donor is rank 1, a build-Mac
+    .intentdefinition is rank 4).  Shipping `state = 2` for Off would leave users stuck in
+    grayscale -- the single worst outcome this primitive can produce.  The Off donor emits 0.
+
+    NO AppIntentDescriptor.  The donors -- plists iOS itself wrote -- carry none for this
+    action.  Synthesising one does not make the validator clean and would fabricate three
+    field values no donor supplies.
+    """
+    return action(COLOR_FILTERS, state=1 if on else 0)
+
+
 def clear_snapshot(key: str, dictionary_name="State"):
     """Clear the captured ORIGINAL, never the container that holds it.
 
@@ -569,10 +610,43 @@ def restore_managed_settings(dictionary_name="State"):
     not restored.  Skipping a restore leaves the current setting untouched, which is the
     fail-safe direction and is what "never guess an original setting" already requires.
     """
-    a = [comment("""Restore managed settings only when a captured original exists:
+    # PHASE 14 (14-01): the first line changed.  "only when a captured original exists" became a
+    # FALSE UNIVERSAL the moment the colour line below landed, and this comment SHIPS -- it is
+    # rendered once per restore_managed_settings() call site, so a wrong universal here is four
+    # user-visible false statements per fork.  Re-measured 2026-08-19 (plan 14-01 A3): no
+    # comment_index() caller anchors on this prefix -- the only prefixes passed to it are
+    # ROUTE_FALLBACK_MARKER, MANUAL_MARKER, the four PHASE 5 / PHASE 7 block markers and
+    # "Short-circuit a live cooldown" -- so the whole comment was free to rewrite.  dimming()'s
+    # first line is NOT free; do not generalise from this one to that one.
+    a = [comment("""Restore managed settings; colour unconditionally, brightness and volume only from a captured original:
+- Color Filters is always turned off. Grayscale has two values, so there is no original to remember.
 - Brightness uses the saved original value, never a new target.
 - Volume is always Media volume and never exceeds its saved original.
 - A restored original is cleared to the sentinel while its container and all unrelated State remain intact.""")]
+    # PHASE 14 (14-01), D-14-B.  UNCONDITIONAL, AND FIRST.  Both properties will read as
+    # omissions to a later reader standing next to the two gated blocks below, so both are
+    # recorded here rather than inferred.
+    #
+    # WHY UNCONDITIONAL -- there is no gate to write.  Color Filters has exactly TWO values, so
+    # there is no original to capture and nothing to compare against.  "Restore" is not "put
+    # back what was there", it is unconditionally "set it off".  Consequently this primitive
+    # writes no settings_snapshot leaf, no ownership marker and no save_state(), and
+    # settings_snapshot stays at TWO groups.  DO NOT "fix" this line by giving it the numeric
+    # `> 0` leaf gate its neighbours have: there is no leaf to read, so such a gate would either
+    # hard-error on a missing dotted segment or read false forever and never restore colour.
+    #
+    # WHY FIRST -- ordering is the safety mechanism, as it is everywhere else in this file.  A
+    # dotted read of a missing segment is a HARD runtime error in this runtime (.claude/CLAUDE.md,
+    # verified runtime semantics) and Shortcuts has no try/catch, so any read below that raises
+    # aborts the whole run.  Placed under the brightness block, the colour restore would sit
+    # downstream of a failure mode whose exact symptom is a user left in grayscale with no way
+    # back.  Placed here it runs before anything can raise.  T-14-01.
+    #
+    # ONE INSERTION, FOUR CALL SITES: close_pipeline(), manual_emergency_restore() (Emergency
+    # Restore, the panic button), ice_expiry() and live_ice_redirect().  Emergency Restore is
+    # deliberate rather than scope creep -- if CLOSE never fires (force-quit, battery death, a
+    # locked-screen close) it is the ONLY thing between the user and permanent grayscale.
+    a += [set_color_filters(False)]
     a += read_value("settings_snapshot.brightness", variable(dictionary_name), "Restore Brightness Snapshot")
     snapshot_g, snapshot_if = if_block("Restore Brightness Snapshot", 100)
     a += [snapshot_if] + read_value("settings_snapshot.brightness.original_value", variable(dictionary_name), "Restore Brightness")
@@ -602,14 +676,78 @@ def knock():
 
 
 def ash():
+    """Turn the screen black and white.  No alert, no notification, no menu -- by design.
+
+    PHASE 14 (14-01).  WHAT WAS DELETED AND WHY IT WAS NOT REPLACED (D-14-C).  This function
+    used to be a comment plus one alert(), and that alert WAS Circle 2: on device, Circle 1 and
+    Circle 2 were two alert boxes with different words, which is no escalation at all.  The
+    alert is DELETED, not supplemented, and it must not come back as a quieter notification or
+    a menu either.  The escalation from Circle 1 to Circle 2 is precisely the escalation from
+    interrupting with WORDS to changing the ENVIRONMENT without them.  The shipped experience
+    is: open the tracked app, the Circle fires, the phone goes black and white, nothing is said;
+    leave the app and colour returns.
+
+    WHY THERE IS NO CAPTURE HERE, stated so it is not "completed" by analogy to dimming() and
+    silence() (D-14-A).  Those two capture an original because brightness and volume are
+    continua -- their original is one value out of many and must be remembered.  Grayscale has
+    exactly TWO values, so the restore target is a constant and there is nothing to remember.
+    This primitive therefore writes NO settings_snapshot leaf, NO ownership marker, and calls NO
+    save_state(); settings_snapshot stays at TWO groups.  The persist-then-apply ordering rule
+    (axis 7, the phase-16 precedent) does not apply to it, because there is no capture whose
+    persistence could be ordered before the apply.  The restore side is one unconditional
+    set_color_filters(False) at the top of restore_managed_settings() -- read that comment.
+
+    THE READING OF SAFE-01 THIS ENCODES, recorded rather than assumed (plan 14-01 A1).  SAFE-01
+    requires an environmental change be captured and durably persisted before it is applied.
+    No read-back intent exists for ANY accessibility setting on iOS -- spike 005 checked all 35
+    intents in the framework -- so the clause cannot be satisfied by detection here.  The
+    reading adopted is that SAFE-01's capture clause is STRUCTURALLY INAPPLICABLE to a
+    two-valued setting whose restore target is a constant, and that the compliant substitute is
+    an unconditional off leg reachable from the panic button.  Recorded as a deviation in
+    .planning/phases/14-ash-as-real-color-filters-grayscale/14-01-SUMMARY.md, under plan
+    14-01's flagged assumption A1.  (Deliberately NOT given a D-14-xx number: that series is
+    the phase's USER decisions and D-14-02 is already taken by the superseded spike-011
+    probe decision.  This is an executor ruling, and labelling it as a user decision would
+    misattribute its authority.)
+
+    THE FLAG IS THE ONLY RECOURSE A HARMED USER HAS (D-14-D).  Because there is no read-back,
+    the build cannot tell whether the user already runs Color Filters for colour-blindness,
+    migraine or low vision -- so it assumes not, and turning it off at CLOSE will clobber their
+    own setting.  Detection is backlogged
+    (.planning/todos/pending/2026-08-19-ash-void-circle-when-user-already-uses-grayscale.md);
+    until it ships, safety.ash_managed_color_filters is the entire remedy, which is why it is
+    read here rather than deferred with the rest of that item.  Onboarding must state plainly
+    that PROSOCHE turns Color Filters on and off.
+    """
     # Renders the primitive BD-06 ships as "Black and White"; the Python name is deliberately
     # unchanged (see the dispatch tuple in primitive_dispatch()).
-    return [comment("""Black and White is the validator-clean visual-pause fallback:
-- It changes no accessibility setting.
-- Color Filters is deliberately excluded because the iOS action is not validator-supported."""),
-            # The body must not open with another primitive's shipped name: "Pause" is now
-            # Circle 1's intervention, and this alert read as if that one had fired.
-            alert("Black and White", "One breath away from the screen before you go on.")]
+    #
+    # PHASE 14 (14-01): this comment SHIPS, once per primitive_dispatch() rendering -- eleven
+    # times per fork.  Its previous text asserted that this primitive "changes no accessibility
+    # setting" and that "Color Filters is deliberately excluded because the iOS action is not
+    # validator-supported".  Both became FALSE the moment this landed, so leaving them would
+    # have shipped a false claim to the user's device eleven times over.  Re-measured
+    # 2026-08-19 (plan 14-01 A3): comment_index() is never called with this prefix, so the
+    # first line is not an anchor and the whole comment was free to rewrite.  The new text
+    # states the PROPERTY THE BUILD GUARANTEES -- on only when allowed, always back off --
+    # rather than a per-arm outcome, so it stays true on both arms of the gate below.
+    a = [comment("""Black and White turns Color Filters on only when allowed, and PROSOCHĒ always turns them back off:
+- The safety.ash_managed_color_filters flag decides; when it is off this Circle changes nothing at all.
+- Leaving the app, Emergency Restore, and every Frozen exit turn Color Filters off again.""")]
+    # THE GATE IS NUMERIC, AND A STRING TEST HERE WOULD BE A SILENT NO-OP.  Safety booleans
+    # come back out of the Config dictionary as numeric 1 / 0, never as the literal words
+    # "true" / "false", so a condition-4 compare against "true" would read false forever and
+    # this Circle would silently never fire.  `> 0` is the same shape dimming() uses to read
+    # safety.dim_target and mirror_and_voice() uses for its voice-enabled gate.
+    a += config("safety.ash_managed_color_filters", "Ash Managed Color Filters")
+    group, check = if_block("Ash Managed Color Filters", 2, number=0)
+    # The otherwise arm is a BARE NOTHING, deliberately.  D-14-D's kill switch means "this
+    # Circle fires a blank", not "this Circle falls back to an alert" -- a user who turned the
+    # flag off to protect their own accessibility configuration is opting out of the
+    # intervention, not asking for a different one.
+    a += [check, set_color_filters(True), otherwise(group),
+          action("is.workflow.actions.nothing"), end_if(group)]
+    return a
 
 
 def confession():
@@ -2557,6 +2695,19 @@ VERIFIED_PARAMETER_KEYS = {
     # never be silently dropped again.
     "is.workflow.actions.filter.notes": {"AppIntentDescriptor", "WFContentItemFilter",
                                          "WFContentItemLimitEnabled", "WFContentItemLimitNumber"},
+    # PHASE 14 (14-01).  THIS ENTRY IS WHAT ARMS AXIS 1 FOR THE COLOR FILTERS ACTION, and the
+    # registration is opt-in armour rather than decoration: verify_parameter_keys() looks the
+    # identifier up and `continue`s on a miss, so an UNMAPPED action has ZERO axis-1 protection
+    # and an accidental extra key on it would be invisible to every check in this repo.
+    # `state` is the ONLY parameter either Turn donor carries beyond the structural UUID, which
+    # STRUCTURAL_KEYS already covers -- so the mapping is deliberately one key and no more.
+    # THE KEY IT SPECIFICALLY FORBIDS IS `operation`.  Both Turn donors ELIDE it; only the
+    # Toggle form writes it (as the string "toggle"), and PROSOCHE never uses Toggle.  Writing
+    # the elided default would author a literal no donor supplies, so with this entry in place
+    # an `operation` write is a BUILD FAILURE rather than a shipped fabrication.
+    # See DELIBERATE_NON_REGISTRATIONS beside ENVIRONMENTAL_IDENTIFIERS for the four guards
+    # this identifier is deliberately kept OUT of, and why.
+    COLOR_FILTERS: {"state"},
 }
 STRUCTURAL_KEYS = {"UUID", "GroupingIdentifier", "WFControlFlowMode", "CustomOutputName"}
 
@@ -4566,14 +4717,66 @@ def verify_sentinel_gates(actions):
             + f" ({len(offenders)} total)")
 
 
-# The three environmental actions, named exactly as docs/environmental_restore_check.py
-# already names them (SET_BRIGHTNESS / SET_VOLUME / DEVICE_DETAILS).  Kept in one frozenset
+# The environmental actions, named exactly as docs/environmental_restore_check.py already names
+# them (SET_BRIGHTNESS / SET_VOLUME / DEVICE_DETAILS / COLOR_FILTERS).  Kept in one frozenset
 # here so the guard below and that checker's site table cannot drift apart silently.
 ENVIRONMENTAL_IDENTIFIERS = frozenset({
     "is.workflow.actions.setbrightness",
     "is.workflow.actions.setvolume",
     "is.workflow.actions.getdevicedetails",
+    # PHASE 14 (14-01).  A RECURRENCE GUARD, NOT A LIVE ASSERTION TODAY -- and that is the
+    # correct state for it, so nobody reads its silence as a reason to remove it.
+    # WHY IT IS SILENT NOW: verify_environmental_reachability() derives permanence ONLY from
+    # settings_snapshot-rooted existence gates.  ash()'s apply sits behind a numeric gate over a
+    # CONFIG read (safety.ash_managed_color_filters), which the guard cannot evaluate and does
+    # not try to; the off leg sits behind no gate at all.  So it flags nothing today.
+    # WHY IT IS REGISTERED ANYWAY: Color Filters IS an environmental change, and the shape this
+    # guard exists to catch -- an environmental action buried in the never-taken arm of a
+    # permanently-true settings_snapshot container gate -- is EXACTLY what the superseded
+    # snapshot-based design for this primitive would have produced.  Registered, it becomes loud
+    # the moment somebody puts this apply behind a snapshot container gate.  T-14-04.
+    COLOR_FILTERS,
 })
+
+# DELIBERATE_NON_REGISTRATIONS -- PHASE 14 (14-01).
+#
+# THE GENERAL RULE THIS BLOCK EXISTS TO TEACH: registration is decided from what each guard
+# ACTUALLY ASSERTS, never by analogy to the primitive standing next to it.  A guard registered
+# where it structurally cannot fire is a FALSE CERTIFICATION -- it reports green over an action
+# it never examined -- and that is a failure class this codebase has already paid for more than
+# once (docs/environmental_restore_check.py's own WR-17 note records 44 actions certified by
+# site counts while sitting in a dead arm).  The four symbols below were considered for the
+# Color Filters identifier and deliberately LEFT ALONE.  Do not "complete the set".
+#
+#   verify_capture_persistence()  -- its pending map is keyed by a
+#       `settings_snapshot.<group>.original_value` WRITE.  This primitive captures nothing and
+#       writes no such leaf (D-14-A: grayscale has two values, so there is no original to
+#       remember), so the stranded set would be empty at every Color Filters site and the
+#       assertion could never fire in EITHER direction.  Registering it would additionally force
+#       the two-way group derivation open for a group that does not exist.
+#
+#   verify_restore_gates()        -- read its LOOP HEAD, not its body: the identifier filter
+#       `if identifier not in {setbrightness, setvolume}: continue` discards this action at the
+#       FIRST continue, before any operand resolution runs.  (Corrected 2026-08-19: an earlier
+#       draft blamed the later literal-target continue and its "a literal target is not a
+#       state-derived write" comment.  Same verdict, wrong mechanism -- execution never reaches
+#       that line.  The mechanism is recorded correctly here because this reasoning is what the
+#       next reader will act on.)
+#
+#   SNAPSHOT_SEED / seed_settings_snapshot() / clear_snapshot() / verify_state_seed()
+#                                 -- FORBIDDEN, not merely unnecessary (D-14-A).  There is no
+#       third settings_snapshot group and there must not be one; the subtree stays at exactly
+#       brightness and volume.  A proposal to add a colour group has reinstated the superseded
+#       design, which this phase's scope reset explicitly threw out.
+#
+#   COMPOUND_STATE_KEYS           -- nothing compound is read.  The only value this primitive
+#       reads is one scalar Config boolean.
+DELIBERATE_NON_REGISTRATIONS = (
+    "verify_capture_persistence",   # no captured original exists to strand
+    "verify_restore_gates",         # discarded at the loop head's identifier filter
+    "seed_settings_snapshot",       # forbidden: settings_snapshot stays at two groups
+    "COMPOUND_STATE_KEYS",          # no compound value is read
+)
 
 
 def verify_environmental_reachability(actions):
