@@ -1,346 +1,265 @@
 # Requirements: PROSOCHĒ — Nine Circles
 
 **Defined:** 2026-08-13
-**Core Value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
+**Re-founded:** 2026-08-19 on canonical strategy v2 (the covenant model). The v1 requirement families below are the delivered foundation — built, structurally verified, and carried forward; rows whose meaning changes under v2 carry an explicit `v2:` pointer. The new covenant families (COV, VERD, BAND, PERS, VARY, MET) define the conversion. v1 requirement IDs are stable so historical phase records remain resolvable.
+**Core Value:** When use is intentional, PROSOCHĒ is invisible. When intention disappears, it interrupts exactly strongly enough to restore it — and an honest declaration buys back the silence.
 
-## v1 Requirements
-
-Requirements for the initial release: two importable, signed Shortcuts (Dumb and Sentient) plus retained unsigned XML source. Each maps to exactly one roadmap phase.
+## Delivered Foundation (v1 families, built)
 
 ### Capability Audit (AUDIT)
 
-The canonical strategy forbids fabricating an action because the strategy asks for it. These requirements make verification an explicit deliverable.
-
-- [x] **AUDIT-01**: Every iOS action the build depends on is resolved to VERIFIED / UNVERIFIED / NOT AVAILABLE with its exact identifier and parameter shape, recorded in a build-notes document
-- [x] **AUDIT-02**: Grayscale / Color Filters capability is resolved to a go/no-go decision, and the Ash primitive has a documented fallback design if no safe action exists
-- [x] **AUDIT-03**: Brightness read-back capability is resolved; if no safe read path exists, Dimming is specified to degrade to a non-stateful variant rather than making an unrestorable change (Phase 10: the non-stateful branch is the **per-run fallback**, not the shipped behaviour — the stateful capture-and-restore path is retained, and a Phase 10 proposal to cut it was cancelled by user decision; guarded by `docs/environmental_restore_check.py`)
-- [x] **AUDIT-04**: Volume read-back capability is resolved; if no safe read path exists, Silence is specified to degrade to a non-stateful variant (Phase 10: the non-stateful branch is the **per-run fallback**, not the shipped behaviour — the stateful capture-and-restore path is retained, and a Phase 10 proposal to cut it was cancelled by user decision; guarded by `docs/environmental_restore_check.py`)
-- [x] **AUDIT-05**: Notes actions (Create Note, Append to Note, find/show a Note) are confirmed usable on the iOS target, since the Control Room is the only onboarding path
-- [x] **AUDIT-06**: The `Use Model` On-Device selection literal is recovered by round-trip (select On-Device in Shortcuts, export unsigned XML, read the literal back) and recorded verbatim, OR the Sentient fork's On-Device guarantee is explicitly re-planned
-- [x] **AUDIT-07**: Every deviation from the canonical strategy forced by an unverifiable action is recorded with the fallback taken, and the Shortcut remains runnable
-- [x] **AUDIT-08**: Static configuration (profile threshold tables, sequence orderings, Ice cooldown durations, Heat coefficients) exists as a single editable block so prototype parameters can be tuned without restructuring the graph
+- [x] **AUDIT-01**: Every iOS action the build depends on is resolved to VERIFIED / UNVERIFIED / NOT AVAILABLE with its exact identifier and parameter shape, recorded in `docs/BUILD-NOTES.md`
+- [x] **AUDIT-02**: Grayscale / Color Filters resolved — the iOS `AX*` intent is donor-confirmed and shipped (BD-01-R2); the kill switch `safety.ash_managed_color_filters` is the §21-lineage opt-in
+- [x] **AUDIT-03**: Brightness read-back resolved; the stateful capture-and-restore path ships with a non-stateful per-run fallback; guarded by `docs/environmental_restore_check.py`
+- [x] **AUDIT-04**: Volume read-back resolved; same shape as AUDIT-03
+- [x] **AUDIT-05**: Notes actions confirmed usable on the iOS target
+- [x] **AUDIT-06**: The `Use Model` On-Device literal recovered by device round-trip and pinned (`Apple Intelligence on Device`, BD-04-R2)
+- [x] **AUDIT-07**: Every deviation forced by an unverifiable action is recorded with the fallback taken, Shortcut kept runnable
+- [x] **AUDIT-08**: Static configuration exists as a single editable Config block
 
 ### Routing & Bootstrap (BOOT)
 
-- [x] **BOOT-01**: The Shortcut routes correctly on manual run (no input), `OPEN` input, and `CLOSE` input, using iOS-26-compatible nested If/Otherwise rather than macOS-only Otherwise-If
-- [x] **BOOT-02**: Unrecognised or empty input fails safe — the Shortcut does not corrupt state and does not hang
-- [x] **BOOT-03**: First manual run creates `state.json` with initial profile, fork, and config values from the import questions
-- [x] **BOOT-04**: First manual run creates exactly one `PROSOCHĒ — Control Room` Note with a non-empty body
-- [x] **BOOT-05**: Later manual runs never overwrite existing state or create a duplicate Control Room Note
-- [x] **BOOT-06**: Missing `state.json` triggers self-healing bootstrap rather than failure, from any invocation mode
-- [x] **BOOT-07**: Corrupt or unparseable `state.json` triggers safe recovery rather than failure or silent wrong behaviour
-- [x] **BOOT-08**: A deleted Control Room Note is detected and safely recreated without crashing the run
-- [x] **BOOT-09**: Import questions capture descent profile (Paradise/Limbo/Inferno, default Limbo) and voice permission; the Sentient fork additionally captures the on-device intelligence preference
+- [x] **BOOT-01**: Manual / `OPEN` / `CLOSE` routing via iOS-26-compatible nested If/Otherwise
+- [x] **BOOT-02**: Unrecognised or empty input fails safe
+- [x] **BOOT-03**: First manual run creates `state.json` from import-question values
+- [x] **BOOT-04**: First manual run creates exactly one `PROSOCHĒ` Note with a non-empty body
+- [x] **BOOT-05**: Later manual runs never overwrite state or duplicate the Note
+- [x] **BOOT-06**: Missing `state.json` triggers self-healing bootstrap from any mode
+- [x] **BOOT-07**: Corrupt `state.json` triggers safe recovery
+- [x] **BOOT-08**: A deleted Note is detected and safely recreated
+- [x] **BOOT-09**: Import questions capture profile and voice permission (Aware adds the AI preference) — *v2: the profile question becomes the plain-language severity question and a modality question is added; see PERS-01/02*
 
 ### State Engine (STATE)
 
-- [x] **STATE-01**: Behavioural day is computed as current date minus 4 hours and stored as a date key
-- [x] **STATE-02**: Behavioural-day rollover resets `opens_today` and Gravity, and does not reset Heat, recent sessions, or exit statistics
-- [x] **STATE-03**: Heat decays with time since the last genuine target-app interaction
-- [x] **STATE-04**: A genuine OPEN increments Heat, with additional Heat for rapid reopening
-- [x] **STATE-05**: Heat is adjusted by the previous contract's outcome — increased on substantial overrun, decreased when the boundary was respected
-- [x] **STATE-06**: Heat is clamped to its floor and cap
-- [x] **STATE-07**: Gravity accumulates from the day's open count and is capped
-- [x] **STATE-08**: Pressure is computed as Heat plus Gravity
-- [x] **STATE-09**: Pressure maps to a Circle via the active profile's threshold table, using ordered comparisons rather than equality
-- [x] **STATE-10**: All three profiles produce demonstrably different Circles for the same Pressure value
-- [x] **STATE-11**: Duplicate OPEN events from a single user action are debounced and increment the open count only once
-- [x] **STATE-12**: State is persisted as a bounded, versioned JSON document with rolling windows for sessions, contracts, and per-exit aggregates — no unbounded arrays, no CSV
+- [x] **STATE-01**: Behavioural day = current date − 4h, stored as a date key
+- [x] **STATE-02**: Rollover resets `opens_today` and Gravity; Heat, sessions, and exit stats survive
+- [x] **STATE-03**: Heat decays with time since last genuine interaction
+- [x] **STATE-04**: A genuine OPEN increments Heat with rapid-reopen bonuses — *v2: a covered reopen earns no rapid-return bonus; see COV-08*
+- [x] **STATE-05**: Heat adjusts on the previous contract's outcome
+- [x] **STATE-06**: Heat clamps to floor and cap
+- [x] **STATE-07**: Gravity accumulates from the day's opens, capped
+- [x] **STATE-08**: Pressure = Heat + Gravity
+- [x] **STATE-09**: Pressure maps to a Circle via the profile's ascending threshold table, ordered comparisons only
+- [x] **STATE-10**: All three profiles produce demonstrably different Circles for the same Pressure
+- [x] **STATE-11**: Duplicate OPEN events debounce to one increment
+- [x] **STATE-12**: Bounded, versioned JSON state — rolling windows, no unbounded arrays, no CSV
 
 ### Session Measurement (SESS)
 
-- [x] **SESS-01**: Each OPEN creates a session with a unique ID and start timestamp recorded in state
-- [x] **SESS-02**: CLOSE measures actual session duration from the recorded start timestamp
-- [x] **SESS-03**: CLOSE reloads state and aborts without mutating it if a newer OPEN owns the active session
-- [x] **SESS-04**: Rapid switching between two tracked apps does not corrupt state or produce a phantom session
-- [x] **SESS-05**: CLOSE compares actual duration against the declared contract and records the overrun
-- [x] **SESS-06**: CLOSE clears the active session and appends the completed session to the rolling window
-- [x] **SESS-07**: CLOSE restores any environmental setting PROSOCHĒ itself changed during the session (Phase 10: `restore_managed_settings()` is retained in `close_pipeline()` — a proposal to cut the brightness/volume machinery was cancelled by user decision, so the stateful path is what ships; `docs/environmental_restore_check.py` asserts the call site)
+- [x] **SESS-01**: Each OPEN creates a session with unique ID and start timestamp
+- [x] **SESS-02**: CLOSE measures actual duration from that start
+- [x] **SESS-03**: CLOSE reloads state and aborts if a newer OPEN owns the session
+- [x] **SESS-04**: Rapid switching between tracked apps never corrupts state
+- [x] **SESS-05**: CLOSE compares duration against the declared contract and records overrun — *v2: per-window accounting; see COV-06*
+- [x] **SESS-06**: CLOSE clears the session and appends it to the rolling window
+- [x] **SESS-07**: CLOSE restores every environmental setting PROSOCHĒ changed (`restore_managed_settings()`, guarded)
 
 ### Circles & Primitives (CIRC)
 
-- [x] **CIRC-01**: The Knock shows a brief, non-lecturing interruption carrying real telemetry
-- [x] **CIRC-02**: Ash applies the audited visual-salience reduction, or its documented fallback if no safe action exists
-- [x] **CIRC-03**: Silence reduces media audio only when the original value can be captured and restored, otherwise degrades safely (Phase 10: "degrades safely" is the **per-run fallback**, not the permanent shipped behaviour — `silence()` and its capture-and-restore loop are retained after a proposed cut was cancelled by user decision; guarded by `docs/environmental_restore_check.py`, which also pins `WFVolumeSetting = "Media"` at all 15 sites (re-measured 2026-08-18, phase 16 finding F-02: 15 of 15 `setvolume` sites carry `WFVolumeSetting = "Media"` in both forks; the prior figure of 14 was stale))
-- [x] **CIRC-04**: Confession asks for a free-text intention and then a time boundary (2/5/10/15/custom)
-- [x] **CIRC-05**: Dimming reduces brightness only when reversible — that is, only when the original value has been captured **and durably persisted** before the change — otherwise degrades safely (Phase 10: "degrades safely" is the **per-run fallback**, not the permanent shipped behaviour — `dimming()` and its capture-and-restore loop are retained after a proposed cut was cancelled by user decision; guarded by `docs/environmental_restore_check.py`. **Phase 16: AMENDED 2026-08-18, traceable to user decision D-01** — this line carried **two** independent assertions of the retired bound and both are corrected: the statement clause above, which named a forbidden value, and this guard description, which described the checker as testing a strictness. As plan 16-03 left it, `docs/environmental_restore_check.py` asserts that `dim_target` is a number at or above `0` **and** at or above `brightness_floor`; with both shipped at `0` the floor binds **exactly, at equality**, rather than never. The durable-persistence half became true in plan 16-01. Authority: `docs/CAPABILITY-DECISIONS.md` BD-02's Supersession note.)
-- [x] **CIRC-06**: Exile immediately routes to an exit without a permission prompt, and returning remains possible as an affirmative act
-- [x] **CIRC-07**: The Mirror shows a precise behavioural reflection built only from recorded facts
-- [x] **CIRC-08**: The Voice speaks the Mirror at most once per run, only when voice is enabled, never at unsafe levels
-- [x] **CIRC-09**: Ice applies a deterministic cooldown whose duration varies by profile, decided entirely without the model
-- [x] **CIRC-10**: During Ice, a target-app OPEN immediately ejects or redirects, and remaining cooldown is shown where practical
-- [x] **CIRC-11**: Blocked attempts during Ice do not endlessly inflate Heat
-- [x] **CIRC-12**: Ice always expires, granting Heat relief and clearing the cooldown — the user is never permanently trapped
-- [x] **CIRC-13**: All three sequences (Classic default, Black Mirror, Ambient) are selectable and change which primitives each Circle invokes, including combined primitives
-- [x] **CIRC-14**: A stronger Circle does not necessarily replay every weaker Circle's prompt
+- [x] **CIRC-01**: Pause shows a brief, non-lecturing interruption carrying real telemetry — *v2: gains a small rotating copy bank (VARY-01)*
+- [x] **CIRC-02**: Black and White applies the real Color Filters toggle with the unconditional off-leg at all four recovery paths
+- [x] **CIRC-03**: Silence reduces media audio only when the original is captured and durably persisted, else degrades safely
+- [x] **CIRC-04**: Intention asks for a free-text purpose and then a time boundary (2/5/10/15/custom) — *v2: the boundary is mandatory with a config default; the verdict routes the encounter (VERD-01); coverage begins on ALLOW (COV-01)*
+- [x] **CIRC-05**: Dim reduces brightness only when the original is captured and durably persisted, else degrades safely — *v2: Dim is Band B soft friction, Ambient sequence only until device-proven; Blackout is parked (BAND-06)*
+- [x] **CIRC-06**: Eject routes immediately without a permission prompt; returning stays possible as an affirmative act — *v2: Eject is Circle 7; Redirect (routed Exile) is built at Circle 6 per BAND-06*
+- [x] **CIRC-07**: The Mirror shows a precise behavioural reflection built only from recorded facts — *v2: moves to Circle 5 with the three-route surface (BAND-05)*
+- [x] **CIRC-08**: Loud Mirror speaks the reflection at most once per run, only with voice enabled, never at unsafe levels
+- [x] **CIRC-09**: Frozen applies a deterministic cooldown varying by profile, decided entirely without the model
+- [x] **CIRC-10**: During Frozen, a tracked OPEN immediately ejects/redirects with remaining cooldown shown where practical
+- [x] **CIRC-11**: Blocked attempts during Frozen do not endlessly inflate Heat
+- [x] **CIRC-12**: Frozen always expires, granting Heat relief — the user is never trapped
+- [x] **CIRC-13**: Sequences are selectable and change which primitive each Circle fires — *v2: three band-invariant sequences per the BD-09 slot table; combined entries stay abolished (BAND-06)*
+- [x] **CIRC-14**: A deeper Circle does not replay every shallower Circle's prompt
 
 ### Contracts (CONT)
 
-- [x] **CONT-01**: A free-text intention of any wording is accepted, including deliberate leisure such as "watch stupid videos"
-- [x] **CONT-02**: A time boundary is selectable from presets or entered as a custom value
+- [x] **CONT-01**: A free-text intention of any wording is accepted, including deliberate leisure
+- [x] **CONT-02**: A time boundary is selectable from presets or custom — *v2: mandatory, with `contract.default_boundary_minutes` on skip (COV-03)*
 - [x] **CONT-03**: A kept contract is recorded as respected
 - [x] **CONT-04**: An exceeded contract is recorded with its overrun magnitude
-- [x] **CONT-05**: Recorded contract outcomes are available to the next OPEN's Heat calculation
+- [x] **CONT-05**: Recorded outcomes feed the next OPEN's Heat — *v2: and the verdict history (VERD-02)*
 - [x] **CONT-06**: A time-overrun message is never shown when no contract existed
 
 ### Exits (EXIT)
 
-- [x] **EXIT-01**: Capture routes to an idea-externalising target (notes, voice memo, or camera)
-- [x] **EXIT-02**: Coordinate routes to a planning target (reminders, calendar, or task list)
+- [x] **EXIT-01**: Capture routes to an idea-externalising target
+- [x] **EXIT-02**: Coordinate routes to a planning target
 - [x] **EXIT-03**: Create routes to a user-defined making target
-- [x] **EXIT-04**: Connect routes to a direct human-contact tool without initiating contact on the user's behalf
-- [x] **EXIT-05**: Consult asks what the user is trying to find and provides at least a direct query-shaped search route, with a menu covering web, maps, notes, reminders, and calendar
-- [x] **EXIT-06**: Close returns the user off the phone — home or lock — and is treated as a first-class outcome, not a fallback
-- [x] **EXIT-07**: Leaving is always available at every Circle; the user is never forced to complete an intervention to exit
-- [x] **EXIT-08**: Exits the user has disabled are never selected
-- [x] **EXIT-09**: Each exit use is recorded with its type, timestamp, triggering app, Circle, and Heat
+- [x] **EXIT-04**: Connect routes to a direct human-contact tool without initiating contact
+- [x] **EXIT-05**: Consult provides a direct query-shaped search route (web/maps/notes/reminders/calendar in Core)
+- [x] **EXIT-06**: Close returns the user off the phone — home or lock — as a first-class outcome
+- [x] **EXIT-07**: Leaving is always available at every Circle — *v2: superseded in mechanism by BAND-04 (the leave affordance lives inside each interactive surface; Band B has no dialog to leave and Band D's moves are the leave); the principle — never forced to complete an intervention — stands*
+- [x] **EXIT-08**: Disabled exits are never selected *(known open defect F-18/G-06-12: `enabled_exits()` currently filters nothing — fix owned by Phase 17)*
+- [x] **EXIT-09**: Each exit use is recorded with type, timestamp, app, Circle, Heat
 
 ### Exit Learning (LEARN)
 
-- [x] **LEARN-01**: Time until the next tracked-app OPEN after an exit is measured and recorded as that exit's outcome
-- [x] **LEARN-02**: With few observations, exits rotate roughly evenly across the user's enabled exits
-- [x] **LEARN-03**: With sufficient observations, exits associated with longer time away are preferred, with occasional exploration
-- [x] **LEARN-04**: The exploration rate is a configuration value, not a hardcoded constant
-- [x] **LEARN-05**: Exit selection is computed deterministically and never delegated to the model
+- [x] **LEARN-01**: Time to next tracked OPEN is each exit's recorded outcome
+- [x] **LEARN-02**: Few observations → roughly even rotation across enabled exits
+- [x] **LEARN-03**: Sufficient observations → longer-time-away exits preferred, with exploration
+- [x] **LEARN-04**: Exploration rate is a Config value
+- [x] **LEARN-05**: Exit selection is deterministic, never the model's
 
 ### Control Room (ROOM)
 
-- [x] **ROOM-01**: The Note opens with READ THIS FIRST explaining what PROSOCHĒ is and how to create both automations
-- [x] **ROOM-02**: The Note gives exact steps for Automation A (App / selected apps / Is Opened / run automatically / Run Shortcut / pass input `OPEN`)
-- [x] **ROOM-03**: The Note gives exact steps for Automation B (same apps / Is Closed / run automatically / Run Shortcut / pass input `CLOSE`)
-- [x] **ROOM-04**: The Note states plainly that the Shortcut cannot install these automations itself and that PROSOCHĒ is bypassable
-- [x] **ROOM-05**: The Note carries the safety warning not to target Phone, Maps, Wallet, authenticators, password managers, or other essential apps
-- [x] **ROOM-06**: The Note contains the editable MY PHONE, ON PURPOSE proforma with all its prompts
-- [x] **ROOM-07**: The Note shows current settings — fork, profile, sequence, voice, AI, enabled exits
-- [x] **ROOM-08**: The Note shows a human-readable current-state snapshot refreshed on manual run
-- [x] **ROOM-09**: The Attention Ledger records meaningful events only — Circle changes, contracts, redirects, rapid-return clusters, cool-downs, profile changes — not every internal calculation
-- [x] **ROOM-10**: The manual menu offers Status, Open Control Room, Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Test a Circle, Reset Today, Emergency Restore, and Setup Check — where Setup Check reports whether each Personal Automation has ever been recorded firing
-- [x] **ROOM-11**: Sync My Profile extracts the human proforma from the Note into state, and the OPEN path never parses the Note
-- [x] **ROOM-12**: Test a Circle runs any chosen Circle's behaviour without altering real Pressure
+- [x] **ROOM-01..06**: The `PROSOCHĒ` Note opens with READ THIS FIRST, exact steps for both automations, the cannot-self-install and bypassable statements, the essential-apps warning, and the editable `MY PHONE, ON PURPOSE` proforma
+- [x] **ROOM-07**: The Note shows current settings (fork, profile, sequence, voice, AI, enabled exits)
+- [x] **ROOM-08**: The Note shows a human-readable state snapshot refreshed on manual run
+- [x] **ROOM-09**: The Attention Ledger records meaningful events only
+- [x] **ROOM-10**: The manual menu offers Status, Open Control Room, Sync My Profile, Change Profile, Change Sequence, Toggle Voice, Test a Circle, Reset Today, Emergency Restore, Setup Check — *v2: gains `Set an intention` (COV-07)*
+- [x] **ROOM-11**: Sync My Profile is the only Note-parsing path; the OPEN path never parses the Note
+- [x] **ROOM-12**: Test a Circle runs any Circle without altering real Pressure
 
 ### Safety & Restoration (SAFE)
 
-- [x] **SAFE-01**: Brightness is changed only when its original value has been captured **and durably persisted** before the change, and is always restored (Phase 16: **AMENDED 2026-08-18, traceable to user decision D-01** — LOCKED 2026-08-17, recorded by plan 16-05. The previous wording named a forbidden value. Avoiding a value was never itself the safety property; **capture-and-restore reliability is** — see `docs/CAPABILITY-DECISIONS.md` BD-02's Supersession note, the governing authority now that canonical §21's floor clause is superseded on the main line. The durable-persistence half became true in plan 16-01: before it the capture was written into a dictionary that was never saved, so no build could have satisfied this requirement — which is what makes the restatement a correction rather than a weakening. A run whose brightness read returns nothing changes nothing, per SAFE-03.)
-- [x] **SAFE-02**: Volume is never increased and no startling output is produced
-- [x] **SAFE-03**: Any environmental setting whose original value cannot be captured is left unchanged rather than changed unrestorably
-- [x] **SAFE-04**: Pre-existing accessibility configuration is never blindly overridden
-- [x] **SAFE-05**: Emergency Restore clears cooldown, clears the active session, and restores recoverable brightness, volume, and colour settings — **satisfied as written, needing no amendment**: a Phase 10 proposal to cut the brightness and volume restore path was **proposed and cancelled by user decision** (2026-08-16, reaffirmed 2026-08-17), so `restore_managed_settings()` remains in `manual_emergency_restore()` and Emergency Restore still restores all three. Standing guard: `docs/environmental_restore_check.py`
-- [x] **SAFE-06**: Emergency Restore is reachable even while in Ice
+- [x] **SAFE-01**: Brightness changes only after its original is captured **and durably persisted**, and is always restored (D-01; capture-and-restore reliability is the safety property)
+- [x] **SAFE-02**: Volume is never raised and no startling output is produced
+- [x] **SAFE-03**: Any setting whose original cannot be captured is left unchanged
+- [x] **SAFE-04**: Pre-existing accessibility configuration is never blindly overridden (disclosure + kill switch)
+- [x] **SAFE-05**: Emergency Restore clears cooldown and the active session and restores recoverable brightness, volume, and colour
+- [x] **SAFE-06**: Emergency Restore is reachable even while in Frozen — and is never gated on any Note-editable setting
 
-### Dumb Fork (DUMB)
+### Core Fork (DUMB — historical family name retained)
 
-- [x] **DUMB-01**: The Dumb fork has no Apple Intelligence dependency and runs fully on non-Apple-Intelligence iOS 26 iPhones
-- [x] **DUMB-02**: At least 30 Mirror templates exist and none invents a fact
-- [x] **DUMB-03**: Template selection is gated on which facts are actually available, producing no malformed or empty telemetry messages
-- [x] **DUMB-04**: Consult without a model offers Search Web, Search Maps, Open Notes, Open Reminders, Open Calendar, and Back
-- [x] **DUMB-05**: The intent gate accepts a blank or vague response without attempting to judge sincerity
-- [x] **DUMB-06**: Mirror output acknowledges success as well as lapses, so opening a target app does not always produce criticism
+- [x] **DUMB-01**: Core has no Apple Intelligence dependency
+- [x] **DUMB-02**: ≥30 Mirror templates, none inventing a fact
+- [x] **DUMB-03**: Template selection is fact-gated; no malformed or empty telemetry
+- [x] **DUMB-04**: Core Consult offers Search Web, Search Maps, Open Notes, Open Reminders, Open Calendar, Back
+- [x] **DUMB-05**: The intent gate accepts blank or vague text without judging sincerity — *v2: reinforced by VERD-02 (Core's verdict is behavioural arithmetic, never text judgment)*
+- [x] **DUMB-06**: Mirror output acknowledges success as well as lapses
 
-### Sentient Fork (SENT)
+### Aware Fork (SENT — historical family name retained)
 
-- [x] **SENT-01**: The Sentient fork uses the Apple On-Device model only, with no cloud, no Private Cloud Compute, and no ChatGPT path
-- [x] **SENT-02**: The model is invoked across Circles II–VIII with increasing involvement, while Circle I stays fast and deterministic
-- [x] **SENT-03**: Circle IX invokes no model and remains fully deterministic
-- [x] **SENT-04**: Model output is structured as ALLOW, CHALLENGE, or DENY, and is parsed and validated
-- [x] **SENT-05**: Malformed, empty, or slow model output falls back to the deterministic Dumb behaviour without breaking the run
-- [x] **SENT-06**: At most one challenge round occurs — no interrogation loop
-- [x] **SENT-07**: DENY is available only at sufficiently high Circles and means redirect, never system-level punishment
-- [x] **SENT-08**: The model audits contracts on specificity, boundedness, and consistency, and never asserts the user is lying
-- [x] **SENT-09**: The model never claims to know what happened inside an app or what the user felt
+- [x] **SENT-01**: On-Device model only; no cloud path required; PCC authorised fallback only
+- [x] **SENT-02**: Model involvement scales with Circle while Circle 1 stays deterministic — *v2: the model appears only at the ask (Circles 4–6) and reflection surfaces (Mirror / Loud Mirror); never on covered opens; see VERD-03*
+- [x] **SENT-03**: Circle 9 / Frozen invokes no model, ever
+- [x] **SENT-04**: Output is structured ALLOW/CHALLENGE/DENY, parsed and validated — *v2: within the deterministic envelope (VERD-01)*
+- [x] **SENT-05**: Malformed, empty, or slow output falls back to deterministic behaviour without breaking the run
+- [x] **SENT-06**: At most one challenge round — no interrogation loop
+- [x] **SENT-07**: DENY only at sufficiently deep Circles and means redirect, never punishment — *v2: DENY exists at Circle 6 only (VERD-04)*
+- [x] **SENT-08**: The model audits specificity, boundedness, consistency; never asserts lying
+- [x] **SENT-09**: The model never claims to know app contents or feelings
 - [x] **SENT-10**: A clearly bounded deliberate-leisure contract can receive ALLOW
-- [x] **SENT-11**: Prior contract consistency can inform a challenge, using only recorded behavioural facts
-- [x] **SENT-12**: The model never controls Heat, Gravity, Pressure, thresholds, timers, exit selection, or Ice
-- [x] **SENT-13**: The model receives only a compact local context window, never the whole Note, and no behavioural data leaves the device
-- [x] **SENT-14**: The system instruction enforces the required tone and forbids the banned vocabulary and diagnosis language
-- [x] **SENT-15**: The Sentient fork adds no changes to the deterministic state engine inherited from Dumb
+- [x] **SENT-11**: Prior contract consistency can inform a challenge, recorded facts only
+- [x] **SENT-12**: The model never controls Heat, Gravity, Pressure, thresholds, timers, exit selection, coverage, or Frozen
+- [x] **SENT-13**: The model receives only the compact context window; nothing leaves the device
+- [x] **SENT-14**: The system instruction enforces tone and bans the vocabulary list
+- [x] **SENT-15**: Aware adds no changes to the deterministic engine
 
 ### Distribution (DIST)
 
-- [x] **DIST-01**: Both forks pass the Shortcuts Playground validator at the iOS 26 target
-- [x] **DIST-02**: Both forks sign successfully into importable `.shortcut` files
-- [ ] **DIST-03**: Both forks import onto a real iPhone and complete a first manual run
-- [x] **DIST-04**: The two forks are named unambiguously and distinguishable at import
-- [x] **DIST-05**: Unsigned XML source is retained in the repository for both forks
-- [x] **DIST-06**: Build notes document unsupported actions, deviations, fallbacks taken, and known iOS limitations
-- [x] **DIST-07**: Repository documentation states plainly that data stays on-device, there is no external analytics, model output can be wrong, and the system is self-directed and bypassable
+- [x] **DIST-01**: Both forks pass gate A via `docs/gate_a_residue_check.py`
+- [x] **DIST-02**: Both forks sign into importable `.shortcut` files
+- [ ] **DIST-03**: Both forks import onto a real iPhone and complete a first manual run — **the standing device blocker**
+- [x] **DIST-04**: The two forks are named unambiguously (`— Core` / `— Aware`)
+- [x] **DIST-05**: Unsigned XML source retained for both forks
+- [x] **DIST-06**: Build notes document unsupported actions, deviations, fallbacks, limitations
+- [x] **DIST-07**: Repository documentation states data stays on-device, no analytics, model output can be wrong, system is bypassable
 - [x] **DIST-08**: Core functionality has no external network dependency
+- [x] **DIST-09**: The repository LICENSE is **PolyForm Noncommercial 1.0.0** (changed from MIT 2026-08-19, not retroactive — everything published through tag `pre-covenant-overhaul` remains MIT); README and the canon state the noncommercial term plainly
 
-## v2 Requirements
+## v2 Covenant Requirements
 
-Deferred to a future release. Tracked but not in the current roadmap.
+The conversion set. Each maps to exactly one roadmap phase (traceability below).
 
-### Contextual Learning
+### Coverage (COV)
 
-- **CTX-01**: Exit success is conditioned on time of day
-- **CTX-02**: Exit success is conditioned on weekday versus weekend
-- **CTX-03**: Exit success is conditioned on target app and current Circle
-- **CTX-04**: Exit success is conditioned on the declared intention category
+- [ ] **COV-01**: An open covered by a valid contract at a Circle below the ceiling shows no surface, sends no notification, makes no model call — and still runs and persists the full state engine
+- [ ] **COV-02**: A contract covers a time window (`made_at` → `made_at + boundary`) across sessions, not a single session
+- [ ] **COV-03**: The boundary is mandatory; declining the picker applies `contract.default_boundary_minutes` and says so in the confirmation
+- [ ] **COV-04**: Coverage ends on window expiry, on opens-within-window exceeding `contract.max_opens_per_window`, or on rapid-return bonuses within the window exceeding `contract.max_rapid_returns_per_window`; the next uncovered open routes normally at its Circle
+- [ ] **COV-05**: Coverage never applies at Circle ≥ `contract.coverage_ceiling_circle` (ships 7); a live cooldown always short-circuits before the coverage check
+- [ ] **COV-06**: CLOSE accumulates `consumed_seconds` into the live window; settled outcomes (kept / overrun / invalidated, with magnitudes) land losslessly in `recent_contracts` and feed both Heat and the verdict history
+- [ ] **COV-07**: A contract can be created voluntarily from the manual menu (`Set an intention`) with identical coverage semantics
+- [ ] **COV-08**: A covered reopen earns `heat.open_base` and counts toward Gravity but earns no rapid-return bonus (`heat.covered_reopen_bonus`, PROTOTYPE INTERPRETATION)
 
-### Value Measurement
+### Verdicts (VERD)
 
-- **VAL-01**: `Get App & Website Data` schema and runtime granularity are audited on a real iPhone
-- **VAL-02**: Personal counterfactual baselines are computed from rolling personal medians
-- **VAL-03**: Estimated Attention Reclaimed is displayed, always labelled as an estimate
-- **VAL-04**: Daily and weekly summaries are written to the Note
+- [ ] **VERD-01**: The verdict envelope is deterministic and identical in both forks: Circles 4–5 offer ALLOW/CHALLENGE; Circle 6 adds DENY; nothing else, anywhere
+- [ ] **VERD-02**: Core's verdict is computed from recorded behaviour only (`recent_contracts` overrun/invalidation history against Config thresholds) — never from the intention's wording
+- [ ] **VERD-03**: Aware's model verdict is accepted only inside the envelope; out-of-envelope, malformed, empty, or slow output silently falls back to Core's verdict; one CHALLENGE round maximum; covered opens make no model call
+- [ ] **VERD-04**: DENY routes to Redirect and nothing else — no Heat surcharge, no settings change, no cooldown
 
-### Sentient Optimisation
+### Bands & Surfaces (BAND)
 
-- **OPT-01**: The next likely Mirror is precomputed on CLOSE and cached in state
-- **OPT-02**: A cached Mirror is shown immediately on the next OPEN and updated with deterministic facts
+- [ ] **BAND-01**: Band boundaries are fixed (0 / 1–3 / 4–6 / 7–9) and sequence-invariant; `bands.ask_entry` and `bands.rescue_entry` exist in Config (default 4 and 7) and are read, not hardcoded
+- [ ] **BAND-02**: An uncovered Band B open shows no dialog — the environmental change is the whole encounter; Circle 1's single-tap Pause is the only Band B surface
+- [ ] **BAND-03**: At most one interactive surface per OPEN, ever; the universal `Leaving / Continue` pre-menu is retired; no announcement precedes a primitive
+- [ ] **BAND-04**: Every interactive surface carries a one-tap leave route (Panic Escape re-expressed); removing Panic Escape strips exactly those leave routes and nothing else; Emergency Restore is untouched by all of it
+- [ ] **BAND-05**: The Mirror at Band C offers three routes — continue, leave, declare — and the declare route enters the ask
+- [ ] **BAND-06**: The BD-09 slot table ships in three band-invariant sequences (Classic default; Frozen pinned at Circle 9; Redirect built at Circle 6; Dim in Ambient only; Blackout in no sequence); dispatch coverage remains a hard build gate
 
-### Support
+### Personalized Descent (PERS)
 
-- **PAY-01**: A local milestone triggers a pay-after-value prompt, never during an intervention
-- **PAY-02**: The prompt offers Support, Not now, and Never ask again, with no functionality gate
+- [ ] **PERS-01**: The profile import question is the plain-language severity question, mapping to Paradise / Purgatory / Inferno
+- [ ] **PERS-02**: A modality import question maps to the default sequence (Classic vs Ambient)
+- [ ] **PERS-03**: The Note and Status name the profile and sequence in both vocabularies (the feeling chosen and the mythological name)
+- [ ] **PERS-04**: Re-elicitation is possible at any time via Change Profile / Change Sequence without state loss
+
+### Variability (VARY)
+
+- [ ] **VARY-01**: All variability is counter-based and deterministic — persisted counters and modulo tests; `is.workflow.actions.number.random` appears nowhere in either fork
+- [ ] **VARY-02**: The spot check, when armed (`variability.spot_check_interval > 0`), fires the ask in place of the slotted primitive only on eligible uncovered Band B opens at the counter interval; it ships at `0` (off)
+- [ ] **VARY-03**: No variability of any kind touches Frozen, cooldown durations, coverage arithmetic, verdict envelopes, safety paths, or environmental changes; no downward Circle jumps exist
+- [ ] **VARY-04**: Surface copy rotates deterministically (Pause bank; Mirror's existing template selector) so no interactive surface is lexically constant
+
+### Covenant Metrics (MET)
+
+- [ ] **MET-01**: Each recorded session carries whether its OPEN was covered, so covered-open share is computable from state
+- [ ] **MET-02**: Surfaces-per-day is computable from recorded state (a surface counter on the day record)
+- [ ] **MET-03**: Aggregates (Phase 26) define covered share, surfaces/day, and contract fidelity per canon §21 — "opens interrupted" excludes silent-band and covered opens
+
+## v2-Later (deferred, tracked)
+
+- **CTX-01..04**: Contextual exit learning (time of day, weekday, app, intention category)
+- **VAL-01..04**: Value measurement (`Get App & Website Data` audit, personal counterfactual baselines, Estimated Attention Reclaimed, daily/weekly summaries)
+- **OPT-01..02**: Aware precomputes the next Mirror on CLOSE; shown on next OPEN
+- **PAY-01..02**: Pay-after-value prompt (local milestone trigger, never during an intervention; Support / Not now / Never ask again honoured permanently)
+- **RE-ELICIT**: Gentle severity re-ask at the Attention Receipt moment
 
 ## Out of Scope
 
-Explicitly excluded. Documented to prevent scope creep.
-
 | Feature | Reason |
 |---------|--------|
-| Focus modes | Explored and deliberately removed from v1; not required for the Nine Circles engine |
-| NFC / physical commitment tokens | Deliberately removed from v1; possible future physical-separation extension |
-| Screen Time blocking APIs (FamilyControls / ManagedSettings / DeviceActivity) | PROSOCHĒ is a behavioural intervention, not a secure parental-control system |
-| Companion iOS app | Would contradict the native-Shortcut-only premise and the free/open-source distribution model |
-| CSV or any second machine store | One JSON for machine state, one Note for human history — a document store is not a transactional key-value store |
-| ChatGPT, Private Cloud Compute, arbitrary web APIs, analytics services | Sentient is On-Device only; no behavioural data may leave the phone |
-| Remote A/B testing infrastructure | Sequences are switchable locally for manual comparison; a remote experimentation platform is out of scope |
-| Tamper-proofing or bypass prevention | The user can always disable the Personal Automation; the product must never claim otherwise |
-| Model control of arithmetic, thresholds, timers, or Circle IX | Generative output varies; safety and state decisions must stay deterministic |
-| Lie detection or addiction diagnosis | The model cannot observe in-app content or mental state; contract auditing replaces it |
-| Therapy-intake onboarding or long survey | Import questions stay minimal; richer profile lives in the editable Note |
+| Focus modes | Not required for the covenant engine; possible later environmental layer |
+| NFC / physical commitment tokens | Future extension (SEED-001: physical unlock for Frozen) |
+| Screen Time blocking APIs / companion app | Behavioural intervention, not secure access control |
+| CSV or any second machine store | One JSON, one Note |
+| ChatGPT, arbitrary web APIs, analytics | Different trust boundary; Aware is On-Device (PCC fallback only) |
+| Remote A/B infrastructure | Sequences and knobs switch locally |
+| Mid-session timers | No installable timer trigger exists; enforcement happens at the next event — never fabricate one |
+| True randomness in strong interventions | Variability is deterministic; a punishment lottery breaks proportionality and trust |
+| Tamper-proofing claims | Always bypassable, and the product says so |
+| Model control of arithmetic, thresholds, timers, coverage, Frozen | Generative output varies; state and safety stay deterministic |
+| Lie detection / addiction diagnosis / therapy intake | The model cannot observe content or minds; contract auditing replaces it |
 
 ## Traceability
 
-Which phases cover which requirements. Populated during roadmap creation.
-
-| Requirement | Phase | Status |
+| Requirement family | Phase | Status |
 |-------------|-------|--------|
-| AUDIT-01 | Phase 1 | Complete |
-| AUDIT-02 | Phase 1 | Complete |
-| AUDIT-03 | Phase 1 | Complete |
-| AUDIT-04 | Phase 1 | Complete |
-| AUDIT-05 | Phase 1 | Complete |
-| AUDIT-06 | Phase 1 | Complete |
-| AUDIT-07 | Phase 1 | Complete |
-| AUDIT-08 | Phase 1 | Complete |
-| BOOT-01 | Phase 2 | Complete |
-| BOOT-02 | Phase 2 | Complete |
-| BOOT-03 | Phase 2 | Complete |
-| BOOT-04 | Phase 2 | Complete |
-| BOOT-05 | Phase 2 | Complete |
-| BOOT-06 | Phase 2 | Complete |
-| BOOT-07 | Phase 2 | Complete |
-| BOOT-08 | Phase 2 | Complete |
-| BOOT-09 | Phase 2 | Complete |
-| STATE-12 | Phase 2 | Complete |
-| ROOM-01 | Phase 2 | Complete |
-| ROOM-02 | Phase 2 | Complete |
-| ROOM-03 | Phase 2 | Complete |
-| ROOM-04 | Phase 2 | Complete |
-| ROOM-05 | Phase 2 | Complete |
-| ROOM-06 | Phase 2 | Complete |
-| STATE-01 | Phase 3 | Complete |
-| STATE-02 | Phase 3 | Complete |
-| STATE-03 | Phase 3 | Complete |
-| STATE-04 | Phase 3 | Complete |
-| STATE-05 | Phase 3 | Complete |
-| STATE-06 | Phase 3 | Complete |
-| STATE-07 | Phase 3 | Complete |
-| STATE-08 | Phase 3 | Complete |
-| STATE-09 | Phase 3 | Complete |
-| STATE-10 | Phase 3 | Complete |
-| STATE-11 | Phase 3 | Complete |
-| SESS-01 | Phase 4 | Complete |
-| SESS-02 | Phase 4 | Complete |
-| SESS-03 | Phase 4 | Complete |
-| SESS-04 | Phase 4 | Complete |
-| SESS-05 | Phase 4 | Complete |
-| SESS-06 | Phase 4 | Complete |
-| SESS-07 | Phase 4 | Complete |
-| CIRC-01 | Phase 5 | Complete |
-| CIRC-02 | Phase 5 | Complete |
-| CIRC-03 | Phase 5 | Complete |
-| CIRC-04 | Phase 5 | Complete |
-| CIRC-05 | Phase 5 | Complete |
-| CIRC-06 | Phase 5 | Complete |
-| CIRC-07 | Phase 5 | Complete |
-| CIRC-08 | Phase 5 | Complete |
-| CIRC-09 | Phase 5 | Complete |
-| CIRC-10 | Phase 5 | Complete |
-| CIRC-11 | Phase 5 | Complete |
-| CIRC-12 | Phase 5 | Complete |
-| CIRC-13 | Phase 5 | Complete |
-| CIRC-14 | Phase 5 | Complete |
-| SAFE-01 | Phase 5 | Complete |
-| SAFE-02 | Phase 5 | Complete |
-| SAFE-03 | Phase 5 | Complete |
-| SAFE-04 | Phase 5 | Complete |
-| SAFE-05 | Phase 5 | Complete |
-| SAFE-06 | Phase 5 | Complete |
-| EXIT-01 | Phase 6 | Complete |
-| EXIT-02 | Phase 6 | Complete |
-| EXIT-03 | Phase 6 | Complete |
-| EXIT-04 | Phase 6 | Complete |
-| EXIT-05 | Phase 6 | Complete |
-| EXIT-06 | Phase 6 | Complete |
-| EXIT-07 | Phase 6 | Complete |
-| EXIT-08 | Phase 6 | Complete |
-| EXIT-09 | Phase 6 | Complete |
-| LEARN-01 | Phase 6 | Complete |
-| LEARN-02 | Phase 6 | Complete |
-| LEARN-03 | Phase 6 | Complete |
-| LEARN-04 | Phase 6 | Complete |
-| LEARN-05 | Phase 6 | Complete |
-| CONT-01 | Phase 6 | Complete |
-| CONT-02 | Phase 6 | Complete |
-| CONT-03 | Phase 6 | Complete |
-| CONT-04 | Phase 6 | Complete |
-| CONT-05 | Phase 6 | Complete |
-| CONT-06 | Phase 6 | Complete |
-| ROOM-07 | Phase 7 | Complete |
-| ROOM-08 | Phase 7 | Complete |
-| ROOM-09 | Phase 7 | Complete |
-| ROOM-10 | Phase 7 | Complete |
-| ROOM-11 | Phase 7 | Complete |
-| ROOM-12 | Phase 7 | Complete |
-| DUMB-01 | Phase 7 | Complete |
-| DUMB-02 | Phase 7 | Complete |
-| DUMB-03 | Phase 7 | Complete |
-| DUMB-04 | Phase 7 | Complete |
-| DUMB-05 | Phase 7 | Complete |
-| DUMB-06 | Phase 7 | Complete |
-| SENT-01 | Phase 8 | Complete |
-| SENT-02 | Phase 8 | Complete |
-| SENT-03 | Phase 8 | Complete |
-| SENT-04 | Phase 8 | Complete |
-| SENT-05 | Phase 8 | Complete |
-| SENT-06 | Phase 8 | Complete |
-| SENT-07 | Phase 8 | Complete |
-| SENT-08 | Phase 8 | Complete |
-| SENT-09 | Phase 8 | Complete |
-| SENT-10 | Phase 8 | Complete |
-| SENT-11 | Phase 8 | Complete |
-| SENT-12 | Phase 8 | Complete |
-| SENT-13 | Phase 8 | Complete |
-| SENT-14 | Phase 8 | Complete |
-| SENT-15 | Phase 8 | Complete |
-| DIST-01 | Phase 8 | Complete |
-| DIST-02 | Phase 8 | Complete |
-| DIST-03 | Phase 8 | Pending |
-| DIST-04 | Phase 8 | Complete |
-| DIST-05 | Phase 8 | Complete |
-| DIST-06 | Phase 8 | Complete |
-| DIST-07 | Phase 8 | Complete |
-| DIST-08 | Phase 8 | Complete |
+| AUDIT-01..08 | 1 | Complete |
+| BOOT-01..09, ROOM-01..06, STATE-12 | 2 | Complete |
+| STATE-01..11 | 3 | Complete |
+| SESS-01..07 | 4 | Complete |
+| CIRC-01..14, SAFE-01..06 | 5 (+9/10/11/14/15/16) | Complete (structural); device proof → Phase 22 |
+| EXIT-01..09, LEARN-01..05, CONT-01..06 | 6 | Complete (F-18 fix → Phase 17) |
+| ROOM-07..12, DUMB-01..06 | 7 | Complete |
+| SENT-01..15, DIST-01..08 | 8 (+11/13/14/15/16) | Complete except DIST-03 |
+| DIST-09 | Covenant overhaul (2026-08-19) | Complete |
+| COV-01..08, VERD-01..02, MET-01..02 | 17 | Pending |
+| BAND-01..06 | 18 | Pending |
+| PERS-01..04 | 19 | Pending |
+| VERD-03..04 | 20 | Pending |
+| (device debug, locked-screen CLOSE) | 21 | Pending |
+| (device UAT: bands, coverage, circles, environmental) | 22 | Pending |
+| VARY-01..04 | 23 | Pending |
+| MET-03 | 26 | Pending |
 
 **Coverage:**
 
-- v1 requirements: 117 total
-- Mapped to phases: 117
+- Delivered v1 requirements: 117 (116 complete; DIST-03 pending on device access)
+- v2 covenant requirements: 26 (25 pending; DIST-09 complete)
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-08-13*
-*Last updated: 2026-08-13 after roadmap creation (8 phases, full coverage)*
+*Requirements defined: 2026-08-13; re-founded 2026-08-19 on canonical strategy v2*

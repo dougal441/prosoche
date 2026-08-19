@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 15
 current_phase_name: Circle 8 — the Voice primitive
-status: verification-deferred
-stopped_at: Phases 14 and 15 are both executed, merged and verification-deferred. Phase 14 (Ash as real Color Filters grayscale) merged into main on 2026-08-19 — Circle 2 emits 15 AX Color Filters actions per fork (11 on + 4 unconditional off at every recovery path), no snapshot by design, and gate A's permanent residue is now enforced mechanically by docs/gate_a_residue_check.py. Phase 15 (the Voice primitive) shipped Circle 8. Neither has run on a phone. Next highest-value step, unchanged and now cheaper: one device sitting running 14-UAT.md beside 16-UAT.md proves all three environmental primitives at once, starting with force-quit-then-Emergency-Restore; 15-UAT.md is cold-runnable in the same session, subject to the schema_version 4→5 install-ordering constraint.
-last_updated: "2026-08-19T03:10:00.000Z"
+status: re-founded
+stopped_at: The covenant overhaul (2026-08-19) re-founded the project on canonical strategy v2 — coverage as a routing axis, four fixed bands, verdicts in both forks, personalized descent, deterministic variability (BD-09..BD-12). PROJECT.md, REQUIREMENTS.md, ROADMAP.md rewritten; v1 planning state at git tag pre-covenant-overhaul; licence now PolyForm Noncommercial 1.0.0 going forward. Phases 14/15 remain verification-deferred on device access. Next step is /gsd-plan-phase 17 (covenant substrate); the standing device sitting (14-UAT beside 16-UAT, 15-UAT cold-runnable with its schema-ordering constraint) is unchanged and now lives under Phases 21–22.
+last_updated: "2026-08-19T12:00:00.000Z"
 last_activity: 2026-08-19
-last_activity_desc: Phase 14 merged to main — regenerated both forks from the merged generator so the artifact carries Color Filters (phase 14) and Voice (phase 15) together; Note disclosure re-applied through the guarded round trip; both forks re-signed
+last_activity_desc: Covenant overhaul — canon v2 written, planning docs re-founded, BD-09..BD-12 recorded, roadmap renumbered 17–28, licence changed to PolyForm Noncommercial 1.0.0
 progress:
-  total_phases: 24
-  completed_phases: 14
+  total_phases: 28
+  completed_phases: 16
   total_plans: 60
   completed_plans: 60
 ---
@@ -22,13 +22,25 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-08-13)
 
-**Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 15 — Circle 8 — the Voice primitive
+**Core value:** When use is intentional, PROSOCHĒ is invisible. When intention disappears, it interrupts exactly strongly enough to restore it — and an honest declaration buys back the silence.
+**Current focus:** The covenant conversion — Phase 17 (covenant substrate) is next to plan
 
 ## Current Position
 
-Phase: 15 (Circle 8 — the Voice primitive) — EXECUTING
-Plans: 4/4 complete; verifier 25/27, 0 failed; the 2 outstanding are device-gated and abstained
+**RE-FOUNDED 2026-08-19 — the covenant overhaul.** The project was re-founded on canonical
+strategy **v2.0 (the covenant model)**: contract coverage is a routing axis above the Circle
+ladder, four fixed bands (Silent 0 / Ambient 1–3 / Ask 4–6 / Rescue 7–9), ALLOW/CHALLENGE/DENY
+verdicts in both forks inside a deterministic envelope, personalized descent, and deterministic
+anti-ritualisation variability. Decisions **BD-09..BD-12** in `docs/CAPABILITY-DECISIONS.md`;
+v1 planning state preserved in full at git tag **`pre-covenant-overhaul`** (commit `10305e6`);
+canon v2 Appendix A maps every historical §N citation. PROJECT.md, REQUIREMENTS.md and
+ROADMAP.md were rewritten the same day: phases 1–16 are the delivered foundation (execution
+record retained), phases 17–28 are the conversion and beyond. **The shipped artifacts still
+implement the v1 interaction model until Phases 17–20 land** — a recorded build state, not a
+contradiction. The licence moved MIT → **PolyForm Noncommercial 1.0.0** going forward (BD-12,
+not retroactive). Next step: `/gsd-plan-phase 17`.
+
+Phase 15 (the last v1-foundation phase executed): 4/4 plans complete; verifier 25/27, 0 failed; the 2 outstanding are device-gated and abstained
 
 **Phase 13 research rewrote the phase.** Donor 5 was decrypted for the first time and
 **refuted family 1**: iOS itself authors a variable in a conditional's TEXT slot as a
@@ -84,8 +96,9 @@ does not carry forward, because plan 16-02 showed the coercion-chip gate carries
 at a direct Set-action parameter), `12-UAT.md` Test 3 (the same brightness/volume restore
 observation read from the SESS-07 side — run it once, record it in both files), `13-UAT.md`
 (6 tests), `10-UAT.md` (10 tests), Phase 4 UAT tests 1 and 3-6, Phase 8's real-iPhone import,
-Phase 18's locked-screen CLOSE investigation (which **owns** the screen-locked case; `16-UAT.md`
-hands it over by reference rather than duplicating it), and Phase 19's full nine-Circle sweep.
+the locked-screen CLOSE investigation (now **Phase 21** after the 2026-08-19 renumbering; it
+owns the screen-locked case; `16-UAT.md` hands it over by reference rather than duplicating it),
+and the full nine-Circle sweep (now **Phase 22**, re-scoped to cover the covenant model too).
 Report the opens-to-first-interruption count from `10-UAT.md` Test 2 — it decides whether Phase
 10's raised entry thresholds need tuning. `16-UAT.md`'s header carries the batching table.
 
@@ -176,13 +189,16 @@ Progress: [██████████] 100%
 - [Todos]: #2 (iOS 26 automation onboarding), #5 (ship-readiness, absorbed by Phase 10), #12 (Use Model literal, closed as bookkeeping), #13 (dimming/silence experimental fork, absorbed) are closed. Ten remain pending, each now owned by a phase.
 
 - Phase 21 added 2026-08-17: One product or two — Core/Aware fork decision and device eligibility. Gives SEED-006 (merge Dumb/Sentient) an owning phase and folds in the evidence that has accumulated since it was planted: spike 003 INVALIDATED auto-detection (`Device Model` returns bare `"iPhone"`; no try/catch exists), spike 008 VALIDATED `WFLLMModel = "Apple Intelligence on Device"` (closing SEED-006 blocker #2), and `tools/build_sentient.py` already ships the Aware delta as one gated additive insertion. The strategy amendment (§35/§5.7/§31/§13, §38 "document wins") and SEED-006 blocker #3 (provable determinism in a single graph) are what Phase 21 is for. If the answer is TWO products, the better deliverable is a *state* check (Settings → Apple Intelligence & Siri exists and has finished setting up) rather than a model list, since success tracks model presence not just chip class; the A17 Pro/A18 + 8 GB rule alone misleads, as the plain iPhone 15/15 Plus do not qualify while the 16e does. SEED-005 is a hard prerequisite if the merge is chosen.
-- [Phase 21 / spike 004]: **verdict downgraded VALIDATED → PARTIAL, 2026-08-17.** Owner reported an iPhone 16e (capable, models downloaded) running the Capability Gate shortcut successfully; re-reading the spike in that light found two defects in its claim. (1) Its `askllm` omits `WFLLMModel` entirely — verified against `.planning/spikes/004-capability-gate/drafts/*.xml` — so neither device run exercised the pinned `"Apple Intelligence on Device"` path that `src/PROSOCHE-Sentient.xml` ships; the runs used the undocumented default model source. (2) The iPhone SE's error, *"support for selected model is downloading"*, is a **provisioning-state** message that cannot distinguish ineligible hardware from a capable device whose ~7 GB models have not landed — and the spike did not record which SE generation it was. Consequence for the merge: the failure window is **wider** than "users who answer the toggle wrongly on old hardware" — Apple Intelligence is on by default on capable devices since iOS 18.3 but its models download over Wi-Fi/power, so a merged product exposes the failure path to **new users on capable hardware at first run**. What survives: the toggle gates correctly both ways, and the ordering property held under one real observed failure. No try/catch remains confirmed — now by an Apple DTS engineer directly ("no way to detect an error from an action"). Four untested device states are tabulated in ROADMAP Phase 21 item 3.
+- [Phase 21 / spike 004]: **verdict downgraded VALIDATED → PARTIAL, 2026-08-17.** Owner reported an iPhone 16e (capable, models downloaded) running the Capability Gate shortcut successfully; re-reading the spike in that light found two defects in its claim. (1) Its `askllm` omits `WFLLMModel` entirely — verified against `.planning/spikes/004-capability-gate/drafts/*.xml` — so neither device run exercised the pinned `"Apple Intelligence on Device"` path that `src/PROSOCHE-Sentient.xml` ships; the runs used the undocumented default model source. (2) The iPhone SE's error, *"support for selected model is downloading"*, is a **provisioning-state** message that cannot distinguish ineligible hardware from a capable device whose ~7 GB models have not landed — and the spike did not record which SE generation it was. Consequence for the merge: the failure window is **wider** than "users who answer the toggle wrongly on old hardware" — Apple Intelligence is on by default on capable devices since iOS 18.3 but its models download over Wi-Fi/power, so a merged product exposes the failure path to **new users on capable hardware at first run**. What survives: the toggle gates correctly both ways, and the ordering property held under one real observed failure. No try/catch remains confirmed — now by an Apple DTS engineer directly ("no way to detect an error from an action"). Four untested device states are tabulated in ROADMAP Phase 21 item 3. **[Renumbered 2026-08-19: the fork-decision phase is now Phase 25; the spike analysis above carries forward into it unchanged.]**
+
+- **[Covenant overhaul, 2026-08-19]: the roadmap was re-founded on canonical strategy v2.** Phases 1–16 became the delivered-foundation record; the old unexecuted phases 17–24 were replaced by the conversion sequence 17–28: **17** covenant substrate (+ gravity floor, enabled_exits, recent_contracts) → **18** bands & surfaces (absorbs the old Exile-split phase; pre-menu retired; slot table v2) → **19** personalized descent → **20** Aware verdict alignment (absorbs SEED-005's refork) → **21** device debug & locked-screen CLOSE (old phase 18 + the two debug blockers) → **22** device UAT re-scoped to the covenant model (old phase 19) → **23** variability against ritualisation (new) → **24** heavy UX (old phase 20, reduced — SEED-009 items 1 and 4 were resolved by design in BD-09) → **25** fork decision (old 21) → **26** aggregates (old 22, + covenant metrics) → **27** Attention Receipt (old 23) → **28** impact & reciprocity (old 24, licence settled by BD-12). Old-numbered citations in phase records and UAT files resolve through this mapping.
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- **[Covenant overhaul, 2026-08-19] BD-09..BD-12 LOCKED**: the covenant model (coverage axis, four fixed bands, verdicts in both forks inside a deterministic envelope, slot table v2 superseding BD-06 Decision 4, pre-menu retired, Dim split with Blackout parked, canon v1 freeze superseded by the v2 rewrite with git-tag provenance); personalized descent (severity → profile, modality → sequence); deterministic anti-ritualisation variability (spot check Band-C-only, ships off, researched at Phase 23); licence PolyForm Noncommercial 1.0.0 going forward (MIT not retroactive; SEED-008's tension resolved toward pay-after-value)
 - [Roadmap]: Capability audit (Phase 1) must resolve four hard blockers — no verified grayscale action, no brightness/volume read-back, unverified `Use Model` On-Device literal, unconfirmed Notes-on-iOS actions — before any phase that depends on primitives, the Control Room Note, or the model.
 - [Roadmap]: Dumb fork must be fully built, validated, signed, and on-device-verified (Phase 7) before Sentient work (Phase 8) begins; Sentient is an additive wrap that must not alter the deterministic engine.
 - [Roadmap]: CLOSE/session-race handling (Phase 4) lands before contracts and exit learning (Phase 6), because contract fidelity and exit outcomes both depend on trustworthy session duration.
@@ -235,6 +251,13 @@ Recent decisions affecting current work:
 Reorganized 2026-08-16 into todo / backlog / seed. Todo = worked directly. Backlog =
 bare-minimum-to-working-product device verification, tracked as ROADMAP.md 999.x phases.
 Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
+
+**Ownership re-mapped 2026-08-19 by the covenant overhaul:** `recent_contracts` (F-2) and
+`enabled_exits` (F-18) and the Gravity floor are owned by **Phase 17**; the deferred-intervention
+(F-12) and Mirror-picker blockers by **Phase 21**; the split-Exile todo is absorbed by **Phase 18**
+(BD-09 Decision 7); the apply-Addendum-01 todo was completed by Phase 11 and stays only as a
+record; the UX todo's surviving scope is **Phase 24**. Old phase numbers inside todo bodies read
+through STATE.md's renumbering entry above.
 
 **Device-session blockers (captured 2026-08-19 from the 18/19 Aug device UAT — 23 findings):**
 

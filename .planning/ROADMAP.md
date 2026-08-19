@@ -2,17 +2,26 @@
 
 ## Overview
 
-PROSOCHĒ ships as two forks of one Shortcuts action graph. The build starts by resolving four
-independently-converged capability blockers (grayscale, brightness/volume read-back, Notes on
-iOS, the `Use Model` On-Device literal) before any behavioural logic is authored, then lays down
-routing/bootstrap/Control-Room onboarding, then proves the deterministic Heat/Gravity/Pressure
-engine correct with stubbed primitives, then hardens the CLOSE/session-race protocol that contract
-fidelity and exit learning both depend on. Only once that foundation is solid do the nine Circle
-primitives and environmental safety floors get built, followed by exits, exit learning, and
-contracts. The Dumb fork is then frozen, validated, signed, and on-device-verified as a complete
-product in its own right — only after that does the Sentient fork add Apple On-Device Intelligence
-as an additive, non-mutating wrap. The roadmap ends with both signed `.shortcut` files shipped
-side by side, which is this project's definition of done.
+**Re-founded 2026-08-19 on canonical strategy v2 — the covenant model.** Phases 1–16 are the
+delivered v1 foundation: capability audit, routing/bootstrap/Note onboarding, the deterministic
+Heat/Gravity/Pressure engine, the race-proof CLOSE protocol, ten built primitives (including real
+Color Filters grayscale and the Voice primitive), six exits with deterministic learning, the
+Aware fork as an additive wrap, and the full build-guard discipline. Their detail sections below
+are retained verbatim as the execution record — they describe work done under the v1 model and
+are history, not live instruction; the live spec is canon v2, and historical `§N` citations
+resolve through its Appendix A. Forward pointers inside those sections use the pre-overhaul
+numbering — read them through this map: old 17 (Exile split) → absorbed by new 18; old 18
+(locked-screen CLOSE) → 21; old 19 (device UAT) → 22; old 20 (heavy UX) → 24; old 21 (fork
+decision) → 25; old 22 (aggregates) → 26; old 23 (receipt) → 27; old 24 (sharing/support) → 28.
+
+Phases 17–28 are the covenant conversion and everything after it. The conversion order is
+substrate → surfaces → onboarding → Aware (17–20), so the artifact is coherent at every commit;
+then the device work (21–22) converts the whole model from structurally-proven to
+actually-working; then variability research (23), the heavy UX round (24), the fork decision
+(25), and the value/receipt/reciprocity arc (26–28). The shipped artifacts implement the v1
+interaction model until Phases 17–20 land — a recorded build state, restated in the MANIFEST,
+not a contradiction. Definition of done for the milestone: both signed `.shortcut` files
+implementing canon v2, device-verified through Phase 22.
 
 ## Phases
 
@@ -21,29 +30,39 @@ side by side, which is this project's definition of done.
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [x] **Phase 1: Capability Audit & Config Foundation** - Resolve all four capability blockers to VERIFIED/UNVERIFIED/NOT AVAILABLE with fallback designs and lock the tunable config block
-- [x] **Phase 2: Routing, Bootstrap & Control Room Onboarding** - First-run bootstrap creates a valid state.json and Control Room Note; every invocation mode routes and self-heals safely
-- [x] **Phase 3: Deterministic State Engine** - Heat, Gravity, Pressure, and Circle mapping compute correctly and demonstrably differ across all three profiles
-- [x] **Phase 4: CLOSE Pipeline & Session Race Protocol** - Session duration is measured accurately and stays race-proof under rapid app switching
-- [ ] **Phase 5: Nine Primitives & Environmental Safety** - All nine Circle primitives fire correctly with guaranteed safety floors and a model-free Circle IX
-- [ ] **Phase 6: Exits, Exit Learning & Contracts** - Six exits are reachable and learned from; contracts are honoured and feed back into Heat
-- [ ] **Phase 7: Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze** - Dumb implementation, validation, and signing are complete; real-iPhone first-run UAT remains pending
-- [ ] **Phase 8: Sentient Fork & Dual Distribution** - On-Device AI wraps the untouched deterministic engine; both forks ship as signed, importable `.shortcut` files
-- [x] **Phase 9: Dimming/Silence Stateful Restore** - Numeric-coercion fix merged for all 28 sites; device proof outstanding, carried by Phase 16
-- [x] **Phase 10: Ship-readiness remainder and UX-lite pass** - Circle 0 silent band, OPEN notification removed, Control Room quieted, five new structural guards; device UAT deferred to Phase 19
-- [ ] **Phase 11: Build Addendum 01 — Dante Circle names and the ten-primitive roster** - The rename lands once against BD-06's settled roster, with the dispatch-coverage guard written alongside it
-- [ ] **Phase 12: State-shape sentinel gaps — exit_events and active_session** - The last two dotted-read crash risks are seeded and gated on leaf value; prerequisite for Phase 17
-- [ ] **Phase 13: Red-operator conditionals and the WFItems List wrapper** - Donor 5 decrypted at last: the conditional family measures as already correct and is pinned, while 66 List actions carrying 660 blank rows per fork are fixed by class, both with recurrence guards
-- [ ] **Phase 14: Ash as real Color Filters grayscale** - The highest-evidence primitive stops being an alert box; restore leg is the deliverable
-- [ ] **Phase 15: Circle 8 — the Voice primitive** - The product stops shipping eight working Circles out of nine
-- [ ] **Phase 16: Dimming and Silence as distinct device-proven Circles** - Capture-and-restore proven as a closed loop under every ugly failure mode, or retired
-- [ ] **Phase 17: Exile split and exit-route deepening** - Eject and Redirect become distinct Circles; the six exits stop being "open an app"
-- [ ] **Phase 18: Persist state when CLOSE fires from a locked screen** - A locked-screen CLOSE stops stranding sessions and unrestored environmental changes
-- [ ] **Phase 19: Device UAT — nine Circles and sequence switching** - The intervention layer converts from structurally-proven to actually-working on real hardware
-- [ ] **Phase 20: UX optimisation — onboarding and in-run interaction cost** - The heavy UX round: funnel instrumentation, nine-Circle interaction cost, §29 voice, Note restructure
-- [ ] **Phase 22: Cumulative state — lifetime and windowed attention aggregates** - The honest data layer under the receipt; metric definitions are the real work
-- [ ] **Phase 23: The Attention Receipt** - A disposable, regenerated, screenshotable local Note — a receipt, not a scoreboard
-- [ ] **Phase 24: Impact and reciprocity — sharing, then support** - Share first, pay-what-it-was-worth later; no account, no referral, no tracking
+**Delivered v1 foundation (execution record):**
+
+- [x] **Phase 1: Capability Audit & Config Foundation** - All four capability blockers resolved with fallback designs; the tunable config block locked
+- [x] **Phase 2: Routing, Bootstrap & Control Room Onboarding** - First-run bootstrap, the Note, and self-healing routing
+- [x] **Phase 3: Deterministic State Engine** - Heat, Gravity, Pressure, and Circle mapping, demonstrably different across profiles
+- [x] **Phase 4: CLOSE Pipeline & Session Race Protocol** - Race-proof session measurement (device UAT partial)
+- [x] **Phase 5: Nine Primitives & Environmental Safety** - The primitive layer with safety floors and model-free Circle IX (device proof → Phase 22)
+- [x] **Phase 6: Exits, Exit Learning & Contracts** - Six exits, deterministic learning, contracts feeding Heat (F-18 fix → Phase 17)
+- [x] **Phase 7: Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze** - Core complete as a product; real-iPhone UAT pending
+- [x] **Phase 8: Sentient Fork & Dual Distribution** - Aware as an additive wrap; both forks signed (DIST-03 pending)
+- [x] **Phase 9: Dimming/Silence Stateful Restore** - Numeric-coercion fix merged for all 28 sites; device proof carried forward
+- [x] **Phase 10: Ship-readiness remainder and UX-lite pass** - Circle 0 silent band, OPEN notification removed, structural guards
+- [x] **Phase 11: Build Addendum 01** - Dante positional names, Core/Aware rename, exact-match dispatch, Panic Escape removability
+- [x] **Phase 12: State-shape sentinel gaps** - exit_events and active_session seeded and leaf-gated
+- [x] **Phase 13: Red-operator conditionals and the WFItems List wrapper** - The wrapper family fixed by class; the conditional family pinned as correct
+- [x] **Phase 14: Ash as real Color Filters grayscale** - The real toggle with the unconditional restore leg
+- [x] **Phase 15: Circle 8 — the Voice primitive** - Nine working Circles
+- [x] **Phase 16: Dimming and Silence — persistence fix and D-01/D-02** - Capture persisted before the device changes; device proof → Phase 22
+
+**The covenant conversion and beyond (canonical strategy v2):**
+
+- [ ] **Phase 17: Covenant substrate** - Contract windows, the coverage gate, Core's deterministic verdict, recording — plus the engine fixes that block clean measurement
+- [ ] **Phase 18: Bands and surfaces** - The pre-menu retired, Band B silent, one surface per OPEN, in-surface leave, slot table v2, Redirect built, exits deepened
+- [ ] **Phase 19: Personalized descent** - Severity → profile, modality → sequence; onboarding asks feelings, not mythology
+- [ ] **Phase 20: Aware verdict alignment** - The model verdict inside the deterministic envelope; no model on covered opens
+- [ ] **Phase 21: Device debug and locked-screen CLOSE** - The deferred-intervention and Mirror-picker blockers, plus the locked-screen persistence investigation
+- [ ] **Phase 22: Device UAT — bands, coverage, nine Circles, sequences** - The covenant model converts from structurally-proven to actually-working on real hardware
+- [ ] **Phase 23: Variability against ritualisation** - Research and arm the deterministic spot check, after device evidence exists
+- [ ] **Phase 24: UX optimisation — onboarding and in-run interaction cost** - Funnel instrumentation, latency, copy voice, Note restructure
+- [ ] **Phase 25: One product or two — Core/Aware fork decision** - Settle the merge question with the capability-gate experiment
+- [ ] **Phase 26: Cumulative state — lifetime and windowed attention aggregates** - The honest data layer, now including covered share and surfaces/day
+- [ ] **Phase 27: The Attention Receipt** - A disposable, regenerated, screenshotable local Note — a receipt, not a scoreboard
+- [ ] **Phase 28: Impact and reciprocity — sharing, then support** - Share first, pay-what-it-was-worth later; no account, no referral, no tracking
 
 ## Phase Details
 
@@ -211,18 +230,29 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+Delivered: 1 → … → 16 (see the checklist above). Conversion: 17 → 18 → {19, 20} → 22, with 21
+runnable beside 17–20 whenever a device session exists; then 23 and 24 after 22; 25 after 24;
+26 → 27 → 28 (26 can start any time after 17).
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Capability Audit & Config Foundation | 5/5 | Complete | 2026-08-13 |
 | 2. Routing, Bootstrap & Control Room Onboarding | 4/4 | Complete | 2026-08-13 |
 | 3. Deterministic State Engine | 1/1 | Complete | 2026-08-13 |
-| 4. CLOSE Pipeline & Session Race Protocol | 2/2 | In Progress|  |
+| 4. CLOSE Pipeline & Session Race Protocol | 3/3 | Complete (device UAT partial) | 2026-08-14 |
 | 5. Nine Primitives & Environmental Safety | 3/3 | Complete | 2026-08-13 |
 | 6. Exits, Exit Learning & Contracts | 3/3 | Complete | 2026-08-13 |
-| 7. Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze | 1/1 light | Human needed | - |
-| 8. Sentient Fork & Dual Distribution | 3/3 | Human needed | - |
+| 7. Control Room Manual Menu, Dumb Mirror Engine & Dumb Freeze | 1/1 light | Complete (human verify open) | 2026-08-14 |
+| 8. Sentient Fork & Dual Distribution | 3/3 | Complete (DIST-03 open) | 2026-08-14 |
+| 9. Dimming/Silence Stateful Restore | 2/2 | Complete | 2026-08-16 |
+| 10. Ship-readiness remainder and UX-lite pass | 5/5 | Complete | 2026-08-17 |
+| 11. Build Addendum 01 | 10/10 | Complete | 2026-08-18 |
+| 12. State-shape sentinel gaps | 5/5 | Complete | 2026-08-18 |
+| 13. Red operators & WFItems wrapper | 4/4 | Complete | 2026-08-18 |
+| 14. Ash as real Color Filters grayscale | 3/3 | Complete | 2026-08-19 |
+| 15. Circle 8 — the Voice primitive | 5/5 | Complete | 2026-08-19 |
+| 16. Dimming/Silence persistence & D-01/D-02 | 6/6 | Complete | 2026-08-18 |
+| 17–28 (covenant conversion and beyond) | 0 | Not started | - |
 
 ## Backlog
 
@@ -931,143 +961,120 @@ The class is not purely lexical (`docs/phase5_self_check.py:117` encodes it as a
 none of the vocabulary), so 16-05 pairs a repo-scoped gate with an explicit human-reasoned list and
 presents neither alone as complete.
 
-### Phase 17: Exile split and exit-route deepening
+### Phase 17: Covenant substrate
 
-**Goal:** Split Exile into two Circles and deepen the six exit routes so an involuntary ejection lands
-somewhere real.
+**Goal:** The covenant model's machine layer exists and is guarded: contract windows, the coverage
+gate, Core's deterministic verdict, lossless recording — plus the three engine fixes that block
+clean measurement of any of it. No surface changes in this phase: coverage silently gates the
+*existing* v1 surfaces, so the artifact stays coherent at every commit and Phase 18 changes what
+fires, not whether firing is decided correctly.
 
-**User decision 2026-08-16, settled in BD-06.** **Eject** (straight) is the current
-behaviour: immediate, no menu, no question, Home Screen — its virtue is that it is instant
-and cannot be negotiated with. **Redirect** (routed) ejects *into* a deterministically
-selected destination, reusing `select_exit()` and `record_exit_and_route()` unchanged so the
-exit is recorded, the return-time sample captured, and the involuntary path feeds the same
-learning loop as the voluntary one. **User decision 2026-08-17: Redirect lands the user
-directly rather than offering the "Take suggested exit / Choose another" menu** — that is
-what makes it a Circle rather than a second Leaving menu.
+**Deliverables:**
 
-**Selection is settled — do not re-litigate.** Deterministic exit, or home. No
-`is.workflow.actions.number.random`, no shuffle, nowhere in the exit path. `select_exit()`
-already is the mechanism: rotate by a persisted counter under 10 observations, then exploit
-the lowest average return-time, with a Config-driven epsilon step that is itself a
-counter-modulo test.
-
-**Deepen the six routes — one design pass, then plan, then execute.** Every route is
-currently just "open an app", and none has ever run on a device. For each, answer: what does
-it open, what context crosses the boundary, and what does the user see one second after
-landing? Leads, all against verified actions: **Capture** — create the note/reminder rather
-than opening the app, seeded with the Intention text if one exists this session;
-**Coordinate** — same, via the Reminders schemas in `PARAMETER_TYPES.md`; **Create** —
-currently one saved URL for everyone, consider a small user-defined set; **Connect** —
-opening Contacts cold is weak, and the no-send constraint is deliberate and stays;
-**Consult** — already the strongest, it carries the query, use it as the model; **Close** —
-the honest null option, keep it, do not decorate it.
-
-**Hard prerequisite: Phase 12** (`exit_events` absent from the bootstrap template sits
-directly on `record_exit_and_route()`; any device test of either Exile Circle hits it).
-
-**Slot arithmetic is already resolved by BD-06** — ten primitives, nine slots per sequence,
-each sequence picking nine. This phase flips Classic's and Ambient's Circle 6 from `Eject` to
-`Redirect`; BlackMirror keeps `Eject` permanently. Do not re-open the roster question.
-
-Canonical §30 and §36 are the reason the bare version is not enough: ejecting someone to a
-Home Screen full of the same apps is a machine for changing *which* app consumes the time.
-
-**See also SEED-009 item 3** — rename the `Leaving / Continue` menu to `Exit / Stay`, aligning it with this phase's exit vocabulary. Caution recorded there: Phase 10 already reworded that prompt and Phase 11 is the rename phase, so decide at Phase 11 whether to fold it in rather than touching the same two words a third time.
+- **`active_contract` container** seeded at bootstrap per axis-7 discipline (permanent container,
+  flat leaf writes, sentinel/numeric gates, single-item-collapse aware), with `verify_*_seed()`
+  guards and the `schema_version` bump decided deliberately. Leaves per canon §10.2: `made_at`,
+  `expires_at`, `intention`, `boundary_seconds`, `opens_within`, `rapid_returns_within`,
+  `consumed_seconds`, `status`.
+- **The coverage gate** in `open_pipeline()` after the state save, before `universal_leaving()`:
+  covered ∧ Circle < ceiling → no dispatch (COV-01/02/05). A live cooldown short-circuits first,
+  unchanged.
+- **Invalidation bookkeeping** on OPEN (`opens_within`, `rapid_returns_within`, expiry — COV-04)
+  and **consumed-seconds accounting** on CLOSE with outcomes settled losslessly into
+  `recent_contracts` (COV-06). This closes the `recent_contracts` never-written blocker (F-2,
+  `.planning/todos/pending/2026-08-19-recent-contracts-never-written.md`) — the scope question it
+  parked is answered by canon §7.4: window outcomes, rolling ~10.
+- **Core's verdict function** (VERD-01/02): recorded-fact arithmetic against
+  `verdict.challenge_overrun_count`, wired into `confession()`/`persist_contract()`; ALLOW starts
+  coverage. DENY is not reachable until Phase 18 builds Redirect — the envelope constant ships,
+  the Circle 6 arm stays dormant, and the dispatch-coverage guard keeps it honest.
+- **Covered-reopen Heat rule** (COV-08, `heat.covered_reopen_bonus`) in the Heat pipeline.
+- **MET-01/02 counters**: the session record carries a covered flag; the day record carries a
+  surface counter.
+- **Engine fixes folded in, one class each:** `round_down()` on `Gravity Raw`
+  (`.planning/todos/pending/2026-08-19-floor-gravity-to-match-spec.md` — land before any
+  Pressure-accumulation run); `enabled_exits()` actually filtering
+  (`2026-08-19-enabled-exits-filters-nothing.md`, F-18/G-06-12 — prerequisite to any
+  exit-learning measurement); the timezone-naive epoch anchor and single-item-collapse todos
+  reviewed against the new keys so the new container does not re-import either defect.
+- Config additions per canon §10.3 (`contract.*`, `verdict.*`, `bands.*`, `variability.*`,
+  `heat.covered_reopen_bonus`), mirrored in `src/CONFIG-BLOCK.md` in the same commit, with
+  `docs/retired_clause_check.py`'s record-matches-build invariant kept green.
 
 **Severity:** major
-**Requirements**: EXIT-01, EXIT-02, EXIT-03, EXIT-04, CIRC-06, SESS-07
-**Depends on:** Phase 12
+**Requirements**: COV-01..08, VERD-01..02, MET-01..02, EXIT-08, STATE-04, CONT-02, CONT-05
+**Depends on:** Phase 12 (state-shape discipline), Phase 16 (persistence fix)
 **Plans:** 0 plans
 
 Plans:
 
 - [ ] TBD (run /gsd-plan-phase 17 to break down)
 
-### Phase 18: Persist state when CLOSE fires from a locked screen
+### Phase 18: Bands and surfaces
 
-**Goal:** Make state survive a CLOSE that fires while the screen is locked.
+**Goal:** The interaction model becomes the covenant model. The universal `Leaving / Continue`
+pre-menu is retired; Band B fires silently; every open shows at most one surface; every
+interactive surface carries its own one-tap leave; the slot table becomes BD-09's; Redirect
+exists; the exits land somewhere real.
 
-Source: `.planning/todos/pending/2026-08-16-persist-state-when-close-fires-from-a-locked-screen.md`
-— read it first; it is the authority on the observed symptom and is not summarised in full
-here.
+**Deliverables:**
 
-**Why it matters.** CLOSE is where session duration comes from, and therefore where every
-restore-on-close behaviour is triggered: the contract outcome that feeds Heat, and the
-brightness/volume/Color-Filters restore that Phases 14 and 16 make load-bearing. A CLOSE
-that fires against a locked screen and fails to persist leaves an `active_session` no later
-run owns, an unrestored environmental change, and a Heat value that never receives its
-contract adjustment. This is the same failure family as the "screen locked mid-session" case
-in `09-UAT.md`'s ugly-cases block, and the two should be investigated together rather than
-twice.
-
-**Approach.** Establish first what actually happens on device — whether the automation fires
-at all, fires and cannot write, or fires and writes late — because the fix differs entirely
-per case and this project's own evidence hierarchy puts device observation above inference.
-Treat a file-level theory as a hypothesis to test, not a conclusion. `.planning/spikes/`
-already holds two adjacent spikes worth reading before designing anything:
-`001-device-is-locked-literal` and `002-close-automation-vs-screen-lock`.
-
-**Safety framing.** Whatever the mechanism, the acceptance bar is the §21 one: never leave
-the user dark, silent, or holding a session that cannot be closed. If persistence genuinely
-cannot be guaranteed from a locked screen, the correct outcome may be a recovery path on the
-next OPEN rather than a write at CLOSE time — an honest degradation beats a lost write.
+- **Pre-menu retirement** (BAND-03): `universal_leaving()` stops emitting the menu; dispatch runs
+  directly inside the Circle > 0 band. `verify_circle_zero_silence()` and
+  `docs/router_ui_census.py` re-derived for the new surface census.
+- **Panic Escape re-expression** (BAND-04): the removable one-tap leave affordance moves *inside*
+  the interactive surfaces — Pause's alert becomes a two-option surface (Leave / Continue), the
+  ask carries "Take me somewhere better", the Mirror carries its leave route. The
+  `panic_escape_enabled` flag, its seed, its Note-edit-plus-confirmation removal path, and the
+  absolute separation from Emergency Restore all carry forward; removal now strips exactly the
+  in-surface leave options and nothing else. SEED-009 item 3's `Exit / Stay` naming lands here as
+  part of the copy, one pass, final.
+- **Band B silence** (BAND-02): Black and White, Silence, and (Ambient) Dim fire with no dialog.
+  Pause stays the single Band B surface.
+- **The Mirror's three-route surface** (BAND-05) at Band C: continue / leave / declare, with the
+  declare route entering the ask. Mirror templates gain covenant facts (declared vs consumed, the
+  invalidation reason) — fact-gated as ever, and the ordinal-fact-binding todo
+  (`2026-08-17-mirror-templates-ordinal-fact-binding.md`) is honoured in the same template pass.
+- **Slot table v2** (BAND-06): the BD-09 table into all three sequences — Mirror to Circle 5,
+  Redirect at 6, Eject at 7, Frozen pinned at 9, Dim in Ambient only, Blackout in none.
+  `verify_dispatch_coverage()` remains the hard gate; `docs/sequence_dispatch_check.py` re-derived.
+- **Redirect built** (absorbing the v1 Phase 17 Exile-split scope): lands the user directly in
+  the deterministically selected exit — no menu (BD-06 Decision 6 reaffirmed by BD-09), reusing
+  `select_exit()` and `record_exit_and_route()` unchanged so the involuntary path feeds the same
+  learning loop. DENY (Circle 6) routes here (VERD-04).
+- **Exit-route deepening** (carried from the v1 plan): for each exit — what opens, what context
+  crosses, what the user sees one second after landing. Capture/Coordinate create the note or
+  reminder seeded with the live intention rather than cold-opening an app; Consult keeps carrying
+  its query; Close stays the honest null option, undecorated.
+- **`Set an intention`** manual-menu item (COV-07) and the Pause copy bank (VARY-04's
+  deterministic rotation, spot check still off).
 
 **Severity:** major
-**Requirements**: SESS-01, SESS-07, STATE-12, SAFE-01, SAFE-05
-**Depends on:** Phase 16
+**Requirements**: BAND-01..06, COV-07, VERD-04, VARY-04, CIRC-01, CIRC-06, CIRC-07, CIRC-13, EXIT-01..07
+**Depends on:** Phase 17
 **Plans:** 0 plans
 
 Plans:
 
 - [ ] TBD (run /gsd-plan-phase 18 to break down)
 
-### Phase 19: Device UAT — nine Circles and sequence switching
+### Phase 19: Personalized descent
 
-**Goal:** Prove all nine Circles fire on a real iPhone, in all three sequences. **This is the phase
-that converts the whole intervention layer from structurally-proven to actually-working.**
+**Goal:** Onboarding asks about feelings and preferences, not mythology — and two people with
+identical usage get the products they each asked for.
 
-**Exactly one Circle has ever executed on real hardware** — Circle 1, once, build
-`2026-08-15o`. Circles 2 through 9 have never run. No sequence other than the default has
-ever been selected. Every Phase 5 "passed" verdict is static analysis of the action graph,
-and graph well-formedness has repeatedly failed to predict device behaviour here: the seven
-parameter-defect axes in `.claude/CLAUDE.md` were each discovered by a device run after a
-clean validation, and **each was invisible to the sweep that caught the previous one**.
-
-The nine primitives are the most heterogeneous code in the product — an alert, an
-accessibility intent, two Get-Device-Details capture-and-restore loops, an Ask + Menu +
-persisted contract, a Home Screen call, a 30-template selector, a speech action, and a
-profile-aware cooldown writer. There is no reason Circle 1 working predicts anything about
-Circle 6.
-
-**Run in this order; each stage is a real gate.** (1) **Fix the instrument first** —
-`Test a Circle` is the harness everything depends on and was itself broken on device once.
-(2) Sweep all nine in Classic, recording per-Circle, not one verdict: does the intervention
-appear, is the copy correct and **non-empty**, is there a reachable dismiss path, does
-control return cleanly. (3) Switch sequence and re-sweep — BlackMirror and Ambient.
-(4) Prove the environmental primitives as closed loops (`09-UAT.md` tests 2–12, the highest
-risk in the matrix). (5) Give Ice its own scrutiny: it is the only Circle leaving a
-*persistent* state — confirm the cooldown deadline is written, a live cooldown short-circuits
-the next OPEN, **Emergency Restore works from inside Ice**, expiry applies Heat relief, and
-profile durations (60/180/300 s) are right. (6) **Then verify Pressure actually drives
-Circle** — `Test a Circle` bypasses the arithmetic, so the real question is whether repeated
-opens escalate as the thresholds say.
-
-**Also outstanding and to be run in the same sessions:** `10-UAT.md` (10 tests, all blocked
-on DIST-03), `09-UAT.md` tests 2–12, Phase 4 UAT tests 1 and 3–6, and Phase 8's real-iPhone
-import. Report the **opens-to-first-interruption count** from `10-UAT.md` Test 2 — that
-number decides whether Phase 10's raised entry thresholds need tuning.
-
-**Known defect to watch:** `open_pipeline()` has no `round_down()` on `Gravity Raw`, so
-escalation timing is currently off-spec — the 0.1667 in the one device reading is exactly
-1 ÷ 6 unfloored.
-
-**Device round trips are the scarce resource.** One class-wide fix per trip, never one site.
-Read the error text, not just the symptom.
-
-**See also SEED-009 item 2** — record **dismissibility** per Circle, not just whether it fired. For each: what did it cost to get past — taps, seconds, whether the user had to act at all. A Circle waved through in under a second has not been verified working in any sense that matters. Note the distinction the seed draws: §6.4's finding is that an easy way to *leave the app* is the strongest lever; an intervention that is easy to *ignore* is the opposite property, and conflating them would justify weakening the wrong half.
+**Deliverables:** the severity import question mapping plain language to Paradise / Purgatory /
+Inferno (PERS-01: "Mostly fine — keep a light touch" / "Somewhat concerned — balance it" /
+"It's a real problem — be strict with me", default Purgatory); the modality import question
+mapping to Classic vs Ambient (PERS-02); Note and Status naming both vocabularies (PERS-03);
+Change Profile / Change Sequence re-elicitation confirmed lossless (PERS-04); the Note's
+covenant paragraph (canon §15.2) and the refreshed READ THIS FIRST voice. Import questions are
+literal-text prefill — the mapping stays an If-chain at bootstrap, within the mechanism's known
+limits. `bands.ask_entry` / `bands.rescue_entry` exist from Phase 17; this phase documents them
+as the reserved tuning knob and deliberately does not vary them per profile yet.
 
 **Severity:** major
-**Requirements**: CIRC-01 through CIRC-14, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-03
+**Requirements**: PERS-01..04, BOOT-09, ROOM-01, ROOM-07
 **Depends on:** Phase 18
 **Plans:** 0 plans
 
@@ -1075,284 +1082,132 @@ Plans:
 
 - [ ] TBD (run /gsd-plan-phase 19 to break down)
 
-### Phase 20: UX optimisation — onboarding and in-run interaction cost
+### Phase 20: Aware verdict alignment
 
-**Goal:** Optimise PROSOCHĒ as an *experience*. Everything shipped so far was authored to satisfy the
-canonical strategy and survive the seven parameter-defect axes — not to be pleasant, fast, or
-obvious to a first-time user.
+**Goal:** Aware's model judgment operates inside the deterministic envelope, at the ask and the
+reflections, and nowhere else — and the Aware artifact is rebuilt from the current Core rather
+than patched.
 
-**This is the heavy UX round.** Phase 10 did the "lite" pass — the Circle 0 silent band, the
-OPEN notification removed, `Leaving / Continue` reworded, the `shownote` gated, a
-`Setup Check` menu item. Everything below was explicitly deferred to here.
-
-**1. Instrument the funnel before redesigning it.** Define the drop-off points explicitly
-(import → first manual run → Note read → Automation A created → Automation B created → first
-OPEN → first intervention completed) and decide what, if anything, `state.json` should record
-locally about how far setup got. This is the only honest way to know whether a change helped.
-Local-only per §27.
-
-**2. Full interaction-cost pass over all nine Circles.** For each: count taps, count actions
-on the path, measure perceived latency on device, and confirm the dismiss option is present,
-obvious, and one tap away wherever the design allows. §6.4's field study is explicit that the
-single strongest mechanism is **giving the user an easy way to dismiss the consumption
-attempt** — stronger than the deliberation message. The current design risks over-investing
-in message text and under-investing in choice architecture. §12's stated key failure is that
-the intervention becomes so annoying the user disables PROSOCHĒ — a product failure even if
-it blocks more opens.
-
-**3. Rewrite copy to §29's voice** — concrete behavioural facts, no slogans, no exclamation
-marks, no emoji. Retire or rewrite anything that reads as a lecture. Roll telemetry into
-interruptions that were already intended (the Intention header, the Mirror) rather than
-announcing numbers.
-
-**4. Restructure the Note around read-once vs. return-to.** Setup instructions collapse or
-move to the bottom once automations exist; settings and the ledger surface at the top. Defer
-the `MY PHONE, ON PURPOSE` proforma out of the critical path — it is not needed until the
-first Mirror/Contract Circle, and asking at minute one competes with automation setup. Shorten
-READ THIS FIRST to the two automations plus the safety warning.
-
-**Re-verify from a genuinely fresh import** — delete `state.json` and the Note first. A
-returning-user run does not test onboarding.
-
-**Runs last by design.** It depends on the renames (Phase 11), the nine Circles actually
-firing (Phase 19), and correct onboarding instructions (already fixed in quick task
-`260817-au7`), because copy authored against the old names or against Circles that do not
-fire would have to be written twice.
-
-**See also SEED-009 items 1 and 4**, which are the same question from two directions and should be planned together here — item 1 asks how often anything surfaces at all, item 4 asks what surfaces when it does.
-
-*Item 1:* the product is still too talkative. Phase 10 removed the OPEN notification and added the Circle 0 silent band, but at every Circle >= 1 the `Circle N opened. Leave now, or continue?` menu still **announces** an intervention before the primitive fires. That menu is also §6.4's easy-dismissal mechanism, so this is a real tension to resolve deliberately, not a simple deletion. `10-UAT.md` Test 2's opens-to-first-interruption count is the existing tuning signal.
-
-*Item 4:* tuning the Circle order means **revisiting BD-06 Decision 4**, which is legitimate at this point — after device evidence — but must land as a superseding decision record in `docs/CAPABILITY-DECISIONS.md`, not a quiet edit to `src/CONFIG-BLOCK.md`'s arrays. "What happens immediately" is partly latency: measure perceived on-device delay, since an intervention arriving after the user is already scrolling has missed the interval the product exists to create.
+**Deliverables:** rework `audit_block()` into the envelope verdict at Circles 4–6 (VERD-03):
+model output accepted only within the Circle's available set, everything else silently falling
+back to Core's verdict; one CHALLENGE maximum carried; DENY→Redirect only (VERD-04). Reflection
+generation for Mirror / Loud Mirror unchanged in role, updated for covenant facts. **No model
+call on covered opens** — the gate precedes the insertion point by construction, and
+`docs/sentient_audit_check.py` re-derives the one-audit-per-rendering invariant against the new
+graph. SENT-02's contract is restated: the model appears at the ask and the reflection surfaces,
+never in Band A/B, never at Frozen, never under coverage. This is also the natural home of
+**SEED-005** (re-fork Aware from the post-conversion Core) — a rebuild, not a patch, keeping
+`docs/sentient_core_check.py` green.
 
 **Severity:** major
-**Requirements**: ROOM-01 through ROOM-10, BOOT-01, BOOT-09, CIRC-01, DIST-04, DIST-05
-**Depends on:** Phase 19
+**Requirements**: VERD-03..04, SENT-01..15 (re-verified against the new graph), DIST-01, DIST-02
+**Depends on:** Phase 18 (Phase 19 can run in parallel; both precede 22)
 **Plans:** 0 plans
 
 Plans:
 
 - [ ] TBD (run /gsd-plan-phase 20 to break down)
 
-### Phase 21: One product or two — Core/Aware fork decision and device eligibility
+### Phase 21: Device debug and locked-screen CLOSE
 
-**Goal:** Settle whether PROSOCHĒ ships as **one** product or **two** (Core / Aware, formerly
-Dumb / Sentient), and — if two — make choosing between them require no knowledge the user
-doesn't have.
+**Goal:** Clear the device-behaviour blockers that would poison the Phase 22 sweep, and settle
+locked-screen CLOSE persistence.
 
-**This phase closes a question that has been open since SEED-006 was planted (2026-08-16)
-and is now largely answered by evidence already in the repository.** Three spikes and one
-generator design bear on it directly:
+**The two open device blockers, routed `/gsd-debug`:**
 
-- **Spike 003 (INVALIDATED)** — automatic hardware-capability detection is impossible.
-  `Get Device Details → Device Model` returns the bare literal `"iPhone"` on every device;
-  no other `WFDeviceDetail` case (all 12 confirmed) disambiguates hardware. Apple's real
-  check (`SystemLanguageModel.default.availability`) is a Swift API, unreachable without a
-  companion app. Shortcuts has no try/catch, so "attempt and recover" is also closed.
+- **Deferred OPEN intervention** (F-12, `2026-08-19-deferred-open-intervention.md`): an OPEN's
+  intervention can surface minutes later, after the app closed — the mechanism is a hypothesis
+  and must be established on device, because an interval-restoring product whose interruption
+  arrives after the interval has closed is not degraded, it is absent.
+- **Mirror's axis-4 unfilled picker** (`2026-08-18-mirror-primitive-unfilled-picker.md`): halts
+  Circle VII and, post-15, the Voice path; spike 011 could not reproduce it at rung 2, so it is
+  device-gated by construction.
 
-- **Spike 004 (PARTIAL — downgraded 2026-08-17, was VALIDATED)** — a single artifact with
-  an opt-in import question **is buildable**, and the toggle gates the branch correctly in
-  both directions on real hardware. But the safety claim is **not** established. The spike's
-  `askllm` omitted `WFLLMModel`, so neither device run exercised the pinned
-  `"Apple Intelligence on Device"` path Sentient actually ships; and the failure it observed
-  ("support for selected model is downloading") is a **provisioning-state** message that
-  cannot distinguish ineligible hardware from a capable device whose ~7 GB of models have
-  not downloaded yet. Owner's iPhone 16e — capable, models present — ran the same shortcut
-  successfully, which is what forced the re-read. What survives: **the ordering property
-  held under one real failure** (core completed before the halt).
+**Locked-screen CLOSE** (carried from the v1 Phase 18 scope): establish on device whether the
+CLOSE automation fires at all from a locked screen, fires and cannot write, or writes late —
+the fix differs entirely per case. Spikes `001-device-is-locked-literal` and
+`002-close-automation-vs-screen-lock` are the prior art; the todo
+(`2026-08-16-persist-state-when-close-fires-from-a-locked-screen.md`) is the authority on the
+symptom. The acceptance bar is canon §18's: never leave the user dark, silent, or holding an
+unclosable session — if persistence cannot be guaranteed from a locked screen, an honest
+recovery path on the next OPEN beats a lost write.
 
-- **Spike 008 (VALIDATED, donor ground truth)** — `WFLLMModel = "Apple Intelligence on
-  Device"`. SEED-006's blocker #2 ("the On-Device literal is unrecovered, and in a merged
-  world it blocks everyone") is closed.
-
-- **`tools/build_sentient.py`** — the Aware delta is already *one* additive insertion
-  (~56 actions) plus two toggle actions and one import question, all gated on
-  `Import AI == "yes"`. Structurally, a merged product is close to what already exists.
-
-**What this phase must actually decide and do:**
-
-1. **Amend or uphold the canonical strategy.** §35 (`AI | Two product forks`), §5.7 (split
-   justified on hardware capability), §31 (two signed `.shortcut` files as the deliverable)
-   and §13 (Core must not be a degraded afterthought). Per §38 the document wins unless
-   amended — so the first deliverable is a **recorded decision**, not code. §13/§33 Q4 want
-   Core as a scientific control baseline; a recorded, stable runtime toggle preserves that
-   comparison, and that argument must be made explicitly rather than assumed.
-
-2. **Resolve SEED-006's blocker #3 — determinism must be provably untouched.** In a merged
-   artifact both paths live in one graph, which makes the "additive, non-mutating wrap"
-   claim harder to assert. `docs/sentient_core_check.py` and the shared build guards are
-   the existing lever; decide what replaces the fork-skew check when there is no fork.
-
-3. **Re-run the capability gate properly — this is the phase's gating experiment.** Spike
-   004's downgrade leaves the merge's entire safety argument untested. Rebuild the gate with
-   `WFLLMModel = "Apple Intelligence on Device"` (the shipped config, which spike 004 never
-   used) and run it across four states, recording device model, iOS version, whether Apple
-   Intelligence is enabled, and whether model download has completed:
-
-   | State | Device | Why it matters |
-   |---|---|---|
-   | Capable, models downloaded | iPhone 16e / 15 Pro | Known-good baseline |
-   | Capable, **models still downloading** | freshly-enabled capable device | **The merge's real risk** — new user at first run |
-   | Capable, **Apple Intelligence switched off** | same device, toggled off | Ordinary user state, never tested |
-   | Genuinely ineligible | a *recorded* SE / pre-15-Pro model | The case spike 004 claimed but did not establish |
-
-   The question in every case is the same: is the failure a **graceful halt** (contained by
-   ordering) or a hang / partial write? If any state hangs or writes partial state, the
-   merge is off on safety grounds alone.
-
-4. **Audit the Aware block's ordering against the fail-safe.** The audit block is inserted
-   immediately *before* `persist_contract()`'s reload-and-save, so a `Use Model` halt there
-   costs the contract write. The core arithmetic save (`build_state_engine.py:1116`) happens
-   earlier in `open_pipeline()`, so the core loop looks protected — confirm on device. Note
-   the reframed exposure: under two forks only a deliberate Aware downloader reaches that
-   halt; under one product **a new user on fully capable hardware reaches it whenever the
-   models haven't landed yet.**
-
-5. **If the answer is TWO products: make the choice trivial.** The user's own framing —
-   *a list of iPhone models, classified by a rule.* The rule: **A17 Pro or A18-class chip
-   and ≥8 GB RAM** → iPhone 15 Pro, 15 Pro Max, the iPhone 16 family **including the 16e**
-   (A18, 8 GB — owner-confirmed working), and everything since. The trap that makes a bare
-   rule insufficient: the plain **iPhone 15 / 15 Plus do NOT qualify** (A16, 6 GB) despite
-   the shared generation and identical iOS. So the deliverable is an explicit **model list**,
-   not a chip rule the user has to apply — verified against Apple's own current support page
-   at the time of writing, not against this roadmap entry.
-
-   **Better than a model list: the self-check the user can actually perform.** The 16e
-   evidence shows `Use Model` success tracks whether the models are *present*, not merely
-   whether the chip qualifies. So the honest instruction is a state check, not a hardware
-   lookup: *open Settings → Apple Intelligence & Siri; if it exists and has finished setting
-   up, choose Aware.* That covers the ineligible-hardware case and the
-   capable-but-not-provisioned case with one instruction, which a model list cannot do.
-
-6. **If the answer is ONE product:** SEED-005 (re-fork/rebuild Aware) is a hard prerequisite
-   — merging a stale Aware would fold known-broken code into the artifact everyone gets.
-   Then: onboarding import-question wording, fork-aware build-guard rework, and a **full
-   re-run of the device-UAT set in both AI-on and AI-off modes** — a merged build inherits
-   none of Core's device confirmation for free.
-
-**Naming note:** Build Addendum 01 §2 renames Dumb → **Core** and Sentient → **Aware**. If
-the merge happens, those stop being product names and become **mode** names — decide which
-before Phase 20 writes any user-facing copy against them.
-
-**Standing blocker either way:** DIST-03 (both forks import onto a real iPhone and complete
-a first manual run) is still unchecked — no qualifying device was reachable on 2026-08-13.
-Aware has never been device-tested in this project at all.
-
-**Severity:** major
-**Requirements**: DIST-03, DIST-04, DIST-07, BOOT-01, ROOM-01
-**Depends on:** Phase 20 (and SEED-005 if the merge is chosen)
+**Severity:** blocker (two entries), major (locked screen)
+**Requirements**: SESS-01, SESS-07, STATE-12, SAFE-01, SAFE-05, CIRC-07, CIRC-08
+**Depends on:** device access (DIST-03 tunnel); independent of 17–20 and can run beside them
 **Plans:** 0 plans
 
 Plans:
 
 - [ ] TBD (run /gsd-plan-phase 21 to break down)
 
-### Phase 22: Cumulative state — lifetime and windowed attention aggregates
+### Phase 22: Device UAT — bands, coverage, nine Circles, sequences
 
-**Goal:** Give PROSOCHĒ the ability to say what it has actually done — the data layer under the
-Attention Receipt and, later, under the support ask. **No user-facing display in this
-phase.** It exists so the numbers exist and are honest.
+**Goal:** The covenant model converts from structurally-proven to actually-working on real
+hardware. Exactly one Circle has ever executed on a phone; nothing of the covenant layer has.
 
-**The engineering risk is not the arithmetic — it is the schema.** Canonical strategy §16
-mandates bounded rolling windows, so "just keep more history" is not available. Every new
-key must be seeded in the bootstrap template with a build guard: this project has hit the
-STATE-SHAPE axis **three separate times on device**, and a dotted read with a missing
-segment is a hard error, not a blank. **Hard prerequisite: Phase 12** (`exit_events` /
-`active_session`) — do not add keys on top of a schema whose sentinel gaps are still open.
+**Run in this order; each stage is a real gate:**
 
-**Deliverables.** Audit what `state.json` already supports before adding anything —
-`exit_stats`, `recent_sessions` and the day counters may already carry more than expected.
-Then add what is genuinely missing, in two shapes: **bounded windows** for anything
-per-period, and **monotonic lifetime counters** for the "since installing" figures. A
-counter is O(1) and does not violate §16's bounded-history rule, but it is a *new* shape in
-this schema and needs its own seed and guard. Decide the `schema_version` bump and the
-migration path for existing installs deliberately — an existing user must not lose their
-history or hard-error on first read.
+1. **Fix the instrument** — `Test a Circle` is the harness and was itself once broken on device.
+2. **The covenant scenarios** — the new model's own matrix: a covered open is fully silent; each
+   invalidation trigger (expiry / open-count / rapid-return) ends coverage and the next open
+   routes at its Circle; the ceiling holds at Circle 7; ALLOW/CHALLENGE route as specified;
+   DENY lands in Redirect; the voluntary `Set an intention` covers identically.
+3. **Nine Circles in Classic**, per-Circle verdicts: does it appear, is the copy non-empty, is
+   the leave route reachable, does control return. Record **dismissibility** per SEED-009 item 2
+   — what it cost to get past, in taps and seconds; a Circle waved through in under a second has
+   not been verified in any sense that matters.
+4. **Sequence switching** — BlackMirror and Ambient sweeps.
+5. **Environmental closed loops** — `16-UAT.md`'s twelve tests and `14-UAT.md`'s six, run beside
+   each other in one sitting: capture → persist → apply → restore, then the ugly cases
+   (force-quit, restart, CLOSE-never-fires, overlap, locked screen via Phase 21's findings).
+   The single highest-value observation: force-quit mid-intervention, run Emergency Restore,
+   confirm colour and brightness return. `setbrightness.WFBrightness` is OPTIONAL with a 50%
+   default — verify the **value applied**, never the absence of an error.
+6. **Frozen's own scrutiny** — cooldown written, live cooldown short-circuits (before the
+   coverage check), Emergency Restore works from inside it, expiry relieves Heat, profile
+   durations honoured.
+7. **Pressure actually drives Circle** — repeated real opens escalate as the thresholds say
+   (`Test a Circle` bypasses the arithmetic). Report opens-to-first-interruption per profile —
+   the tuning signal for the raised entry thresholds and the severity mapping.
 
-**Metric definitions are the real work, and each one is a decision to record.** Three that
-are already load-bearing and easy to get wrong:
+**Also outstanding and batched into the same sessions:** `13-UAT.md`, `12-UAT.md` Test 3,
+`10-UAT.md`, Phase 4 UAT tests 1 and 3–6, Phase 8's real-iPhone import (Aware has never been
+installed), `15-UAT.md` (mind its install-ordering constraint: any schema-bumping build installs
+**before** Pressure-accumulation tests, because the first run rebuilds `state.json`).
 
-- **"Automatic opens interrupted"** must mean *actually interrupted*. Since Phase 10, an
-  open inside the Circle 0 silent band is **observed, not interrupted** — nothing is shown.
-  Counting silent-band opens as interruptions would inflate the headline number and turn
-  the receipt into the self-congratulatory telemetry §29's voice forbids. Define it against
-  what the user actually saw.
+**Device round trips are the scarce resource.** One class-wide fix per trip. Read the error
+text, not just the symptom. Branch on `tunnelState` from `xcrun devicectl list devices
+--json-output`, never on the `State` column.
 
-- **"Most effective exit"** needs an effectiveness definition and a confidence floor.
-  `select_exit()` already exploits lowest average return-time and already refuses to exploit
-  below `exits.exploit_min_observations` (10). Reuse that threshold: do not name a winner
-  from two samples.
-
-- **"Contracts kept"** already exists as contract outcome feeding Heat — confirm it is
-  recorded losslessly enough to report as a ratio, not just as a Heat delta.
-
-**Estimates are governed by §24 and are deliberately out of scope here.** Observed metrics
-may be stated directly. Any *estimated* attention reclaimed must be labelled an estimate,
-use a **personal rolling-median counterfactual baseline** rather than a global assumption,
-and be lower-bounded at zero. `100 blocked opens = X hours saved` is **explicitly
-forbidden** without evidence. Ship observed metrics first; the estimate is its own decision.
-
-Source: **SEED-004** (VALUE / LIFE RETURNED), whose trigger condition — "after the device-UAT
-backlog closes and state-shape discipline is settled" — this phase's position honours.
-
-**Severity:** major
-**Requirements**: VAL-01, VAL-02, STATE-12, SESS-07, SAFE-01
-**Depends on:** Phase 12
+**Severity:** blocker
+**Requirements**: DIST-03, COV-01..08, VERD-01..04, BAND-01..06, PERS-01..02, CIRC-01..14, SAFE-01..06
+**Depends on:** Phases 18, 20, 21 (19 strongly preferred first so onboarding is tested once)
 **Plans:** 0 plans
 
 Plans:
 
 - [ ] TBD (run /gsd-plan-phase 22 to break down)
 
-### Phase 23: The Attention Receipt
+### Phase 23: Variability against ritualisation
 
-**Goal:** Build the **Attention Receipt**: a separate, local, disposable Note the user asks for and
-PROSOCHĒ regenerates from `state.json` each time. Daily, 7-day, and lifetime views. It is
-the artifact a person might genuinely screenshot and send to someone.
+**Goal:** Research, arm, and tune the deterministic spot check — after the covenant model has
+device evidence, never before.
 
-**Shape.** A distinct Note from the Control Room — the Control Room is durable and
-returned-to; the receipt is disposable and regenerated. Never accumulate receipts; regenerate
-one. Three cadences sharing one generator: `ATTENTION RECEIPT` + date, `7 DAYS OF ATTENTION`,
-`SINCE INSTALLING PROSOCHĒ`. Ends with `Spend your attention on purpose.` and two options,
-Share and Done.
+The failure mode is canon §13's: a surface repeated identically trains its own dismissal
+(Epictetus' deferred-attention habit; the observed fate of Screen Time prompts). The mechanism
+shipped dormant in Phases 17–18: `variability.spot_check_interval = 0`, the persisted
+`variability_counter`, and the Band-C-only jump semantics (VARY-02/03). This phase: define the
+proxies **before** tuning (contract specificity over time, fidelity trends, dismissal cost from
+Phase 22's observations, self-report — and record what these cannot see); arm the spot check at a
+candidate interval; compare against the dormant baseline; decide the shipped default. Also
+evaluate whether surface rotation (VARY-04) is varied *enough* — lexical variation that reads as
+the same prompt in different clothes buys nothing. Invariants re-asserted, not re-decided:
+counter-based only, Band C jumps only, nothing touches Frozen/safety/environmental/coverage,
+and the silent band stays silent.
 
-**It names the Circle in the Dante vocabulary** — `PEAK DEPTH — CIRCLE VII` — which is what
-makes it shareable in a way "4h12m screen time" is not. **Depends on Phase 11**, which
-settles those names; authoring receipt copy before the rename would mean writing it twice.
-
-**The design risk that must not be waved through: this inverts the incentive.**
-"How deep do you go?" is strong as a hook, and *I hit Circle VI today* is real social
-currency — but the product's entire purpose is that you **don't**. Peak Circle VII is a bad
-day. If the receipt renders depth as achievement, the user who wants an interesting receipt
-is the user who wants to fail more, and the mechanism quietly starts working against its own
-goal. SEED-004 already fixes the frame: **it is a receipt, not a scoreboard — no streaks, no
-scores, no shame.** A receipt records what something cost. Render peak depth as a fact and
-let it read as a confession, never as a trophy or a high score, and never with a
-congratulatory verb.
-
-**Sharing exports behavioural data by design, so the receipt's content is a privacy
-surface.** Generating locally preserves §27 for *generation*, but a shared screenshot is
-published. Therefore: **no app names, no timestamps, nothing that fingerprints a routine**.
-The mock this phase derives from is already clean on that — keep it that way, and treat any
-proposed field against the question "would the user knowingly publish this?"
-
-**The receipt must carry its own provenance** — what made it and where to get it — because it
-is the distribution artifact. That is a hard requirement, not decoration, and it is the same
-attribution question **SEED-008** raises. Keep it quiet and factual: a name and a source, not
-a watermark or an ad.
-
-**Honesty rules inherited from §24 and Phase 22.** Only observed metrics unless an estimate
-is explicitly labelled and personally baselined. Suppress any figure not yet supported by
-enough observations rather than printing a confident-looking number — a receipt that
-overclaims once is never trusted again.
-
-**Never shown while the user is being blocked.** An intervention is not a surface for
-displaying value (§25).
-
-Source: **SEED-004**'s second deliverable.
-
-**Severity:** major
-**Requirements**: VAL-03, VAL-04, ROOM-04, ROOM-05, CIRC-01, DIST-04
+**Severity:** minor (research; the product is complete without arming it)
+**Requirements**: VARY-01..04
 **Depends on:** Phase 22
 **Plans:** 0 plans
 
@@ -1360,58 +1215,176 @@ Plans:
 
 - [ ] TBD (run /gsd-plan-phase 23 to break down)
 
-### Phase 24: Impact and reciprocity — sharing, then support
+### Phase 24: UX optimisation — onboarding and in-run interaction cost
 
-**Goal:** Turn the receipt into the two loops that let PROSOCHĒ spread and sustain itself — **sharing
-first, support second** — without an account, a referral scheme, or a tracker.
+**Goal:** Optimise PROSOCHĒ as an *experience*, with the covenant model settled and device-proven
+underneath it.
 
-**Impact loop, after meaningful value:** *Someone you care about might want some of this time
-back too.* → Share PROSOCHĒ. No incentive, no tracking, no credit. **Reciprocity loop,
-later:** *PROSOCHĒ has helped you interrupt 500 automatic openings. It's free forever. If it
-has been worth something, pay what you think it was worth.* Same local evidence, different
-moment. **That order is the design** — sharing before payment states the project's priorities
-without having to claim them.
+The v1 heavy-UX questions that the covenant redesign already answered — the announcement menu
+(retired by BAND-03) and the Circle-order tuning (settled by BD-09's table) — are out. What
+remains:
 
-**Growth is decentralised by construction.** Person A's copy helps them; they send a link;
-Person B downloads their own copy. No centralised ecosystem mediates the relationship, and
-there is no account to create. That is what earns the line *not another app* — and its
-stronger form: **no account, no feed, no subscription, not even an app.**
-
-**Never "refer a friend."** No referral credits, no incentive of any kind. The recommendation
-must stay uncorrupted by benefit to the recommender — that absence is precisely what makes it
-credible, and it is worth protecting as a product property rather than treating as a missing
-feature.
-
-**§25's four prohibitions are absolute:** never display the payment ask while the user is
-being blocked; never use guilt; never threaten loss of functionality; **never transmit
-attention history** — the trigger threshold is computed locally and the user only ever
-*chooses* to open a link. The ask is three options — Support / Not now / Never ask again —
-persisted with a build guard, and `Never ask again` must be permanent and honoured.
-
-**Blocked on a decision outside this phase: the licence.** *Pay what you think it was worth*
-presumes the author can be paid for value others derive, and the project is currently **MIT
-licensed on a public repo** — which grants commercial use and forks with no royalty and no
-product-facing attribution, irrevocably for everything already published. A voluntary
-tip-jar is compatible with MIT; anything stronger is not. **SEED-008** holds that analysis and
-the option map. Settle it before shipping a payment surface, and settle the outbound
-destination with the project owner rather than assuming one.
-
-**Removal must stay clean.** The product must remain forkable, so the whole support path
-should come out behind a single generator toggle.
-
-Source: **SEED-003** (low-salience support path), whose trigger — "after SEED-004 ships,
-because pay-after-value is meaningless with no value display" — this phase's position
-honours.
-
-**Successor:** the marketing and distribution phase, which uses shared receipts as its
-primary material. Not yet added — add it when the receipt's actual shape is known, rather
-than designing the campaign against a mock.
+1. **Instrument the funnel** before redesigning it: import → first manual run → Note read →
+   Automation A → Automation B → first OPEN → first intervention completed; decide what
+   `state.json` records locally about how far setup got (local-only, canon §26).
+2. **Latency**: measure perceived on-device delay per surface — an intervention arriving after
+   the user is already scrolling has missed the interval the product exists to create.
+3. **Copy voice** (canon §19): concrete facts, no slogans; retire anything that lectures; roll
+   telemetry into surfaces that already fire rather than announcing numbers.
+4. **Note restructure** around read-once vs return-to: setup collapses once automations exist;
+   settings and ledger surface; the proforma defers out of the critical path.
+5. **Re-verify from a genuinely fresh import** — delete `state.json` and the Note first.
 
 **Severity:** major
-**Requirements**: PAY-01, PAY-02, DIST-04, DIST-05, DIST-06, ROOM-04
-**Depends on:** Phase 23
+**Requirements**: ROOM-01..12, BOOT-01, BOOT-09, DIST-04, DIST-05, MET-02
+**Depends on:** Phase 22
 **Plans:** 0 plans
 
 Plans:
 
 - [ ] TBD (run /gsd-plan-phase 24 to break down)
+
+### Phase 25: One product or two — Core/Aware fork decision and device eligibility
+
+**Goal:** Settle whether PROSOCHĒ ships as one product or two, and — if two — make choosing
+require no knowledge the user doesn't have.
+
+The accumulated evidence (all still standing): **spike 003 INVALIDATED** automatic capability
+detection (`Device Model` returns bare `"iPhone"`; no try/catch exists — confirmed by Apple DTS);
+**spike 008 VALIDATED** the `WFLLMModel = "Apple Intelligence on Device"` literal; **spike 004 is
+PARTIAL** — the toggle gates correctly both ways and the ordering property held under one real
+failure, but its `askllm` omitted `WFLLMModel`, so the pinned path was never exercised, and the
+observed "downloading" halt cannot distinguish ineligible hardware from an unprovisioned capable
+device. **New since the seed: Phase 20 shrinks the Aware delta further** — with verdicts shared
+and only the model call differing, the merge case strengthens (SEED-006).
+
+**What the phase does:** (1) amend or uphold canon v2 §25's two-fork answer as a recorded
+decision; (2) re-run the capability gate with the pinned literal across the four device states
+(capable+provisioned / capable+downloading / capable+AI-off / genuinely ineligible), asking one
+question each time — graceful halt or hang/partial write; if any state hangs, the merge is off
+on safety grounds; (3) resolve determinism provability in a single graph (what replaces the
+fork-skew check); (4) if two products: ship the **state check** instruction ("Settings → Apple
+Intelligence & Siri exists and has finished setting up → choose Aware") — it covers ineligible
+and unprovisioned with one instruction, which a model list cannot; the model-list trap stands
+(iPhone 15/15 Plus do not qualify; the 16e does); (5) if one product: SEED-005's refork is a hard
+prerequisite, then a full re-run of the device UAT in both AI modes.
+
+**Severity:** major
+**Requirements**: DIST-03, DIST-04, DIST-07, BOOT-01, ROOM-01
+**Depends on:** Phase 24 (and SEED-005 via Phase 20 if the merge is chosen)
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 25 to break down)
+
+### Phase 26: Cumulative state — lifetime and windowed attention aggregates
+
+**Goal:** Give PROSOCHĒ the ability to say what it has actually done — the honest data layer
+under the Attention Receipt and, later, the support ask. No user-facing display in this phase.
+
+**The engineering risk is the schema, not the arithmetic.** Canon §10 mandates bounded rolling
+windows; every new key is seeded with a build guard; the STATE-SHAPE axis has bitten three times
+on device. Two shapes: bounded windows for per-period figures, monotonic lifetime counters for
+"since installing." Decide the `schema_version` bump and migration deliberately.
+
+**Metric definitions are the real work, each one a recorded decision (MET-03):**
+
+- **"Automatic opens interrupted"** counts only opens where something was actually shown —
+  silent-band opens are *observed*, covered opens are *honoured*; counting either would inflate
+  the number into the self-congratulatory telemetry canon §19 forbids.
+- **Covered-open share** and **surfaces per day** — the covenant's own success curve, from
+  MET-01/02's recording.
+- **"Most effective exit"** reuses `exits.exploit_min_observations` as its confidence floor —
+  never name a winner from two samples.
+- **"Contracts kept"** reports from `recent_contracts` as a ratio with its window stated.
+
+Estimates stay governed by canon §26: observed metrics may be stated directly; any estimated
+attention reclaimed must be labelled an estimate, personally baselined on rolling medians,
+lower-bounded at zero, and is its own later decision (VAL-02/03).
+
+**Severity:** major
+**Requirements**: MET-03, VAL-01, VAL-02, STATE-12, SESS-07, SAFE-01
+**Depends on:** Phase 17 (schema discipline); display depends on Phase 27
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 26 to break down)
+
+### Phase 27: The Attention Receipt
+
+**Goal:** A separate, local, disposable Note the user asks for and PROSOCHĒ regenerates from
+`state.json`: daily, 7-day, and lifetime views. The artifact a person might genuinely screenshot
+and send to someone.
+
+**Shape:** distinct from the durable `PROSOCHĒ` Note — regenerated, never accumulated. Three
+cadences, one generator. It names depth in the Dante vocabulary (`PEAK DEPTH — CIRCLE VII`) and
+now also speaks the covenant's language: contracts kept, attention declared and honoured. Ends
+with `Spend your attention on purpose.`
+
+**The design risk that must not be waved through: depth as achievement inverts the incentive.**
+Peak Circle VII is a bad day. Render depth as a fact that reads as a confession, never a trophy,
+never a congratulatory verb — **a receipt, not a scoreboard: no streaks, no scores, no shame**
+(SEED-004). The covenant metrics help here: *kept covenants* are the shareable pride, and that
+incentive points the right way.
+
+**Privacy surface:** a shared screenshot is published. No app names, no timestamps, nothing that
+fingerprints a routine; every proposed field faces "would the user knowingly publish this?"
+**Provenance:** the receipt carries its own quiet attribution — a name and a source, not a
+watermark (SEED-008's attribution half). **Honesty:** observed metrics only unless labelled
+estimates; suppress figures below their confidence floors; **never shown while the user is being
+blocked.**
+
+**Severity:** major
+**Requirements**: VAL-03, VAL-04, ROOM-04, ROOM-05, DIST-04
+**Depends on:** Phase 26 (and Phase 11's names, long since landed)
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 27 to break down)
+
+### Phase 28: Impact and reciprocity — sharing, then support
+
+**Goal:** Turn the receipt into the two loops that let PROSOCHĒ spread and sustain itself —
+**sharing first, support second** — without an account, a referral scheme, or a tracker.
+
+**Impact loop, after meaningful value:** *Someone you care about might want some of this time
+back too.* → Share PROSOCHĒ. No incentive, no tracking, no credit — the recommendation stays
+uncorrupted by benefit to the recommender, and that absence is what makes it credible.
+**Reciprocity loop, later:** the same local evidence, a different moment: *free forever; if it
+has been worth something, pay what you think it was worth.* Sharing before payment states the
+project's priorities without claiming them.
+
+**Growth is decentralised by construction:** person A sends a link; person B downloads their own
+copy. No account, no feed, no subscription, not even an app.
+
+**The §26-inherited prohibitions are absolute:** never display the ask while the user is being
+blocked; never guilt; never threaten functionality; never transmit attention history — the
+trigger computes locally and the user only ever *chooses* to open a link. Support / Not now /
+Never ask again, with `Never ask again` permanent and honoured, persisted with a build guard.
+
+**Licence — settled 2026-08-19:** the repository moved from MIT to **PolyForm Noncommercial
+1.0.0** going forward (not retroactive: everything published through tag
+`pre-covenant-overhaul` remains MIT-licensed as published). This resolves SEED-008's central
+tension in the pay-after-value direction: commercial redistribution of future versions is not
+licensed, while personal use, forking, and noncommercial sharing stay free — so the voluntary
+support ask is no longer undercut by the licence itself. SEED-008's remaining scope (provenance
+declaration, attribution mechanics) folds into this phase and Phase 27's provenance line. The
+outbound payment destination is settled with the project owner before any surface ships.
+
+**Removal stays clean:** the whole support path sits behind a single generator toggle, so forks
+can strip it.
+
+**Successor:** the marketing and distribution phase, added once the receipt's real shape is
+known.
+
+**Severity:** major
+**Requirements**: PAY-01, PAY-02, DIST-04..07, ROOM-04
+**Depends on:** Phase 27
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 28 to break down)
