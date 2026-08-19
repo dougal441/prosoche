@@ -52,7 +52,7 @@ key-decisions:
   - "The five gate-A cells in MANIFEST.md were RETAINED UNEDITED with an inline supersession pointer rather than corrected in place. Each was a true measurement of the build it describes; rewriting a dated provenance measurement to match a later reality would corrupt the record twice over. The plan handed over four; the independent sweep found five."
   - "The disclosure names no Circle number. Which Circle fires Black and White depends on the chosen sequence — Classic 2, BlackMirror 3, Ambient 1 — so naming Circle 2 would have been false under two of the three sequences. The Note's own neighbouring paragraph already makes this point."
   - "The disclosure names no fork. build_sentient.py's fix_fork_strings() asserts EXACTLY 2 occurrences of the Core display name in the Note body; a third would have aborted the Aware build. Avoiding the fork name entirely was both safer and more accurate, since the same prose ships in both forks."
-  - "The stated 238-text-token baseline is not reproducible under any counting basis measured here and was not adopted. What was preserved and asserted instead: the count is UNCHANGED by this plan's edit (249 -> 249 WFTextActionText tokens per fork, measured at the wave-1 base commit, at HEAD before the edit and after), and every one passes assert_offsets_match in both forks."
+  - "CORRECTED post-verification (finding F-1): the 238-text-token baseline IS reproducible — at 953ff1e, the pre-wave-1 scope-reset commit, under this plan's own counting basis. It was measured from a base already carrying 14-01, which is why it read 249. The delta is exactly +11 per fork: ash()'s 11 config reads. Independently reconfirmed by the orchestrator on a second basis (260 -> 271), same +11. The invariant that matters held either way: the count is UNCHANGED across this plan's edit, and every token passes assert_offsets_match in both forks."
   - "The three ROADMAP plan-list checkboxes were ticked and then deliberately reverted in a follow-up commit: plan-progress state is the orchestrator's to write, and this plan's ROADMAP scope is the goal-block prose plus the 999.3 retirement."
 
 patterns-established:
@@ -389,15 +389,23 @@ a Rule 1–3 fix.
 
 ### Recorded divergences (not auto-fixes)
 
-**1. The stated 238-text-token baseline was not reproducible and was not adopted.** The plan's
-preamble gives "238 text tokens per fork" as the wave-1 baseline to preserve. Measured under
-every basis available here, the figure is **249** `WFTextActionText` token strings per fork —
-at the wave-1 base commit `80e0240`, at `HEAD` before this plan's edit, and after it — or
-**1104/1112** whole-document `WFTextTokenString` values, which is `note_identity_check.py`'s own
-basis and its recorded floor. Neither yields 238. **The invariant that actually matters was
-preserved and asserted:** the count is unchanged across the edit and every token passes
-`assert_offsets_match` in both forks. The 238 figure is recorded here as unreproduced rather than
-silently rounded to.
+**1. CORRECTED post-verification — the 238-text-token baseline WAS reproducible; this note
+originally said it was not.** Phase verification (finding F-1) resolved it: 238 is exactly what
+this plan's own counting basis yields at `953ff1e`, the pre-wave-1 scope-reset commit. This plan
+measured from a base that already carried 14-01, which is why every reading came back 249. The
+delta is **exactly +11 per fork** — `ash()`'s eleven config reads, one per `primitive_dispatch()`
+rendering. The orchestrator reconfirmed the same +11 independently on a different basis
+(`WFTextActionText` action params: 260 at `953ff1e` -> 271 at `ca0bbea` -> 271 at HEAD).
+
+So the figure was never wrong and the brief was never wrong; the two were taken at different
+commits, and this note misdiagnosed that as an unreproducible measurement. **The invariant that
+actually matters held regardless, and still holds:** the token count is UNCHANGED across this
+plan's edit (249 -> 249 on this basis, 271 -> 271 on the orchestrator's), and every token passes
+`assert_offsets_match` in both forks — 0 failures of 1115 (Core) / 1123 (Aware) whole-document
+token strings at verification time.
+
+The original instinct was right and is worth keeping: recording a figure as unreproduced beats
+rounding to it. The error was in the diagnosis, not the discipline.
 
 **2. One further stale site in `src/CONFIG-BLOCK.md` beyond the plan's inventory of four.** The
 plan's flagged assumption **C2** anticipated exactly this and instructed a sweep; the sweep found
