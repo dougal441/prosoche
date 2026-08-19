@@ -754,9 +754,9 @@ blank, and it is BLOCKED on `DIST-03`.
 
 Plans:
 
-- [x] 14-01-PLAN.md — TRACER: the Color Filters action on at Circle 2 with no alert, one unconditional off inside the restore expansion, guards registered only where they can fire, checkers taught (wave 1, D-14-A/B/C/D)
-- [x] 14-02-PLAN.md — The gate-A disposition: the constitutional edit, the mechanical residue checker, and the deviation-log entry (wave 2, D-14-01)
-- [x] 14-03-PLAN.md — Disclose the change in the Control Room Note, correct the config mirror, re-sign both forks, author `14-UAT.md`, retire backlog 999.3 (wave 3, D-14-03)
+- [ ] 14-01-PLAN.md — TRACER: the Color Filters action on at Circle 2 with no alert, one unconditional off inside the restore expansion, guards registered only where they can fire, checkers taught (wave 1, D-14-A/B/C/D)
+- [ ] 14-02-PLAN.md — The gate-A disposition: the constitutional edit, the mechanical residue checker, and the deviation-log entry (wave 2, D-14-01)
+- [ ] 14-03-PLAN.md — Disclose the change in the Control Room Note, correct the config mirror, re-sign both forks, author `14-UAT.md`, retire backlog 999.3 (wave 3, D-14-03)
 
 ### Phase 15: Circle 8 — the Voice primitive
 
