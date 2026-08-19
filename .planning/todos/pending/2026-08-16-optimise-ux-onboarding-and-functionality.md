@@ -96,3 +96,26 @@ Sequence matters — do not start this until the onboarding *correctness* todo i
 - `2026-08-14-repair-ios-26-automation-onboarding.md` — hard prerequisite.
 - `2026-08-14-apply-build-addendum-01.md` — naming/renames this todo's copy work depends on.
 - `2026-08-15-ship-readiness-cleanup.md` — scaffolding must be stripped to evaluate UX.
+
+## Device observations from the 2026-08-18/19 UAT — four small UX items
+
+Recorded in passing during phase 4/6/9 verification on a fresh install of Core `873fa3db…`.
+None was investigated; each is a starting point, not a diagnosis. Evidence throughout:
+`.planning/debug/device-state/README.md`.
+
+1. **Raw unrounded floats are shown to the user.** The Circle 1 `Pause` alert rendered
+   *"Circle 1 · pressure 3.33333333333333 · heat 3"*. Fourteen decimal places of a behavioural
+   quantity, in the product's calmest surface.
+2. **The contract result is bare machine phrasing.** On CLOSE, a completed contract showed only
+   *"Contract — Overrun seconds: 30"*, to a user who has just put an app down. Compare the care
+   taken over the Leaving/Continue copy, which reads well (finding F-11).
+3. **`Capture → Notes` lands on the Control Room note, not a blank one.** The route is
+   `open_app("Notes")`, so iOS restores the last-viewed note — and the last note PROSOCHĒ itself
+   opened is its own settings page. Correct per the implementation, but a user sent to "capture a
+   thought" arrives at the app's configuration. Product decision, not a bug (finding F-21).
+4. **Permission dialogs land mid-intervention on a new install.** Three distinct Save File
+   prompts plus a notification prompt, all on top of the tracked app in the first minutes of use.
+   Fully characterised — including the fix — in
+   `.planning/todos/pending/2026-08-17-note-entity-chooser-on-clean-install.md`; cross-referenced
+   here because the *experience* is an onboarding problem even though the *cause* is generator
+   shape (finding F-16).

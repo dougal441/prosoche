@@ -340,3 +340,52 @@ Predicts the same failure, for the same reason, in:
   SHA-256 `b07497ba1a66506aaaa9c48134f463ceefeac7f4a656e86dad48b0a76414ac5b`, decrypted and
   parameter-dumped.
 - Precondition: iCloud Drive → Shortcuts folder observed **empty** immediately before the run.
+
+## Corroboration from the 2026-08-18/19 device UAT — a FIFTH path, and a clean negative control
+
+Independent session (`/gsd-verify-work` for phases 4, 6, 9), fresh install of Core
+`873fa3db…`, `state.json` deleted first. Nothing here contradicts the FINAL CHARACTERISATION
+above; two observations tighten it.
+
+**1. A fifth state-changing path reproduces it: `Emergency Restore`.** Same pair, same order —
+`Note` entity chooser (PROSOCHĒ offered as the first row) then the bare `Text` box. Reproduction
+count is now **five for five** on state-changing manual runs.
+
+**2. The negative control is now clean, and it is the sharper one.** The earlier table records
+`Status` raising the chooser — but that run was on a device with **no `state.json`**, so the
+bootstrap wrote state and the run was state-changing after all. This session ran `Status`
+**twice**: once on a fresh bootstrap (**chooser + text box**, matching the old row) and once
+immediately afterwards with `state.json` now present (**completely clean — no chooser, no text
+box, no Notes launch**). Same menu item, same build, same device, differing only in whether the
+run wrote state.
+
+That removes the last ambiguity in the characterisation: it is **not** "Status", **not** first
+run, and **not** the Note being absent. It tracks **whether the run reaches
+`manual_note_refresh()`'s `appendnote`** — exactly as the final characterisation says. The
+localisation step it asks for (trace where `Control Room Note` is set relative to
+`manual_note_refresh()`) is unchanged and still needs no device.
+
+**Both `appendnote` parameters were re-checked in the shipped artifact and are well-formed** —
+`entity` a proper variable `WFTextTokenAttachment`, `text` a proper `WFTextTokenString` with its
+single attachment at `{114, 1}`. So this remains a runtime **binding/resolution** failure and is
+**not** one of the nine parameter-defect axes. Do not re-open it as an envelope defect.
+
+### Save File prompt — the per-action-instance finding holds, plus the payload-shape detail
+
+Three **distinct** Save File prompts were raised during ordinary first-use, each after
+`Always Allow` had already been granted for the previous one:
+
+1. *"…to save **1 dictionary** to a file?"* — first automated OPEN
+2. *"…to save **2 dictionaries** to a file?"* — first automated CLOSE
+3. *"…to save **1 dictionary and 1 number** to a file?"* — first Silence (Circle 3)
+
+Consistent with the confirmed per-action-instance scoping already recorded above, and it adds a
+detail worth having when writing the fix: **the prompt's wording is derived from the payload
+shape**, so the three prompts are visibly different to the user and read as three unrelated
+demands rather than one repeated one. A separate **notification** permission dialog also fired on
+the first CLOSE. All of these land **on top of the tracked app, mid-intervention**, in the first
+few minutes of a new install.
+
+Nothing here changes the recommended fix (funnel every state write through a **single shared Save
+File action** in `save_state()`); it strengthens the case for it, since one grant would collapse
+all three of the above into one.

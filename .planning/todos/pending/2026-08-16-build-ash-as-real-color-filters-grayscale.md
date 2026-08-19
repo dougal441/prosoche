@@ -111,3 +111,19 @@ close.
   declares a `state` **response** parameter. If it is consumable as a magic variable, Ash
   could detect and preserve a pre-existing filter instead of requiring opt-out — an
   enhancement to §21 compliance, not a gate on this work.
+
+## Device observation, 2026-08-18 — Circle 2 fires but the screen does not grey
+
+First time Ash has run on hardware in this project. On the shipped Core build `873fa3db…`,
+sequence `Classic` (Ash = Circle 2), a real OPEN reaching Circle 2 displayed the alert
+**"Black and White — One breath away from the screen before you go on."** and the screen
+**stayed in full colour** — the tracked app's red chrome was unchanged behind the alert.
+
+So the Circle **dispatches** correctly and its copy renders; what does not happen is any actual
+colour change. That is consistent with this todo's whole premise (`CAP-10`: no grayscale toggle
+is exposed to Shortcuts on iOS) and with the primitive currently being alert-only.
+
+Recorded in passing during phase 4/6/9 UAT and **not investigated** — no attempt was made to
+determine whether a Color Filters action was reached, skipped or absent on that path. Treat it as
+a starting observation for this todo, not as a diagnosis. Evidence:
+`.planning/debug/device-state/README.md`, finding F-22.
