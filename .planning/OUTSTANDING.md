@@ -28,6 +28,17 @@ Where they landed: `04-UAT.md`, `06-UAT.md` and `16-UAT.md` (all now `status: pa
 full evidence in `.planning/debug/device-state/README.md` (23 findings, five preserved state
 files).
 
+**⚠ And then Phase 15 superseded that build too, before this work merged.** Phase 15 rebuilt and
+re-signed both forks and bumped `schema_version` 4 → 5, so the `873fa3db…` artifact tested above
+is no longer what ships and this file's caveat now applies to the newer session as well. Most of
+the findings are generator-level or are iOS runtime semantics and survive any rebuild; the one
+that genuinely needs re-running is the **positive** result — the volume capture/restore proof —
+because a proof should not be inherited across a re-sign. The provenance block at the top of
+`.planning/debug/device-state/README.md` sets out which is which.
+
+**The re-check is now trivial, though:** `schema_version` alone distinguishes the two builds
+(4 vs 5), so the fingerprint technique below no longer even needs the `settings_snapshot` shape.
+
 **Of the two open blockers this file names:**
 
 - **Control Room Note resolution — RE-CONFIRMED on `873fa3db`.** It did not disappear in the

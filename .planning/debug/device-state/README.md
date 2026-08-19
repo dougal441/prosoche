@@ -1,3 +1,47 @@
+# ⚠ PROVENANCE — the build tested here was superseded by Phase 15 before this branch merged
+
+**Read this before citing any finding below as "the shipped build".**
+
+Everything in this document was measured against **Core `873fa3db…9f10`, 231,148 bytes,
+`schema_version: 4`** — the shipped artifact when the session ran, hash-matched to `16-UAT.md`'s
+header beforehand. While this branch was open, **Phase 15 landed on `main` and rebuilt and
+re-signed both forks**, and bumped **`schema_version` 4 → 5**. Both `.shortcut` blobs on `main`
+differ from the ones tested here.
+
+So the same caveat `OUTSTANDING.md` applies to the 2026-08-17/18 session now applies to this one:
+**no finding here may be promoted to "verified on the current shipped build" without a re-run.**
+
+**What survives a rebuild regardless, and why.** Most of this document is not build-specific:
+
+- **F-4** (dotted write → flat key; dotted read prefers it) and **F-20** (one-item list collapses
+  to a bare item) are **iOS runtime semantics**. No PROSOCHĒ build can change them.
+- **F-14**'s rung-3 ceiling — `Current Brightness` reads `0` over Mirroring — is a property of
+  the host and the device, not of the artifact.
+- **F-2** (`recent_contracts` never written), **F-5** (timezone-naive epoch anchor), **F-18**
+  (`enabled_exits()` filters nothing), **F-15** (Note entity resolution) and **F-16** (per-action
+  Save File grants) are all **generator-level**: they live in `tools/build_state_engine.py` in
+  code Phase 15 did not touch, and would have to be deliberately fixed to disappear.
+
+**What genuinely needs re-checking against the new artifact:** the *positive* result. **F-13**'s
+volume capture → apply → restore proof is a statement about a specific signed artifact behaving
+correctly. Phase 15 did not touch `silence()` or the restore path, so it very probably holds —
+but a proof is exactly the kind of claim that should not be inherited across a re-sign. Re-run
+`16-UAT.md` Tests 2, 4 and 11 on the new build; it is a ten-minute check.
+
+**One incidental confirmation, worth having.** The fresh bootstrap in this session wrote
+`"voice_enabled": true` — a **boolean**. Phase 15 (plan 15-03) normalised that seed to numeric
+and bumped the schema for it. This document therefore contains a device observation of the exact
+pre-fix state that change was written to correct.
+
+**And the schema bump helpfully resolves the cleanup this document owes.** The fixture edits left
+in the device's `state.json` (see *Cleanup owed* at the end) were written under `schema_version:
+4`. The new build's state load requires the stored version to match its own, so the first run of
+a Phase 15 build **rebuilds the file from the bootstrap template** and discards the synthetic
+values automatically. The scratch `Show Content` probe shortcut is still there and still needs
+deleting by hand.
+
+---
+
 # Pre-install device `state.json` forensics — 2026-08-18
 
 **Artifact:** `state-2026-08-18T1931-stale-preinstall.json`, 4338 bytes, recovered
