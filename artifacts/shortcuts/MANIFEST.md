@@ -1,5 +1,27 @@
 # Shortcut Distribution Manifest
 
+
+**MERGE REBUILD (2026-08-19). THE TABLE BELOW NAMES THIS BUILD — it is neither the phase-14
+block's artifact nor the phase-15 block's, but the first build carrying BOTH.** Phase 14 was
+developed on a branch forked before phase 15 landed. Merging it regenerated both forks from the
+merged generator, so the shipped artifact now carries phase 14's 15 Color Filters sites per fork
+(11 on + 4 unconditional off) **and** phase 15's post-split `mirror()`/`voice()` shape with 11
+`speaktext` sites. Neither parent's digests describe it and both are recorded as superseded below.
+
+**Why the Core source SHRANK from the phase-14 branch's 2915855 bytes to 2832215.** That is
+phase 15's work, not a loss: splitting `mirror_and_voice()` removed 11 `speaktext` sites and
+their surrounding gates (22 → 11), while phase 14 added 15 Color Filters actions. The merged
+artifact is larger than phase 15's parent and smaller than phase 14's, which is the expected
+direction. Verified action-for-action against both parents before signing; all 14 `docs/*.py`
+checkers pass on the merged build, including phase 15's `verify_voice_gates()` and phase 14's
+`gate_a_residue_check.py`.
+
+**The Control Room Note disclosure was re-applied by hand during the merge.** The Note body is a
+PRESERVED LITERAL inside the artifact, not a generator string, so regenerating from phase 15's
+XML did not restore phase 14's Color Filters disclosure. It was re-applied through
+`tools/plist_text_edit.py`'s guarded round trip and offsets were re-verified in both forks.
+Confirmed present in both decrypted signed containers.
+
 **PHASE 14 RE-SIGN (2026-08-19, plan 14-03). THIS BLOCK OWNS THE TABLE'S SIX ROWS; every block
 below it describes a build the table no longer names.** All six rows were recomputed from disk in
 one pass — both sources, both new dated archives under `2026-08-19/`, and both signed containers —
@@ -57,6 +79,71 @@ migraine or low vision — has their **own** setting switched off by the restore
 detection and none is built. What ships is the `safety.ash_managed_color_filters` kill switch and a
 plain-language disclosure in the Control Room Note. The undone half is
 `.planning/todos/pending/2026-08-19-ash-void-circle-when-user-already-uses-grayscale.md`.
+
+**PHASE 15 — the Voice primitive, re-signed (2026-08-18, plan 15-05). Both forks moved; this
+block's six hash/size rows below supersede every row in every block that follows.** Everything
+below this block is retained as its own rebuild's record, per this file's own convention, and
+is superseded here wherever the two conflict.
+
+**What changed, all four waves in one rebuild.** Plan 15-01 split the interim
+`mirror_and_voice()` into `mirror()` (Circle 7, shows only) and `voice()` (Circle 8, shows and
+speaks once, consent-gated), retargeted `primitive_dispatch()`'s tuple, and added
+`verify_speaktext_placement()`. Plan 15-03 normalised `voice_enabled` to the numbers `1`/`0` at
+every writer and bumped `schema_version` **4 → 5**. Plan 15-04 added `verify_voice_gates()`
+(every `speaktext` site enclosed by both the consent gate and the once-per-run gate),
+`verify_voice_path_volume_silence()` (zero volume writes inside the Circle-8 branch span), and a
+fifth `docs/sequence_dispatch_check.py` assertion that no two distinct sequence-entry names may
+resolve to action-equal dispatch bodies — the general form of the defect that let `Mirror` and
+`Loud Mirror` dispatch the identical function for four phases. Plan 15-05 (this rebuild) changed
+no code: it re-ran the provenance-gated builders, confirmed both forks reproduce byte-identically
+(`git status --short -- src/` empty after the rebuild — the working tree already carried waves
+1–3's committed state), validated gate A clean on both, and re-signed.
+
+**Measured from the decrypted payload of each signed artifact, not from `src/`:** 11
+`is.workflow.actions.speaktext` sites (was 22 at the phase-15 baseline), 15
+`is.workflow.actions.setvolume` sites (unchanged), `schema_version` **5** (was 4) in the
+bootstrap template, on both forks. Action totals: Core 4128, Aware 4262.
+
+**CIRC-08's device status, stated plainly and in the same place as the claims it qualifies: this
+build is structurally proven and behaviourally UNPROVEN.** Plan 15-02's rung-2 simulator probe
+(spike 011) did **not** discriminate the inherited axis-4 unfilled-required-picker defect —
+verdict `not discriminated at rung 2`, routed to Branch B (no generator fix attempted, no
+identifier named). The Mirror primitive that both `mirror()` and `voice()` are built on carries
+a **device-reproduced** failure (`.planning/todos/pending/2026-08-18-mirror-primitive-unfilled-picker.md`,
+reproduced three times across two independent installs, proven to follow the primitive rather
+than the Circle index) that this phase did not close. **Circle 8 is expected to raise "Please
+choose a value for each parameter in this action." on a phone**, exactly as Circle 7 does today.
+Nothing in this rebuild's green gate A, green guards, or clean rung-2 bisection should be read as
+evidence otherwise.
+
+**This signed build is deliberately NOT the one installed on the developer's iPhone.** The last
+device session (2026-08-17/18) ran against Core `b07497ba1a66506aaaa9c48134f463ceefeac7f4a656e86dad48b0a76414ac5b`
+(233802 bytes, the phase-13 CR-01 signing) — several rebuilds behind this one (Phase 16, the
+Phase 11 gap-closure waves, and now Phase 15 all post-date it). No install has happened since.
+Per plan 15-03's recorded sequencing constraint: **build and install this Phase-15 signed build
+BEFORE the next Pressure-accumulation UAT session, never after** — the `schema_version` 4→5 bump
+wipes `heat`/`gravity`/`pressure`/every rolling window/`exit_events`/`exit_stats[*].samples` on
+first run, and re-installing a `.shortcut` alone does **not** trigger that wipe; only the schema
+bump does. Doing the bump after that session would throw it away and force it to be repeated.
+
+**SUPERSEDED 2026-08-19 by the merge-rebuild block at the top of this file — these six values
+are no longer a live table**, converted to prose here so `docs/manifest_check.py` (which scans
+every pipe-delimited row in the document) asserts only the current build's rows. Retained as the
+record of what plan 15-05 actually built and signed, which is the last build carrying phase 15
+WITHOUT phase 14's Color Filters: Core source/archive `2780563` bytes
+`4d761994ec14c7d643aceb98a2693e18f988cc9944c37cd55cea515060eb9693`, Core signed `225345` bytes
+`a5b2976adb88f9ac9db8d4ded298634cf6afd04e84a4a65cd0218b028db8af34`, Aware source/archive
+`2852646` bytes `edaf67fb6dd73b3d0bbbc14af51ab18d9fbb69b88bafd7105c69b9c6217df96d`, Aware signed
+`231675` bytes `8a20813efe9c3211a21425d77bfb723e15a686e97557c877196b266b150834c8`.
+
+**NOTHING IN THIS BLOCK IS A DEVICE CLAIM.** Every result above is rung 1, structural, or (for
+the axis-4 verdict) rung 2 with its ceiling stated in `.planning/spikes/011-mirror-primitive-picker-discriminator/FINDINGS.md`.
+Voice has never been heard on a phone; the Mirror primitive it is built on has never completed a
+device run without the axis-4 error. Read `docs/BUILD-NOTES.md` §36 and
+`.planning/phases/15-circle-8-the-voice-primitive/15-UAT.md` before distributing or relying on
+this build.
+
+---
 
 **PHASE 11 GAP-CLOSURE, wave 10 (2026-08-18, plan 11-10) — NO ARTIFACT MOVED, and this block
 adds no hash row.** The table's six hash/size rows below remain plan 11-09's and are correct
@@ -345,21 +432,34 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Core source | `src/PROSOCHE-Dumb.xml` | 2915855 | `e15ae8bc5a4da5a93141be620ac70000bf4aa1a896a9980939b8b4002c198d28` |
-| Core archive | `artifacts/shortcuts/2026-08-19/PROSOCHĒ — Nine Circles — Core-113713.xml` | 2915855 | `e15ae8bc5a4da5a93141be620ac70000bf4aa1a896a9980939b8b4002c198d28` |
-| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 235369 | `c359bbe2f801f899ac21237000d589df5be9e7e575a825306c5333055a76658e` |
-| Aware source | `src/PROSOCHE-Sentient.xml` | 2987938 | `bcb2b37e97d563d3e3a407a1a4c6a75777101606000cff8990b2049aa7fe93cb` |
-| Aware archive | `artifacts/shortcuts/2026-08-19/PROSOCHĒ — Nine Circles — Aware-113713.xml` | 2987938 | `bcb2b37e97d563d3e3a407a1a4c6a75777101606000cff8990b2049aa7fe93cb` |
-| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 241805 | `bd269b0cd3ae496811ec4482ab965cdb0288f2ec127d9d7350c344d36ec575d2` |
+| Core source | `src/PROSOCHE-Dumb.xml` | 2832215 | `7c841ea807b4618c69a860b514f54b3ae2715373367a880212d07a356de9d504` |
+| Core archive | `artifacts/shortcuts/2026-08-19/PROSOCHĒ — Nine Circles — Core-122717.xml` | 2832215 | `7c841ea807b4618c69a860b514f54b3ae2715373367a880212d07a356de9d504` |
+| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 229338 | `8f78c7a4cbf9f4393d89accda0764077a28024f2cbafa78286a2888f354497de` |
+| Aware source | `src/PROSOCHE-Sentient.xml` | 2904298 | `459e22e3ecd84f9e9c3340513d7b8066dd37c63ff2c0bde6647082f2ce678bc2` |
+| Aware archive | `artifacts/shortcuts/2026-08-19/PROSOCHĒ — Nine Circles — Aware-122728.xml` | 2904298 | `459e22e3ecd84f9e9c3340513d7b8066dd37c63ff2c0bde6647082f2ce678bc2` |
+| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 235896 | `434a9bdf5aa9c70525561b347b14d09b1c62cc96efcc34274428522ad44378d6` |
 
-**Superseded previous rows, retained so a reader can identify a build already on a device:**
-**phase 16 (2026-08-18, plan 16-06 / 11-10)** Core source & archive `2864203` bytes `34c2ba05…`,
-Core signed `231148` bytes `873fa3db…`, Aware source & archive `2936286` bytes `c52edd93…`,
-Aware signed `238095` bytes `4b7c2cfb…`.
+**Superseded previous rows, retained so a reader can identify a build already on a device.**
+Converted to prose rather than deleted, because `docs/manifest_check.py` scans every
+pipe-delimited row in this document and asserts only the live build's:
+
+- **Phase 14 pre-merge (2026-08-19, plan 14-03)** — Core source & archive `2915855` bytes
+  `e15ae8bc…`, Core signed `235369` bytes `c359bbe2…`, Aware source & archive `2987938` bytes
+  `bcb2b37e…`, Aware signed `241805` bytes `bd269b0c…`. Built on the phase-14 branch **before**
+  it was merged with phase 15, so it carries Color Filters but still the pre-split
+  `mirror_and_voice()` shape with 22 `speaktext` sites. Never shipped to a device.
+- **Phase 15 (2026-08-18, plan 15-05)** — the rows this block supersedes.
+- **Phase 16 (2026-08-18, plan 16-06 / 11-10)** — Core source & archive `2864203` bytes
+  `34c2ba05968b0e35c723892404c5f4d3a334d51c3f14263f7d6809997e668b02`, Core signed `231148` bytes
+  `873fa3dbda7b1f3440bfc76997c2962198ddec2052096833787547b52f129f10`, Aware source & archive
+  `2936286` bytes `c52edd930f0c5fd1c81160fb584675d91a5c7b4d315dfe255f5325d3d35c0203`, Aware signed
+  `238095` bytes `4b7c2cfbddf0dccf47ef8e34209378faf14ca2d760dc089013d3b033ebd2ada0`.
 
 **Re-archived and re-signed by the phase 13 CODE REVIEW, finding CR-01 (2026-08-17).** This is
-the record for the six rows in the table above; the plan-04 paragraph immediately below is its
-own re-sign's record and is **SUPERSEDED** by this one wherever the two conflict. Plan 04's
+the record for the six values in the paragraph immediately above (now prose, formerly this
+file's live table — see the plan 15-05 supersession note there); the plan-04 paragraph
+immediately below is its own re-sign's record and is **SUPERSEDED** by this one wherever the two
+conflict. Plan 04's
 `_list_row()` discriminated on Python type (`isinstance(item, str)`), so every non-`str` got the
 `{WFItemType, WFValue}` wrapper — including two Mirror templates that carry no `￼` placeholder
 and therefore have an **empty** `attachmentsByRange`. Those are literal rows by content, and

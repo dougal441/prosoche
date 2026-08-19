@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 14
-current_phase_name: Ash as real Color Filters grayscale
+current_phase: 15
+current_phase_name: Circle 8 — the Voice primitive
 status: verification-deferred
-stopped_at: Phase 14 complete and merged — Circle 2 now emits real Color Filters grayscale with an unconditional off leg at all four recovery paths, both forks re-signed, 14/14 checkers green, 27/27 structural must-haves verified against the DECRYPTED signed artifacts. Deferred on DIST-03 by user decision 2026-08-19: iPhone paired but tunnelState unavailable, transport none. Next highest-value step is unchanged and now cheaper — one device sitting running 14-UAT.md beside 16-UAT.md proves all three environmental primitives at once, starting with force-quit-then-Emergency-Restore.
-last_updated: "2026-08-19T02:30:00.000Z"
+stopped_at: Phases 14 and 15 are both executed, merged and verification-deferred. Phase 14 (Ash as real Color Filters grayscale) merged into main on 2026-08-19 — Circle 2 emits 15 AX Color Filters actions per fork (11 on + 4 unconditional off at every recovery path), no snapshot by design, and gate A's permanent residue is now enforced mechanically by docs/gate_a_residue_check.py. Phase 15 (the Voice primitive) shipped Circle 8. Neither has run on a phone. Next highest-value step, unchanged and now cheaper: one device sitting running 14-UAT.md beside 16-UAT.md proves all three environmental primitives at once, starting with force-quit-then-Emergency-Restore; 15-UAT.md is cold-runnable in the same session, subject to the schema_version 4→5 install-ordering constraint.
+last_updated: "2026-08-19T03:10:00.000Z"
 last_activity: 2026-08-19
-last_activity_desc: Phase 14 executed — Ash ships as a real Color Filters grayscale toggle (15 AX sites/fork, 11 on + 4 unconditional off, no snapshot); gate A residue formalised mechanically; verification 27/34 human_needed, deferred on DIST-03
+last_activity_desc: Phase 14 merged to main — regenerated both forks from the merged generator so the artifact carries Color Filters (phase 14) and Voice (phase 15) together; Note disclosure re-applied through the guarded round trip; both forks re-signed
 progress:
   total_phases: 24
   completed_phases: 14
-  total_plans: 55
-  completed_plans: 51
+  total_plans: 60
+  completed_plans: 60
 ---
 
 # Project State
@@ -23,11 +23,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** When a user automatically reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual choice — and the strength of that interruption adapts to their own recent behaviour.
-**Current focus:** Phase 11 — Build Addendum 01 — Dante Circle names and the ten-primitive roster
+**Current focus:** Phase 15 — Circle 8 — the Voice primitive
 
 ## Current Position
 
-Phase: 11 (Build Addendum 01 — Dante Circle names and the ten-primitive roster) — EXECUTING
+Phase: 15 (Circle 8 — the Voice primitive) — EXECUTING
 Plans: 4/4 complete; verifier 25/27, 0 failed; the 2 outstanding are device-gated and abstained
 
 **Phase 13 research rewrote the phase.** Donor 5 was decrypted for the first time and
@@ -105,7 +105,7 @@ target**, so an observation on it is same-major-version evidence rather than an 
 Personal Automations are user-created on the device regardless, so DIST-03 would gate this work
 even with a live tunnel.
 
-Last activity: 2026-08-18 — Phase 11 execution started
+Last activity: 2026-08-18 — Phase 15 execution started
 
 Progress: [██████████] 100%
 
@@ -321,6 +321,7 @@ Items acknowledged and carried forward from previous milestone close:
 | 13 | verification_deferred_human | /gsd-verify-work 13 |
 | 16 | verification_deferred_human | /gsd-verify-work 16 |
 | 14 | verification_deferred_human | /gsd-verify-work 14 |
+| 15 | verification_deferred_human | /gsd-verify-work 15 |
 
 **Phase 14 (added 2026-08-19).** Executed clean — 3 plans, 9 tasks, 3 waves, all merged, both
 forks re-signed. Verification scored **27/34, `human_needed`**: 27/27 structural must-haves
@@ -349,6 +350,39 @@ by design, that path is the only thing between a user and permanent greyscale.
 setting switched off. There is no read-back for any accessibility setting on iOS. Backlogged at
 `.planning/todos/pending/2026-08-19-ash-void-circle-when-user-already-uses-grayscale.md`; the
 `safety.ash_managed_color_filters` kill switch is the only recourse until that lands.
+
+**Phase 15 (added 2026-08-19).** All five plans executed; verifier scored **15/15 structural
+must-haves, `human_needed`**, with zero structural gaps found. It is not `passed` for one honest
+reason: **nothing in phase 15 has run on a phone.** Plan 15-02's rung-2 simulator probe (spike 011)
+returned `not discriminated at rung 2` — none of `list` / `getitemfromlist` / `speaktext`
+reproduced the device-observed axis-4 unfilled-picker defect — so it was correctly routed to D-04
+Branch B with no speculative fix, and **CIRC-08 remains structurally proven and behaviourally
+UNPROVEN**. `MANIFEST.md`, `docs/BUILD-NOTES.md` §36 and `15-UAT.md` each state this plainly and
+independently. `15-UAT.md` is cold-runnable and digest-pinned to the shipped artifacts: 4 tests,
+0 run. **DIST-03 is lifted**, so these are runnable in the next Mirroring session — expect Tests
+1–3 to hit the known axis-4 error, which the instrument warns about at its head.
+
+**Sequencing constraint from plan 15-03, carry this into the next device session:** install the
+Phase 15 build **BEFORE** the Pressure-accumulation UAT, never after. `schema_version` moved 4 → 5,
+and the first run of the new build rebuilds `state.json`, wiping `heat`, `gravity`, `pressure`, the
+rolling windows, `exit_events` and every `exit_stats[*].samples`. Doing the accumulation first
+throws that session away. A `.shortcut` re-install alone does **not** wipe `state.json` — only the
+bump does.
+
+**DIST-03 — the two entries above disagree, and the later measurement wins.** Phase 15's note
+(written 2026-08-19) says DIST-03 is lifted; Phase 14 re-measured it at execution time the same
+day and found iPhone `dougal` (`iPhone16,1`) `pairingState: paired` but **`tunnelState:
+unavailable`, `transportType: none`** — a known device with no live tunnel and no session to
+drive. Both statements were true when written: Mirroring was live during the 2026-08-17/18
+session and the tunnel was down when Phase 14 ran. **Branch on `tunnelState` read from `xcrun
+devicectl list devices --json-output`, never on the `State` column or on either of these notes.**
+The practical consequence is unchanged for both phases: the device work is runnable the moment a
+session is up, and neither phase's UAT has been run.
+
+**Run 15-UAT.md and 14-UAT.md in the same sitting, and mind plan 15-03's ordering constraint:**
+install the Phase 15 build **before** any Pressure-accumulation UAT, because `schema_version`
+4 → 5 makes the first run rebuild `state.json` and wipe every accumulated counter. Phase 14
+introduces no schema change and adds no ordering constraint of its own.
 
 **Phase 11 (added 2026-08-18).** Gap-closure waves 7-10 executed, code-reviewed and fix-passed
 twice; re-verification scored **18/21, `human_needed`**, with all five original gaps CLOSED and each

@@ -1,0 +1,207 @@
+{
+  "last_open_at": 1787092643,
+  "ai_enabled": false,
+  "circle": 7,
+  "sequence": "Classic",
+  "exit_selection_counter": 2,
+  "pending_exit.type": "Coordinate",
+  "behavioural_day": "2026-08-18",
+  "exit_events": [
+    {
+      "app": "tracked",
+      "timestamp": 1787092643,
+      "type": "Coordinate",
+      "heat": 15,
+      "circle": 7
+    },
+    {
+      "app": "tracked",
+      "timestamp": 1787092241,
+      "type": "Capture",
+      "heat": 12,
+      "circle": 6
+    }
+  ],
+  "last_app": "tracked",
+  "profile": "Purgatory",
+  "schema_version": 4,
+  "active_session.started_at": 1787092643,
+  "gravity": 1.6666666666666667,
+  "settings_snapshot": {
+    "volume": {
+      "original_value": "null"
+    },
+    "brightness": {
+      "original_value": "null"
+    }
+  },
+  "exit_stats.Capture.sum_return_seconds": 253,
+  "active_session.intention": "null",
+  "exit_stats": {
+    "Close": {
+      "count": 0,
+      "sum_return_seconds": 0,
+      "samples": []
+    },
+    "Consult": {
+      "count": 0,
+      "sum_return_seconds": 0,
+      "samples": []
+    },
+    "Capture": {
+      "count": 0,
+      "sum_return_seconds": 0,
+      "samples": []
+    },
+    "Create": {
+      "count": 0,
+      "sum_return_seconds": 0,
+      "samples": []
+    },
+    "Connect": {
+      "count": 0,
+      "sum_return_seconds": 0,
+      "samples": []
+    },
+    "Coordinate": {
+      "count": 0,
+      "sum_return_seconds": 0,
+      "samples": []
+    }
+  },
+  "opens_today": 10,
+  "exit_stats.Capture.samples": 253,
+  "exit_stats.Capture.count": 1,
+  "panic_escape_enabled": 1,
+  "recent_sessions": [
+    {
+      "declared_duration_seconds": 0,
+      "respected": null,
+      "started_at": 1787092643,
+      "id": "session-1787092643-137826186",
+      "overrun_seconds": null,
+      "ended_at": 1787092736,
+      "duration_seconds": 93
+    },
+    {
+      "declared_duration_seconds": 0,
+      "respected": null,
+      "started_at": 1787092494,
+      "id": "session-1787092494-1793005602",
+      "overrun_seconds": null,
+      "ended_at": 1787092515,
+      "duration_seconds": 21
+    },
+    {
+      "declared_duration_seconds": 0,
+      "respected": null,
+      "started_at": 1787092241,
+      "id": "session-1787092241-1532948665",
+      "overrun_seconds": null,
+      "ended_at": 1787092415,
+      "duration_seconds": 174
+    },
+    {
+      "declared_duration_seconds": 0,
+      "respected": null,
+      "started_at": 1787091246,
+      "id": "session-1787091246-1285216378",
+      "overrun_seconds": null,
+      "ended_at": 1787091345,
+      "duration_seconds": 99
+    },
+    {
+      "declared_duration_seconds": 0,
+      "respected": null,
+      "started_at": 1787091166,
+      "id": "session-1787091166-2118921755",
+      "overrun_seconds": null,
+      "ended_at": 1787091233,
+      "duration_seconds": 67
+    },
+    {
+      "declared_duration_seconds": 0,
+      "respected": null,
+      "started_at": 1787091100,
+      "id": "session-1787091100-340273326",
+      "overrun_seconds": null,
+      "ended_at": 1787091111,
+      "duration_seconds": 11
+    },
+    {
+      "declared_duration_seconds": 0,
+      "respected": null,
+      "started_at": 1787091064,
+      "id": "session-1787091064-63699680",
+      "overrun_seconds": null,
+      "ended_at": 1787091084,
+      "duration_seconds": 20
+    },
+    {
+      "declared_duration_seconds": 0,
+      "respected": null,
+      "started_at": 1787090948,
+      "id": "session-1787090948-2125380414",
+      "overrun_seconds": null,
+      "ended_at": 1787090952,
+      "duration_seconds": 4
+    },
+    {
+      "declared_duration_seconds": 0,
+      "respected": null,
+      "started_at": 1787090833,
+      "id": "session-1787090833-240629985",
+      "overrun_seconds": null,
+      "ended_at": 1787090896,
+      "duration_seconds": 63
+    },
+    {
+      "declared_duration_seconds": 0,
+      "respected": null,
+      "started_at": 1787090685,
+      "id": "session-1787090685-1344174073",
+      "overrun_seconds": null,
+      "ended_at": 1787090747,
+      "duration_seconds": 62
+    }
+  ],
+  "pressure": 16.66666666666667,
+  "pending_exit.timestamp": 1787092643,
+  "pending_exit": {
+    "type": "null",
+    "timestamp": "null"
+  },
+  "active_session": {
+    "intention": "null",
+    "id": "null",
+    "started_at": "null",
+    "declared_duration_seconds": "null"
+  },
+  "last_close_at": 1787092736,
+  "profile_snapshot": {
+    "goal": "",
+    "enabled_exits": [
+      "Capture",
+      "Coordinate",
+      "Create",
+      "Connect",
+      "Consult",
+      "Close"
+    ],
+    "create_target_url": "null",
+    "deliberate_leisure_definition": "",
+    "phone_purpose": "",
+    "reclaim_for": "",
+    "note_content_hash": null,
+    "synced_at": "1787090282"
+  },
+  "active_session.declared_duration_seconds": 0,
+  "voice_enabled": true,
+  "active_session.id": "null",
+  "recent_contracts": [],
+  "settings_snapshot.volume.original_value": "null",
+  "heat": 15,
+  "last_model_message": null,
+  "fork": "Core",
+  "cooldown_until": "null"
+}

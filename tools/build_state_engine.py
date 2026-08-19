@@ -1070,27 +1070,77 @@ def mirror_templates(templates):
                              for index, part in enumerate(template.split("￼"))]) for template in templates)
 
 
-def mirror_and_voice():
+def _mirror_body():
+    """Select one of 30 fact-gated Mirror templates into the named variable "Mirror Text".
+
+    Shared by mirror() (Circle 7) and voice() (Circle 8) so the same 30 templates back both
+    Circles (D-03) -- the escalation between them is the modality, never the copy.  This is
+    the ONLY consumer of mirror_text(), which is the only consumer of MIRROR_BASELINES /
+    MIRROR_SUCCESSES / MIRROR_LAPSES, so the 30-template surface stays single-sourced for
+    DUMB-02/DUMB-03 and docs/phase7_self_check.py.  Emits no leading comment and no alert --
+    both callers own their own comment and their own alert() call.
+    """
     baseline = mirror_templates(MIRROR_BASELINES)
     success = mirror_templates(MIRROR_SUCCESSES)
     lapse = mirror_templates(MIRROR_LAPSES)
-    a = [comment("""Mirror selects from 30 fact-gated, local templates:
-- Baselines use only this OPEN's Circle, Pressure, and Heat.
-- Success and lapse wording runs only when the recorded previous contract says so.
-- No model, interpretation, or empty telemetry path exists.""")]
     # Baseline is always available: Circle, Pressure, and Heat are prepared in this OPEN run.
-    a += mirror_text(baseline, "Mirror Text")
+    a = mirror_text(baseline, "Mirror Text")
     respected_g, respected_if = if_block("Previous Respected", 4, string="true")
     lapsed_g, lapsed_if = if_block("Previous Respected", 4, string="false")
     a += [respected_if] + mirror_text(success, "Mirror Text") + [otherwise(respected_g), lapsed_if]
-    a += mirror_text(lapse, "Mirror Text") + [otherwise(lapsed_g), action("is.workflow.actions.nothing"), end_if(lapsed_g), end_if(respected_g),
-          alert("Mirror", variable("Mirror Text"))]
+    a += mirror_text(lapse, "Mirror Text") + [otherwise(lapsed_g), action("is.workflow.actions.nothing"),
+          end_if(lapsed_g), end_if(respected_g)]
+    return a
+
+
+def mirror():
+    """Circle 7 -- The Mirror.  Shows a fact-gated reflection and does NOT speak.
+
+    D-02: speech is removed from Circle 7 and moved to Circle 8's voice() -- this is what
+    makes Circle 8 an escalation at all and what satisfies CIRC-14 (a stronger Circle does
+    not necessarily replay every weaker Circle's prompt).  Visible behaviour change for
+    existing voice_enabled=1 users: Circle 7 goes quiet.  Accepted knowingly (D-02).
+    """
+    a = [comment("""Mirror selects from 30 fact-gated, local templates and shows them -- it does
+not speak:
+- Baselines use only this OPEN's Circle, Pressure, and Heat.
+- Success and lapse wording runs only when the recorded previous contract says so.
+- Speech moved to Circle 8's Voice (D-02); the Mirror never reads voice_enabled.
+- No model, interpretation, or empty telemetry path exists.""")]
+    a += _mirror_body()
+    a += [alert("Mirror", variable("Mirror Text"))]
+    return a
+
+
+def voice():
+    """Circle 8 -- The Voice.  Shows the same reflection as the Mirror, then speaks it once.
+
+    D-03: the same 30 fact-gated templates as Circle 7's Mirror -- the escalation is the
+    modality, not the words.  D-01: the alert is emitted BEFORE the consent gate, so a
+    voice_enabled=0 run still shows a Mirror-equivalent alert and only degrades the speech
+    arm to is.workflow.actions.nothing -- Circle 8 never becomes an empty Circle.  D-06: the
+    Spoken This Run guard is copied verbatim from the retired mirror_and_voice() -- no reset,
+    no second flag, no clear step -- because it already is CIRC-08's "at most once per run".
+    """
+    a = [comment("""The Voice shows the same reflection as the Mirror (Circle 7), then speaks it
+once:
+- Same 30 fact-gated templates as the Mirror -- the escalation is modality, not copy (D-03).
+- Speaks only with the user's import-time consent, voice_enabled > 0 (D-01).
+- Speaks at most once per run, guarded by Spoken This Run (D-06).
+- Writes no volume anywhere in this path: speaktext exposes no volume parameter, so "never
+  at unsafe levels" is satisfied by absence, not by a setting (CIRC-08 / SAFE-02).""")]
+    a += _mirror_body()
+    # Same title Circle 7 uses, deliberately (D-01): with voice off the two Circles are
+    # indistinguishable to the user -- a recorded, accepted cost, not an oversight.
+    a += [alert("Mirror", variable("Mirror Text"))]
     a += read_value("voice_enabled", variable("State"), "Voice Enabled")
     voice_g, voice_if = if_block("Voice Enabled", 2, number=0)
     spoken_g, spoken_if = if_block("Spoken This Run", 101)
     # DEV-03 closed: the ToolKit v78 catalog DOES define speaktext parameters, and its text
     # parameter is WFText (type str, name "Text").  WFInput is not among them, so the spoken
     # text was never being read.  str-typed, so it also takes the WFTextTokenString envelope.
+    # No WFSpeakTextWait/Rate/Pitch/Language/Voice: catalog-real but no donor shows how
+    # Shortcuts serializes any of them, so omitting them is the safest fallback (C-1).
     a += [voice_if, spoken_if, action("is.workflow.actions.speaktext", WFText=variable("Mirror Text"))]
     a += number(1, "Spoken This Run")
     a += [otherwise(spoken_g), action("is.workflow.actions.nothing"), end_if(spoken_g),
@@ -1126,17 +1176,16 @@ def primitive_dispatch(circle_name: str | None = None):
           set_var("Selected Primitive", output(entry_text_id, "Text"))]
     # The tuple carries the SHIPPED name, the function carries the INTERNAL name.  BD-06
     # Decision 3 renames the roster, but knock(), ash(), confession(), dimming(), exile(),
-    # mirror_and_voice() and ice_start() all keep their Python identifiers because
+    # mirror(), voice() and ice_start() all keep their Python identifiers because
     # docs/environmental_restore_check.py:49-60 imports generator functions BY NAME.
     #
-    # "Loud Mirror" (Circle 8 in all three sequences) reuses mirror_and_voice() as a
-    # DELIBERATE INTERIM, not as the designed behaviour.  It is here so the dispatch-coverage
-    # guard can be a hard gate from this commit onwards rather than waiting on a primitive
-    # that does not exist yet: mirror_and_voice() already carries the once-per-run and
-    # voice-enabled gates CIRC-08 requires.  PHASE 15 replaces it with the designed Voice
-    # primitive; until then Circle 8 is a real dispatch, not the designed one.
+    # "Mirror" (Circle 7) dispatches mirror() -- shows, does not speak.  "Loud Mirror"
+    # (Circle 8, in all three sequences) dispatches voice() -- shows the same reflection AND
+    # speaks it once, consent-gated.  PHASE 15 split the interim mirror_and_voice() both
+    # entries used to share into these two designed primitives; see mirror()'s and voice()'s
+    # own docstrings for D-01..D-06.
     #
-    # "Eject" (Circle 6 in all three sequences) is the SECOND DELIBERATE INTERIM, and in
+    # "Eject" (Circle 6 in all three sequences) is the DELIBERATE INTERIM, and in
     # Classic and Ambient only.  BD-06 gives that slot to `Redirect` there and to `Eject` in
     # BlackMirror; `Redirect` -- Exile routed INTO a deterministically selected exit rather
     # than straight to the Home Screen -- has no implementation, and a branch no sequence names
@@ -1151,7 +1200,7 @@ def primitive_dispatch(circle_name: str | None = None):
     # generator alone with no way to learn that this tuple entry is temporary.
     for name, implementation in (("Pause", knock), ("Black and White", ash), ("Silence", silence),
                                  ("Intention", confession), ("Dim", dimming), ("Eject", exile),
-                                 ("Mirror", mirror_and_voice), ("Loud Mirror", mirror_and_voice),
+                                 ("Mirror", mirror), ("Loud Mirror", voice),
                                  ("Frozen", ice_start)):
         # Condition 4 ("string is"), never 99 ("contains").  BD-06 Decision 5 abolished the
         # combined entries that were 99's only reason to exist, and under 99 the entry
@@ -2251,6 +2300,417 @@ def verify_dispatch_coverage(actions):
             "signature of a half-applied rename, where the tuple moved and the Config literal "
             "did not, and the matching orphan on the other side is the Circle that now "
             "dispatches nothing.  Name it in a sequence or stop emitting it")
+
+
+# Beside verify_dispatch_coverage() because both are statements about the dispatch surface,
+# and neither implies the other: that one asks whether every named sequence entry has a
+# receiving branch at all; this one asks whether two receivers that DO exist -- 'Mirror' and
+# 'Loud Mirror' -- actually differ in what they DO, not merely in name.
+def verify_speaktext_placement(actions):
+    """Fail the build if Circle 8 loses its speech, or Circle 7 regains it.
+
+    D-02 moved speech from Circle 7's mirror() to Circle 8's voice() specifically so the two
+    Circles would differ (CIRC-14).  A later pass that quietly retargets the dispatch tuple
+    back onto a non-speaking function, or re-adds a speaktext call to mirror(), produces a
+    structurally perfect plist that validate_shortcut.py, the ToolKit catalog and the
+    signed-artifact decrypt all see as fine -- exactly the failure mode that let Circle 8
+    dispatch mirror_and_voice() unnoticed for four phases.  Only a guard that inspects
+    PLACEMENT, not merely presence, can catch it.
+
+    Branches are located the same way verify_dispatch_coverage() does: mode-0 conditionals
+    whose WFInput variable is Selected Primitive.  Matching semantics are resolved PER SITE
+    from that site's own WFCondition, never from a hardcoded filter -- but unlike
+    verify_dispatch_coverage(), which is a general-purpose guard that must still classify a
+    condition-99 ("contains") branch as a recognised (if BD-06-violating) strategy for its
+    OWN purposes, this guard has nothing to do with "contains" at all: BD-06 Decision 5
+    abolished combined entries and the only strategy any 'Mirror'/'Loud Mirror' branch can
+    legitimately use post-abolition is condition 4 ("string is").  So this guard recognises
+    exactly one shape -- WFCondition == 4 against a plain string WFConditionalActionString --
+    and RAISES on anything else, including a resurrected condition-99 branch, rather than
+    special-casing it the way verify_dispatch_coverage() must.  Deliberately no equality test
+    against the literal 99 appears anywhere in this function: recognising exactly one shape
+    and raising on everything else achieves "never filter on a hardcoded code" without ever
+    naming the retired one.  Each branch's span is computed from enclosing_groups(actions)
+    over its own GroupingIdentifier -- structural, not index-based, so it survives a rebuild
+    that shifts every action index.
+
+    Five assertions, in this order, each with the failure it prevents:
+      (1) the resolved branch set is non-empty and contains at least one 'Mirror' branch and
+          at least one 'Loud Mirror' branch -- a guard that resolves nothing must fail, not
+          report a clean placement it never checked;
+      (2) the resolved is.workflow.actions.speaktext site set is non-empty -- zero speech
+          sites is a failure for the same reason zero surfaces is in
+          verify_panic_escape_isolation(): The Voice cannot speak on any device, and CIRC-08
+          is unsatisfiable by construction;
+      (3) every speech site is enclosed by a 'Loud Mirror' branch or a 'Mirror' branch -- a
+          site reachable from neither is orphaned relative to the dispatch surface entirely;
+      (4) exactly one speech site per 'Loud Mirror' branch span -- never zero (the Voice went
+          mute on that rendering), never two (the same utterance spoken twice in one run);
+      (5) zero speech sites enclosed by any 'Mirror' branch span -- the CIRC-14 clause: this
+          is what stops a later pass from quietly re-adding speech to Circle 7 and collapsing
+          the escalation D-02 removed it to create.
+
+    NEGATIVE CONTROL (project standard, plan 11-10), measured 2026-08-18 on this exact build,
+    both mutations reverted after the failure was observed:
+    (a) retargeting the 'Loud Mirror' tuple entry back onto mirror() removes voice()'s ONLY
+    caller, so is.workflow.actions.speaktext disappears from the artifact entirely -> assertion
+    (2) raises first, naming every resolved 'Loud Mirror' branch span as holding zero sites --
+    the vacuity check catches this mutation before per-branch counting (assertion 4) even runs,
+    which is a stronger and earlier catch of the same defect;
+    (b) appending a speaktext action to mirror()'s body adds a site enclosed by a 'Mirror'
+    branch span while every 'Loud Mirror' span is untouched -> assertion (5) raises, naming the
+    site and the 'Mirror' branch it was found inside.
+    """
+    branches = []
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("WFControlFlowMode") != 0:
+            continue
+        variable_name = (parameters.get("WFInput", {}).get("Variable", {})
+                         .get("Value", {}).get("VariableName"))
+        if variable_name != SELECTED_PRIMITIVE:
+            continue
+        code = parameters.get("WFCondition")
+        tested = parameters.get("WFConditionalActionString")
+        # Recognise exactly one shape -- condition 4 ("string is") against a plain literal --
+        # the only strategy BD-06 Decision 5 leaves any dispatch branch free to use.  Anything
+        # else RAISES; it is never excluded, so a resurrected combined-match branch cannot
+        # slip past this guard the way it slipped past dispatch for four phases.
+        if not (isinstance(tested, str) and code == 4):
+            raise SystemExit(
+                f"speaktext placement: dispatch branch at action {index} has unresolvable "
+                f"matching semantics (condition {code!r} against {tested!r}) -- guessing which "
+                "rule applies would let this guard report Circle 7/8's placement clean without "
+                "ever having checked it; see verify_dispatch_coverage() for the same rule")
+        branches.append((index, tested, parameters.get("GroupingIdentifier")))
+
+    if not branches:
+        raise SystemExit(
+            "speaktext placement: no dispatch branch resolves at all -- this guard would "
+            "report Circle 7 and Circle 8's speech placement as correct without having located "
+            "a single branch to check it against.  Zero resolved branches is a failure, not a "
+            "vacuous pass")
+
+    mirror_groups = {group for _, tested, group in branches if tested == "Mirror" and group}
+    loud_groups = {group for _, tested, group in branches if tested == "Loud Mirror" and group}
+    if not mirror_groups:
+        raise SystemExit(
+            "speaktext placement: no dispatch branch resolves to 'Mirror' -- assertion (5)'s "
+            "CIRC-14 clause could not be checked against anything, because Circle 7's actions "
+            "cannot be identified without knowing which branch is its own")
+    if not loud_groups:
+        raise SystemExit(
+            "speaktext placement: no dispatch branch resolves to 'Loud Mirror' -- Circle 8's "
+            "escalation could not be located, so this guard cannot tell whether The Voice can "
+            "speak on any device (CIRC-08)")
+
+    speech_sites = [index for index, item in enumerate(actions)
+                    if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.speaktext"]
+    if not speech_sites:
+        raise SystemExit(
+            "speaktext placement: zero is.workflow.actions.speaktext sites exist anywhere in "
+            "the artifact, including inside every resolved 'Loud Mirror' branch span -- The "
+            "Voice cannot speak on any device, which makes CIRC-08 unsatisfiable by "
+            "construction.  Zero sites is a failure for the same reason zero surfaces is in "
+            "verify_panic_escape_isolation(): a guard that reports clean because it resolved "
+            "nothing is worse than no guard.  Check that primitive_dispatch()'s tuple still "
+            "dispatches ('Loud Mirror', voice)")
+
+    enclosing = enclosing_groups(actions)
+
+    orphaned = [index for index in speech_sites
+                if not (set(enclosing[index]) & (loud_groups | mirror_groups))]
+    if orphaned:
+        raise SystemExit(
+            f"speaktext placement: {len(orphaned)} speaktext site(s) at action(s) {orphaned} "
+            "lie outside every 'Loud Mirror' branch AND every 'Mirror' branch -- an utterance "
+            "reachable from neither Circle's dispatch branch is not gated by the Circle-8 "
+            "dispatch at all, and could fire on a Circle the design never intended to speak")
+
+    per_loud_counts = {group: 0 for group in loud_groups}
+    for index in speech_sites:
+        for group in set(enclosing[index]) & loud_groups:
+            per_loud_counts[group] += 1
+
+    muted = sorted(group for group, count in per_loud_counts.items() if count == 0)
+    if muted:
+        raise SystemExit(
+            f"speaktext placement: {len(muted)} 'Loud Mirror' dispatch branch span(s) "
+            f"{muted} contain ZERO speaktext sites -- The Voice went mute on at least one "
+            "rendering of Circle 8, which satisfies CIRC-08's 'at most once per run' clause "
+            "by never speaking rather than by speaking exactly once.  Check that "
+            "primitive_dispatch()'s tuple still dispatches ('Loud Mirror', voice)")
+
+    doubled = sorted((group, count) for group, count in per_loud_counts.items() if count > 1)
+    if doubled:
+        raise SystemExit(
+            f"speaktext placement: {len(doubled)} 'Loud Mirror' dispatch branch span(s) hold "
+            f"MORE THAN ONE speaktext site {doubled} -- the same utterance would be spoken "
+            "twice in one run, violating CIRC-08's 'at most once per run' clause")
+
+    in_mirror = [index for index in speech_sites if set(enclosing[index]) & mirror_groups]
+    if in_mirror:
+        raise SystemExit(
+            f"speaktext placement: {len(in_mirror)} speaktext site(s) at action(s) {in_mirror} "
+            "lie inside a 'Mirror' dispatch branch (Circle 7) -- Circle 7 has regained speech, "
+            "which collapses the escalation D-02 removed it to create: CIRC-14 requires Circle "
+            "8 to differ from Circle 7, and a Mirror branch that speaks again makes it not")
+
+
+# The run-scoped Shortcuts variable D-06 keeps verbatim -- named here as a constant, not a
+# bare literal at the call site, so verify_voice_gates() and voice() cannot drift apart the
+# way the Panic Escape variable name once did.  Unlike VOICE_ENABLED_KEY this has no
+# state.json provenance to resolve BY -- it is never written to a dictionary, only to a
+# run-scoped Shortcuts variable that resets every run by construction -- so it is
+# legitimately a named literal rather than a provenance-resolved set.
+SPOKEN_THIS_RUN_VARIABLE = "Spoken This Run"
+
+
+# Beside verify_speaktext_placement() because both are statements about is.workflow.actions.
+# speaktext, and neither implies the other: that one asks whether speech lands in the RIGHT
+# BRANCH (Circle 8, never Circle 7); this one asks whether it sits behind the RIGHT TWO GATES
+# once it is there.  A speech site can be correctly placed inside a 'Loud Mirror' branch span
+# and still be reachable without consent -- e.g. hoisted above the consent conditional inside
+# voice() -- and placement alone cannot see that.
+def verify_voice_gates(actions):
+    """Fail the build if any speaktext site is reachable without BOTH required gates.
+
+    WHY THIS NEEDS A GUARD AT ALL.  A partially-enclosed speech site is invisible to
+    validate-shortcut, invisible to the ToolKit catalog, and invisible to a decrypt of the
+    signed container, because all three see a well-formed is.workflow.actions.speaktext
+    action sitting inside a well-formed is.workflow.actions.conditional -- the only thing
+    wrong is WHICH conditional encloses it, and only a structural control-flow walk
+    (enclosing_groups()) can see that.
+
+    Four assertions, each naming the failure it prevents:
+      (1) the resolved speech-site set (every is.workflow.actions.speaktext action) is
+          non-empty -- a guard inspecting zero sites would report every enclosure satisfied
+          without having tested anything;
+      (2) the resolved consent-variable set, from _voice_enabled_variables(actions) resolved
+          BY PROVENANCE against VOICE_ENABLED_KEY (never a hardcoded variable-name literal),
+          is non-empty -- the same vacuity failure one level up: if provenance resolves no
+          variable at all, the per-site consent check below could never fire and every site
+          would pass by default;
+      (3) every speech site's enclosing groups (enclosing_groups(actions), one structural
+          left-to-right stack pass) include a mode-0 conditional with WFCondition == 2 and
+          WFNumberValue == 0 whose tested variable is in that resolved consent set -- a site
+          reachable without this enclosure could speak to a user who never consented to be
+          spoken to;
+      (4) every speech site's enclosing groups also include a mode-0 conditional with
+          WFCondition == 101 ("does not have any value") testing SPOKEN_THIS_RUN_VARIABLE --
+          a site reachable without this enclosure could speak more than once in a single run,
+          breaking CIRC-08's "at most once per run" clause.  D-06 keeps this guard verbatim
+          from the retired mirror_and_voice(): Shortcuts variables reset every run by
+          construction, which is exactly CIRC-08's semantics, and condition-4 dispatch means
+          Mirror and Loud Mirror are never both reached in one run -- see voice()'s own
+          docstring.
+
+    An enclosing conditional whose shape this guard does not recognise -- any condition code
+    other than the 2/0 consent shape or the 101 once-per-run shape -- is simply not counted
+    toward satisfying either role.  It is never treated as absent when a recognised gate of
+    that role exists elsewhere in the enclosure, and it is never treated as satisfying the
+    role in place of a recognised one; the two per-site checks below only ever look for the
+    two specific shapes named above.
+
+    NEGATIVE CONTROL (measured 2026-08-18 on this exact build):
+      (a) hoisting voice()'s speaktext action out of the consent conditional so it sits at
+          branch base depth (temporarily edited into voice() itself, then
+          `python3 tools/build_state_engine.py` run for real and reverted) -> exited non-zero,
+          naming all 11 un-consented sites: "reachable WITHOUT the user's consent gate
+          (voice_enabled > 0) enclosing them";
+      (b) deleting the Spoken This Run conditional pair from voice() so speech is enclosed by
+          the consent gate only (same real-build methodology, reverted) -> exited non-zero,
+          naming all 11 sites missing the once-per-run enclosure: "reachable WITHOUT the
+          once-per-run 'Spoken This Run' gate enclosing them" (spoken_groups resolves empty,
+          so every site's enclosure intersection with it is empty too);
+      (c) severing every getvalueforkey site reading the literal key "voice_enabled" (13
+          sites across 3 source call sites -- voice(), Toggle Voice, and Sync Profile --
+          matching verify_voice_enabled_seed()'s own mutation (c)) so
+          _voice_enabled_variables resolves nothing -> raised rather than the build exiting 0
+          with a vacuous pass, naming exactly the failure this guard's assertion (2) exists to
+          prevent: "no variable in the artifact resolves to 'voice_enabled' by provenance, so
+          the consent check below would inspect no gate and every speech site would pass by
+          default".  Measured against an IN-MEMORY deepcopy of the already-built actions list
+          (never written to src/PROSOCHE-Dumb.xml, no revert needed) -- the same
+          methodology plan 15-03 established for its own multi-site provenance mutation, and
+          functionally identical evidence for a build-time guard that only ever sees an
+          in-memory actions list.  A same-name-preserving rename of a single reader was tried
+          FIRST and did NOT sever provenance: the walk tracks the emitted data-flow GRAPH, not
+          variable-name literals, so a variable renamed consistently at both its write site
+          and its read site keeps exactly the provenance it had -- the same property that lets
+          a legitimate rename survive this guard at all (see _read_variable_keys()'s own
+          WR-16/WR-20 history).  Severing at the SOURCE, across every reader, is what a real
+          disconnection looks like.
+
+    DELIBERATE NON-COVERAGE.  This guard says nothing about device volume -- that is
+    verify_voice_path_volume_silence()'s job, sited immediately beside this one.
+    """
+    speech_sites = [index for index, item in enumerate(actions)
+                    if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.speaktext"]
+    if not speech_sites:
+        raise SystemExit(
+            "voice gates: zero is.workflow.actions.speaktext sites exist anywhere in the "
+            "artifact -- this guard would report every speech site correctly gated without "
+            "having tested a single one.  Check that primitive_dispatch()'s tuple still "
+            "dispatches ('Loud Mirror', voice); see verify_speaktext_placement()")
+
+    guarded = _voice_enabled_variables(actions)
+    if not guarded:
+        raise SystemExit(
+            f"voice gates: no variable in the artifact resolves to {VOICE_ENABLED_KEY!r} by "
+            "provenance, so the consent check below would inspect no gate and every speech "
+            "site would pass by default -- either voice()'s consent read was removed or a "
+            "rename disconnected this guard; see verify_voice_enabled_seed()")
+
+    consent_groups = {item["WFWorkflowActionParameters"].get("GroupingIdentifier")
+                      for item in actions
+                      if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+                      and item.get("WFWorkflowActionParameters", {}).get("WFControlFlowMode") == 0
+                      and item.get("WFWorkflowActionParameters", {}).get("WFCondition") == 2
+                      and item.get("WFWorkflowActionParameters", {}).get("WFNumberValue") == 0
+                      and _tested_variable(item.get("WFWorkflowActionParameters", {})) in guarded}
+    consent_groups.discard(None)
+
+    spoken_groups = {item["WFWorkflowActionParameters"].get("GroupingIdentifier")
+                     for item in actions
+                     if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.conditional"
+                     and item.get("WFWorkflowActionParameters", {}).get("WFControlFlowMode") == 0
+                     and item.get("WFWorkflowActionParameters", {}).get("WFCondition") == 101
+                     and _tested_variable(item.get("WFWorkflowActionParameters", {})) == SPOKEN_THIS_RUN_VARIABLE}
+    spoken_groups.discard(None)
+
+    enclosing = enclosing_groups(actions)
+
+    unconsented = [index for index in speech_sites if not (set(enclosing[index]) & consent_groups)]
+    if unconsented:
+        raise SystemExit(
+            f"voice gates: {len(unconsented)} speaktext site(s) at action(s) {unconsented} are "
+            "reachable WITHOUT the user's consent gate (voice_enabled > 0) enclosing them -- "
+            "The Voice could speak to a user who never consented to be spoken to, breaking "
+            "CIRC-08's consent clause")
+
+    unonce = [index for index in speech_sites if not (set(enclosing[index]) & spoken_groups)]
+    if unonce:
+        raise SystemExit(
+            f"voice gates: {len(unonce)} speaktext site(s) at action(s) {unonce} are reachable "
+            f"WITHOUT the once-per-run {SPOKEN_THIS_RUN_VARIABLE!r} gate enclosing them -- The "
+            "Voice could speak more than once in a single run, breaking CIRC-08's 'at most "
+            "once per run' clause (D-06)")
+
+
+# Beside verify_voice_gates() -- neither implies the other.  That one asserts speech happens
+# only with consent; this one asserts speech never comes with a device change to make it
+# audible.  is.workflow.actions.speaktext exposes no volume parameter at all (see the
+# deliberate non-coverage note below), so "never at unsafe levels" is a property of ABSENCE:
+# nothing in the Voice path may ever write device volume, because there is nothing there that
+# could legitimately need to.
+def verify_voice_path_volume_silence(actions):
+    """Fail the build if anything inside a 'Loud Mirror' (Circle 8) branch span writes volume.
+
+    WHY THIS NEEDS A GUARD AT ALL.  "Never at unsafe levels" reads like a parameter and is not
+    one: is.workflow.actions.speaktext has exactly six parameters (WFText, WFSpeakTextWait,
+    WFSpeakTextRate, WFSpeakTextPitch, WFSpeakTextLanguage, WFSpeakTextVoice) and none of them
+    is volume.  So the property is satisfied by ABSENCE, not by a setting -- and absence is
+    precisely the kind of invariant that erodes silently when a later pass adds a well-meaning
+    "make sure the user can hear it" is.workflow.actions.setvolume before the utterance.  That
+    addition is invisible to validate-shortcut, the ToolKit catalog and a decrypt of the signed
+    container: all three see a well-formed setvolume action inside a well-formed dispatch
+    branch, and none of them asks which branch.
+
+    Dispatch branches are located the SAME WAY verify_speaktext_placement() locates them:
+    mode-0 is.workflow.actions.conditional actions whose WFInput variable is Selected
+    Primitive, with matching semantics resolved PER SITE from that site's own WFCondition --
+    never filtered on a hardcoded code.  BD-06 Decision 5 abolished combined dispatch entries,
+    so the only strategy any 'Mirror'/'Loud Mirror' branch can legitimately use is condition 4
+    ("string is"); anything else RAISES rather than being excluded, exactly as
+    verify_speaktext_placement() does.
+
+    Three assertions, each naming the failure it prevents:
+      (1) the resolved 'Loud Mirror' branch set is non-empty -- a guard that located no branch
+          would report the Voice path free of volume writes without having checked a single
+          one;
+      (2) the artifact-wide is.workflow.actions.setvolume count is non-zero -- so this guard
+          cannot pass because volume writing was removed from the product entirely rather than
+          kept out of this one path.  Measured baseline: 15 sites per fork on 2026-08-18, all
+          belonging to silence() and restore_managed_settings(), all Media-scoped;
+      (3) zero of those setvolume sites lie inside any 'Loud Mirror' branch span (enclosing
+          groups intersecting the resolved branch-group set) -- a site that did would raise
+          device volume to make The Voice audible, which is exactly the startling, unrequested
+          output SAFE-02 forbids.
+
+    NEGATIVE CONTROL (measured 2026-08-18):
+      (a) inserting a volume write immediately before voice()'s speaktext action (temporarily
+          edited into voice() itself, then `python3 tools/build_state_engine.py` run for real
+          and reverted) -> exited non-zero, naming all 11 offending sites and the
+          startling-audio-output failure they cause;
+      (b) renaming every 'Loud Mirror' dispatch branch's tested literal so no branch resolves
+          to that name (measured against an IN-MEMORY deepcopy, calling this guard directly --
+          run through the real build this would first hit verify_dispatch_coverage()'s orphan
+          check on the resulting Config/branch mismatch, which is a different guard entirely;
+          the in-memory call isolates THIS guard's own vacuity assertion) -> raised naming
+          exactly assertion (1)'s failure: "no dispatch branch resolves to 'Loud Mirror' ...
+          this guard cannot tell whether the Voice path ever writes device volume", rather
+          than the build exiting 0 with a vacuous pass.
+
+    DELIBERATE NON-COVERAGE.  This guard covers volume only.  Brightness is owned by
+    verify_restore_gates() and verify_capture_persistence() and is deliberately out of scope
+    here: is.workflow.actions.speaktext exposes no brightness parameter either, so the same
+    absence argument applies, but the environmental-restore guards already own that surface
+    and duplicating it here would only create a second place for the two to drift apart.
+    """
+    branches = []
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("WFControlFlowMode") != 0:
+            continue
+        variable_name = (parameters.get("WFInput", {}).get("Variable", {})
+                         .get("Value", {}).get("VariableName"))
+        if variable_name != SELECTED_PRIMITIVE:
+            continue
+        code = parameters.get("WFCondition")
+        tested = parameters.get("WFConditionalActionString")
+        if not (isinstance(tested, str) and code == 4):
+            raise SystemExit(
+                f"voice path volume: dispatch branch at action {index} has unresolvable "
+                f"matching semantics (condition {code!r} against {tested!r}) -- guessing which "
+                "rule applies would let this guard report the Voice path free of volume "
+                "writes without ever having checked it; see verify_dispatch_coverage()")
+        branches.append((index, tested, parameters.get("GroupingIdentifier")))
+
+    if not branches:
+        raise SystemExit(
+            "voice path volume: no dispatch branch resolves at all -- this guard would report "
+            "the Voice path free of volume writes without having located a single branch to "
+            "check it against")
+
+    loud_groups = {group for _, tested, group in branches if tested == "Loud Mirror" and group}
+    if not loud_groups:
+        raise SystemExit(
+            "voice path volume: no dispatch branch resolves to 'Loud Mirror' -- Circle 8's "
+            "branch span could not be located, so this guard cannot tell whether the Voice "
+            "path ever writes device volume (CIRC-08)")
+
+    volume_sites = [index for index, item in enumerate(actions)
+                    if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setvolume"]
+    if not volume_sites:
+        raise SystemExit(
+            "voice path volume: zero is.workflow.actions.setvolume sites exist anywhere in "
+            "the artifact -- this guard would pass because volume writing was removed from "
+            "the product entirely, not because it was kept out of the Voice path specifically. "
+            "Check that silence() and restore_managed_settings() still emit setvolume")
+
+    enclosing = enclosing_groups(actions)
+    offenders = [index for index in volume_sites if set(enclosing[index]) & loud_groups]
+    if offenders:
+        raise SystemExit(
+            f"voice path volume: {len(offenders)} is.workflow.actions.setvolume action(s) at "
+            f"action(s) {offenders} lie inside a 'Loud Mirror' (Circle 8) dispatch branch "
+            "span -- the Voice path would raise device volume to make itself heard, producing "
+            "startling, unrequested audio output and violating SAFE-02")
 
 
 def install_cooldown_branches(actions):
@@ -3491,6 +3951,102 @@ def seed_panic_escape(actions):
                       PANIC_ESCAPE_ANCHOR + f'\n{indent}"{PANIC_ESCAPE_KEY}": {PANIC_ESCAPE_SEED},')
 
 
+# PHASE 15 (15-03), D-05 -- voice_enabled's two writers disagreed in JSON TYPE.  Bootstrap
+# emitted the unquoted boolean true/false while Toggle Voice (see the setvalueforkey call in
+# the Control Room menu below) writes the number 1/0, and every reader coerces through
+# WFCoercionVariableAggrandizement / WFNumberContentItem and compares "> 0" -- a comparison
+# .claude/CLAUDE.md's device-verified runtime-semantics table does not cover for booleans
+# (axis 6: "booleans, files, dictionaries and entity references are unaudited").  If "true"
+# happens to coerce to nothing, The Voice is silent on every fresh install that answered yes,
+# and CIRC-08 is unsatisfiable no matter how well the primitive is written.  D-05 makes this
+# question moot rather than spending a device session answering it: normalise the writer so
+# both writers agree BY CONSTRUCTION.
+VOICE_ENABLED_KEY = "voice_enabled"
+# The intermediate Shortcuts variable both bootstrap gettext branches write.  The ONLY handle
+# normalise_voice_enabled_seed() and _voice_enabled_variables() use to find their producing
+# actions -- never a hardcoded action index, since both indices are measured to shift on
+# every rebuild (15-03-PLAN.md's key_links: voice pair at 66/67, Contract Respected pair at
+# 1526/1529 in one measured build).
+VOICE_ENABLED_VARIABLE = "Voice Normalised"
+VOICE_ENABLED_SEED_TRUE = "1"
+VOICE_ENABLED_SEED_FALSE = "0"
+# The two superseded literals this pass retargets away from, named so the idempotence check
+# and normalise_voice_enabled_seed()'s own assertion recognise them without repeating the
+# bare strings at every call site.
+VOICE_ENABLED_LEGACY = ("true", "false")
+
+
+def _voice_enabled_seed_gettexts(actions):
+    """The two bootstrap gettext actions feeding VOICE_ENABLED_VARIABLE, resolved by PROVENANCE.
+
+    Content matching alone is WRONG here and would corrupt an unrelated subsystem: the
+    shipped artifact carries FOUR gettext actions holding the literals "true"/"false", and
+    the second pair feeds Contract Respected in the CLOSE pipeline.  So this walks the
+    emitted data-flow graph instead of grepping for the literals: it starts from the two
+    is.workflow.actions.setvariable actions whose WFVariableName is VOICE_ENABLED_VARIABLE,
+    follows each one's WFInput.Value.OutputUUID, and returns the gettext action that UUID
+    belongs to.  Raises rather than returning a partial result -- a caller that silently
+    accepted fewer than two would either leave the boolean writer live (if it under-resolved)
+    or retarget an unrelated gettext pair (if it over-resolved by content).
+    """
+    setters = [item for item in actions
+               if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.setvariable"
+               and item.get("WFWorkflowActionParameters", {}).get("WFVariableName") == VOICE_ENABLED_VARIABLE]
+    if len(setters) != 2:
+        raise SystemExit(
+            f"expected exactly 2 setvariable actions writing {VOICE_ENABLED_VARIABLE!r}, found "
+            f"{len(setters)} -- the voice_enabled seed pair could not be located by provenance")
+    uuids = []
+    for setter in setters:
+        value = setter["WFWorkflowActionParameters"].get("WFInput", {}).get("Value", {})
+        if value.get("Type") != "ActionOutput" or not isinstance(value.get("OutputUUID"), str):
+            raise SystemExit(
+                f"a {VOICE_ENABLED_VARIABLE!r} setvariable action does not read an ActionOutput "
+                "reference -- provenance cannot be walked back to its producing gettext action")
+        uuids.append(value["OutputUUID"])
+    gettexts = [item for item in actions
+                if item.get("WFWorkflowActionIdentifier") == "is.workflow.actions.gettext"
+                and item.get("WFWorkflowActionParameters", {}).get("UUID") in uuids]
+    if len(gettexts) != 2:
+        raise SystemExit(
+            f"expected exactly 2 gettext actions feeding {VOICE_ENABLED_VARIABLE!r} by "
+            f"provenance, found {len(gettexts)} for UUIDs {uuids!r}")
+    return gettexts
+
+
+def normalise_voice_enabled_seed(actions):
+    """Retarget the two bootstrap voice_enabled gettext branches from booleans to numbers.
+
+    D-05.  This is a RETARGET, not an insertion: voice_enabled is already present in the
+    bootstrap template, fed by VOICE_ENABLED_VARIABLE, so only the two gettext actions
+    producing that variable's two possible values change -- the template token itself is
+    untouched by this pass.
+
+    Idempotent: a second run finds the new pair already in place and returns.  Must run in
+    main()'s seeder block BEFORE fix_state_rebind() -- that pass edits the same template
+    token, and retargeting this seed is one of the reasons the version bump exists.
+
+    Does NOT build a migrator, a dual-key alias, or read-time normalisation by name --
+    BD-06-A1 forbids all three, and each would permanently encode the inconsistency this
+    pass exists to dissolve.
+    """
+    gettexts = _voice_enabled_seed_gettexts(actions)
+    texts = {item["WFWorkflowActionParameters"].get("WFTextActionText") for item in gettexts}
+    normalised_pair = {VOICE_ENABLED_SEED_TRUE, VOICE_ENABLED_SEED_FALSE}
+    if texts == normalised_pair:
+        return  # already normalised; verify_voice_enabled_seed() proves it is the right shape
+    legacy_pair = set(VOICE_ENABLED_LEGACY)
+    if texts != legacy_pair:
+        raise SystemExit(
+            f"the {VOICE_ENABLED_VARIABLE!r} gettext pair holds unexpected text {texts!r} -- "
+            f"expected either the legacy pair {legacy_pair!r} or the normalised pair "
+            f"{normalised_pair!r}, and refusing to guess which branch is which")
+    for item in gettexts:
+        text = item["WFWorkflowActionParameters"]["WFTextActionText"]
+        item["WFWorkflowActionParameters"]["WFTextActionText"] = (
+            VOICE_ENABLED_SEED_TRUE if text == "true" else VOICE_ENABLED_SEED_FALSE)
+
+
 def _panic_escape_variables(actions):
     """Every named variable whose PROVENANCE resolves to the Panic Escape state key.
 
@@ -3627,6 +4183,125 @@ def verify_panic_escape_seed(actions):
               "removed bypass from a present one; the gate must be a numeric '> 0' test.  On the "
               "two gates inside panic_escape_branch() this also WRITES the flag on a run where "
               "the user changed nothing")
+
+
+def _voice_enabled_variables(actions):
+    """Every named variable whose PROVENANCE resolves to VOICE_ENABLED_KEY.
+
+    Same rationale as _panic_escape_variables(): a NAME is not a contract.  voice()'s reader
+    ("Voice Enabled"), Toggle Voice's reader ("Manual Voice") and the bootstrap writer's
+    intermediate variable (VOICE_ENABLED_VARIABLE, "Voice Normalised") sit hundreds of lines
+    apart in this file and share no constant beyond VOICE_ENABLED_KEY itself, so resolving by
+    a hardcoded variable-name literal means a rename silently disconnects the guard.
+    Resolution runs through _read_variable_keys(actions), the same provenance walk every
+    other resolved guard in this file routes through.
+    """
+    return {name for name, keys in _read_variable_keys(actions).items()
+            if VOICE_ENABLED_KEY in keys}
+
+
+def verify_voice_enabled_seed(actions):
+    """Fail the build unless voice_enabled is seeded numerically and gated numerically.
+
+    Neighbours verify_state_seed() and verify_panic_escape_seed() -- all three assert that
+    what bootstrap writes and what the runtime reads are the same shape.
+
+    WHY THIS NEEDS A GUARD AT ALL.  A type-confused consent flag is invisible to the
+    validator, to the ToolKit catalog and to a decrypt of the signed container -- every one of
+    them sees a well-formed conditional whether its operand coerces to something truthy or to
+    nothing.  Only a build-time read of the emitted actions can tell "1" apart from "true".
+
+    Four assertions, each naming the failure it prevents:
+      (1) the bootstrap template contains the voice_enabled key, and the two gettext actions
+          feeding VOICE_ENABLED_VARIABLE (resolved by provenance exactly as
+          normalise_voice_enabled_seed() resolves them, so exactly two must resolve) carry
+          VOICE_ENABLED_SEED_TRUE and VOICE_ENABLED_SEED_FALSE, never either legacy boolean
+          literal -- a seed that reverted to "true"/"false" would leave The Voice's consent
+          gate resting on the unaudited boolean-to-WFNumberContentItem coercion D-05 exists
+          to avoid.
+      (2) the resolved variable set from _voice_enabled_variables() is non-empty -- a guard
+          that resolves nothing must raise, stating that it would otherwise report the
+          consent gate sound without having tested anything.
+      (3) every mode-0 is.workflow.actions.conditional whose input variable is in that
+          resolved set uses WFCondition == 2 and WFNumberValue == 0.  Any other condition
+          code on a voice_enabled reader RAISES -- an unrecognised gate shape is a failure,
+          never a silent exclusion.  This is the clause that stops a later pass "fixing" the
+          gate into a string comparison against a boolean literal, which would validate,
+          sign, import, and then silently never speak.
+      (4) the set of conditionals found while checking (3) is non-empty.  Zero readers is a
+          failure for the same reason zero variables is in (2): a guard inspecting no gate
+          reports success by construction, which is worse than no guard at all.
+
+    NEGATIVE CONTROL, measured 2026-08-18 against an in-memory copy of the built actions list
+    (never written to disk, so no revert was needed):
+      (a) reverting the true-branch seed gettext literal to "true" made assertion (1) raise:
+          "the 'Voice Normalised' gettext pair holds ['0', 'true'], not the numeric pair
+          ['0', '1'] -- a non-numeric seed leaves voice_enabled's consent gate resting on an
+          unaudited boolean-to-WFNumberContentItem coercion (axis 6) ...".
+      (b) changing voice()'s "Voice Enabled" gate to condition 4 with the string operand
+          "true" made assertion (3) raise: "a voice_enabled reader uses an unrecognised gate
+          shape (expected WFCondition == 2, WFNumberValue == 0): action 1185: 'Voice Enabled'
+          at condition 4, number None ...".
+      (c) severing every getvalueforkey action reading the literal key "voice_enabled" (13
+          sites) made assertion (2) raise: "no variable in the artifact resolves to
+          'voice_enabled' by provenance, so assertions (3)/(4) below would inspect nothing
+          and report success ..." -- the build did NOT exit 0 with a vacuous pass.
+
+    DELIBERATE NON-COVERAGE.  This guard does not assert anything about Toggle Voice's own
+    internal "Manual Voice" / "Manual Voice Next" pair before its set_value() call -- that
+    pair was already numeric (it is the writer bootstrap is brought into agreement with) and
+    is out of scope for D-05, which is specifically about the bootstrap seed.
+    """
+    _, inner = _state_template(actions)
+    if f'"{VOICE_ENABLED_KEY}"' not in inner["string"]:
+        raise SystemExit(
+            f"the bootstrap template does not contain {VOICE_ENABLED_KEY!r} -- The Voice's "
+            "consent gate has nothing to read on a clean install")
+    gettexts = _voice_enabled_seed_gettexts(actions)
+    texts = sorted(item["WFWorkflowActionParameters"].get("WFTextActionText") for item in gettexts)
+    expected = sorted((VOICE_ENABLED_SEED_TRUE, VOICE_ENABLED_SEED_FALSE))
+    if texts != expected:
+        raise SystemExit(
+            f"the {VOICE_ENABLED_VARIABLE!r} gettext pair holds {texts!r}, not the numeric "
+            f"pair {expected!r} -- a non-numeric seed leaves voice_enabled's consent gate "
+            "resting on an unaudited boolean-to-WFNumberContentItem coercion (axis 6), and "
+            "The Voice may be silent on every fresh install that answered yes")
+
+    guarded = _voice_enabled_variables(actions)
+    if not guarded:
+        raise SystemExit(
+            f"no variable in the artifact resolves to {VOICE_ENABLED_KEY!r} by provenance, so "
+            "assertions (3)/(4) below would inspect nothing and report success -- either this "
+            "build dropped the voice_enabled read entirely, or a rename disconnected this "
+            "guard from the reader")
+
+    malformed, gates = [], 0
+    for index, item in enumerate(actions):
+        if item.get("WFWorkflowActionIdentifier") != "is.workflow.actions.conditional":
+            continue
+        parameters = item.get("WFWorkflowActionParameters", {})
+        if parameters.get("WFControlFlowMode") != 0:
+            continue
+        name = _tested_variable(parameters)
+        if name not in guarded:
+            continue
+        gates += 1
+        if not (parameters.get("WFCondition") == 2 and parameters.get("WFNumberValue") == 0):
+            malformed.append((index, name, parameters.get("WFCondition"), parameters.get("WFNumberValue")))
+    if not gates:
+        raise SystemExit(
+            f"{len(guarded)} variable(s) resolve to {VOICE_ENABLED_KEY!r} by provenance but no "
+            "mode-0 conditional tests any of them, so assertions (3)/(4) inspected zero gates "
+            "and would have reported success without checking a single one")
+    if malformed:
+        raise SystemExit(
+            "a voice_enabled reader uses an unrecognised gate shape (expected WFCondition == 2, "
+            "WFNumberValue == 0): "
+            + "; ".join(f"action {i}: {name!r} at condition {code}, number {number}"
+                        for i, name, code, number in malformed)
+            + " -- an unrecognised shape here is exactly the change that would let a later "
+              "pass 'fix' the gate into a string comparison against a boolean literal, which "
+              "validates, signs, imports and then silently never speaks")
 
 
 # The literal that names the safety hatch on every surface it appears on.  ONE constant, so
@@ -5567,8 +6242,8 @@ def fix_date_format_key(actions):
 # A STRING, because site 3 is a WFConditionalActionString and the device compares its stored
 # schema_version as text; the template interpolates the same characters unquoted, which is
 # what makes the two halves comparable at all.
-SCHEMA_VERSION = "4"
-SCHEMA_VERSION_PREVIOUS = "3"
+SCHEMA_VERSION = "5"
+SCHEMA_VERSION_PREVIOUS = "4"
 # The RECOGNITION tuple.  It must admit every literal this transformer has ever written --
 # including the one it is about to write -- or the NEXT build fails to locate the
 # conditional and aborts, one build downstream of the change that caused it.
@@ -5581,7 +6256,15 @@ SCHEMA_VERSION_PREVIOUS = "3"
 # licenses the unrecoverable loss the bump carries (heat, gravity, pressure, the rolling
 # windows, the session record, every exit_stats[*].samples); that same decision forbids a
 # migration, a dual-key alias and read-time normalisation by name.
-SCHEMA_VERSION_ACCEPTED = ("1", "2", "3", "4")
+#
+# PHASE 15 (15-03) -- the 4 -> 5 move is this plan's, D-05.  Normalising voice_enabled's
+# bootstrap seed from the boolean true/false to the numbers 1/0 (normalise_voice_enabled_seed()
+# above) only reaches a device that ALREADY holds a state.json by way of THIS bump; the same
+# BD-06-A1 Amendment 3 record licenses the same unrecoverable loss, re-confirmed by this plan's
+# Task 1 sequencing constraint (see 15-03-SUMMARY.md).  THREE COUPLED LITERALS move in this
+# same commit, per fix_state_rebind()'s own docstring: SCHEMA_VERSION, SCHEMA_VERSION_PREVIOUS
+# and this recognition tuple -- the tuple is the one that fails LATE, one build downstream.
+SCHEMA_VERSION_ACCEPTED = ("1", "2", "3", "4", "5")
 
 
 def fix_state_rebind(actions):
@@ -5710,6 +6393,10 @@ def main():
     seed_exit_events(actions)
     seed_active_session(actions)
     seed_create_target_url(actions)
+    # PHASE 15 (15-03), D-05.  Also must run BEFORE fix_state_rebind(): the rebind pass edits
+    # the same template token, and retargeting this seed is one of the reasons the
+    # schema_version 4 -> 5 bump below exists.
+    normalise_voice_enabled_seed(actions)
     fix_state_rebind(actions)
     fix_date_format_key(actions)
     fix_shownote_key(actions)
@@ -5745,6 +6432,10 @@ def main():
     verify_state_seed(actions)
     verify_pending_exit_seed(actions)
     verify_panic_escape_seed(actions)
+    # PHASE 15 (15-03).  Beside verify_state_seed() and verify_panic_escape_seed() -- all
+    # three are neighbours because all three assert that what bootstrap writes and what the
+    # runtime reads are the same shape; this one is D-05's half of CIRC-08's consent gate.
+    verify_voice_enabled_seed(actions)
     # Beside the seed guard because both resolve their targets through the SAME
     # provenance set (_panic_escape_variables) and neither implies the other: that one asks
     # whether every gate over the flag can DISTINGUISH a removed bypass from a present one,
@@ -5767,6 +6458,19 @@ def main():
     verify_router_shape(actions)
     verify_circle_zero_silence(actions)
     verify_dispatch_coverage(actions)
+    # Beside verify_dispatch_coverage() -- both are statements about the dispatch surface;
+    # that one asks whether every named entry has a receiver, this one asks whether two
+    # receivers ('Mirror' and 'Loud Mirror') actually differ in what they DO (CIRC-14).
+    verify_speaktext_placement(actions)
+    # PHASE 15 (15-04).  Beside verify_speaktext_placement() -- both are statements about
+    # is.workflow.actions.speaktext, and neither implies the other: that one asks whether
+    # speech lands in the right BRANCH, this one asks whether it sits behind the right two
+    # GATES once it's there (consent, and at most once per run).
+    verify_voice_gates(actions)
+    # Beside verify_voice_gates() -- neither implies the other: that one asserts speech
+    # happens only with consent, this one asserts speech never comes with a device change to
+    # make it audible.
+    verify_voice_path_volume_silence(actions)
     # Declare that this shortcut consumes Shortcut Input.  The routing block reads the
     # ExtensionInput token, and PLIST_FORMAT.md defines this root key as "True if
     # shortcut uses input variables"; every modern golden shortcut that references

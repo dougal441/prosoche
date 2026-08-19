@@ -321,6 +321,38 @@ Two findings from the same spike that change how these questions must be asked:
 - **The "coercion chip does not render red" gate does NOT work at a direct Set-action parameter.** A conditional's operator picker is populated from the operand's static type, so a mismatch renders red; **`Set Brightness` has no operator picker**, so coerced and uncoerced operands render **identically**. A green chip there is not weak evidence, it is *no* evidence. The gate remains valid for conditionals (`## Conventions`, "Operator/operand type validity is invisible in the plist") and only there.
 - **`setbrightness.WFBrightness` is OPTIONAL and defaults to 50%.** An absent operand renders as "Set brightness to 50%" and does **not** raise the unfilled-parameter error. So an unresolved operand fails **silently**, applying an unrequested 50% rather than halting. Any device test of these actions must verify **the value applied**, never merely the absence of an error.
 
+### Rung 3's ceiling — what iPhone Mirroring may never close
+
+Rung 2 has had a written ceiling for a while. **Rung 3 has one too, and it went unrecorded until
+a session ran into it**, so it is stated here rather than rediscovered.
+
+- **Every brightness observation.** Measured 2026-08-19 on the paired iPhone 15 Pro over
+  Mirroring, with a two-action probe built on the phone: `Get Device Details → Current Brightness`
+  reads **`0`**, while `Current Volume` reads correctly (`1`) and `Device Is Locked` reads
+  **`No`**. So the `0` is *not* attributable to a locked device; the leading explanation is that
+  the phone's physical display is off while mirrored, and that is itself untested. The practical
+  consequence is absolute: `dimming()`'s numeric `> 0` capture gate can never pass over Mirroring,
+  so **Dimming always short-circuits and no brightness behaviour is observable at this rung** —
+  no matter how good the instrument is. **A brightness reading taken over Mirroring is never
+  promotable above `UNVERIFIED`, and must never be written up as "brightness cannot be captured
+  on iOS 26".** That claim needs rung 4: the user, phone in hand, unmirrored.
+- **Volume carries no such restriction.** The full capture → persist → apply → restore → clear
+  cycle was proven at rung 3 for volume (`1` → `0.1` → `1`, both restore paths). Do not
+  generalise the brightness ceiling to the whole environmental class.
+- **Anything that needs the Mac awake.** Mirroring cannot run behind the macOS login window, so a
+  long-running or overnight rung-3 session dies the moment the Mac locks — silently, from the
+  agent's point of view, since `state.json` stays readable through iCloud the whole time. Arm
+  `sudo pmset -a sleep 0 displaysleep 0` before any unattended session, or run at rung 4.
+
+Evidence for all of the above: `.planning/debug/device-state/README.md`, findings F-13, F-14 and
+F-23.
+
+**One instrument-scope note that belongs with these.** The Control Room's `Test a Circle` menu
+exercises a primitive's **UI** but not its **session-dependent state**: with no live session,
+`persist_contract()` correctly declines to write, so no contract test can be settled that way.
+Reaching the primitive from a real OPEN is the only route for anything that touches
+`active_session` (finding F-17).
+
 ### Probes and donors
 
 A **donor** is evidence the user already happens to have. A **probe shortcut** is evidence we deliberately manufacture, so it can be aimed at precisely the open question rather than at whatever the donor happened to contain. Both are first-class instruments; they differ in provenance and in aim.
@@ -516,7 +548,30 @@ Playground bundle and cannot be derived from the plist.
 | flat read of a **missing** key | returns nothing, no error → `has any value` **false** |
 | flat read of a **present but empty** value | → `has any value` **true** |
 | **dotted** read (`a.b`) with any missing segment | **hard error**, "could not evaluate the key path" |
+| **dotted WRITE** (`set` `a.b`) | creates a **literal flat top-level key** `"a.b"`; the nested subtree is left untouched |
+| **dotted read** when a literal `"a.b"` key exists | returns **that flat key's value**; no traversal happens, so the nested subtree is shadowed |
+| a Shortcuts List of **exactly one item**, serialised into the dictionary | stores as the **bare item**, not a one-element array; becomes a real array at n ≥ 2 |
 | `"null"` or `""` coerced to `WFNumberContentItem` | **false**, no error |
+
+**The last three rows were established 2026-08-18/19** — the write/read pair by analysing a
+`state.json` the device itself wrote, then re-confirmed live on the shipped build; the
+single-item collapse by watching `recent_sessions`, `exit_events` and
+`exit_stats.<Exit>.samples` each do it independently. Evidence:
+`.planning/debug/device-state/README.md`, findings F-4 and F-20.
+
+**Why the write/read pair matters more than it looks.** The two halves agree, so the state
+engine is self-consistent and correct — this is not a bug to chase. What it changes is **where
+you look**. Any check that reads a nested container to confirm a write landed will report a
+**false negative**: the value is in the flat key and the nested block still holds its bootstrap
+sentinel forever. That very nearly cost this project a wrong verdict on phase 16's central
+test. When verifying a dotted write on device, read the **flat top-level key**.
+
+It also refines axis 7 rather than replacing it. Seeding the container is still required — it is
+what the **first** read falls back to, before any flat key exists, and without it that read
+traverses a missing segment and hard-errors. But the axis-7 phrasing "write and clear only its
+**leaves**" describes an intent the runtime does not implement: the leaves being written are flat
+keys, not leaves of the seeded container. Seeding also does **not** prevent the single-item
+collapse — `exit_events` was correctly seeded `[]` and the first exit still wrote a bare object.
 
 **Consequence — a read-then-`has any value` gate on a dotted path is unimplementable.**
 The read raises unless the final key exists; if it exists, the gate is true. There is no

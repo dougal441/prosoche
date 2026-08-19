@@ -38,8 +38,12 @@ from build_state_engine import (
     verify_restore_gates,
     verify_router_shape,
     verify_sentinel_gates,
+    verify_speaktext_placement,
     verify_state_seed,
     verify_string_envelopes,
+    verify_voice_enabled_seed,
+    verify_voice_gates,
+    verify_voice_path_volume_silence,
 )
 
 SOURCE = Path("src/PROSOCHE-Dumb.xml")
@@ -544,6 +548,16 @@ def main() -> None:
     # touch point here: the guard was already imported and already invoked.
     verify_pending_exit_seed(actions)
     verify_panic_escape_seed(actions)
+    # PHASE 15 (15-03), D-05.  Armed here for the first time, beside verify_panic_escape_seed()
+    # for the same reason it sits beside it on Dumb: both assert that what bootstrap writes and
+    # what the runtime reads are the same shape.  Sentient inherits the seeded bootstrap
+    # template and every voice_enabled reader from the built Dumb source, so this asserts the
+    # fork lost neither the numeric seed nor the numeric gate shape -- a fork that reintroduced
+    # a boolean-typed voice_enabled write, or a reader gated on anything other than
+    # WFCondition == 2 / WFNumberValue == 0, is exactly as invisible to both validator gates and
+    # to a decrypt of the signed container as the Core case, and CIRC-08's consent gate would be
+    # silently unsatisfiable on the Aware fork alone.
+    verify_voice_enabled_seed(actions)
     # PHASE 11 (11-10).  T-11-22, the only `critical` this phase raises, asserted per fork
     # rather than inferred from the Dumb run.  Sentient inherits both Emergency Restore menu
     # surfaces and every Panic Escape conditional from the built Dumb source, so this asserts
@@ -618,6 +632,22 @@ def main() -> None:
     # and the branches -- from the built Dumb source, so a fork that dropped or rewrote
     # either would produce a Circle that dispatches nothing, with no error anywhere.
     verify_dispatch_coverage(actions)
+    # PHASE 15 (15-01).  Armed here for the first time, beside verify_dispatch_coverage() for
+    # the same reason it sits beside it on Dumb: Sentient inherits both the 'Mirror' and 'Loud
+    # Mirror' dispatch branches from the built Core source, so this asserts the fork lost
+    # neither the split nor its placement -- a fork that dropped voice()'s speech or let
+    # mirror() regain it is exactly as invisible to both validator gates as the Core case.
+    verify_speaktext_placement(actions)
+    # PHASE 15 (15-04).  Armed here for the first time, beside the speech-placement guard
+    # above for the same reason it sits beside it on Core: Sentient inherits voice()'s consent
+    # gate and once-per-run gate from the built Core source, so this asserts the fork lost
+    # neither -- a fork that dropped or partially enclosed either gate is exactly as invisible
+    # to both validator gates and to a decrypt of the signed container as the Core case.
+    verify_voice_gates(actions)
+    # Beside the consent-and-once-per-run guard above for the same reason it sits beside it on
+    # Core: Sentient inherits the whole Voice path from the built Core source, so this asserts
+    # the fork added no volume write inside a 'Loud Mirror' branch span.
+    verify_voice_path_volume_silence(actions)
     # PHASE 16 CODE REVIEW (WR-01).  Armed here for the first time: 16-01 created this guard
     # FOR the GroupingIdentifier defect class and armed it on Dumb only, with no per-fork
     # reasoning recorded either way -- an omission, not a decision.  It matters MORE here.

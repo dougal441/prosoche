@@ -103,7 +103,22 @@ RANGE_KEY = re.compile(r"^\{\s*(\d+)\s*,\s*(\d+)\s*\}$")
 # A legitimate reason for this to move is a build that genuinely emits fewer token strings --
 # but only by exactly what that change explains.  Re-measure both forks and reset the floor to
 # the new lower value IN THE SAME COMMIT as the change that moved it; do not widen the gap.
-MINIMUM_TOKEN_STRINGS = 1104
+#
+# PHASE 15 (15-01) -- 1104 -> 1082, and the drop is accounted for to the unit.  Decision D-02
+# removes speech from Circle 7: mirror() now shows only, and voice() (Circle 8) is the sole
+# speaking primitive.  primitive_dispatch() renders 11 times per fork, so per fork that
+# retires 11 renderings of the Circle-7 speech block.  MEASURED against base 089b7c5, by
+# action identifier:
+#     speaktext   -11 actions, -11 token strings   (the utterance itself)
+#     gettext     -11 actions, -11 token strings   (the text that fed it)
+#   ... plus, carrying no token strings and so not moving this floor: -66 conditional,
+#       -22 comment, -22 nothing, -22 setvariable, -11 number, -11 getvalueforkey --
+#       the Voice Enabled gate and the Spoken This Run guard, which now exist only at Circle 8.
+# Total -22, which is exactly 11 speaktext + 11 gettext.  Nothing else moved: no identifier
+# LOST token strings without also losing actions, which is the signature this guard exists to
+# catch.  Re-measured after the move: Core 1082, Aware 1090 -- Core remains the lower bound,
+# so the floor is 1082 and the gap is not widened.
+MINIMUM_TOKEN_STRINGS = 1082
 
 
 def require(value: bool, message: str) -> None:

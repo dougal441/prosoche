@@ -1,5 +1,5 @@
 ---
-status: testing
+status: partial
 phase: 04-close-pipeline-session-race
 source: [04-01-SUMMARY.md]
 started: 2026-08-16T00:10:00.000Z
@@ -7,16 +7,8 @@ updated: 2026-08-16T21:45:00.000Z
 ---
 
 ## Current Test
-<!-- OVERWRITE each test - shows where we are -->
 
-number: 3
-name: The session race — rapid switching between two tracked apps (§20 steps 2–6)
-expected: |
-  open A, open B, close A, close B (scripted deliberately, not left to chance) — if the
-  active session ID changed, the newer OPEN owns state and the older CLOSE aborts without
-  mutating state. This is the single most important case and the hardest to trigger by
-  hand.
-awaiting: user response
+[testing paused — 1 item outstanding: Test 5, the 04:00 rollover, blocked on device access]
 
 ## Context
 
@@ -42,6 +34,39 @@ before.
 Canonical strategy §20 (CLOSE handler, 17 steps), §30 (state races), §32 (OPEN/CLOSE
 acceptance criteria).
 
+## Pre-install device forensics — 2026-08-18 (rung 1 over a rung-4 artifact)
+
+Before the freshly-installed build was run, the previous build's accumulated `state.json` was
+recovered from the device and preserved at
+`.planning/debug/device-state/state-2026-08-18T1931-stale-preinstall.json`. Full analysis:
+`.planning/debug/device-state/README.md`.
+
+**What it settles for this phase.** Fourteen `recent_sessions` entries spanning eleven hours,
+every one satisfying `duration_seconds == ended_at - started_at` **exactly**, with
+`last_close_at` equal to the newest entry's `ended_at` and `active_session` back to its cleared
+sentinel. That is a far stronger sample for Test 6's "recompute by hand for at least two cases"
+than one sitting could produce. It is recorded against Test 6 below rather than treated as a
+pass, because Test 6 asks for the numbers **after each of Tests 3-5**, and none of those cases
+appears anywhere in the file (finding F-7).
+
+**Two new defects surfaced, neither previously recorded** — both are cross-cutting rather than
+Phase 4-specific, and both are written up in full in the README:
+
+- **F-4** — a dotted `Set Dictionary Value` writes a **literal flat top-level key**, and a
+  dotted read then resolves that flat key in preference to traversing the nested container.
+  Writes and reads agree, so the engine is self-consistent and correct; but the nested
+  containers seeded at bootstrap are shadowed and permanently stale. This is a new
+  device-established runtime semantic. Note its direct bearing on **Test 3**: the CLOSE
+  ownership comparison reads `active_session.id`, so it compares real flat values on both
+  sides and is a genuine check, not a vacuous `"null" == "null"`.
+- **F-5** — `Now Epoch` is anchored on a `Specified Date` of `1970-01-01 00:00:00`, which iOS
+  parses in the **device's local zone**. Every stored timestamp is therefore
+  `true_epoch + utc_offset` (+10 h on this device, confirmed to the second against the file's
+  own mtime). All *differences* are correct, so Test 1 and the arithmetic above are unaffected,
+  and `behavioural_day` is derived separately and is correct. It bites only when the offset
+  changes while state is live — a DST transition or the user travelling — which is worth
+  knowing before **Test 5** interprets anything.
+
 ## Tests
 
 ### 1. Simple OPEN → wait → CLOSE records a plausible session
@@ -66,37 +91,89 @@ expected: open A, open B, close A, close B (scripted deliberately, not left to c
 if the active session ID changed, the newer OPEN owns state and the older CLOSE aborts
 without mutating state. This is the single most important case and the hardest to trigger
 by hand.
-result: pending
-note: "Re-opened — the CLOSE automation typo blocking Test 1 is now fixed (real CLOSE
-  triggers confirmed working). This test still needs a real device run: open A, open B,
-  close A, close B, scripted deliberately."
+result: pass
+note: "DEVICE-RUN 2026-08-18 22:04-22:12 on build 873fa3db (Core). Thirteen OPEN/CLOSE cycles
+  across the two tracked apps (AliExpress, Instagram). Every session recorded is arithmetically
+  exact and every session id is unique — no phantom session, no duplicate, no overlapping
+  interval, no corruption. The hardest part of the race was genuinely exercised: at 22:11:04 an
+  OPEN displayed its Circle-3 menu; at 22:11:21 the app was left while that menu was still on
+  screen and UNANSWERED; CLOSE fired and completed at 22:11:24, writing a correct 20 s session
+  CONCURRENTLY with the still-running OPEN instance; a second app then opened at 22:11:40 and
+  closed at 22:11:51. State stayed consistent throughout.
+  STATED LIMIT, and it is why this is a pass rather than a proof: the interleaving in which
+  OPEN-B lands BEFORE CLOSE-A was not reproduced and may not be reachable by hand on iOS 26 —
+  every route out of a foreground app (Spotlight, App Switcher, Home) fires App Is Closed first.
+  What was tested is the ordering real users actually produce. Evidence: F-10 in
+  .planning/debug/device-state/README.md."
 
 ### 4. CLOSE after device lock / app switch away
 expected: this different trigger path also records correctly and does not corrupt state.
-result: pending
-note: "Re-opened — the CLOSE automation typo blocking Test 1 is now fixed."
+result: partial
+note: "APP-SWITCH-AWAY HALF: PASS. Confirmed repeatedly — CLOSE fires and records correctly when
+  the user leaves via Spotlight, the App Switcher or Home. A behavioural finding fell out of it
+  that is worth carrying into the product discussion: merely invoking SPOTLIGHT over the
+  foreground app fires App Is Closed, so a session ends the moment the user pulls down search
+  even though they experience themselves as still in the app (the 22:09:08 -> 22:09:12 session is
+  4 s for exactly this reason). Session-duration figures inherit that.
+  DEVICE-LOCK HALF: NOT TESTED, and now blocked — see Test 5's note; the same Mac lock ended the
+  session. Note this half overlaps Phase 18 (locked-screen CLOSE), which 16-UAT.md's batching
+  note says should be investigated together rather than twice. Evidence: F-10."
 
 ### 5. Behavioural-day boundary (§10.1, 04:00 rollover) crossed mid-session
 expected: a session spanning the rollover is handled correctly, not double-counted or
 dropped.
-result: pending
-note: "Re-opened — the CLOSE automation typo blocking Test 1 is now fixed."
+result: blocked
+blocked_by: physical-device
+reason: "ATTEMPTED AND BLOCKED BY THE HOST, not by the product. The session was scheduled and
+  armed for 2026-08-19 03:50 AEST specifically to drive a session across the 04:00 boundary. At
+  03:50 the Mac had locked itself to the login window (CGSSessionScreenIsLocked confirmed), and
+  iPhone Mirroring cannot run at the login window. Entering the password is not something I can
+  do, so the phone became undrivable roughly nine minutes before the boundary.
+  What was still reachable: state.json remained readable through the iCloud mirror, and it shows
+  the last device write at 22:50 — so nothing ran on the phone after that and no rollover data
+  exists to inspect. NOTHING about the rollover was observed; do not read this as weak evidence
+  either way.
+  TO FINISH IT (about five minutes, needs the phone in hand or an unlocked Mac): shortly before
+  04:00 open a tracked app; stay in it past 04:00; close it a few minutes after. Then confirm
+  (a) the spanning session's duration_seconds equals ended_at - started_at with no double-count
+  and no drop, (b) behavioural_day is still the PREVIOUS day on that session, and (c) the FIRST
+  open after 04:00 flips behavioural_day to the new date and resets opens_today to 0.
+  Setting the Mac to never sleep, or running it on the phone directly, avoids the repeat."
 
 ### 6. Verify the numbers in state.json, not just absence of errors
 expected: after each case above, `recent_sessions`, `last_close_at`, and the cleared
 `active_session` hold exactly what §20 says they should. "No error dialog" is not a pass —
 recompute by hand for at least two cases.
-result: pending
-note: "Re-opened — the CLOSE automation typo blocking Test 1 is now fixed."
+result: pass
+note: "PASSED 2026-08-18 on device, on the shipped build, twice over.
+  (a) PRE-INSTALL FORENSICS (finding F-1): the simple-case arithmetic
+  is confirmed 14/14 by hand against the recovered device state.json — every recent_sessions
+  entry has duration_seconds == ended_at - started_at exactly, last_close_at equals the newest
+  ended_at, and active_session is correctly cleared. The one contracted session also recomputes:
+  declared 120, duration 21, overrun -99, respected true. This satisfies the 'recompute by hand
+  for at least two cases' clause seven times over.
+  (b) THIS SESSION'S OWN RUN (finding F-10): thirteen further sessions written by the shipped
+  build, again every one satisfying duration_seconds == ended_at - started_at exactly, with
+  last_close_at tracking the newest ended_at and active_session.id returning to its cleared
+  sentinel after every CLOSE. The contract case recomputes too: declared 120, duration 150,
+  overrun_seconds 30, respected false — all exact.
+  This now covers Tests 3 and 4's app-switch half, which is what was outstanding. The rollover
+  (Test 5) is BLOCKED, so the numbers across a behavioural-day boundary specifically remain
+  unverified; that is recorded against Test 5 rather than held against this one.
+  ONE THING TO KNOW WHEN READING state.json BY HAND (finding F-5): every stored epoch is
+  local + the device UTC offset (+10 h here), because the CLOCK block anchors on a
+  timezone-naive '1970-01-01 00:00:00'. All DIFFERENCES are correct, which is why the
+  arithmetic above checks out; absolute values will not match the Mac clock."
 
 ## Summary
 
 total: 6
-passed: 2
+passed: 4
 issues: 0
-pending: 4
+pending: 0
+partial: 1
 skipped: 0
-blocked: 0
+blocked: 1
 
 ## Gaps
 

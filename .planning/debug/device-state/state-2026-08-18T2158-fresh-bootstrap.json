@@ -1,0 +1,48 @@
+{
+  "schema_version": 4,
+  "fork": "Core",
+  "profile": "Purgatory",
+  "sequence": "Classic",
+  "voice_enabled": true,
+  "ai_enabled": false,
+  "panic_escape_enabled": 1,
+  "behavioural_day": "2026-08-18",
+  "opens_today": 0,
+  "heat": 0,
+  "gravity": 0,
+  "pressure": 0,
+  "circle": 1,
+  "last_open_at": null,
+  "last_close_at": null,
+  "last_app": null,
+  "active_session": {"id": "null", "started_at": "null", "declared_duration_seconds": "null", "intention": "null"},
+  "pending_exit": {"type": "null", "timestamp": "null"},
+  "recent_sessions": [],
+  "recent_contracts": [],
+  "exit_events": [],
+  "exit_selection_counter": 0,
+  "exit_stats": {
+    "Capture": {"count": 0, "sum_return_seconds": 0, "samples": []},
+    "Coordinate": {"count": 0, "sum_return_seconds": 0, "samples": []},
+    "Create": {"count": 0, "sum_return_seconds": 0, "samples": []},
+    "Connect": {"count": 0, "sum_return_seconds": 0, "samples": []},
+    "Consult": {"count": 0, "sum_return_seconds": 0, "samples": []},
+    "Close": {"count": 0, "sum_return_seconds": 0, "samples": []}
+  },
+  "cooldown_until": null,
+  "settings_snapshot": {
+    "brightness": {"original_value": "null"},
+    "volume": {"original_value": "null"}
+  },
+  "profile_snapshot": {
+    "goal": "",
+    "phone_purpose": "",
+    "reclaim_for": "",
+    "deliberate_leisure_definition": "",
+    "enabled_exits": ["Capture", "Coordinate", "Create", "Connect", "Consult", "Close"],
+    "synced_at": "1787090282",
+    "create_target_url": "null",
+    "note_content_hash": null
+  },
+  "last_model_message": null
+}

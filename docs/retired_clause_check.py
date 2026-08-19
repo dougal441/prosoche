@@ -242,7 +242,28 @@ ALLOWED_PREFIXES: tuple[tuple[str, str], ...] = (
 # and 2, no live occurrence needed sparing. Any future entry must carry a written reason
 # here, in this constant, where a reader can see what was spared and why.
 # ---------------------------------------------------------------------------------------
-ALLOWED_SITES: tuple[tuple[str, str, str], ...] = ()
+ALLOWED_SITES: tuple[tuple[str, str, str], ...] = (
+    (
+        "tools/build_state_engine.py",
+        "exactly one speech site per 'Loud Mirror' branch span",
+        # PRE-EXISTING ON MAIN, recorded 2026-08-19 while merging phase 14. This is a FALSE
+        # POSITIVE of family [never zero], not a surviving brightness-floor clause. The phrase
+        # belongs to verify_voice_gates()'s assertion (4), authored by phase 15: it counts
+        # SPEECH SITES inside the Circle-8 branch span and says there must be exactly one and
+        # never zero, because a zero would mean the Voice primitive went silent again -- the
+        # exact defect phase 15 existed to fix. It makes no claim about brightness, no claim
+        # about a floor, and asserts nothing about any environmental value.
+        #
+        # The pattern is a bare substring, so any prose pairing "never" with "zero" trips it
+        # regardless of subject. Narrowing the pattern was rejected as the wrong repair: this
+        # gate is deliberately over-broad because the clause class it hunts was under-fixed
+        # four separate times by correcting only what was visible. An allowlist entry with a
+        # written reason is the mechanism this file documents for exactly this case, and it
+        # leaves the pattern's teeth intact for every other site.
+        "phase-15 verify_voice_gates() speech-site count; [never zero] here means 'the Voice "
+        "must not go silent', not a brightness floor -- see the block comment above",
+    ),
+)
 
 
 def require(condition: bool, message: str) -> None:
