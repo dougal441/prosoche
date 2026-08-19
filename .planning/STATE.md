@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 11
-current_phase_name: Build Addendum 01 — Dante Circle names and the ten-primitive roster
+current_phase: 14
+current_phase_name: Ash as real Color Filters grayscale
 status: verification-deferred
-stopped_at: TWO concurrent streams, both recorded. (1) Phase 11 execution ran to verification_deferred_human — device-blocked on DIST-03. (2) Device UAT session 2026-08-17/18 on Core b07497ba (hash-matched) — DIST-03 IS NOW LIFTED: an iPhone is reachable via Mirroring and both Personal Automations are verified correct, so Phase 11's device-blocked UAT and every other file still carrying blocked_on: DIST-03 can now be run. 24 UAT items answered (11 pass, 6 partial, 4 fail, 3 blocked). Two product blockers open: the Mirror primitive's axis-4 unfilled picker (proven to follow the primitive, not the Circle index) and Control Room Note resolution on state-changing manual runs. Next highest-value step: accumulate Pressure to Inferno's Circle-1 entry (>=2) via repeated tracked-app opens to unlock the intervention/exits surface, which gates ~30 remaining tests in phases 06/12/13.
-last_updated: "2026-08-18T08:30:00.000Z"
-last_activity: 2026-08-18
-last_activity_desc: Phase 11 execution + first real device UAT session — DIST-03 unblocked; 24 tests answered across phases 06/07/10/12/13; two product blockers found (Mirror axis-4 picker, Note resolution); audit-uat and audit-open both fixed for silent under-reporting
+stopped_at: Phase 14 complete and merged — Circle 2 now emits real Color Filters grayscale with an unconditional off leg at all four recovery paths, both forks re-signed, 14/14 checkers green, 27/27 structural must-haves verified against the DECRYPTED signed artifacts. Deferred on DIST-03 by user decision 2026-08-19: iPhone paired but tunnelState unavailable, transport none. Next highest-value step is unchanged and now cheaper — one device sitting running 14-UAT.md beside 16-UAT.md proves all three environmental primitives at once, starting with force-quit-then-Emergency-Restore.
+last_updated: "2026-08-19T02:30:00.000Z"
+last_activity: 2026-08-19
+last_activity_desc: Phase 14 executed — Ash ships as a real Color Filters grayscale toggle (15 AX sites/fork, 11 on + 4 unconditional off, no snapshot); gate A residue formalised mechanically; verification 27/34 human_needed, deferred on DIST-03
 progress:
   total_phases: 24
-  completed_phases: 11
-  total_plans: 52
-  completed_plans: 48
+  completed_phases: 14
+  total_plans: 55
+  completed_plans: 51
 ---
 
 # Project State
@@ -320,6 +320,35 @@ Items acknowledged and carried forward from previous milestone close:
 | 12 | verification_deferred_human | /gsd-verify-work 12 |
 | 13 | verification_deferred_human | /gsd-verify-work 13 |
 | 16 | verification_deferred_human | /gsd-verify-work 16 |
+| 14 | verification_deferred_human | /gsd-verify-work 14 |
+
+**Phase 14 (added 2026-08-19).** Executed clean — 3 plans, 9 tasks, 3 waves, all merged, both
+forks re-signed. Verification scored **27/34, `human_needed`**: 27/27 structural must-haves
+verified **against the decrypted signed artifacts**, not merely the source, and all 14
+`docs/*.py` checkers green. The 7 abstentions are all `verification: backstop` truths that no
+file-level analysis can reach — whether the screen actually goes greyscale, whether colour
+actually returns on CLOSE / Emergency Restore / Ice expiry / the live-Ice redirect, whether the
+forks import without an unfilled-parameter dialog, whether the Note disclosure renders, and
+whether the kill switch really leaves Color Filters untouched. Each abstained as
+`insufficient_spec` rather than inheriting a pass from the structure beneath it, which is the
+correct outcome. `14-UAT.md` carries 6 tests, all blank, `status: blocked`.
+
+**DIST-03 re-measured 2026-08-19 at execution time:** iPhone `dougal` (`iPhone16,1`),
+`pairingState: paired`, **`tunnelState: unavailable`**, `transportType: none`. Same reason as the
+Phase 16 entry below — a known device with no live tunnel and no active transport, so there is no
+session to drive. Deferred by user decision 2026-08-19.
+
+**What this phase makes cheap:** grayscale restore is routed through `restore_managed_settings()`
+alongside brightness and volume, so **one device sitting proves all three environmental
+primitives**. `14-UAT.md` is deliberately designed to be run beside `16-UAT.md`'s twelve
+outstanding tests. The single highest-value observation in either file: force-quit mid-intervention
+so no CLOSE can fire, then run Emergency Restore, and confirm colour comes back — with no snapshot
+by design, that path is the only thing between a user and permanent greyscale.
+
+**Accepted, not mitigated:** a user who already runs Color Filters has their own accessibility
+setting switched off. There is no read-back for any accessibility setting on iOS. Backlogged at
+`.planning/todos/pending/2026-08-19-ash-void-circle-when-user-already-uses-grayscale.md`; the
+`safety.ash_managed_color_filters` kill switch is the only recourse until that lands.
 
 **Phase 11 (added 2026-08-18).** Gap-closure waves 7-10 executed, code-reviewed and fix-passed
 twice; re-verification scored **18/21, `human_needed`**, with all five original gaps CLOSED and each
