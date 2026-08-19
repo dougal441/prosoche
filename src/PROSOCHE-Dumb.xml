@@ -101462,6 +101462,12 @@ PROSOCHĒ measures how automatic your reaching has become and places each open a
 
 The name tells you how deep you are. It does not tell you what will happen. Which interruption fires at a given depth is decided by the sequence you chose — Classic, BlackMirror and Ambient order the same interruptions differently — so the same Circle number is a different experience under a different sequence.
 
+### One of them changes your screen
+
+One of the nine interruptions is Black and White. When it fires, PROSOCHĒ turns your phone's Color Filters on and the screen goes black and white until you leave the app. There is nothing to read and nothing to tap. PROSOCHĒ turns Color Filters off again when you leave, and Emergency Restore turns them off too. Which Circle it lands on depends on the sequence you chose, so it is not always the same depth.
+
+If you use Color Filters yourself — for colour-blindness, migraine or low vision — this part is for you. iOS gives PROSOCHĒ no way to read what your Color Filters setting was, so it cannot put your own setting back afterwards. It turns them off. There is one switch that stops it touching Color Filters at all: the setting named ash_managed_color_filters, on its own line inside the Text action near the top of this shortcut that holds PROSOCHĒ's settings. It ships turned on. Open the shortcut in the Shortcuts app, find that line, and change true to false. Black and White then does nothing at all and your own Color Filters are left alone.
+
 ## PANIC ESCAPE
 
 - Panic Escape: ON
@@ -101473,7 +101479,7 @@ You can remove it. Doing so takes two deliberate steps, and neither one on its o
 1. Change the word ON on the setting line above to OFF, in capitals, here in the Notes app.
 2. Run PROSOCHĒ by hand and choose Panic Escape from its menu. It shows you the change and asks you to confirm it.
 
-Emergency Restore is a different thing and this setting does not affect it. Emergency Restore stays on PROSOCHĒ's manual menu, and it stays available inside a cool-down, whatever this line says. If a run has left your screen dim or your media volume down, Emergency Restore is what puts them back.
+Emergency Restore is a different thing and this setting does not affect it. Emergency Restore stays on PROSOCHĒ's manual menu, and it stays available inside a cool-down, whatever this line says. If a run has left your screen dim, your media volume down, or your screen in black and white, Emergency Restore is what puts them back.
 
 Putting the word back to ON and choosing the same menu item restores Panic Escape. The route is the same in both directions, and PROSOCHĒ asks you to confirm that too.
 
@@ -101533,14 +101539,14 @@ Reserved. Nothing is measured here yet.
 Reserved. Nothing is asked for here yet.</string>
 						<key>attachmentsByRange</key>
 						<dict>
-							<key>{8555, 1}</key>
+							<key>{9679, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
 								<key>VariableName</key>
 								<string>Import Descent</string>
 							</dict>
-							<key>{8586, 1}</key>
+							<key>{9710, 1}</key>
 							<dict>
 								<key>Type</key>
 								<string>Variable</string>
