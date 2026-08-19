@@ -2690,6 +2690,19 @@ VERIFIED_PARAMETER_KEYS = {
     # never be silently dropped again.
     "is.workflow.actions.filter.notes": {"AppIntentDescriptor", "WFContentItemFilter",
                                          "WFContentItemLimitEnabled", "WFContentItemLimitNumber"},
+    # PHASE 14 (14-01).  THIS ENTRY IS WHAT ARMS AXIS 1 FOR THE COLOR FILTERS ACTION, and the
+    # registration is opt-in armour rather than decoration: verify_parameter_keys() looks the
+    # identifier up and `continue`s on a miss, so an UNMAPPED action has ZERO axis-1 protection
+    # and an accidental extra key on it would be invisible to every check in this repo.
+    # `state` is the ONLY parameter either Turn donor carries beyond the structural UUID, which
+    # STRUCTURAL_KEYS already covers -- so the mapping is deliberately one key and no more.
+    # THE KEY IT SPECIFICALLY FORBIDS IS `operation`.  Both Turn donors ELIDE it; only the
+    # Toggle form writes it (as the string "toggle"), and PROSOCHE never uses Toggle.  Writing
+    # the elided default would author a literal no donor supplies, so with this entry in place
+    # an `operation` write is a BUILD FAILURE rather than a shipped fabrication.
+    # See DELIBERATE_NON_REGISTRATIONS beside ENVIRONMENTAL_IDENTIFIERS for the four guards
+    # this identifier is deliberately kept OUT of, and why.
+    COLOR_FILTERS: {"state"},
 }
 STRUCTURAL_KEYS = {"UUID", "GroupingIdentifier", "WFControlFlowMode", "CustomOutputName"}
 
@@ -4699,14 +4712,66 @@ def verify_sentinel_gates(actions):
             + f" ({len(offenders)} total)")
 
 
-# The three environmental actions, named exactly as docs/environmental_restore_check.py
-# already names them (SET_BRIGHTNESS / SET_VOLUME / DEVICE_DETAILS).  Kept in one frozenset
+# The environmental actions, named exactly as docs/environmental_restore_check.py already names
+# them (SET_BRIGHTNESS / SET_VOLUME / DEVICE_DETAILS / COLOR_FILTERS).  Kept in one frozenset
 # here so the guard below and that checker's site table cannot drift apart silently.
 ENVIRONMENTAL_IDENTIFIERS = frozenset({
     "is.workflow.actions.setbrightness",
     "is.workflow.actions.setvolume",
     "is.workflow.actions.getdevicedetails",
+    # PHASE 14 (14-01).  A RECURRENCE GUARD, NOT A LIVE ASSERTION TODAY -- and that is the
+    # correct state for it, so nobody reads its silence as a reason to remove it.
+    # WHY IT IS SILENT NOW: verify_environmental_reachability() derives permanence ONLY from
+    # settings_snapshot-rooted existence gates.  ash()'s apply sits behind a numeric gate over a
+    # CONFIG read (safety.ash_managed_color_filters), which the guard cannot evaluate and does
+    # not try to; the off leg sits behind no gate at all.  So it flags nothing today.
+    # WHY IT IS REGISTERED ANYWAY: Color Filters IS an environmental change, and the shape this
+    # guard exists to catch -- an environmental action buried in the never-taken arm of a
+    # permanently-true settings_snapshot container gate -- is EXACTLY what the superseded
+    # snapshot-based design for this primitive would have produced.  Registered, it becomes loud
+    # the moment somebody puts this apply behind a snapshot container gate.  T-14-04.
+    COLOR_FILTERS,
 })
+
+# DELIBERATE_NON_REGISTRATIONS -- PHASE 14 (14-01).
+#
+# THE GENERAL RULE THIS BLOCK EXISTS TO TEACH: registration is decided from what each guard
+# ACTUALLY ASSERTS, never by analogy to the primitive standing next to it.  A guard registered
+# where it structurally cannot fire is a FALSE CERTIFICATION -- it reports green over an action
+# it never examined -- and that is a failure class this codebase has already paid for more than
+# once (docs/environmental_restore_check.py's own WR-17 note records 44 actions certified by
+# site counts while sitting in a dead arm).  The four symbols below were considered for the
+# Color Filters identifier and deliberately LEFT ALONE.  Do not "complete the set".
+#
+#   verify_capture_persistence()  -- its pending map is keyed by a
+#       `settings_snapshot.<group>.original_value` WRITE.  This primitive captures nothing and
+#       writes no such leaf (D-14-A: grayscale has two values, so there is no original to
+#       remember), so the stranded set would be empty at every Color Filters site and the
+#       assertion could never fire in EITHER direction.  Registering it would additionally force
+#       the two-way group derivation open for a group that does not exist.
+#
+#   verify_restore_gates()        -- read its LOOP HEAD, not its body: the identifier filter
+#       `if identifier not in {setbrightness, setvolume}: continue` discards this action at the
+#       FIRST continue, before any operand resolution runs.  (Corrected 2026-08-19: an earlier
+#       draft blamed the later literal-target continue and its "a literal target is not a
+#       state-derived write" comment.  Same verdict, wrong mechanism -- execution never reaches
+#       that line.  The mechanism is recorded correctly here because this reasoning is what the
+#       next reader will act on.)
+#
+#   SNAPSHOT_SEED / seed_settings_snapshot() / clear_snapshot() / verify_state_seed()
+#                                 -- FORBIDDEN, not merely unnecessary (D-14-A).  There is no
+#       third settings_snapshot group and there must not be one; the subtree stays at exactly
+#       brightness and volume.  A proposal to add a colour group has reinstated the superseded
+#       design, which this phase's scope reset explicitly threw out.
+#
+#   COMPOUND_STATE_KEYS           -- nothing compound is read.  The only value this primitive
+#       reads is one scalar Config boolean.
+DELIBERATE_NON_REGISTRATIONS = (
+    "verify_capture_persistence",   # no captured original exists to strand
+    "verify_restore_gates",         # discarded at the loop head's identifier filter
+    "seed_settings_snapshot",       # forbidden: settings_snapshot stays at two groups
+    "COMPOUND_STATE_KEYS",          # no compound value is read
+)
 
 
 def verify_environmental_reachability(actions):
