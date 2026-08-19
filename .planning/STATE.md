@@ -236,6 +236,14 @@ Reorganized 2026-08-16 into todo / backlog / seed. Todo = worked directly. Backl
 bare-minimum-to-working-product device verification, tracked as ROADMAP.md 999.x phases.
 Seed = forward-looking, not yet triggered, tracked in `.planning/seeds/`.
 
+**Device-session blockers (captured 2026-08-19 from the 18/19 Aug device UAT — 23 findings):**
+
+- [blocker] `enabled_exits()` filters nothing; disabled exits are offered, selectable and routed — `.planning/todos/pending/2026-08-19-enabled-exits-filters-nothing.md` (F-18; **prerequisite** to any exit-learning measurement — evidence gathered before this lands must be discarded)
+- [blocker] An OPEN's intervention can be deferred by minutes and surface after the app is closed — `.planning/todos/pending/2026-08-19-deferred-open-intervention.md` (F-12; **severity raised major→blocker 2026-08-19**; route `/gsd-debug` — mechanism is a hypothesis)
+- [blocker] Mirror primitive fails with an unfilled required picker — `.planning/todos/pending/2026-08-18-mirror-primitive-unfilled-picker.md` (now halts Circle VIII/Voice as well as VII; route `/gsd-debug` — not localised)
+- [major] Gravity is never floored; escalation off-spec on all three profiles — `.planning/todos/pending/2026-08-19-floor-gravity-to-match-spec.md` (one-line fix; land **before** the next Pressure-accumulation run or that run measures the defect)
+- [major] `recent_contracts` is never written by any code path — `.planning/todos/pending/2026-08-19-recent-contracts-never-written.md` (F-2; scope decision first, then phase work; Phase 06 Test 8 is currently unpassable)
+
 **Todo (worked directly):**
 
 - [cosmetic] Apply Build Addendum 01 — `.planning/todos/pending/2026-08-14-apply-build-addendum-01.md`

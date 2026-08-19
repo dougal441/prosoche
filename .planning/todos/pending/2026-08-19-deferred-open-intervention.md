@@ -2,11 +2,21 @@
 created: 2026-08-19T04:15:00.000Z
 title: An OPEN's intervention can be deferred by minutes and surface after the app is closed — needs /gsd-debug
 area: general
-severity: major
+severity: blocker
 files:
   - tools/build_state_engine.py
   - artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut
 ---
+
+## Severity raised to blocker — 2026-08-19
+
+Recorded rather than silently changed. This was filed `major`; it is now `blocker` because the
+symptom is a direct negation of the product's stated core value — *"when a user automatically
+reaches for a target app, PROSOCHĒ interrupts strongly enough that the user makes an actual
+choice."* An interruption that arrives three and a half minutes later, after the app has been used
+and closed, is not a weaker version of that; it is the opposite, because it trains the user to
+dismiss a prompt that no longer refers to anything they are doing. State accumulates correctly
+throughout, so nothing in `state.json` reveals it — only a person watching the screen can.
 
 ## Problem
 
