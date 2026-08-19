@@ -930,6 +930,8 @@ each sequence picking nine. This phase flips Classic's and Ambient's Circle 6 fr
 Canonical §30 and §36 are the reason the bare version is not enough: ejecting someone to a
 Home Screen full of the same apps is a machine for changing *which* app consumes the time.
 
+**See also SEED-009 item 3** — rename the `Leaving / Continue` menu to `Exit / Stay`, aligning it with this phase's exit vocabulary. Caution recorded there: Phase 10 already reworded that prompt and Phase 11 is the rename phase, so decide at Phase 11 whether to fold it in rather than touching the same two words a third time.
+
 **Severity:** major
 **Requirements**: EXIT-01, EXIT-02, EXIT-03, EXIT-04, CIRC-06, SESS-07
 **Depends on:** Phase 12
@@ -1020,6 +1022,8 @@ escalation timing is currently off-spec — the 0.1667 in the one device reading
 **Device round trips are the scarce resource.** One class-wide fix per trip, never one site.
 Read the error text, not just the symptom.
 
+**See also SEED-009 item 2** — record **dismissibility** per Circle, not just whether it fired. For each: what did it cost to get past — taps, seconds, whether the user had to act at all. A Circle waved through in under a second has not been verified working in any sense that matters. Note the distinction the seed draws: §6.4's finding is that an easy way to *leave the app* is the strongest lever; an intervention that is easy to *ignore* is the opposite property, and conflating them would justify weakening the wrong half.
+
 **Severity:** major
 **Requirements**: CIRC-01 through CIRC-14, SAFE-01, SAFE-02, SAFE-03, SAFE-05, DIST-03
 **Depends on:** Phase 18
@@ -1072,6 +1076,12 @@ returning-user run does not test onboarding.
 firing (Phase 19), and correct onboarding instructions (already fixed in quick task
 `260817-au7`), because copy authored against the old names or against Circles that do not
 fire would have to be written twice.
+
+**See also SEED-009 items 1 and 4**, which are the same question from two directions and should be planned together here — item 1 asks how often anything surfaces at all, item 4 asks what surfaces when it does.
+
+*Item 1:* the product is still too talkative. Phase 10 removed the OPEN notification and added the Circle 0 silent band, but at every Circle >= 1 the `Circle N opened. Leave now, or continue?` menu still **announces** an intervention before the primitive fires. That menu is also §6.4's easy-dismissal mechanism, so this is a real tension to resolve deliberately, not a simple deletion. `10-UAT.md` Test 2's opens-to-first-interruption count is the existing tuning signal.
+
+*Item 4:* tuning the Circle order means **revisiting BD-06 Decision 4**, which is legitimate at this point — after device evidence — but must land as a superseding decision record in `docs/CAPABILITY-DECISIONS.md`, not a quiet edit to `src/CONFIG-BLOCK.md`'s arrays. "What happens immediately" is partly latency: measure perceived on-device delay, since an intervention arriving after the user is already scrolling has missed the interval the product exists to create.
 
 **Severity:** major
 **Requirements**: ROOM-01 through ROOM-10, BOOT-01, BOOT-09, CIRC-01, DIST-04, DIST-05
