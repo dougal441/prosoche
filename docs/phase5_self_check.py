@@ -21,6 +21,31 @@ BUILDER = ROOT / "tools/build_state_engine.py"
 SHIPPED_PRIMITIVES = {"Pause", "Black and White", "Silence", "Intention", "Dim", "Eject",
                       "Mirror", "Loud Mirror", "Frozen"}
 
+# PHASE 14 (14-01).  The iOS Color Filters (grayscale) toggle, and its macOS twin.  The twin is
+# named here ONLY so it can be asserted ABSENT -- it must never be emitted.
+AX_COLOR_FILTERS = "com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent"
+UA_COLOR_FILTERS_MACOS_TWIN = "com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent"
+
+# Derivation of the count, so a future reader meeting a mismatch investigates the ARTIFACT
+# rather than reflexively editing this constant:
+#   APPLY sites = 11, one per primitive_dispatch() rendering.  ash() emits one Set Color
+#   Filters (on) and primitive_dispatch() is rendered eleven times per fork -- nine
+#   Test-a-Circle submenu cases plus two in universal_leaving().        -> 11
+#   OFF sites   = 4, one per restore_managed_settings() call site: close_pipeline(),
+#   manual_emergency_restore(), ice_expiry() and live_ice_redirect().  The off leg is
+#   unconditional, so it renders exactly once per expansion.            -> 4
+#   Total: 15 per fork, identical in Dumb and Sentient.
+#
+# DERIVED FROM THE BUILT ARTIFACT, NOT TRANSCRIBED FROM A PLAN.  Measured 2026-08-19 against
+# both rebuilt forks.  Note for anyone comparing against phase-14 planning material: an earlier,
+# SUPERSEDED snapshot-based design also projected 15 per fork, by entirely different arithmetic.
+# The agreement is a coincidence and must not be read as confirmation of either figure.
+#
+# A change to the number of dispatch renderings or to the number of restore call sites moves
+# this number LEGITIMATELY, but only by exactly what that change explains.  Any other delta is
+# the regression this assertion exists to catch.
+EXPECTED_COLOR_FILTER_SITES = 15
+
 
 def digest() -> str:
     return hashlib.sha256(SOURCE.read_bytes()).hexdigest()
@@ -114,8 +139,39 @@ def main() -> None:
     for key in ("settings_snapshot.brightness.original_value", "settings_snapshot.volume.original_value",
                 "cooldown_until"):
         require(key in text, f"missing state safety key: {key}")
-    require("AXToggleColorFiltersIntent" not in text and "UAToggleColorFiltersIntent" not in text,
-            "unsupported Color Filters action was emitted")
+    # PHASE 14 (14-01), 2026-08-19.  THE REVERSAL, AND ITS AUTHORITY.  What stood here was a
+    # SINGLE assertion that BOTH Color Filters identifiers were absent, and it was CORRECT when
+    # written: the capability verdict then in force held that no Color Filters action was
+    # available to an iPhone at all, so Ash shipped as an alert.  Spike 005 superseded that
+    # verdict from three decrypted device-authored donors (tier-1 evidence,
+    # .planning/spikes/005-ios-color-filters-identifier/), and phase 14 shipped the real
+    # toggle.  Authority for the reversal: user decisions D-14-A through D-14-D, 2026-08-19.
+    #
+    # THE INVERSION IS ASYMMETRIC, AND THE SECOND HALF IS WHERE THE TEETH ARE.  Deleting the
+    # old line outright would have removed the macOS-twin protection ALONG WITH the inversion,
+    # which is the opposite of what this phase needs: gate A now fails permanently because the
+    # AX identifier is absent from all three bundled ToolKit snapshots, and a red validator is
+    # a standing invitation to reach for the UA* twin, which IS in the catalog and would make
+    # the validator green by shipping an action that does nothing whatsoever on an iPhone.
+    # So: AX asserted PRESENT at a derived count, UA asserted STILL ABSENT.  T-14-03.
+    #
+    # Counted by IDENTIFIER over parsed actions, never by substring hits in the raw text --
+    # the identifier also appears in this artifact's comments and prose, so a text count would
+    # be inflated by exactly the material that is not an action.
+    color_filter_sites = sum(1 for item in actions
+                             if item.get("WFWorkflowActionIdentifier") == AX_COLOR_FILTERS)
+    require(color_filter_sites == EXPECTED_COLOR_FILTER_SITES,
+            f"expected {EXPECTED_COLOR_FILTER_SITES} Color Filters actions, found "
+            f"{color_filter_sites} -- see EXPECTED_COLOR_FILTER_SITES for the arithmetic "
+            "before changing the number")
+    require(UA_COLOR_FILTERS_MACOS_TWIN not in text,
+            "the macOS Color Filters twin "
+            f"({UA_COLOR_FILTERS_MACOS_TWIN}) was emitted. It is in the bundled ToolKit "
+            "catalog and the iOS AX* action is not, so substituting it QUIETS A RED "
+            "VALIDATOR BY SHIPPING AN ACTION THAT DOES NOTHING ON AN IPHONE -- Circle 2 "
+            "would silently stop working and colour would never be restored. Gate A is "
+            "expected to stay red for the AX identifier (D-14-01); that is not a reason "
+            "to swap in this one")
     for item in actions:
         params = item.get("WFWorkflowActionParameters", {})
         if item["WFWorkflowActionIdentifier"] == "is.workflow.actions.setvolume":

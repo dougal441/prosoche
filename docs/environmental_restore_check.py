@@ -93,6 +93,14 @@ REQUIRED_SYMBOLS = (
     # WR-19 was protected by nothing at all.  Listed here for the same reason as the four
     # above, and now covered by CALLED_GUARDS by construction rather than by remembering.
     "verify_panic_escape_seed",  # build guard: the Panic Escape flag is seeded and numerically gated
+    # PHASE 14 (14-01).  The Color Filters primitive and its emitter, listed for exactly the
+    # reason everything above is listed: a subtractive pass could delete either one and no
+    # count in this file would notice, because a deleted emitter emits no sites to miscount.
+    # The stakes here are the highest in the file -- set_color_filters is what turns grayscale
+    # OFF at all four restore sites, so losing it strands the user in permanent grayscale with
+    # Emergency Restore itself no longer able to help (T-14-01).
+    "set_color_filters",          # the Set Color Filters write, on and off legs both
+    "ash",                        # Circle primitive, the grayscale apply -- CIRC-02
 )
 
 # PHASE 11 CODE REVIEW (WR-17).  REQUIRED_SYMBOLS above proves each guard is DEFINED and
@@ -121,6 +129,9 @@ CALLED_GUARDS = tuple(name for name in REQUIRED_SYMBOLS if name.startswith("veri
 SET_BRIGHTNESS = "is.workflow.actions.setbrightness"
 SET_VOLUME = "is.workflow.actions.setvolume"
 DEVICE_DETAILS = "is.workflow.actions.getdevicedetails"
+# PHASE 14 (14-01).  The iOS Color Filters (grayscale) toggle -- the AX* Accessibility-Utilities
+# intent, never the UA* macOS twin.  Donor-exact; see tools/build_state_engine.py COLOR_FILTERS.
+COLOR_FILTERS = "com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent"
 
 # Derivation of these three counts, so a future reader can tell a legitimate change from a
 # regression rather than re-deriving it or, worse, "fixing" the number:
@@ -182,7 +193,30 @@ DEVICE_DETAILS = "is.workflow.actions.getdevicedetails"
 # STILL NOT ASSERTED HERE, and not by anything else either: that the capture-and-restore loop
 # WORKS on a phone.  Reachable is a structural property of the build.  DIST-03 is open, Phase
 # 16 owns the device proof, and 16-UAT.md's twelve tests have never run.
-EXPECTED_SITES = {SET_BRIGHTNESS: 15, SET_VOLUME: 15, DEVICE_DETAILS: 22}
+# PHASE 14 (14-01) adds the fourth row, and its arithmetic is written in the same style as the
+# three above so the two derivations can be compared rather than trusted:
+#   COLOR_FILTERS = 11 primitive_dispatch() renderings, each emitting ash()'s one Set Color
+#   Filters (on)                                                        -> 11
+#                 + 4 restore_managed_settings() call sites, each emitting the one
+#   unconditional Set Color Filters (off)                               -> 4
+#   Total: 15 per fork, identical in Dumb and Sentient.
+#
+# NOTE THE DIFFERENT SHAPE FROM THE THREE ROWS ABOVE, because it will look like an error to a
+# reader who skims.  Brightness and volume take 4 restore sites + 11 CAPTURE-primitive
+# renderings, and their restore leg is GATED on a captured original.  Colour takes 4 restore
+# sites + 11 APPLY renderings and its restore leg is UNCONDITIONAL -- grayscale has exactly two
+# values, so there is nothing to capture and "restore" is unconditionally "set it off"
+# (D-14-A / D-14-B).  The totals coincide at 15; the derivations do not.
+#
+# WITHOUT THIS ROW the checker would stay GREEN while covering nothing new -- the precise
+# false-reassurance class this file's own docstring and its WR-17 note are about.  With it, a
+# future subtractive pass that silently drops colour sites turns this check red.  T-14-01.
+#
+# DERIVED FROM THE BUILT ARTIFACT, measured 2026-08-19 against both rebuilt forks.  A change to
+# the dispatch-rendering count or the restore call-site count moves it legitimately, by exactly
+# what that change explains; any other delta is a regression to investigate, never a number to
+# edit.
+EXPECTED_SITES = {SET_BRIGHTNESS: 15, SET_VOLUME: 15, DEVICE_DETAILS: 22, COLOR_FILTERS: 15}
 
 # The only two device properties this Shortcut is permitted to read.  Anything else is an
 # unaudited read of the user's device and is not covered by BD-02/BD-03's evidence.
@@ -323,6 +357,14 @@ def artifact_check(actions) -> None:
     snapshot = seed.get("settings_snapshot")
     require(isinstance(snapshot, dict) and snapshot,
             "the bootstrap state template no longer seeds a settings_snapshot subtree")
+    # PHASE 14 (14-01): THE ABSENCE OF A COLOUR GROUP HERE IS DELIBERATE, not an oversight, and
+    # is recorded so nobody "completes" the loop when they add the colour census row above.
+    # settings_snapshot has exactly TWO groups and must keep having two (D-14-A).  The Color
+    # Filters primitive captures nothing -- grayscale has two values, so there is no original to
+    # remember -- so it seeds no leaf, writes no ownership marker and calls no save_state().
+    # Adding "color_filters" to this tuple would fail against a bootstrap template that
+    # correctly does not carry it, and would be the superseded snapshot design arriving through
+    # the checker instead of the generator.
     for group in ("brightness", "volume"):
         leaves = snapshot.get(group)
         require(isinstance(leaves, dict) and "original_value" in leaves,
