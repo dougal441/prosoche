@@ -15,6 +15,10 @@ Decisions in this document are numbered `BD-NN` ("blocker decision"). They are *
 | BD-07 | Conditional TEXT-slot operand envelope — settled ALREADY CORRECT by Donor 5 | 13-03 |
 | BD-08 | `WFItems` List row wrapper — the two-kind rule, from Donors 4 and 4.1 | 13-03 |
 | BD-02/03-A1 | The capture gate both decisions specify was present but UNREACHABLE — corrected, and T-16-03's scope corrected with it | 11-08 |
+| BD-09 | The covenant model: coverage, bands, verdicts in both forks; supersedes BD-06 Decision 4 | Covenant overhaul (2026-08-19) |
+| BD-10 | Personalized descent: severity → profile, modality → sequence | Covenant overhaul (2026-08-19) |
+| BD-11 | Variability against ritualisation: deterministic, Band-C-only, ships off | Covenant overhaul (2026-08-19) |
+| BD-12 | Licence: PolyForm Noncommercial 1.0.0 going forward (MIT not retroactive) | Covenant overhaul (2026-08-19) |
 
 ---
 
@@ -1236,3 +1240,205 @@ four `restore_managed_settings()` call sites remain the recovery path for everyt
 amendment makes live.
 
 **Requirement:** CIRC-02, CIRC-06, CIRC-08, DIST-01, DIST-02
+
+---
+
+## BD-09 — The covenant model: coverage as a routing axis, bands, verdicts in both forks
+
+**User decision, 2026-08-19. This is the project's largest design decision since BD-06, and it
+re-founds the product.** Owning record: `PROSOCHE_Nine_Circles_Canonical_Strategy.md` **v2.0**,
+which was rewritten in full the same day. v1.0 is preserved at git tag `pre-covenant-overhaul`
+(commit `10305e6`); canon v2 Appendix A maps every v1 §N to its v2 home so historical citations
+resolve. Binding on Phases 17–28.
+
+**Question:** The v1 interaction model fired one primitive on every OPEN at Circle ≥ 1,
+regardless of whether the use was conscious — punishing deliberate, bounded use exactly as hard
+as automatic thrash, in contradiction of the product's own stated purpose ("makes your phone
+wait for an intention"; deliberate leisure is valid). Where does declared intention fit?
+
+### Decision 1 — coverage is a routing axis above the ladder
+
+An **intention contract** (free text + boundary — the existing mechanism) covers a **time
+window** (`made_at` → `made_at + boundary`) across sessions. An OPEN covered by a valid
+contract at a Circle below the ceiling fires **nothing**: no surface, no notification, no model
+call. The state engine still runs and persists in full. Silence is the reward for declared,
+bounded use; coverage silences surfaces, never the ledger.
+
+### Decision 2 — four fixed bands
+
+Circles group as **Silent (0) · Ambient (1–3) · Ask (4–6) · Rescue (7–9)**, fixed across all
+sequences and profiles. Sequences vary order *within* a band only. Config reserves
+`bands.ask_entry` / `bands.rescue_entry` (default 4 / 7) as a future tuning knob, deliberately
+unused at v2.0. Band A is inviolable; Band B fires without dialogs (Circle 1's single-tap Pause
+is the lone Band B surface); Band C engages; Band D rescues without questions.
+
+### Decision 3 — the boundary is mandatory
+
+A contract without an end time has no window, no expiry, no fidelity — the system could neither
+go silent nor come back. Declining the picker applies `contract.default_boundary_minutes` and
+says so. Blank or vague intention *text* remains accepted without judgment (DUMB-05 unchanged).
+
+### Decision 4 — deterministic invalidation, and a coverage ceiling at Circle 7
+
+Coverage ends on window expiry, on `opens_within > contract.max_opens_per_window`, or on more
+than `contract.max_rapid_returns_per_window` rapid-return bonuses inside the window. Coverage
+never applies at Circle ≥ `contract.coverage_ceiling_circle` (ships 7): Band D is only reached
+through behaviour that has already invalidated coverage, and the ceiling guarantees a
+declaration can never outrun the record. A live cooldown short-circuits before the coverage
+check; Frozen remains untouched by everything declared.
+
+### Decision 5 — covered reopens earn no rapid-return Heat
+
+A reopen inside a covered window adds `heat.open_base` and counts toward Gravity but earns no
+rapid-return bonus (`heat.covered_reopen_bonus = "none"`, PROTOTYPE INTERPRETATION). Reopening
+within one's own declared window is granted time, not compulsive clustering — but the opens
+still accumulate Gravity, so wall-to-wall coverage still descends.
+
+### Decision 6 — ALLOW / CHALLENGE / DENY exists in both forks, inside a deterministic envelope
+
+The per-Circle envelope is identical in both forks: Circles 4–5 offer ALLOW/CHALLENGE; Circle 6
+adds DENY; nothing else anywhere. **Core's verdict is recorded-fact arithmetic** (overrun and
+invalidation history in `recent_contracts` against Config thresholds) — never text judgment.
+**Aware's model verdict is accepted only inside the envelope**; out-of-envelope, malformed,
+empty, or slow output silently falls back to Core's verdict. One CHALLENGE round maximum
+(carried). DENY routes to Redirect and does nothing else — no Heat surcharge, no settings
+change, no cooldown. Covered opens make no model call. This gives the ask routing consequence
+in both forks while preserving D-04/SENT-12 determinism exactly: the model narrows within a
+deterministic envelope and never widens it.
+
+### Decision 7 — slot table v2 (supersedes BD-06 Decision 4; BD-06 Decisions 1–3 and 5 stand)
+
+| Circle | Name | Classic (default) | BlackMirror | Ambient |
+|---|---|---|---|---|
+| 1 | Limbo | Pause | Pause | Black and White |
+| 2 | Lust | Black and White | Silence | Silence |
+| 3 | Gluttony | Silence | Black and White | Dim |
+| 4 | Greed | Intention | Mirror | Intention |
+| 5 | Wrath | Mirror | Intention | Mirror |
+| 6 | Heresy | Redirect | Redirect | Redirect |
+| 7 | Violence | Eject | Loud Mirror | Eject |
+| 8 | Fraud | Loud Mirror | Eject | Loud Mirror |
+| 9 | Treachery | Frozen | Frozen | Frozen |
+
+Mirror moves to Band C (the re-engagement surface: reflect the recorded gap, then offer
+continue / leave / declare). Redirect is Circle 6 in **all three** sequences — with verdicts
+routing Band C, BD-06's colder Eject-at-6 BlackMirror variant is retired; Eject is Band D's
+business. Frozen is pinned at 9 everywhere. Dante names stay positional (BD-06 Decisions 1–2),
+exact-match dispatch and the dispatch-coverage guard stay binding (Decision 5), and **Decision 6
+(Redirect lands directly, no menu) is reaffirmed** — the consensual "somewhere better?" path is
+the in-surface leave affordance, not a Circle.
+
+### Decision 8 — the roster grows to eleven: Dim splits, Blackout is parked
+
+`Dim` becomes Band B soft friction (Ambient sequence only until the capture-and-restore loop is
+device-proven). **Blackout** — hard dim to the device minimum as a Band D primitive — is parked:
+in no sequence until the loop is proven *and* a slot is deliberately re-cut. D-01 is untouched
+(`safety.brightness_floor` / `safety.dim_target` ship at `0`; the safety property is the
+capture-persist-restore loop, BD-02).
+
+### Decision 9 — the pre-menu is retired; Panic Escape is re-expressed
+
+The universal `Leaving / Continue` menu (v1's announcement-before-every-primitive) is retired.
+Its two jobs move into the primitives: every interactive surface carries a one-tap leave route,
+and at most **one** interactive surface ever shows per OPEN. **Panic Escape** becomes exactly
+those in-surface leave routes: the `panic_escape_enabled` flag, its seeds and guards, and the
+Note-edit-plus-confirmation removal path carry forward; removal strips exactly the leave
+affordances and nothing else. **Emergency Restore remains absolutely separate, ungated, and
+unconditionally reachable** — T-11-22's mitigation is untouched and non-negotiable.
+
+### Decision 10 — canon v1 is replaced in full; the freeze is superseded
+
+The 2026-08-18 decision to freeze the canonical strategy as an unmodifiable historical input is
+**superseded by the owner's 2026-08-19 instruction** to re-found the project without stale
+fragments. Provenance moves from "frozen file" to "git tag": v1.0 stands verbatim at
+`pre-covenant-overhaul`, and canon v2 Appendix A carries the §-map. Consequences: the v2 canon
+states current truth directly (no internal supersession pointers needed), it re-enters
+`docs/retired_clause_check.py`'s walked set as live authority (its path exemption is removed),
+and BD-02's Supersession note stands as the historical record of how v1 §21 was governed while
+v1 was live.
+
+**Requirement:** COV-01..08, VERD-01..04, BAND-01..06, CIRC-04/06/07/13, EXIT-07 (supersession), SENT-02/04/07 (amendment)
+
+---
+
+## BD-10 — Personalized descent: severity → profile, modality → sequence
+
+**User decision, 2026-08-19.** Two people with identical usage can deserve different products:
+one is content and wants a light touch; the other is unhappy about the same usage and wants
+strictness. Personalization keys on **how much of a problem the person says it is**, not on
+usage volume.
+
+**Decision 1 — the elicitation, not the machinery, changes.** The existing three-profile
+substrate (Paradise / Purgatory / Inferno threshold tables, Circle-0 entry points, Frozen
+durations) is the implementation. The profile import question becomes the plain-language
+severity question ("Mostly fine — keep a light touch" / "Somewhat concerned — balance it" /
+"It's a real problem — be strict with me" → Paradise / Purgatory / Inferno, default Purgatory).
+The mythological names remain the profiles' names everywhere else.
+
+**Decision 2 — a modality question selects the default sequence.** "Questions and reflections"
+→ Classic; "Quiet changes to the screen and sound" → Ambient. BlackMirror stays a manual-menu
+choice.
+
+**Decision 3 — descent pace is the mechanism; band boundaries stay fixed at v2.0.** Fixed bands
+plus per-profile thresholds already deliver the requested behaviour (the content user rarely
+meets the ask; the strict user meets it fast). `bands.ask_entry` / `bands.rescue_entry` exist in
+Config as the reserved second knob, uniform 4/7 until device evidence argues otherwise — any
+future per-profile variation lands as a superseding decision here, never a quiet Config edit.
+
+**Decision 4 — re-elicitation is cheap and later.** Change Profile / Change Sequence already
+exist; a gentle severity re-ask at the Attention Receipt moment is recorded as v2-later.
+
+**Requirement:** PERS-01..04, BOOT-09
+
+---
+
+## BD-11 — Variability against ritualisation: deterministic, Band-C-only, ships off
+
+**User decision, 2026-08-19.** The observed failure mode (Screen Time's prompt dismissed by
+reflex, contents unread — reported directly of the owner's friends) is **ritualisation**: a
+surface repeated identically trains its own dismissal, which for this product is fatal because
+the value lives in the moment of genuine consideration. Epictetus names the underlying habit in
+*Discourses* 4.12 — deferred attention, practiced, becomes the disposition.
+
+**Decision 1 — all variability is deterministic.** Counter-based (persisted counters, modulo
+tests — the exit epsilon idiom), reproducible, auditable in state.
+`is.workflow.actions.number.random` appears nowhere. The standing "no nondeterminism in the
+exit path" rule extends product-wide.
+
+**Decision 2 — the sanctioned mechanisms are three.** (a) Deterministic surface rotation (the
+Mirror's existing template selector; a new Pause copy bank). (b) **The spot check**: when
+`variability.spot_check_interval = N > 0`, every Nth *uncovered Ambient-band* open runs the
+Intention ask in place of the slotted passive primitive — a jump **into Band C only**. (c) The
+existing exit exploration, which already varies redirect destinations.
+
+**Decision 3 — the never-list.** No variability of any kind touches Frozen, cooldown durations,
+coverage arithmetic, verdict envelopes, safety paths, or environmental changes. The silent band
+stays silent. **Downward jumps into Band D are rejected by design**: a punishment lottery breaks
+proportionality, contradicts the benevolence stance, and would make the strongest interventions
+arbitrary precisely where trust matters most.
+
+**Decision 4 — ships off; research before arming.** `variability.spot_check_interval` ships at
+`0`. Phase 23 defines its proxies first (contract specificity over time, fidelity trends,
+dismissal cost from Phase 22's observations, self-report — with the blind spots recorded), arms
+the spot check experimentally, and decides the shipped default with evidence.
+
+**Requirement:** VARY-01..04
+
+---
+
+## BD-12 — Licence: PolyForm Noncommercial 1.0.0 going forward
+
+**User decision, 2026-08-19.** The repository licence changes from MIT to **PolyForm
+Noncommercial 1.0.0** for all future versions. Not retroactive, and recorded as such: everything
+published through git tag `pre-covenant-overhaul` was published under MIT and remains so.
+
+**What it changes:** future versions are free for any noncommercial purpose — personal use,
+forking, sharing, study — and commercial use is not licensed. The project stops describing
+itself as "open source" in the OSI sense and says **"free for personal use, source-available"**;
+honesty about the distinction is part of the product's voice. **What it resolves:** SEED-008's
+central tension — pay-what-it-was-worth support (Phase 28) is no longer undercut by a licence
+that granted commercial redistribution royalty-free. **What it does not change:** nothing about
+privacy, forkability for personal use, the no-feature-gate rule, or the §26-inherited support
+prohibitions.
+
+**Requirement:** DIST-09

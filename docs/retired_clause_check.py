@@ -9,10 +9,13 @@ is the 2026-08-18 revision block in
 `.planning/phases/16-dimming-and-silence-as-distinct-device-proven-circles/16-CONTEXT.md`)
 set `safety.brightness_floor` and `safety.dim_target` to `0` on the main line.  The clause
 that had asserted a lower bound is retired.  It is CITED here, never restated -- it lived in
-BD-02's original Decision paragraph in `docs/CAPABILITY-DECISIONS.md` and in the canonical
-strategy's Sec 21, and `docs/CAPABILITY-DECISIONS.md` BD-02's Supersession note is now the
-authority where the two disagree.  The canonical strategy itself is FROZEN: a historical
-design input, not a living spec, retained unmodified by user decision 2026-08-18.
+BD-02's original Decision paragraph in `docs/CAPABILITY-DECISIONS.md` and in canonical
+strategy v1's Sec 21, and `docs/CAPABILITY-DECISIONS.md` BD-02's Supersession note governed
+while v1 was live.  Canon history since then (BD-09 Decision 10, 2026-08-19): the v1 freeze
+is superseded -- the canonical strategy was REWRITTEN as v2, which states D-01-era truth
+directly and carries no retired clause.  v1 stands verbatim at git tag
+`pre-covenant-overhaul`; the v2 file is LIVE AUTHORITY and is therefore WALKED by this gate
+rather than exempted.
 
 **Why a gate and not a sweep.**  The blast radius of D-01 was enumerated FOUR times before
 this file existed and every enumeration claimed completeness: six sites, then eight, then
@@ -168,14 +171,11 @@ FAMILY_C_WINDOW = 6
 # TIER 1 -- path prefixes.  The frozen historical record.
 # ---------------------------------------------------------------------------------------
 ALLOWED_PREFIXES: tuple[tuple[str, str], ...] = (
-    (
-        "PROSOCHE_Nine_Circles_Canonical_Strategy.md",
-        "FROZEN by user decision 2026-08-18: a historical design input, not a living spec. "
-        "Its Sec 21 floor clause stays exactly as written; docs/CAPABILITY-DECISIONS.md "
-        "BD-02's Supersession note records that D-01 supersedes it on the main line and is "
-        "the authority where the two disagree. Editing the canon instead would have "
-        "destroyed the original design record to make a checker green.",
-    ),
+    # The canonical strategy's former entry here is REMOVED (BD-09 Decision 10, 2026-08-19):
+    # canon v2 is a live rewrite that states current truth directly, so it is walked like
+    # every other live-authority file.  v1 -- which contained the retired Sec 21 clause and
+    # motivated the old exemption -- is preserved at git tag `pre-covenant-overhaul`, where
+    # no file walk reaches it.
     (
         ".planning/phases/",
         "Dated per-phase planning records: what was intended and believed at a point in "
@@ -224,6 +224,19 @@ ALLOWED_PREFIXES: tuple[tuple[str, str], ...] = (
     (
         ".git/",
         "Version control internals: object storage, not authored text.",
+    ),
+    (
+        "graphify-out/",
+        "Machine-generated knowledge-graph exports and AST caches, gitignored and "
+        "untracked. They embed verbatim excerpts of the historical phase records TIER 1 "
+        "already excludes, so a hit here is a mirror of an already-exempted line, not a "
+        "live assertion. Regenerated wholesale by the graphify tool; not authored text. "
+        "Added 2026-08-19 when a fresh graphify run surfaced quoted 16-REVIEW.md lines.",
+    ),
+    (
+        ".planning/graphs/",
+        "Same as graphify-out/: the gsd-graphify mirror of the same generated graph, "
+        "gitignored and untracked, quoting exempted historical records.",
     ),
     (
         "docs/retired_clause_check.py",
