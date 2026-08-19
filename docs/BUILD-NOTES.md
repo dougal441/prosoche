@@ -125,11 +125,14 @@ This is exactly the reasoning chain that produced CAP-20's *original* Verdict (`
 
 ### Validator and signer invocations (recorded here for all later phases)
 
-Validate — **gate A, mandatory** (`Validation passed.`, exit 0):
+Validate — **gate A, mandatory** (exit **1**, with a residue equal to exactly the enumerated waiver — **amended 2026-08-19, see DEV-08 in §5**; the superseded expectation lived in this line and is cited, not restated):
 
 ```bash
-validate-shortcut <file.xml> --target-macos 26 --target-platform all
+validate-shortcut <file.xml> --target-macos 26 --target-platform all   # read the report
+python3 docs/gate_a_residue_check.py                                   # SATISFY the gate-A obligation
 ```
+
+**Run the checker, not the raw command, wherever a plan needs gate A to pass.** Gate A carries a permanent two-family waiver for `com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent` and can never exit zero again, so the raw invocation is structurally incapable of being an `&&`-linked build gate. `docs/gate_a_residue_check.py` runs gate A on both forks and fails on any line outside that waiver, and on any change to the permitted count in either direction.
 
 Validate — **gate B, advisory** (exit 1 with exactly one waived line per fork):
 
@@ -143,7 +146,7 @@ Sign:
 sign-shortcut <file.xml> --name "<name>"
 ```
 
-**The rule is not restated here.** The two-gate rule, the waiver, gate B's advisory status and its false-acceptance limit are stated once, in `.claude/CLAUDE.md` §1 `### Exact validator invocation`. Measurements are in §22 below.
+**The rule is not restated here.** The two-gate rule, **both** waivers (gate A's two-family waiver and gate B's one-line waiver), gate B's advisory status and its false-acceptance limit are stated once, in `.claude/CLAUDE.md` §1 `### Exact validator invocation`. Measurements are in §22 below; gate A's measured residue and the three rejected alternatives are in §5 DEV-08.
 
 **Amended 2026-08-17 (quick task `260817-ewg`).** The paragraph this replaced closed with the claim that `--target-platform ios` is required to admit iOS-only rows and reject macOS-only rows that would otherwise leak in as falsely "available." **That premise is retired: it does not hold.** Measured, the `ios` setting excludes every `macOS 27`-tagged catalog entry — dropping all four Notes actions out of parameter-key and enum-case checking — and, paired with `--target-macos 26`, admits no snapshot at all. The controlling variable is `--target-macos`, not `--target-platform`. See §22.
 
@@ -262,6 +265,66 @@ Numbered entries `DEV-01`, `DEV-02`, ... Each entry carries exactly five labelle
 - **Substituted:** The operative invocation for every Phase 2+ authoring gate is `validate-shortcut <file.xml> --target-macos 26 --target-platform all`. `--target-macos 26` is unchanged from §3 and remains load-bearing for the reason §3 originally recorded it: it is what keeps the OS27 first-party parameter catalog — and its OS27-gated keys — out of the allowlist at this project's actual iOS 26.x target (D-01). Only the platform flag changes, from `ios` to `all`.
 - **Runnability:** This is a build-tooling correction, not a product-behaviour change — no action, parameter, or state-document field is affected. Every plan from 02-01 onward runs the corrected invocation directly; §3's original text is left in place per this document's append-only rule, and this entry supersedes it for invocation purposes.
 - **Amended 2026-08-17 (quick task `260817-ewg`).** The measurement above stands entirely — the 118-error result, the `load_packaged_toolkit_ids` two-gate root cause, and the substituted invocation, which is now **gate A** and unchanged. What is amended is the same generalisation amended in §13 DEV-01: the controlling variable is `--target-macos`, not `--target-platform`. DEV-04's own final sentence — "Only the platform flag changes, from `ios` to `all`" — is why the second, catalog-loading gate went unnoticed for so long: at target 26 no platform setting loads the parameter-key or enum-case catalogs, so no amount of platform-flag tuning could have surfaced them. **Gate B** (`--target-macos 27 --target-platform all`) is adopted as advisory. See §13 DEV-01's amendment and §22.
+
+### DEV-08 — gate A exits non-zero permanently: the shipped iOS Color Filters identifier is absent from all three bundled ToolKit snapshots (phase 14, 2026-08-19)
+
+> **READ THIS FIRST IF YOU ARE HERE BECAUSE GATE A IS RED.** The fix is **not** to swap in
+> `com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent`. That identifier
+> is the **macOS twin**. It is in the catalog, so it turns the gate green — by shipping an
+> action that does **nothing on an iPhone**. A green check that certifies nothing is strictly
+> worse than a red one that certifies the truth. Run `python3 docs/gate_a_residue_check.py`
+> instead; it tells you whether the red gate is the expected residue or a real finding.
+
+- **Capability:** CAP-20 — Color Filters / grayscale (Ash, Circle 2), as shipped by phase 14 with the donor-established iOS identifier `com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent`.
+- **Wanted:** Gate A — the mandatory identifier / availability baseline at this project's real iOS 26.x target — to keep producing a clean report, as `.claude/CLAUDE.md` §1 required until 2026-08-19, so every plan could chain it into a definition of done.
+- **Verified:** The `AX*` identifier is absent from **all three** bundled ToolKit snapshots (`toolkit-v63-tool-ids.json`, `toolkit-v78-tool-ids.json`, `toolkit-v78-ios27-tool-ids.json`) — a **genuine catalog gap, not a project error**, matching the `AX*`-private / `UA*`-public split the Playground's own `APPINTENTS.md` documents for sibling accessibility toggles. The identifier itself is **device-donor-established** from three shortcuts exported off the owner's iPhone and decrypted through the AEA1 round trip; the two records that carry that evidence are **§4's CAP-20 row** in this document and **BD-01-R2** in `docs/CAPABILITY-DECISIONS.md`. Measured on the validator: no allowlist, no ignore flag, no waiver file, no environment override, and a data path resolved relative to the validator's own script — outside this repository and overwritten on the next plugin update. **Signing is measured unaffected**: a signed `.shortcut` was produced from a plist carrying the identifier, so the artifact remains shippable and only the validator's verdict changed.
+- **Substituted:** Gate A's obligation is amended (decision **D-14-01**, `.claude/CLAUDE.md` §1 `### Exact validator invocation`) from a clean report to **the residue must equal exactly the enumerated waiver**, mirroring the treatment gate B already had. The waiver enumerates **both** validator line families — because a descriptor-less action emits both per instance and D-14-01 forbids synthesising a descriptor, so a one-family waiver would be permanently unsatisfiable — scoped to that **one identifier by name**. The waiver is **mechanical, not remembered**: `docs/gate_a_residue_check.py` classifies every reported line, fails on anything outside the two families, and fails on any change to the permitted count in **either** direction. Every other unknown identifier, missing parameter key and availability failure still fails gate A exactly as before.
+- **Runnability:** Unaffected. This is a build-tooling and record correction, not a product-behaviour change: signing, import and every OPEN/CLOSE path are untouched. The one behavioural change belongs to phase 14 itself (Circle 2 now applies real grayscale and `restore_managed_settings()` turns it off at all four recovery paths), not to this deviation.
+
+**Reproduction command.** Run per fork; both exit **1**:
+
+```bash
+validate-shortcut src/PROSOCHE-Dumb.xml --target-macos 26 --target-platform all
+validate-shortcut src/PROSOCHE-Sentient.xml --target-macos 26 --target-platform all
+python3 docs/gate_a_residue_check.py    # the executable form of the gate-A obligation; exits 0
+```
+
+**The measured residue, index-normalised so a future run can diff against it.** Exactly **30
+error lines per fork** — two families × 15 emitted AX sites — and nothing else on either fork.
+Re-measured 2026-08-19 at phase 14 wave 2 and identical to plan 14-01's recording:
+
+| Line family (indices normalised to `N`) | Per fork |
+|---|---:|
+| `- Unknown AppIntent identifier at index N: com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent` | 15 |
+| `- AppIntent action missing AppIntentDescriptor at index N: com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent` | 15 |
+
+Both families appear at the same 15 indices within a fork. Measured `N` values —
+**Core (`src/PROSOCHE-Dumb.xml`)**: 176, 226, 1012, 1272, 1585, 1770, 2039, 2308, 2577, 2846,
+3115, 3384, 3653, 3922, 4168. **Aware (`src/PROSOCHE-Sentient.xml`)**: 178, 228, 1014, 1340,
+1719, 1904, 2173, 2442, 2711, 2980, 3249, 3518, 3787, 4056, 4302. The 15 is derived from the
+built artifact — 11 `primitive_dispatch()` renderings of the On leg plus 4
+`restore_managed_settings()` call sites of the Off leg — not transcribed, so a site that stops
+being emitted **shrinks** the residue and turns the checker red rather than passing quietly.
+
+**Three rejected alternatives, worst-disguised first.**
+
+1. **Substituting the `UA*` macOS twin** (`com.apple.UniversalAccess.UASettingsShortcuts.UAToggleColorFiltersIntent`). The cheapest-looking fix and by far the most damaging: it is present in the catalog, so gate A goes green, and it ships an action that does nothing on an iPhone. Circle 2 would silently stop working and colour would never be restored. Three independent surfaces now reject it — this entry, `docs/gate_a_residue_check.py`'s classifier control, and `docs/phase5_self_check.py`'s twin-absent assertion.
+2. **Synthesising an `AppIntentDescriptor`.** It does not even achieve the goal — the unknown-identifier family is emitted independently of the descriptor family, so the gate stays red — and it fabricates three field values no donor supplies, in direct violation of §2's do-not-fabricate protocol, under which this deviation is filed.
+3. **Vendoring or patching the plugin's bundled ToolKit snapshot.** There is no override path, the file lives outside this repository, and the edit is lost on the next plugin update. A gate that depends on a mutated copy of its own reference data is not a gate.
+
+**Supersedes by pointer, not by edit.** §12 (dated 2026-08-13) states that the shipped Phase 5
+graph "deliberately emits neither Color Filters identifier because the mandatory bundled
+validator has no waivable unknown-action exception." That was true when written and is **left
+exactly as written**. As of phase 14 the `AX*` identifier **is** emitted, at 15 sites per fork,
+and the "no waivable exception" observation is what this entry converts from a blocker into an
+enumerated, mechanically-checked waiver. The `UA*` half of §12's sentence stands unchanged and
+unconditionally: the macOS twin is still emitted nowhere.
+
+**Consequence for every later plan.** Gate A now joins gate B in never being an `&&`-linked
+build gate. A plan satisfies its gate-A obligation by running
+`python3 docs/gate_a_residue_check.py`; the raw validator command is for reading, not for
+gating. Plans authored before 2026-08-19 that chain the raw invocation are satisfied by running
+the checker in its place, and nothing else about them is now wrong.
 
 ## 6. User action items
 
@@ -400,6 +463,7 @@ Every `DEV-NN` entry recorded in §5, indexed against the requirement it touches
 |---|---|---|---|---|
 | DEV-01 | CAP-20 — Color Filters / grayscale (Ash, Primitive B) | AUDIT-02 | Phase 5 | BD-01 degrades Ash to a verified, self-contained, non-environmental low-salience visual pause (CIRC-02) — never `UAToggleColorFiltersIntent`, never a read of live accessibility state. Phase 5 builds CIRC-02 exactly as BD-01 specifies; resolved by construction, not by a future capability discovery. |
 | DEV-02 | CAP-03 — Save File / the missing file-existence-check action (bootstrap's "does `state.json` already exist" question) | AUDIT-01 | Phase 2 | Phase 2's bootstrap (BOOT-01 through BOOT-04) implements the substitute directly: Get File with `WFFileErrorIfNotFound=Off`, piped through Detect Dictionary, treating a non-dictionary/empty result as "state absent." Resolved by construction; no further capability discovery needed. |
+| DEV-08 | CAP-20 — Color Filters / grayscale (Ash, Circle 2): the shipped `AX*` identifier is absent from all three bundled ToolKit snapshots, so gate A exits non-zero permanently | AUDIT-02 | **Phase 14** (owner) | **Resolved by construction, and deliberately never "closed" by making the gate green.** D-14-01 amends gate A's obligation from a clean report to a residue equal to exactly the enumerated waiver — two line families, one identifier by name, 30 lines per fork — and `docs/gate_a_residue_check.py` makes that waiver mechanical, failing on any line outside it and on any change to the count in either direction. The catalog gap is genuine and outside this repository; it retires only if a future plugin snapshot gains the identifier, which the checker turns into a loud failure rather than a silent drift. **Never resolve this by substituting `UAToggleColorFiltersIntent`** — see DEV-08's opening note. |
 | DEV-03 | CAP-26 — Use Model / the `WFLLMModel` On-Device selection literal | AUDIT-06 | Phase 8 | **CLOSED 2026-08-13 (reconciled 2026-08-17).** UA-02 was the exit path and it completed: the round-trip recovered `WFLLMModel` = `Apple Intelligence on Device` (`docs/device-evidence/UseModel-OnDevice.xml`, §11, commit `013a217`), so CAP-26's token is now `ROUND-TRIP-CONFIRMED` and BD-04 **Branch A** was reached — see BD-04-R2 in `docs/CAPABILITY-DECISIONS.md`. Phase 8 hardcodes the literal (`tools/build_sentient.py:29`). This index now has **no open deviation**. The one item still open on this capability is *not* a deviation: the runtime no-network check (that the action cannot silently fall back to Private Cloud Compute) needs an Apple-Intelligence-capable iPhone, is tracked in UA-02's closure note in §6, and until it passes the user-facing guarantee copy stays as D-06/DIST-07 required. |
 
 ### C. Runnability statement
