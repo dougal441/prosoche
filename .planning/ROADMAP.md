@@ -233,21 +233,32 @@ phase directories, tracked via `/gsd-verify-work {phase}` and rolled up by
 `/gsd-audit-uat`, not as roadmap phases.) Promote with `/gsd-review-backlog` when ready to
 sequence.
 
-### Phase 999.3: Grayscale / Ash capability donor test (BACKLOG)
+### Phase 999.3: Grayscale / Ash capability donor test — **RETIRED 2026-08-19** (was BACKLOG)
 
-**Goal:** Decrypt the already-on-disk `Set Colour Filters.shortcut` donor to settle,
-with device evidence rather than catalog inference, whether Ash's grayscale toggle
-(§6.5's strongest-evidence primitive) is actually buildable on iOS 26 with safe
-read-back — and only then decide whether to rebuild Ash as designed.
+**RETIRED, not promoted and not abandoned — every step of it is discharged.** Closed by
+decision **D-14-03** when Phase 14 landed. Step accounting, from this item's own outcome block:
+
+| Step | State | Discharged by |
+|---|---|---|
+| 1. Decrypt the donor already on disk | ✅ complete | Spike 005 decrypted **three** donors, not one — On, Off and Toggle |
+| 2. Settle the §21 / BD-01 read-back question | ✅ complete | **No `Get*`/`Query*` intent exists for any accessibility setting** across all 35 intents in the framework. That is the finding, and it is why the remedy is disclosure plus a kill switch rather than detection |
+| 3. Close CAP-20 as absent-on-iOS | **n/a** | The action *does* exist on iOS — the branch this step was conditioned on never opened |
+| 4. Update the audit trail | ✅ complete | `docs/CAPABILITY-DECISIONS.md` **BD-01-R2**, which supersedes BD-01-R's build recipe and now carries a phase-14 IMPLEMENTED note |
+| 5. Decide whether to rebuild Ash | ✅ complete | **This is Phase 14.** Decided yes, and built: 15 `AXToggleColorFiltersIntent` sites per fork, both forks re-signed 2026-08-19 |
+| 6. Never guess the identifier or enum cases | ✅ complete | Nothing was guessed; every literal in the shipped emitter traces to a donor, and a build guard fails the build on any unverified parameter key |
+
+**Closing evidence:** Phase 14 above, and its three summaries — `14-01-SUMMARY.md`,
+`14-02-SUMMARY.md`, `14-03-SUMMARY.md`.
+
 **Severity:** minor
-**Requirements:** TBD
-**Plans:** 0 plans
+**Requirements:** AUDIT-02 (via Phase 14)
+**Plans:** 0 plans — retired without being promoted
 
 Plans:
 
-- [ ] TBD (promote with /gsd-review-backlog when ready)
+- [x] Retired 2026-08-19 per D-14-03; step 5 is Phase 14
 
-Full context: `.planning/phases/999.3-grayscale-ash-capability-donor-test/2026-08-16-grayscale-ash-capability-donor-test.md`
+Full context (retained): `.planning/phases/999.3-grayscale-ash-capability-donor-test/2026-08-16-grayscale-ash-capability-donor-test.md`
 
 ### Phase 9: Dimming/Silence Stateful Restore (Experimental Fork)
 
@@ -687,25 +698,42 @@ ToolKit snapshots. Record the deviation rather than letting a validator complain
 substitution back to `UA*`, which would ship a macOS action to an iPhone.
 
 **The restore leg is the deliverable, not the apply leg.** A grayscale that does not restore
-is strictly worse than no grayscale. Wire `state = 0` everywhere the other environmental
-primitives restore — CLOSE, Emergency Restore, Ice expiry, the live-Ice redirect — reusing
-`restore_managed_settings()`'s ownership pattern, and track it in `settings_snapshot`
-alongside brightness and volume so Emergency Restore has one uniform recovery surface.
-Routing it through the same path means one device pass can prove all three environmental
-primitives.
+is strictly worse than no grayscale. **Wire `state = 0` unconditionally, once, at the top of
+`restore_managed_settings()`** — one insertion reaching all four recovery paths for free: the
+CLOSE pipeline, Emergency Restore, Ice expiry and the live-Ice redirect. It is emitted
+**first** so no dotted read below it can hard-error and abort the run before colour comes
+back, which is the exact failure whose symptom is a user stuck in grayscale. There is **no
+snapshot, no capture, no marker of who changed it and no persist-before-apply ordering**: a
+two-valued setting has no original to remember, so "restore" is unconditionally "set it off",
+and the phase-16 capture machine keeps exactly the two groups it already had. *(The paragraph
+that stood here instructed the opposite, routing colour through that machine as a third member.
+It is **superseded by the scope reset below** and by `14-CONTEXT.md` decisions **D-14-A** and
+**D-14-B**; its wording is cited by where it lived rather than restated here.)*
 
 **There is no read-back** — no `Get*`/`Query*` intent exists for any accessibility setting
 across all 35 intents in the framework — so §21's "do not clobber a pre-existing
 accessibility state" cannot be satisfied by detection. **User decision 2026-08-17: default
 ON, disclosed in onboarding.** Branch on `safety.ash_managed_color_filters` (already in
-Config, currently dead code): true → real toggle, false → BD-01's non-environmental pause.
-Onboarding must state plainly that PROSOCHĒ turns Color Filters on and off, so a user who
-needs their own filter setting for colour-blindness, migraine or low vision can turn the flag
-off.
+Config, dead code until this phase made it live): true → real toggle, false → **the Circle
+fires a bare Nothing**, not BD-01's visual pause — per **D-14-C**, the alert that *was* Circle
+2 is deleted rather than kept as a fallback, because the escalation from Circle 1 to Circle 2
+is the escalation from interrupting with words to changing the environment without them. The
+disclosure ships in the **Control Room Note**, not at import: it states plainly that PROSOCHĒ
+turns Color Filters on and off, names the kill switch and its shipped default, and says where
+to change it. The pre-existing-grayscale user is **accepted and backlogged, not solved**
+(**D-14-D**) — `.planning/todos/pending/2026-08-19-ash-void-circle-when-user-already-uses-grayscale.md`.
 
-Also correct `src/CONFIG-BLOCK.md`'s BD-01-R note, which currently asserts Ash *is* already a
-real Color Filters change — make it true or make it honest, but do not leave both. Closes
-spike 005 step 5.
+Also correct `src/CONFIG-BLOCK.md`'s BD-01-R note, which asserted Ash *is* already a real
+Color Filters change while a neighbouring note asserted its alert-only body was verbatim —
+make it true or make it honest, but do not leave both. Closes spike 005 step 5 and retires
+backlog phase 999.3.
+
+**What shipped (2026-08-19).** Both forks re-signed under their exact display names and
+decrypt-verified; **15 `AXToggleColorFiltersIntent` sites per fork** — 11 apply, 4
+unconditional off. **Gate A now exits 1 permanently by construction** and the obligation is
+`docs/gate_a_residue_check.py`, never the raw validator command (**D-14-01**, `DEV-08`).
+**Nothing in this phase is device-proven:** `14-UAT.md` is the instrument, every test is
+blank, and it is BLOCKED on `DIST-03`.
 
 **Severity:** major
 **UI hint**: no
@@ -713,14 +741,16 @@ spike 005 step 5.
 **Depends on:** Phase 11
 **Plans:** 3 plans
 
-> **⚠ SCOPE RESET — user, 2026-08-19.** The goal prose above still describes the **superseded**
-> design: tracking colour in `settings_snapshot` alongside brightness and volume, reusing the
-> ownership pattern, and a third snapshot group. That was over-built and is retired. Grayscale
-> has exactly **two** values, so there is nothing to remember — "restore" is unconditionally
-> "set it off". `14-CONTEXT.md` decisions **D-14-A/B/C/D** are the binding scope and override
-> this paragraph where they disagree; `settings_snapshot` stays at two groups. The superseded
-> six-plan set is parked at `superseded/` in the phase directory. Plan 14-03 corrects this prose
-> in place once the phase ships.
+> **⚠ SCOPE RESET — user, 2026-08-19. APPLIED: the goal prose above was corrected in place by
+> plan 14-03 and now describes what shipped.** This banner is retained as the record of what
+> was reset and when, per this project's convention of superseding by pointer rather than
+> deleting. What it retired: routing colour through the phase-16 capture machine as a third
+> member, with a marker of who changed it and the persist-then-apply ordering that machine
+> needs. That was over-built. Grayscale has exactly **two** values, so there is nothing to
+> remember — "restore" is unconditionally "set it off". `14-CONTEXT.md` decisions
+> **D-14-A/B/C/D** are the binding scope and override the superseded wording wherever a reader
+> meets it. The superseded six-plan, sixteen-task set is parked at `superseded/` in the phase
+> directory and is **not** the plan list below.
 
 Plans:
 

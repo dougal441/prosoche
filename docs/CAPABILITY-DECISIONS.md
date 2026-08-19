@@ -304,6 +304,36 @@ until a donor confirms it.
 **Consequence:** DEV-01 stays withdrawn (BD-01-R). Phase 5 builds CIRC-02 on the corrected
 identifier and integer parameters, with the opt-in guard and the BD-01 pause as fallback.
 
+**IMPLEMENTED — phase 14, 2026-08-19. The decision above is unchanged; this note records that
+it now describes a build rather than a plan.** Phase 14 plan 01 built it: `ash()` emits the
+`AX*` identifier with `state = 1` and no `operation`, and one unconditional `state = 0` at the
+top of `restore_managed_settings()` reaches all four recovery paths. **15 emitted sites per
+fork**, identical in Core and Aware, derived from the built artifact with `plistlib` — 11 apply
+(one per `primitive_dispatch()` rendering) + 4 restore (one per `restore_managed_settings()`
+call site). Plan 14-03 shipped it: both forks re-signed, and the Control Room Note now carries
+the plain-language disclosure this decision's §21-compliance paragraph requires.
+
+Three things this decision anticipated differently, recorded so the divergence is visible rather
+than inferred:
+
+1. **The `false` branch is a bare Nothing, not BD-01's visual pause.** Phase 14 decisions D-14-C
+   and D-14-D make the escalation from Circle 1 to Circle 2 the escalation from interrupting with
+   words to changing the environment without them, so the alert was **deleted** rather than kept
+   as a fallback. A user who sets the flag `false` gets no interruption at that Circle at all.
+2. **No snapshot, no capture, no ownership marker.** A two-valued setting has no original to
+   remember, so the restore is unconditional rather than gated on a captured value. SAFE-01's
+   capture clause was ruled structurally inapplicable to this primitive — see `14-01-SUMMARY.md`
+   ruling A1, recorded as a deviation rather than treated as satisfied by analogy to brightness.
+3. **Gate A now exits 1 permanently**, because the `AX*` identifier is absent from all three
+   bundled ToolKit snapshots. That is expected and is **not** a reason to reach for the macOS
+   twin. The obligation is `docs/gate_a_residue_check.py`, and the deviation is
+   `docs/BUILD-NOTES.md` **DEV-08**.
+
+The read-back lead below remains a lead: nothing in phase 14 tested it, and the pre-existing-user
+case is **accepted and backlogged, not mitigated** —
+`.planning/todos/pending/2026-08-19-ash-void-circle-when-user-already-uses-grayscale.md`.
+Nothing here is device-proven: `14-UAT.md` is the instrument and is unrun, BLOCKED on DIST-03.
+
 **Requirement:** AUDIT-02
 
 ---
