@@ -711,16 +711,22 @@ spike 005 step 5.
 **UI hint**: no
 **Requirements**: CIRC-02, SAFE-01, SAFE-02, SAFE-05, AUDIT-02
 **Depends on:** Phase 11
-**Plans:** 6 plans
+**Plans:** 3 plans
+
+> **⚠ SCOPE RESET — user, 2026-08-19.** The goal prose above still describes the **superseded**
+> design: tracking colour in `settings_snapshot` alongside brightness and volume, reusing the
+> ownership pattern, and a third snapshot group. That was over-built and is retired. Grayscale
+> has exactly **two** values, so there is nothing to remember — "restore" is unconditionally
+> "set it off". `14-CONTEXT.md` decisions **D-14-A/B/C/D** are the binding scope and override
+> this paragraph where they disagree; `settings_snapshot` stays at two groups. The superseded
+> six-plan set is parked at `superseded/` in the phase directory. Plan 14-03 corrects this prose
+> in place once the phase ships.
 
 Plans:
 
-- [ ] 14-01-PLAN.md — TRACER: emit the donor-exact Color Filters action, wire apply and restore, seed the third snapshot group, and let the reachability and capture-persistence guards see it (wave 1)
-- [ ] 14-02-PLAN.md — Spike 011: probe the `state` response parameter for accessibility read-back, and discharge the recording duty either way (wave 1, D-14-02)
-- [ ] 14-03-PLAN.md — Teach the three artifact checkers about grayscale, and prove the widened capture guard generalised rather than mislabelled (wave 2)
-- [ ] 14-04-PLAN.md — The gate-A disposition: the constitutional edit, the mechanical residue checker, and the deviation-log entry (wave 3, D-14-01)
-- [ ] 14-05-PLAN.md — Disclose the accessibility change in the Control Room Note, and stop the config mirror contradicting itself (wave 4)
-- [ ] 14-06-PLAN.md — Rebuild, re-sign, refresh the manifest, author `14-UAT.md`, and retire backlog 999.3 (wave 5, D-14-03)
+- [ ] 14-01-PLAN.md — TRACER: the Color Filters action on at Circle 2 with no alert, one unconditional off inside the restore expansion, guards registered only where they can fire, checkers taught (wave 1, D-14-A/B/C/D)
+- [ ] 14-02-PLAN.md — The gate-A disposition: the constitutional edit, the mechanical residue checker, and the deviation-log entry (wave 2, D-14-01)
+- [ ] 14-03-PLAN.md — Disclose the change in the Control Room Note, correct the config mirror, re-sign both forks, author `14-UAT.md`, retire backlog 999.3 (wave 3, D-14-03)
 
 ### Phase 15: Circle 8 — the Voice primitive
 
