@@ -703,7 +703,12 @@ def ash():
     intents in the framework -- so the clause cannot be satisfied by detection here.  The
     reading adopted is that SAFE-01's capture clause is STRUCTURALLY INAPPLICABLE to a
     two-valued setting whose restore target is a constant, and that the compliant substitute is
-    an unconditional off leg reachable from the panic button.  Recorded as deviation D-14-02.
+    an unconditional off leg reachable from the panic button.  Recorded as a deviation in
+    .planning/phases/14-ash-as-real-color-filters-grayscale/14-01-SUMMARY.md, under plan
+    14-01's flagged assumption A1.  (Deliberately NOT given a D-14-xx number: that series is
+    the phase's USER decisions and D-14-02 is already taken by the superseded spike-011
+    probe decision.  This is an executor ruling, and labelling it as a user decision would
+    misattribute its authority.)
 
     THE FLAG IS THE ONLY RECOURSE A HARMED USER HAS (D-14-D).  Because there is no read-back,
     the build cannot tell whether the user already runs Color Filters for colour-blindness,
