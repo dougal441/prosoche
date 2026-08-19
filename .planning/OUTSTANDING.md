@@ -1,6 +1,7 @@
 ---
 generated: 2026-08-18
-source: device UAT session 2026-08-17/18
+updated: 2026-08-19
+source: device UAT sessions 2026-08-17/18 and 2026-08-18/19
 purpose: the items `gsd-tools query audit-uat` cannot see, plus a pointer to the ones it can
 ---
 
@@ -15,7 +16,39 @@ neither shape, and which a UAT-file-shaped view therefore cannot surface.
 node ~/.claude/gsd-core/bin/gsd-tools.cjs query audit-uat --raw
 ```
 
-## ⚠ FIRST: the device UAT results in this repo are against a SUPERSEDED build
+## ✅ UPDATE 2026-08-19 — a device UAT HAS now run against the shipped build
+
+**The re-run the section below asks for has partly happened.** A `/gsd-verify-work` session for
+phases 4, 6 and 9 ran on 2026-08-18/19 against **Core `873fa3db…9f10`, 231,148 bytes** — the
+artifact currently on disk — hash-matched to `16-UAT.md`'s header before testing, on a **fresh
+install with `state.json` deleted first**. Results from that session are therefore *"verified on
+the shipped build"* in the sense this file demands, and the caveat below does not apply to them.
+
+Where they landed: `04-UAT.md`, `06-UAT.md` and `16-UAT.md` (all now `status: partial`), with the
+full evidence in `.planning/debug/device-state/README.md` (23 findings, five preserved state
+files).
+
+**Of the two open blockers this file names:**
+
+- **Control Room Note resolution — RE-CONFIRMED on `873fa3db`.** It did not disappear in the
+  Phase 11 rebuild. Reproduced on a **fifth** state-changing path (`Emergency Restore`), and the
+  session added the clean negative control that removes the last ambiguity from its
+  characterisation. Recorded in
+  `.planning/todos/pending/2026-08-17-note-entity-chooser-on-clean-install.md`.
+- **Mirror axis-4 unfilled picker — NOT re-checked.** Circle 7 (`Mirror` in `Classic`) was never
+  reached on this build; the session topped out at Circle 6. Still open against `873fa3db`.
+
+**One new blocker was found on the shipped build** and is filed as gap **G-06-12** in
+`06-UAT.md`: `enabled_exits()` filters nothing, so exits the user has disabled are offered,
+selectable and fully routable.
+
+**A build-identity technique that removes the need for this whole caveat in future.** This file
+and `16-UAT.md` both state that which build is installed cannot be determined by inspection,
+because the signer strips `WFWorkflowName`. That is true of the shortcut and **false of the state
+it writes**: the `settings_snapshot` seed shape is emitted by no build before decision D-02. So
+*delete `state.json`, run once, read `settings_snapshot`* fingerprints the install. Finding F-8.
+
+## ⚠ The device UAT results from the 2026-08-17/18 session are against a SUPERSEDED build
 
 The 2026-08-17/18 device UAT ran against **Core `b07497ba…ac5b`, 233,802 bytes**, which
 was the shipped artifact at the time and was hash-matched to `13-UAT.md`'s header before
