@@ -1,5 +1,63 @@
 # Shortcut Distribution Manifest
 
+**PHASE 14 RE-SIGN (2026-08-19, plan 14-03). THIS BLOCK OWNS THE TABLE'S SIX ROWS; every block
+below it describes a build the table no longer names.** All six rows were recomputed from disk in
+one pass — both sources, both new dated archives under `2026-08-19/`, and both signed containers —
+rather than only the rows believed to have moved, because Phase 10 measured three of six wrong at
+once. The rebuild is byte-idempotent: after the provenance ancestor check passed (exit 0) both
+generators were re-run and `git status --short -- src/` was empty, so these digests are
+reproducible rather than run-specific.
+
+**GATE A NOW EXITS 1 BY CONSTRUCTION, PERMANENTLY, AND THAT IS THE EXPECTED RESULT.** Circle 2
+ships the real iOS Color Filters toggle,
+`com.apple.AccessibilityUtilities.AXSettingsShortcuts.AXToggleColorFiltersIntent`, which is absent
+from all three bundled ToolKit snapshots. The validator therefore reports two line families per
+emitted site — an unknown identifier and a missing `AppIntentDescriptor` — and can never report
+clean again. **Reaching for the macOS `UA*` twin is the wrong fix and would ship a macOS action to
+an iPhone:** `docs/BUILD-NOTES.md` DEV-08 and `docs/phase5_self_check.py` both reject it. The
+gate-A obligation is now `python3 docs/gate_a_residue_check.py`, which runs gate A on both forks
+and fails on any line outside the enumerated waiver **and** on any change to the permitted count in
+either direction. Measured at this commit: **exit 0**, 30 permitted lines per fork, 15 sites × 2
+families, nothing else on either fork.
+
+**Every earlier gate-A cell in this file is superseded by the paragraph above.** Five sentences in
+the blocks below record that one fork or both passed gate A clean, with `Validation passed.` and
+exit 0. Each was a true measurement of the build it describes and each is **retained unedited**,
+carrying only an inline pointer back here — rewriting a dated provenance measurement to match a
+later reality would corrupt the record twice over. None of them describes the artifacts this
+table now names.
+
+**Gate B** (`--target-macos 27 --target-platform all`) was read standalone and advisorily per
+fork. Core reports 31 lines: the 30 gate-A residue lines plus the one permanent `WFCreateNoteInput`
+waiver at index **4240**. Aware reports the same 30 plus its `WFCreateNoteInput` waiver at index
+**4374**. **Nothing outside those two waivers appears on either fork.**
+
+**Both signed containers were decrypted** through the AEA1 recipe in `.claude/CLAUDE.md` §8 and
+measured on the recovered plists, not on `src/`: Core 4396 actions, Aware 4530, each identical to
+its source **action-for-action by identifier sequence**; **15** `AXToggleColorFiltersIntent` sites
+per fork (11 apply at each `primitive_dispatch()` rendering + 4 unconditional off at each
+`restore_managed_settings()` call site); and the Control Room Note in both recovered payloads
+carries the new Color Filters disclosure and names `ash_managed_color_filters`. `WFWorkflowName` is
+**absent** from both recovered payloads though both `src/*.xml` set it — re-measured on this build,
+confirming again that the signer strips it and the filename is the sole carrier of the display
+name. All fourteen `docs/*.py` checkers exit 0 at this commit, `manifest_check` included once this
+table was refreshed, and `gate_a_residue_check` among them.
+
+**⚠ NOTHING IN THIS REBUILD HAS RUN ON A REAL IPHONE, and this phase makes that warning stronger
+rather than weaker.** The build now changes an **accessibility setting** on the user's device, and
+no run of it has happened on a phone. Whether the screen actually goes black and white when the
+Circle fires, whether colour actually returns at CLOSE, and whether Emergency Restore actually
+brings colour back after a force-quit are all **unobserved**. The instrument is
+`.planning/phases/14-ash-as-real-color-filters-grayscale/14-UAT.md`, every test in it is blank, and
+`DIST-03` is open. Structural proof is not behavioural proof.
+
+**One risk is ACCEPTED and DISCLOSED, not mitigated.** iOS exposes no read-back for any
+accessibility setting, so a user who already runs Color Filters deliberately — for colour-blindness,
+migraine or low vision — has their **own** setting switched off by the restore leg. There is no
+detection and none is built. What ships is the `safety.ash_managed_color_filters` kill switch and a
+plain-language disclosure in the Control Room Note. The undone half is
+`.planning/todos/pending/2026-08-19-ash-void-circle-when-user-already-uses-grayscale.md`.
+
 **PHASE 11 GAP-CLOSURE, wave 10 (2026-08-18, plan 11-10) — NO ARTIFACT MOVED, and this block
 adds no hash row.** The table's six hash/size rows below remain plan 11-09's and are correct
 unchanged. Plan 11-10 touched build guards and one checker constant only: it emitted no action,
@@ -7,7 +65,9 @@ so both forks rebuild **byte-identical** to the 11-09 build and neither containe
 Verified rather than assumed — `git status --short -- src/` is empty after a full rebuild of both
 forks, the Aware source re-serialises to the same SHA-256 `c52edd93…`, and `docs/manifest_check.py`
 is green **with no exception**, which is what makes "no hash moved" a measurement rather than an
-expectation. Both forks still pass gate A (`--target-macos 26 --target-platform all`).
+expectation. Both forks still pass gate A (`--target-macos 26 --target-platform all`)
+— *true of the 11-10 build; **gate-A status superseded**, see the 2026-08-19 block at the top of
+this file.*
 
 **One claim in this file is now superseded by an executable guard, and that is the point of the
 wave.** The earlier blocks record T-11-22 — that no Emergency Restore surface is enclosed by a
@@ -222,7 +282,9 @@ Net action delta across the phase: **+44 − 88 = −44** per fork, 4346 → **4
 Both forks were regenerated in one pass after the provenance ancestor check passed, and the
 rebuild is byte-idempotent — a second consecutive build left `git status` empty, so these
 digests are reproducible rather than run-specific. **Gate A** (`--target-macos 26
---target-platform all`) `Validation passed.` exit 0 on both forks before signing; **gate B**
+--target-platform all`) `Validation passed.` exit 0 on both forks before signing — *true of the
+phase 16 build; **gate-A status superseded**, see the 2026-08-19 block at the top of this file*;
+**gate B**
 (`--target-macos 27 --target-platform all`) read standalone and advisorily per fork, reporting
 exactly the one permanent `WFCreateNoteInput` waiver each — at index **4148** (Core) and
 **4216** (Aware) — and nothing else. All thirteen `docs/*.py` checkers exit 0 at this commit,
@@ -268,7 +330,9 @@ reversibly so, `panic_escape_enabled` became a first-class flat state field, and
 it.** Built with Shortcuts Playground
 under the project's **two-gate rule** (stated in full in `.claude/CLAUDE.md` §1
 `### Exact validator invocation`). These artifacts were built and validated under **gate A**,
-`--target-macos 26 --target-platform all`, which passes clean on both forks. **Gate B**,
+`--target-macos 26 --target-platform all`, which passes clean on both forks — *true of the phase 13
+CR-01 build; **gate-A status superseded**, see the 2026-08-19 block at the top of this file*.
+**Gate B**,
 `--target-macos 27 --target-platform all`, was read against them advisorily and reported the
 one recorded waiver (`WFCreateNoteInput`, device-donor ground truth) and nothing else —
 measurements in `docs/BUILD-NOTES.md` §22.
@@ -281,12 +345,17 @@ exists. Regenerating both in one pass is the only way the shipped pair provably 
 
 | Fork | Source / archive / signed artifact | Bytes | SHA-256 |
 |---|---|---:|---|
-| Core source | `src/PROSOCHE-Dumb.xml` | 2864203 | `34c2ba05968b0e35c723892404c5f4d3a334d51c3f14263f7d6809997e668b02` |
-| Core archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Core-132716.xml` | 2864203 | `34c2ba05968b0e35c723892404c5f4d3a334d51c3f14263f7d6809997e668b02` |
-| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 231148 | `873fa3dbda7b1f3440bfc76997c2962198ddec2052096833787547b52f129f10` |
-| Aware source | `src/PROSOCHE-Sentient.xml` | 2936286 | `c52edd930f0c5fd1c81160fb584675d91a5c7b4d315dfe255f5325d3d35c0203` |
-| Aware archive | `artifacts/shortcuts/2026-08-18/PROSOCHĒ — Nine Circles — Aware-134612.xml` | 2936286 | `c52edd930f0c5fd1c81160fb584675d91a5c7b4d315dfe255f5325d3d35c0203` |
-| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 238095 | `4b7c2cfbddf0dccf47ef8e34209378faf14ca2d760dc089013d3b033ebd2ada0` |
+| Core source | `src/PROSOCHE-Dumb.xml` | 2915855 | `e15ae8bc5a4da5a93141be620ac70000bf4aa1a896a9980939b8b4002c198d28` |
+| Core archive | `artifacts/shortcuts/2026-08-19/PROSOCHĒ — Nine Circles — Core-113713.xml` | 2915855 | `e15ae8bc5a4da5a93141be620ac70000bf4aa1a896a9980939b8b4002c198d28` |
+| Core signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Core.shortcut` | 235369 | `c359bbe2f801f899ac21237000d589df5be9e7e575a825306c5333055a76658e` |
+| Aware source | `src/PROSOCHE-Sentient.xml` | 2987938 | `bcb2b37e97d563d3e3a407a1a4c6a75777101606000cff8990b2049aa7fe93cb` |
+| Aware archive | `artifacts/shortcuts/2026-08-19/PROSOCHĒ — Nine Circles — Aware-113713.xml` | 2987938 | `bcb2b37e97d563d3e3a407a1a4c6a75777101606000cff8990b2049aa7fe93cb` |
+| Aware signed | `artifacts/shortcuts/PROSOCHĒ — Nine Circles — Aware.shortcut` | 241805 | `bd269b0cd3ae496811ec4482ab965cdb0288f2ec127d9d7350c344d36ec575d2` |
+
+**Superseded previous rows, retained so a reader can identify a build already on a device:**
+**phase 16 (2026-08-18, plan 16-06 / 11-10)** Core source & archive `2864203` bytes `34c2ba05…`,
+Core signed `231148` bytes `873fa3db…`, Aware source & archive `2936286` bytes `c52edd93…`,
+Aware signed `238095` bytes `4b7c2cfb…`.
 
 **Re-archived and re-signed by the phase 13 CODE REVIEW, finding CR-01 (2026-08-17).** This is
 the record for the six rows in the table above; the plan-04 paragraph immediately below is its
@@ -300,7 +369,8 @@ Donors 4 and 4.1 write a literal row as a bare `<string>`. 44 rows per fork ship
 looked exactly like the blank Mirror this phase set out to fix. `_list_row()` now discriminates
 on attachment-bearing-ness, `verify_list_item_wrappers()` asserts the inverse rule, and the
 whole ship chain was redone: provenance ancestor check exit 0, both generators re-run, **gate A**
-`Validation passed.` exit 0 on both forks, **gate B** read standalone and advisorily per fork
+`Validation passed.` exit 0 on both forks (*gate-A status superseded — top block, 2026-08-19*),
+**gate B** read standalone and advisorily per fork
 (exit 1, exactly the one permanent `WFCreateNoteInput` waiver each and nothing else), both forks
 re-archived and re-signed under the canonical names with no suffix, and all six rows above
 recomputed from disk in one pass. Both signed containers were then **decrypted** through the
@@ -319,7 +389,8 @@ of six wrong at once. `src/*.xml` were regenerated from `tools/build_state_engin
 `tools/build_sentient.py` after the provenance ancestor check passed, and the rebuild was
 **byte-idempotent**: a rebuild on an already-built tree left `git status` empty, so the digests
 above are reproducible rather than run-specific. Both forks passed **gate A**
-(`--target-macos 26 --target-platform all`, `Validation passed.`, exit 0) before signing, and
+(`--target-macos 26 --target-platform all`, `Validation passed.`, exit 0) before signing
+(*gate-A status superseded — top block, 2026-08-19*), and
 **gate B** (`--target-macos 27 --target-platform all`) was read **standalone and advisorily**
 per fork, reporting exactly the one permanent `WFCreateNoteInput` waiver each and nothing else
 — the run most likely to surface a regression, since this phase moved 660 row serializations.
