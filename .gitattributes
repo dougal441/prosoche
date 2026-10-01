@@ -1,0 +1,3 @@
+*.shortcut binary
+*.png binary
+source/*.xml linguist-generated=true
